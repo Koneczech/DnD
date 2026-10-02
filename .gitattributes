@@ -1,0 +1,15 @@
+# Konce řádků v repu jsou vždy LF (rozhodnutí 30 v ZADANI.md).
+* text=auto eol=lf
+
+# Dávkové soubory Windows potřebují CRLF, jinak cmd.exe chybně čte návěští.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binární soubory
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.af binary
+*.xlsx binary
+*.pdf binary

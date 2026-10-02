@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DM Hub — přihlášení</title>
+  <link rel="stylesheet" href="/panel/styly.css">
+</head>
+<body>
+  <main>
+    <h1>DM Hub</h1>
+    <p class="uvod">Ovládání z jiného zařízení je chráněné PINem z Nastavení.</p>
+    <form id="formular" class="formular">
+      <label class="kratke">PIN
+        <input id="pin" type="password" inputmode="numeric" autocomplete="current-password" required autofocus>
+      </label>
+      <button type="submit" class="hlavni">Přihlásit</button>
+      <p class="ulozeni chyba" id="chyba" aria-live="polite"></p>
+    </form>
+  </main>
+  <script type="module">
+    document.querySelector('#formular').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const odpoved = await fetch('/prihlaseni', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: document.querySelector('#pin').value }),
+      });
+      if (odpoved.ok) location.href = '/';
+      else document.querySelector('#chyba').textContent = 'Nesprávný PIN.';
+    });
+  </script>
+</body>
+</html>

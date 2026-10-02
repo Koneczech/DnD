@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <title>DM Hub — testovací výstup</title>
+  <style>
+    /* Výstup pro OBS Browser Source: průhledné pozadí, velikost a umístění řeší OBS. */
+    html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+    body {
+      display: grid;
+      place-content: center;
+      text-align: center;
+      font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+      color: #ece4d3;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.85), 0 0 2px rgba(0, 0, 0, 0.9);
+    }
+    #datum { font-size: 9vmin; color: #e3c27f; line-height: 1.1; }
+    #misto { font-size: 5vmin; margin-top: 1vmin; }
+    #sezeni { font-size: 3vmin; opacity: 0.8; margin-top: 2vmin; }
+  </style>
+</head>
+<body>
+  <div id="datum"></div>
+  <div id="misto"></div>
+  <div id="sezeni"></div>
+  <script>
+    // Výstup drží poslední zobrazený stav. Při výpadku serveru nic nemaže
+    // a EventSource se sám znovu připojí (server posílá retry: 1000).
+    function vykresli(data) {
+      const s = data && data.stav;
+      if (!s) return;
+      document.getElementById('datum').textContent = s.datum || '';
+      document.getElementById('misto').textContent = s.misto || '';
+      document.getElementById('sezeni').textContent = Number.isInteger(s.sezeni) ? 'Sezení ' + s.sezeni : '';
+    }
+    fetch('/api/stav').then((r) => r.json()).then(vykresli).catch(() => {});
+    function pripojit() {
+      const zdroj = new EventSource('/api/udalosti');
+      zdroj.addEventListener('stav', (e) => vykresli(JSON.parse(e.data)));
+      // Prohlížeč se po výpadku připojuje sám. Kdyby to vzdal (stav CLOSED), zkus to znovu.
+      zdroj.addEventListener('error', () => {
+        if (zdroj.readyState === EventSource.CLOSED) setTimeout(pripojit, 1000);
+      });
+    }
+    pripojit();
+  </script>
+</body>
+</html>

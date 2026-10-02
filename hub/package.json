@@ -1,0 +1,21 @@
+{
+  "name": "dm-hub",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DM Hub — lokální ovládací panel DM pro kampaň a OBS",
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "start": "node spoustec.js",
+    "server": "node server/index.js",
+    "test": "node --test --test-concurrency=1 \"test/**/*.test.js\"",
+    "check:node": "node skripty/check-node.js"
+  },
+  "dependencies": {
+    "chokidar": "^5.0.0",
+    "obs-websocket-js": "^5.0.8",
+    "yaml": "^2.9.1"
+  }
+}

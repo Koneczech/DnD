@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import http from 'node:http';
+import path from 'node:path';
 import { Hub } from '../server/app.js';
 import { rozebrat } from '../server/frontmatter.js';
 import { docasneRepo, dokud, FalesnyObs } from './pomoc.js';
@@ -170,6 +171,61 @@ test('Ochrana: cizí Host, formulář místo JSON a únik ze složky se odmítno
     assert.equal((await fetch(hub.adresa + '/panel/..%2F..%2Fpackage.json')).status, 404);
     assert.equal((await fetch(hub.adresa + '/')).status, 200);
     assert.equal((await fetch(hub.adresa + '/vystupy/test.html')).status, 200);
+  } finally {
+    await zastavit();
+  }
+});
+
+test('Blok 1a: Zahájit, poznámka, Ukončit a odpočet přes API; nestažené změny chtějí potvrzení', async () => {
+  const { hub, repo, zastavit } = await spustitHub();
+  const sse = odebirat(hub);
+  try {
+    hub.git.stav.pozadu = 2;
+    const blok = await pozadavek(hub, '/api/sezeni/zahajit', { metoda: 'POST', telo: { pritomni: ['Martin'] } });
+    assert.equal(blok.status, 409);
+    assert.equal(blok.data.kod, 'nestazene-zmeny');
+
+    const z = await pozadavek(hub, '/api/sezeni/zahajit', {
+      metoda: 'POST',
+      telo: { pritomni: ['Martin'], potvrzenoBezStazeni: true, odpocet: { minut: 15 } },
+    });
+    assert.equal(z.status, 200);
+    assert.equal(z.data.cislo, 2);
+    await sse.cekat((u) => u.typ === 'sezeni' && u.data.bezi === true);
+    await sse.cekat((u) => u.typ === 'odpocet' && u.data.stav === 'pripraveny');
+
+    const sp = await pozadavek(hub, '/api/odpocet/spustit', { metoda: 'POST', telo: {} });
+    assert.equal(sp.data.stav, 'bezi');
+
+    const p = await pozadavek(hub, '/api/poznamka', { metoda: 'POST', telo: { text: 'Lupiči ustupují' } });
+    assert.equal(p.status, 200);
+    assert.equal(p.data.soubor, 'kampan/sezeni/s02/s02.md');
+    assert.match(await fs.readFile(path.join(repo.c.kampan, 'sezeni', 's02', 's02.md'), 'utf8'), /Lupiči ustupují/);
+
+    const k = await pozadavek(hub, '/api/sezeni/ukoncit', { metoda: 'POST', telo: {} });
+    assert.equal(k.status, 200);
+    assert.match(k.data.zpravaCommitu, /^Sezení 2 — \d{1,2}\. \d{1,2}\. \d{4}$/);
+    assert.equal(hub.odpocet.stav.stav, 'zadny', 'Ukončit sezení zruší odpočet');
+    assert.equal((await pozadavek(hub, '/api/sezeni/ukoncit', { metoda: 'POST', telo: {} })).status, 409);
+  } finally {
+    sse.zavrit();
+    await zastavit();
+  }
+});
+
+test('Blok 1a: Souboj bez nastavené scény hlásí chybu, s nastavenou přepne OBS do 500 ms', async () => {
+  const { hub, obs, zastavit } = await spustitHub();
+  try {
+    await dokud(() => hub.obs.pripojeno, 2000);
+    const bez = await pozadavek(hub, '/api/obs/souboj', { metoda: 'POST', telo: {} });
+    assert.equal(bez.status, 409);
+    assert.match(bez.data.chyba, /Nastavení/);
+    await pozadavek(hub, '/api/nastaveni', { metoda: 'PUT', telo: { scenaSouboj: 'Souboj' } });
+    const zacatek = Date.now();
+    const s = await pozadavek(hub, '/api/obs/souboj', { metoda: 'POST', telo: {} });
+    assert.equal(s.status, 200);
+    assert.ok(Date.now() - zacatek < 500);
+    assert.equal(obs.scena, 'Souboj');
   } finally {
     await zastavit();
   }

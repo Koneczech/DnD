@@ -519,3 +519,9 @@ Nic z této sekce zatím neplatí. Každý bod se rozhodne nejpozději na začá
 | 6 | Ilustrace v IIO bez internetu | IIO čte obrázky z GitHubu; ověřit, zda export může odkazovat na lokální server | Verze 2 |
 | 7 | Testy datového motoru Harptos | Ověřit doma, zda jsou v lokálním klonu. Pokud chybí, napsat je v Bloku 1b znovu podle kritéria bloku | Blok 1b |
 | 9 | ⚠ Pole `stav.md` | `datum` (text, zatím prázdné; DM doplní po zápisu ze sezení 2), `misto` (text), `sezeni` (číslo posledního odehraného sezení, nyní 2), `sezeni_bezi`. Formát data doladí bod 2 | Blok 1a |
+| 13 | ⚠ Hráči v `kampan.yaml` | Pole `hraci` (jméno hráče a postava) pro seznam přítomných při Zahájit sezení: Martin – Tusker, Zaky – Koudur, Adriana – Alba, Anna – Leta | Akceptace Bloku 1a |
+| 14 | ⚠ Soubor sezení | `sezeni/sNN/sNN.md`, hlavička `cislo`, `datum_realne`, `zacatek`, `konec`, `pritomni`, `verejne: false`; poznámky jako odrážky `- 18:05 — text` pod nadpisem Poznámky ze stolu | Akceptace Bloku 1a |
+| 15 | ⚠ Tlačítko Souboj | V horní liště panelu; scéna se vybírá v Nastavení a ukládá do `hub/.env` (`OBS_SCENA_SOUBOJ`), protože jde o nastavení OBS na tomto PC | Akceptace Bloku 1a |
+| 16 | ⚠ Odpočet | Nastaví se časem začátku hry (HH:MM) nebo počtem minut; Zahájit sezení navrhne nejbližší čtvrthodinu za 10 minut. Stav v `hub/.stav/odpocet.json`, Ukončit sezení odpočet zruší. Vzhled ve výstupu je dočasný (barva kost → jantar → rez), převezme se z `odpocet.html` | Akceptace Bloku 1a |
+| 17 | ⚠ Kontrolní seznam při Ukončit sezení | Poznámky zapsané; datum a místo odpovídají konci sezení; uložit do GitHubu. Seznam je jen připomínka, nic nevynucuje | Akceptace Bloku 1a |
+| 18 | ⚠ Uložit do GitHubu commituje jen `kampan/` | Kód Hubu a jiné soubory tlačítko nikdy necommituje. Bez internetu zůstane commit lokálně a panel to řekne | Akceptace Bloku 1a |

@@ -14,7 +14,7 @@ async function api(cesta, { metoda = 'GET', telo } = {}) {
     body: telo !== undefined ? JSON.stringify(telo) : undefined,
   });
   const data = await odpoved.json().catch(() => ({}));
-  if (!odpoved.ok) throw new Error(data.chyba || `Server vrátil ${odpoved.status}`);
+  if (!odpoved.ok) throw Object.assign(new Error(data.chyba || `Server vrátil ${odpoved.status}`), { kod: data.kod });
   return data;
 }
 
@@ -25,7 +25,7 @@ function cas() {
 /* ---------- Navigace ---------- */
 
 function ukazObrazovku(jmeno) {
-  const platne = ['prehled', 'sceny', 'kontrola', 'nastaveni'];
+  const platne = ['prehled', 'odpocet', 'sceny', 'kontrola', 'nastaveni'];
   const cil = platne.includes(jmeno) ? jmeno : 'prehled';
   for (const s of document.querySelectorAll('.obrazovka')) s.hidden = s.id !== `obrazovka-${cil}`;
   for (const a of document.querySelectorAll('.moduly a')) {
@@ -185,6 +185,7 @@ function vykresliSceny() {
     b.type = 'button';
     b.textContent = nazev;
     b.setAttribute('aria-pressed', String(nazev === o.aktualniScena));
+    if (nazev === stav.prehled?.nastaveni?.scenaSouboj) b.title = 'Scéna pro Souboj';
     b.addEventListener('click', async () => {
       try {
         await api('/api/obs/scena', { metoda: 'POST', telo: { nazev } });
@@ -236,6 +237,17 @@ function vykresliNastaveni(n) {
   $('#pole-port').value = n.port;
   $('#pole-domaci-sit').checked = n.domaciSit;
   $('#pole-pin').placeholder = n.pinNastaven ? 'PIN je uložený. Vyplň jen při změně.' : '4–8 číslic';
+  vykresliVyberSouboje();
+}
+
+/** Výběr scény pro Souboj: scény z OBS, a pokud OBS neběží, aspoň uložená hodnota. */
+function vykresliVyberSouboje() {
+  const select = $('#pole-scena-souboj');
+  if (document.activeElement === select) return;
+  const ulozena = stav.prehled?.nastaveni?.scenaSouboj || '';
+  const sceny = [...new Set([...(stav.prehled?.obs?.sceny ?? []), ...(ulozena ? [ulozena] : [])])];
+  select.replaceChildren(new Option('— vyber scénu —', ''), ...sceny.map((n) => new Option(n, n)));
+  select.value = ulozena;
 }
 
 $('#formular-nastaveni').addEventListener('submit', async (e) => {
@@ -245,6 +257,7 @@ $('#formular-nastaveni').addEventListener('submit', async (e) => {
     obsUrl: f.get('obsUrl').trim(),
     port: Number(f.get('port')),
     domaciSit: f.get('domaciSit') === 'on',
+    scenaSouboj: f.get('scenaSouboj') ?? '',
   };
   if (f.get('obsHeslo')) telo.obsHeslo = f.get('obsHeslo');
   if (f.get('pin')) telo.pin = f.get('pin');
@@ -271,11 +284,16 @@ function prekresli() {
   vykresliKontrolky();
   vykresliSceny();
   vykresliKontrolu(stav.prehled?.kontrola);
+  vykresliSezeni();
+  vykresliOdpocet();
+  vykresliGit();
+  vykresliVyberSouboje();
 }
 
 async function nactiPrehled() {
   try {
     stav.prehled = await api('/api/prehled');
+    stav.odchylkaHodin = Date.parse(stav.prehled.odpocet?.serverCas ?? new Date().toISOString()) - Date.now();
     stav.serverOk = true;
     vykresliNastaveni(stav.prehled.nastaveni);
   } catch {
@@ -304,6 +322,279 @@ function pripojitUdalosti() {
   zdroj.addEventListener('obs', aktualizuj('obs'));
   zdroj.addEventListener('git', aktualizuj('git'));
   zdroj.addEventListener('kontrola', aktualizuj('kontrola'));
+  zdroj.addEventListener('sezeni', aktualizuj('sezeni'));
+  zdroj.addEventListener('odpocet', (e) => {
+    if (!stav.prehled) return;
+    stav.prehled.odpocet = JSON.parse(e.data);
+    stav.odchylkaHodin = Date.parse(stav.prehled.odpocet.serverCas) - Date.now();
+    vykresliOdpocet();
+  });
+}
+
+/* ---------- Toast ---------- */
+
+let casovacToastu = null;
+function toast(text, { chyba = false } = {}) {
+  const t = $('#toast');
+  t.textContent = text;
+  t.className = chyba ? 'toast chyba' : 'toast';
+  t.hidden = false;
+  clearTimeout(casovacToastu);
+  casovacToastu = setTimeout(() => (t.hidden = true), chyba ? 7000 : 3500);
+}
+
+/* ---------- Sezení: Zahájit / Ukončit ---------- */
+
+function vykresliSezeni() {
+  const s = stav.prehled?.sezeni;
+  const b = $('#tlacitko-sezeni');
+  b.dataset.bezi = String(Boolean(s?.bezi));
+  b.textContent = s?.bezi ? `Ukončit sezení ${s.cislo}` : 'Zahájit sezení';
+}
+
+function navrhCasu() {
+  // Nejbližší čtvrthodina, nejméně 10 minut od teď
+  const d = new Date(Date.now() + 10 * 60000);
+  d.setMinutes(Math.ceil(d.getMinutes() / 15) * 15, 0, 0);
+  return d.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+}
+
+function otevritZahajit() {
+  const s = stav.prehled?.sezeni;
+  $('#zahajit-cislo').textContent = s ? s.cislo + 1 : '';
+  const box = $('#zahajit-hraci');
+  box.replaceChildren();
+  for (const h of s?.hraci ?? []) {
+    const label = document.createElement('label');
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.name = 'pritomni';
+    input.value = h.jmeno;
+    input.checked = true;
+    const small = document.createElement('small');
+    small.textContent = h.postava ? `(${h.postava})` : '';
+    label.append(input, ` ${h.jmeno} `, small);
+    box.append(label);
+  }
+  if (!s?.hraci?.length) box.textContent = 'V kampan/kampan.yaml nejsou hráči (pole hraci).';
+  $('#zahajit-cas').value = navrhCasu();
+  const g = stav.prehled?.git;
+  const varovani = $('#zahajit-varovani');
+  varovani.hidden = !(g?.pozadu > 0);
+  varovani.textContent = g?.pozadu > 0 ? `Na GitHubu jsou novější změny (${g.pozadu}). Sezení jde zahájit i bez nich, ale doporučuju je nejdřív stáhnout.` : '';
+  $('#zahajit-potvrdit').textContent = g?.pozadu > 0 ? 'Zahájit bez stažení změn' : 'Zahájit sezení';
+  $('#zahajit-chyba').textContent = '';
+  $('#dialog-zahajit').showModal();
+}
+
+$('#formular-zahajit').addEventListener('submit', async (e) => {
+  if (e.submitter?.value !== 'zahajit') return;
+  e.preventDefault();
+  const pritomni = [...document.querySelectorAll('#zahajit-hraci input:checked')].map((i) => i.value);
+  const cas = $('#zahajit-cas').value.trim();
+  try {
+    const r = await api('/api/sezeni/zahajit', {
+      metoda: 'POST',
+      telo: { pritomni, odpocet: cas ? { cas } : null, potvrzenoBezStazeni: true },
+    });
+    $('#dialog-zahajit').close();
+    toast(`Sezení ${r.cislo} zahájeno. Poznámky padají do ${r.soubor}.`);
+    if (cas) location.hash = 'odpocet';
+  } catch (chyba) {
+    $('#zahajit-chyba').textContent = chyba.message;
+  }
+});
+
+function otevritUkoncit() {
+  const s = stav.prehled?.sezeni;
+  $('#ukoncit-cislo').textContent = s?.cislo ?? '';
+  $('#ukoncit-vysledek').textContent = '';
+  $('#ukoncit-vysledek').className = 'ulozeni';
+  for (const i of document.querySelectorAll('#dialog-ukoncit input')) i.checked = false;
+  $('#dialog-ukoncit').showModal();
+}
+
+$('#formular-ukoncit').addEventListener('submit', async (e) => {
+  const volba = e.submitter?.value;
+  if (volba !== 'ukoncit' && volba !== 'jen-ukoncit') return;
+  e.preventDefault();
+  const vysledek = $('#ukoncit-vysledek');
+  try {
+    const r = await api('/api/sezeni/ukoncit', { metoda: 'POST', telo: {} });
+    if (volba === 'jen-ukoncit') {
+      $('#dialog-ukoncit').close();
+      toast(`Sezení ${r.cislo} ukončeno. Do GitHubu ho ulož ze Stavu kampaně.`);
+      return;
+    }
+    vysledek.textContent = 'Ukládám do GitHubu…';
+    const g = await api('/api/git/ulozit', { metoda: 'POST', telo: { zprava: r.zpravaCommitu } });
+    $('#dialog-ukoncit').close();
+    toast(g.chybaPush ? g.chybaPush : `Sezení ${r.cislo} ukončeno a uloženo do GitHubu.`, { chyba: Boolean(g.chybaPush) });
+  } catch (chyba) {
+    vysledek.className = 'ulozeni chyba';
+    vysledek.textContent = chyba.message;
+  }
+});
+
+$('#tlacitko-sezeni').addEventListener('click', () => (stav.prehled?.sezeni?.bezi ? otevritUkoncit() : otevritZahajit()));
+
+/* ---------- Souboj ---------- */
+
+$('#tlacitko-souboj').addEventListener('click', async () => {
+  try {
+    await api('/api/obs/souboj', { metoda: 'POST', telo: {} });
+  } catch (chyba) {
+    toast(chyba.message, { chyba: true });
+    if (/není nastavená/.test(chyba.message)) location.hash = 'nastaveni';
+  }
+});
+
+/* ---------- Poznámka (F2) ---------- */
+
+function otevritPoznamku() {
+  const d = $('#dialog-poznamka');
+  if (d.open) return;
+  const s = stav.prehled?.sezeni;
+  $('#poznamka-kam').textContent = s?.bezi
+    ? `Zapíše se do sezení ${s.cislo} s aktuálním časem.`
+    : 'Sezení neběží, poznámka se zapíše do kampan/sezeni/priprava.md.';
+  $('#poznamka-chyba').textContent = '';
+  for (const dlg of document.querySelectorAll('dialog[open]')) dlg.close();
+  d.showModal();
+  $('#pole-poznamka').focus();
+}
+
+async function zapsatPoznamku() {
+  const pole = $('#pole-poznamka');
+  if (!pole.value.trim()) return;
+  try {
+    const r = await api('/api/poznamka', { metoda: 'POST', telo: { text: pole.value } });
+    pole.value = '';
+    $('#dialog-poznamka').close();
+    toast(r.vysledek === 'odlozeno' ? 'Poznámka čeká na zápis (soubor je otevřený jinde).' : `Poznámka zapsána v ${r.cas}.`);
+  } catch (chyba) {
+    $('#poznamka-chyba').textContent = chyba.message;
+  }
+}
+
+$('#formular-poznamka').addEventListener('submit', (e) => {
+  if (e.submitter?.value !== 'ulozit') return;
+  e.preventDefault();
+  zapsatPoznamku();
+});
+$('#pole-poznamka').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    zapsatPoznamku();
+  }
+});
+$('#tlacitko-poznamka').addEventListener('click', otevritPoznamku);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'F2') {
+    e.preventDefault();
+    otevritPoznamku();
+  }
+});
+
+/* ---------- Odpočet ---------- */
+
+stav.odchylkaHodin = 0;
+
+function formatCasu(ms) {
+  const celkem = Math.max(0, Math.ceil(ms / 1000));
+  const h = Math.floor(celkem / 3600);
+  const m = Math.floor((celkem % 3600) / 60);
+  const s = celkem % 60;
+  const mm = h ? String(m).padStart(2, '0') : String(m);
+  return `${h ? `${h}:` : ''}${mm}:${String(s).padStart(2, '0')}`;
+}
+
+function zbyvajiciMs(o) {
+  if (!o) return null;
+  if (o.stav === 'bezi') return Math.max(0, Date.parse(o.konec) - (Date.now() + stav.odchylkaHodin));
+  return o.zbyvaMs;
+}
+
+function vykresliOdpocet() {
+  const o = stav.prehled?.odpocet;
+  const casEl = $('#odpocet-cas');
+  const mini = $('#odpocet-mini');
+  const popis = $('#odpocet-popis');
+  const zbyva = zbyvajiciMs(o);
+  casEl.dataset.stav = o?.stav ?? 'zadny';
+  casEl.textContent = zbyva == null ? '--:--' : formatCasu(zbyva);
+  mini.hidden = !(o && (o.stav === 'bezi' || o.stav === 'pauza'));
+  mini.textContent = zbyva == null ? '' : formatCasu(zbyva);
+  const texty = {
+    zadny: 'Odpočet není nastavený.',
+    pripraveny: 'Připraveno. V OBS se ukáže po spuštění.',
+    bezi: zbyva === 0 ? 'Odpočet doběhl. Hra začíná.' : `Běží. Konec v ${new Date(o?.konec).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}.`,
+    pauza: 'Pozastaveno. V OBS stojí na posledním čase.',
+  };
+  popis.textContent = texty[o?.stav ?? 'zadny'];
+  $('#odpocet-spustit').textContent = o?.stav === 'pauza' ? 'Pokračovat' : 'Spustit';
+  $('#odpocet-spustit').disabled = !o || o.stav === 'zadny' || o.stav === 'bezi';
+  $('#odpocet-pauza').disabled = o?.stav !== 'bezi' || zbyva === 0;
+  $('#odpocet-zrusit').disabled = !o || o.stav === 'zadny';
+}
+setInterval(() => {
+  if (stav.prehled?.odpocet?.stav === 'bezi') vykresliOdpocet();
+}, 250);
+
+$('#formular-odpocet').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const cas = $('#pole-odpocet-cas').value.trim();
+  const minut = Number($('#pole-odpocet-minut').value);
+  try {
+    await api('/api/odpocet/pripravit', { metoda: 'POST', telo: cas ? { cas } : { minut } });
+    $('#pole-odpocet-cas').value = '';
+    $('#pole-odpocet-minut').value = '';
+  } catch (chyba) {
+    toast(chyba.message, { chyba: true });
+  }
+});
+for (const [id, akce] of [['#odpocet-spustit', 'spustit'], ['#odpocet-pauza', 'pauza'], ['#odpocet-zrusit', 'zrusit']]) {
+  $(id).addEventListener('click', () => api(`/api/odpocet/${akce}`, { metoda: 'POST', telo: {} }).catch((chyba) => toast(chyba.message, { chyba: true })));
+}
+
+/* ---------- Uložení do GitHubu ---------- */
+
+function vykresliGit() {
+  const g = stav.prehled?.git;
+  const popis = $('#git-popis');
+  if (!g?.dostupny) {
+    popis.textContent = g?.chyba || 'Zjišťuji stav Gitu…';
+    $('#git-ulozit').disabled = true;
+    return;
+  }
+  $('#git-ulozit').disabled = false;
+  popis.textContent = `Větev ${g.vetev}. Neuložených souborů v repu: ${g.zmeneno}. Tlačítko uloží jen data kampaně (kampan/), ne kód Hubu.`;
+}
+
+$('#git-ulozit').addEventListener('click', async () => {
+  const v = $('#git-vysledek');
+  v.className = 'ulozeni';
+  v.textContent = 'Ukládám…';
+  try {
+    const r = await api('/api/git/ulozit', { metoda: 'POST', telo: {} });
+    v.className = r.chybaPush ? 'ulozeni varovani' : 'ulozeni';
+    v.textContent = r.chybaPush ?? (r.commit ? `Uloženo a odesláno na GitHub v ${cas()}.` : 'Nic nového k uložení, GitHub je aktuální.');
+  } catch (chyba) {
+    v.className = 'ulozeni chyba';
+    v.textContent = chyba.message;
+  }
+});
+
+/* ---------- Adresy výstupů ---------- */
+
+const adresaOdpoctu = `${location.origin}/vystupy/odpocet.html`;
+$('#adresa-odpoctu').textContent = adresaOdpoctu;
+for (const b of document.querySelectorAll('[data-kopirovat]')) {
+  b.addEventListener('click', async () => {
+    await navigator.clipboard?.writeText($(`#${b.dataset.kopirovat}`).textContent).catch(() => {});
+    b.textContent = 'Zkopírováno';
+    setTimeout(() => (b.textContent = 'Kopírovat adresu'), 1500);
+  });
 }
 
 const adresaVystupu = `${location.origin}/vystupy/test.html`;

@@ -11,6 +11,8 @@ import { Nastaveni } from './nastaveni.js';
 import { Obs } from './obs.js';
 import { Git } from './git.js';
 import { Vysilac } from './sse.js';
+import { Sezeni, datumCesky } from './sezeni.js';
+import { Odpocet } from './odpocet.js';
 import { jeVOneDrive, nainstalovatHook } from './prostredi.js';
 
 const TYPY_SOUBORU = {
@@ -62,6 +64,8 @@ export class Hub {
     this.portPrepis = port;
     this.zapisovac = new Zapisovac({ zurnal: path.join(this.c.lokalniStav, 'odlozene-zapisy') });
     this.data = new DataKampane({ cesty: this.c, zapisovac: this.zapisovac });
+    this.sezeni = new Sezeni({ cesty: this.c, data: this.data, zapisovac: this.zapisovac });
+    this.odpocet = new Odpocet({ soubor: path.join(this.c.lokalniStav, 'odpocet.json') });
     this.hlidac = new Hlidac(this.c.kampan);
     this.nastaveni = new Nastaveni(this.c.env);
     this.obs = new Obs(obsKlient ? { klient: obsKlient } : {});
@@ -83,10 +87,13 @@ export class Hub {
     this.data.on('stav', () => this.vyslatStav());
     this.data.on('kontrola', (k) => this.vysilac.vyslat('kontrola', k));
     this.obs.on('stav', (s) => this.vysilac.vyslat('obs', s));
+    this.odpocet.on('stav', (s) => this.vysilac.vyslat('odpocet', s));
     this.hlidac.on('zmena', ({ soubor }) => this.data.souborZmenen(soubor).catch(() => {}));
 
     await this.zapisovac.obnovit();
     await this.data.nacist();
+    await this.odpocet.nacist();
+    this.vysilac.vyslat('odpocet', this.odpocet.verejny());
     await this.hlidac.spustit();
 
     this.server = http.createServer((req, res) => this.obsluha(req, res));
@@ -127,10 +134,13 @@ export class Hub {
 
   vyslatStav() {
     this.vysilac.vyslat('stav', { ...this.data.verejnyStav(), odlozeneZapisy: this.odlozeneZapisy() });
+    this.sezeni.verejne().then((s) => this.vysilac.vyslat('sezeni', s)).catch(() => {});
   }
 
-  prehled() {
+  async prehled() {
     return {
+      sezeni: await this.sezeni.verejne(),
+      odpocet: this.odpocet.verejny(),
       stav: { ...this.data.verejnyStav(), odlozeneZapisy: this.odlozeneZapisy() },
       kontrola: this.data.kontrola,
       obs: this.obs.verejnyStav(),
@@ -166,7 +176,7 @@ export class Hub {
       return await this.staticky(req, res, url);
     } catch (e) {
       const status = e.status || 500;
-      if (!res.headersSent) poslatJson(res, status, { chyba: e.message });
+      if (!res.headersSent) poslatJson(res, status, { chyba: e.message, ...(e.kod ? { kod: e.kod } : {}) });
       else res.end();
     }
   }
@@ -191,12 +201,12 @@ export class Hub {
     const m = req.method;
     const p = url.pathname;
     if (p === '/api/udalosti' && m === 'GET') return this.vysilac.pripojit(req, res);
-    if (p === '/api/prehled' && m === 'GET') return poslatJson(res, 200, this.prehled());
+    if (p === '/api/prehled' && m === 'GET') return poslatJson(res, 200, await this.prehled());
     if (p === '/api/zdravi' && m === 'GET') return poslatJson(res, 200, { ok: true, pid: process.pid, spusteno: this.spusteno });
-    if (p === '/api/stav' && m === 'GET') return poslatJson(res, 200, this.prehled().stav);
+    if (p === '/api/stav' && m === 'GET') return poslatJson(res, 200, (await this.prehled()).stav);
     if (p === '/api/stav' && m === 'PUT') {
       const vysledek = await this.data.zmenitStav(await nacistJson(req));
-      return poslatJson(res, 200, { ...vysledek, stav: this.prehled().stav });
+      return poslatJson(res, 200, { ...vysledek, stav: (await this.prehled()).stav });
     }
     if (p === '/api/kontrola' && m === 'GET') return poslatJson(res, 200, await this.data.zkontrolovat());
     if (p === '/api/nastaveni' && m === 'GET') return poslatJson(res, 200, this.nastaveni.verejne());
@@ -220,6 +230,54 @@ export class Hub {
       const zacatek = Date.now();
       await this.obs.prepnoutScenu(String(nazev));
       return poslatJson(res, 200, { ok: true, ms: Date.now() - zacatek });
+    }
+    if (p === '/api/sezeni/zahajit' && m === 'POST') {
+      const telo = await nacistJson(req);
+      if (this.git.stav.pozadu > 0 && !telo.potvrzenoBezStazeni) {
+        throw Object.assign(new Error(`Na GitHubu jsou novější změny (${this.git.stav.pozadu}). Stáhni je, nebo zahaj sezení bez nich.`), { status: 409, kod: 'nestazene-zmeny' });
+      }
+      const pritomni = Array.isArray(telo.pritomni) ? telo.pritomni.map(String).slice(0, 20) : [];
+      const vysledek = await this.sezeni.zahajit({ pritomni });
+      if (telo.odpocet && (telo.odpocet.cas || telo.odpocet.minut)) await this.odpocet.pripravit(telo.odpocet);
+      return poslatJson(res, 200, vysledek);
+    }
+    if (p === '/api/sezeni/ukoncit' && m === 'POST') {
+      await nacistJson(req);
+      const vysledek = await this.sezeni.ukoncit();
+      if (this.odpocet.stav.stav !== 'zadny') await this.odpocet.zrusit();
+      return poslatJson(res, 200, { ...vysledek, zpravaCommitu: `Sezení ${vysledek.cislo} — ${datumCesky()}` });
+    }
+    if (p === '/api/poznamka' && m === 'POST') {
+      const { text } = await nacistJson(req);
+      return poslatJson(res, 200, await this.sezeni.poznamka(text));
+    }
+    if (p.startsWith('/api/odpocet/') && m === 'POST') {
+      const akce = p.slice('/api/odpocet/'.length);
+      const telo = await nacistJson(req);
+      const mapa = {
+        pripravit: () => this.odpocet.pripravit(telo),
+        spustit: () => this.odpocet.spustit(),
+        pauza: () => this.odpocet.pauza(),
+        zrusit: () => this.odpocet.zrusit(),
+      };
+      if (!mapa[akce]) throw Object.assign(new Error('Neznámá akce odpočtu'), { status: 404 });
+      return poslatJson(res, 200, await mapa[akce]());
+    }
+    if (p === '/api/odpocet' && m === 'GET') return poslatJson(res, 200, this.odpocet.verejny());
+    if (p === '/api/obs/souboj' && m === 'POST') {
+      await nacistJson(req);
+      const scena = this.nastaveni.hodnoty.OBS_SCENA_SOUBOJ;
+      if (!scena) throw Object.assign(new Error('Scéna pro souboj není nastavená. Vyber ji v Nastavení.'), { status: 409 });
+      const zacatek = Date.now();
+      await this.obs.prepnoutScenu(scena);
+      return poslatJson(res, 200, { ok: true, scena, ms: Date.now() - zacatek });
+    }
+    if (p === '/api/git/ulozit' && m === 'POST') {
+      const telo = await nacistJson(req);
+      const zprava = String(telo.zprava || '').trim() || `Ruční uložení — ${datumCesky()}`;
+      const vysledek = await this.git.ulozit(zprava.slice(0, 200));
+      this.obnovitGit(false);
+      return poslatJson(res, 200, vysledek);
     }
     if (p === '/api/git/obnovit' && m === 'POST') {
       await nacistJson(req);

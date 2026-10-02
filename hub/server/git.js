@@ -23,7 +23,13 @@ export class Git {
   /** Lokální stav bez sítě. */
   async lokalniStav() {
     try {
-      const vetev = await git(this.koren, ['rev-parse', '--abbrev-ref', 'HEAD']);
+      await git(this.koren, ['rev-parse', '--git-dir']);
+      let vetev;
+      try {
+        vetev = await git(this.koren, ['symbolic-ref', '--short', '-q', 'HEAD']);
+      } catch {
+        vetev = 'HEAD'; // odpojená HEAD
+      }
       const porcelain = await git(this.koren, ['status', '--porcelain']);
       let upstream = null;
       try {
@@ -59,6 +65,47 @@ export class Git {
       this.stav.chyba = 'GitHub není dostupný (bez internetu nebo bez přihlášení). Pracuje se s lokální kopií.';
     }
     return this.stav;
+  }
+
+  /**
+   * Uložit do GitHubu: commit dat kampaně (jen složka kampan/) a push.
+   * Kód Hubu ani nic jiného se tímto tlačítkem necommituje.
+   * @returns {Promise<{commit:boolean, push:boolean, zprava:string}>}
+   */
+  async ulozit(zprava, cesty = ['kampan']) {
+    await this.lokalniStav();
+    if (!this.stav.dostupny) throw Object.assign(new Error(this.stav.chyba || 'Git není dostupný.'), { status: 409 });
+    await git(this.koren, ['add', '--', ...cesty]);
+    const zmeny = await git(this.koren, ['diff', '--cached', '--name-only', '--', ...cesty]);
+    let commit = false;
+    if (zmeny) {
+      try {
+        await git(this.koren, ['commit', '-q', '-m', zprava, '--', ...cesty], { timeout: 60000 });
+        commit = true;
+      } catch (e) {
+        const vystup = String(e.stderr || e.stdout || e.message).trim();
+        const duvod = /DM Hub: commit zastaven/.test(vystup)
+          ? `Commit zastavil hook, repo je veřejné: ${vystup.split('\n').filter((r) => /^\s{2}\S/.test(r)).map((r) => r.trim()).join('; ')}`
+          : /user\.(name|email)|Author identity/i.test(vystup)
+            ? 'Git neví, kdo commituje. Nastav git config user.name a user.email.'
+            : `Commit se nepodařil: ${vystup.split('\n')[0]}`;
+        throw Object.assign(new Error(duvod), { status: 409 });
+      }
+    }
+    let push = false;
+    let chybaPush = null;
+    if (this.stav.upstream) {
+      try {
+        await git(this.koren, ['push', '--quiet'], { timeout: 60000 });
+        push = true;
+      } catch {
+        chybaPush = 'Uloženo jen lokálně, odeslání na GitHub se nepodařilo (internet nebo přihlášení). Zkus Uložit znovu později.';
+      }
+    } else {
+      chybaPush = 'Větev nemá vzdálenou větev na GitHubu; uloženo jen lokálně.';
+    }
+    await this.lokalniStav();
+    return { commit, push, chybaPush, zmeneno: zmeny ? zmeny.split('\n').length : 0 };
   }
 
   /** Stáhnout změny: jen fast-forward, aby se nikdy nic nepřepsalo. */

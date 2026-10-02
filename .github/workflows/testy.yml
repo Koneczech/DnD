@@ -1,0 +1,48 @@
+name: Testy DM Hubu
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  testy:
+    name: Testy (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    defaults:
+      run:
+        working-directory: hub
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node.js podle .nvmrc
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: hub/package-lock.json
+
+      - name: Shoda .nvmrc a engines (a běžící verze)
+        run: node skripty/check-node.js --runtime
+
+      - name: Konce řádků v repu jsou LF
+        if: runner.os == 'Windows'
+        shell: pwsh
+        working-directory: .
+        run: |
+          $crlf = git ls-files --eol | Select-String -Pattern 'i/crlf'
+          if ($crlf) { Write-Error "Soubory s CRLF v indexu:`n$crlf"; exit 1 }
+          Write-Host "Konce řádků v indexu jsou v pořádku."
+
+      - name: Instalace závislostí
+        run: npm ci
+
+      - name: Testy
+        run: npm test

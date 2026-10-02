@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DM Hub</title>
+  <link rel="stylesheet" href="/panel/styly.css">
+  <link rel="icon" href="/panel/ikona.svg" type="image/svg+xml">
+</head>
+<body>
+  <header class="lista">
+    <div class="kampan" aria-live="polite">
+      <p class="kampan-datum" id="lista-datum">…</p>
+      <p class="kampan-detail"><span id="lista-misto"></span><span id="lista-sezeni"></span></p>
+    </div>
+
+    <nav class="akce" aria-label="Akce sezení">
+      <button type="button" disabled title="Přijde v Bloku 1a">Zahájit sezení</button>
+      <button type="button" disabled title="Přijde v Bloku 1b">Další den</button>
+      <button type="button" disabled title="Přijde v Bloku 1a (klávesa F2)">Poznámka</button>
+      <button type="button" disabled title="Přijde v Bloku 3">Hledat</button>
+    </nav>
+
+    <ul class="kontrolky" aria-label="Stav systému">
+      <li><span class="svetlo" id="svetlo-server" data-stav="ceka"></span>Server</li>
+      <li><span class="svetlo" id="svetlo-obs" data-stav="ceka"></span>OBS</li>
+      <li><span class="svetlo" id="svetlo-git" data-stav="ceka"></span>Git</li>
+    </ul>
+  </header>
+
+  <div class="rozvrzeni">
+    <nav class="moduly" aria-label="Moduly">
+      <a href="#prehled" data-obrazovka="prehled">Stav kampaně</a>
+      <a href="#sceny" data-obrazovka="sceny">Scény OBS</a>
+      <a href="#kontrola" data-obrazovka="kontrola">Kontrola dat <span class="pocet" id="pocet-problemu" hidden></span></a>
+      <a href="#nastaveni" data-obrazovka="nastaveni">Nastavení</a>
+      <hr>
+      <span class="pripravuje" title="Blok 1b">Kalendář</span>
+      <span class="pripravuje" title="Blok 1b">Obchody</span>
+      <span class="pripravuje" title="Blok 2">Místa a ilustrace</span>
+      <span class="pripravuje" title="Blok 3">Kánon</span>
+    </nav>
+
+    <main>
+      <div id="upozorneni" class="upozorneni" aria-live="polite"></div>
+
+      <section id="obrazovka-prehled" class="obrazovka">
+        <h1>Stav kampaně</h1>
+        <p class="uvod">Co tady změníš, se samo uloží do <code>kampan/stav.md</code> a hned se ukáže v OBS.</p>
+        <form id="formular-stav" class="formular" autocomplete="off">
+          <label>Datum v Harptosu
+            <input name="datum" id="pole-datum" placeholder="např. 14. Eleint 1491 DR">
+          </label>
+          <label>Kde je družina
+            <input name="misto" id="pole-misto" placeholder="např. Longsaddle">
+          </label>
+          <label class="kratke">Číslo sezení
+            <input name="sezeni" id="pole-sezeni" type="number" min="0" step="1">
+          </label>
+        </form>
+        <p class="ulozeni" id="stav-ulozeni" aria-live="polite"></p>
+
+        <h2>Testovací výstup pro OBS</h2>
+        <p>Přidej v OBS zdroj <em>Browser</em> s touto adresou. Ukazuje stav kampaně a ověří, že živé změny dorazí do OBS.</p>
+        <p class="adresa"><code id="adresa-vystupu"></code> <button type="button" id="kopirovat-adresu">Kopírovat adresu</button></p>
+        <p class="poznamka">Ve vlastnostech zdroje nech vypnuté <em>Shutdown source when not visible</em> i <em>Refresh browser when scene becomes active</em>. Jen tak výstup přežije výpadek Hubu.</p>
+      </section>
+
+      <section id="obrazovka-sceny" class="obrazovka" hidden>
+        <h1>Scény OBS</h1>
+        <p class="uvod" id="obs-popis"></p>
+        <div class="sceny" id="seznam-scen"></div>
+      </section>
+
+      <section id="obrazovka-kontrola" class="obrazovka" hidden>
+        <h1>Kontrola dat</h1>
+        <p class="uvod" id="kontrola-souhrn"></p>
+        <table class="problemy" id="tabulka-problemu" hidden>
+          <thead><tr><th scope="col">Soubor</th><th scope="col">Problém</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <button type="button" id="zkontrolovat">Zkontrolovat znovu</button>
+      </section>
+
+      <section id="obrazovka-nastaveni" class="obrazovka" hidden>
+        <h1>Nastavení</h1>
+        <p class="uvod" id="nastaveni-uvod">Nastavení se ukládá do <code>hub/.env</code> na tomto počítači. Do Gitu se nikdy nedostane.</p>
+        <form id="formular-nastaveni" class="formular" autocomplete="off">
+          <fieldset>
+            <legend>OBS</legend>
+            <label>Adresa WebSocket serveru
+              <input name="obsUrl" id="pole-obs-url" placeholder="ws://127.0.0.1:4455">
+            </label>
+            <label>Heslo WebSocket serveru
+              <input name="obsHeslo" id="pole-obs-heslo" type="password" autocomplete="new-password">
+              <small id="napoveda-heslo">Najdeš ho v OBS: Tools → WebSocket Server Settings → Show Connect Info.</small>
+            </label>
+          </fieldset>
+          <fieldset>
+            <legend>Hub</legend>
+            <label class="kratke">Port
+              <input name="port" id="pole-port" type="number" min="1024" max="65535">
+            </label>
+            <label class="zaskrtavaci">
+              <input name="domaciSit" id="pole-domaci-sit" type="checkbox">
+              Povolit ovládání z jiného zařízení v domácí síti
+            </label>
+            <label class="kratke">PIN pro domácí síť
+              <input name="pin" id="pole-pin" type="password" inputmode="numeric" autocomplete="new-password" placeholder="4–8 číslic">
+            </label>
+          </fieldset>
+          <button type="submit" class="hlavni">Uložit nastavení</button>
+          <p class="ulozeni" id="nastaveni-vysledek" aria-live="polite"></p>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="/panel/app.js"></script>
+</body>
+</html>

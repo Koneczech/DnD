@@ -514,3 +514,8 @@ Nic z této sekce zatím neplatí. Každý bod se rozhodne nejpozději na začá
 | 5 | Pilotní místo pro Blok 2 | Místo, kam družina dorazí v nejbližším sezení (Longsaddle nebo Triboar) | Blok 2 |
 | 6 | Ilustrace v IIO bez internetu | IIO čte obrázky z GitHubu; ověřit, zda export může odkazovat na lokální server | Verze 2 |
 | 7 | Testy datového motoru Harptos | Ověřit doma, zda jsou v lokálním klonu. Pokud chybí, napsat je v Bloku 1b znovu podle kritéria bloku | Blok 1b |
+| 8 | ⚠ Název kampaně v `kampan.yaml` | Blok 0 použil pracovní název „Mečové pobřeží 1491 DR“. DM ho potvrdí nebo přepíše | Akceptace Bloku 0 |
+| 9 | ⚠ Pole `stav.md` | `datum` (text, zatím prázdné), `misto` (text), `sezeni` (číslo posledního odehraného sezení, nyní 2), `sezeni_bezi`. Formát data doladí bod 2 | Blok 1a |
+| 10 | ⚠ Výchozí port Hubu | 7420 na localhost; jde změnit v Nastavení | Akceptace Bloku 0 |
+| 11 | ⚠ Odložené zápisy přežijí pád serveru | Ukládají se do žurnálu `hub/.stav/odlozene-zapisy/` (mimo Git). Po startu se dokončí; pokud je soubor na disku novější, má přednost a záznam se zahodí | Akceptace Bloku 0 |
+| 12 | ⚠ Nastavení se ukládá tlačítkem | Na rozdíl od dat kampaně (autosave) se Nastavení ukládá tlačítkem Uložit nastavení, aby se rozepsané heslo neposílalo po písmenech | Akceptace Bloku 0 |

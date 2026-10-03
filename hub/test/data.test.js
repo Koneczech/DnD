@@ -69,7 +69,7 @@ test('Kontrola dat hlásí chybný stav.md a chybějící kampan.yaml', async ()
     await fs.rm(c.kampanYaml);
     const { problemy } = await kontrolaDat(c);
     const zpravy = problemy.map((p) => `${p.soubor}: ${p.zprava}`).join('\n');
-    assert.match(zpravy, /stav\.md: datum musí být text/);
+    assert.match(zpravy, /stav\.md: datum musí být datum Harptosu/);
     assert.match(zpravy, /stav\.md: sezeni musí být/);
     assert.match(zpravy, /kampan\.yaml: Soubor chybí/);
   } finally {

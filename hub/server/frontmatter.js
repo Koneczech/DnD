@@ -48,7 +48,16 @@ export function upravitHlavicku(text, zmeny) {
   if (r.chyba) throw new Error(r.chyba);
   if (!r.maHlavicku) return slozit(zmeny, r.telo);
   for (const [klic, hodnota] of Object.entries(zmeny)) {
-    r.dokument.set(klic, hodnota);
+    if (hodnota && typeof hodnota === 'object' && !Array.isArray(hodnota)) {
+      // Malá mapa (datum Harptosu) se zapíše na jeden řádek a převezme komentář z původního řádku.
+      const puvodni = r.dokument.get(klic, true);
+      const uzel = r.dokument.createNode(hodnota);
+      uzel.flow = true;
+      if (puvodni?.comment) uzel.comment = puvodni.comment;
+      r.dokument.set(klic, uzel);
+    } else {
+      r.dokument.set(klic, hodnota);
+    }
   }
   const yamlText = r.dokument.toString({ lineWidth: 0 });
   return `---\n${yamlText}---\n${r.telo}`;

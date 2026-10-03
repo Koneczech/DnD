@@ -112,31 +112,42 @@
       return new Promise((r) => requestAnimationFrame(r));
     }
 
-    /** Přejede z indexu a na index b seznamu dní. Vrací false, když mezitím přišla nová data. */
-    async function prejed(cislo, seznamDni, a, b) {
+    /**
+     * Přejede z indexu a na index b seznamu dní (i pozpátku). msNaDen určuje tempo.
+     * Vrací false, když mezitím přišla nová data.
+     */
+    async function prejed(cislo, seznamDni, a, b, msNaDen = KROK, maxMs = Infinity) {
       const delka = b - a;
-      const trvani = Math.max(700, delka * KROK);
+      const horni = Math.max(a, b);
+      const trvani = Math.min(maxMs, Math.max(700, Math.abs(delka) * msNaDen));
       const rampa = Math.min(0.45, 1100 / trvani);
       const start = performance.now();
       for (;;) {
         if (cislo !== beh) return false;
         const t = Math.min(1, (performance.now() - start) / trvani);
         const pozice = a + draha(t, rampa) * delka;
-        const i = Math.min(Math.floor(pozice), b);
-        orloj.plynule({ ...data, dnes: seznamDni[i] }, i === b ? 0 : pozice - i);
+        const i = Math.min(Math.floor(pozice), horni);
+        orloj.plynule({ ...data, dnes: seznamDni[i] }, i === horni ? 0 : pozice - i);
         if (t >= 1) return true;
         await snimek();
       }
     }
 
     async function prehrat(cislo) {
+      let prvni = true;
       while (cislo === beh) {
         const seznamDni = dny(data.zacatek, data.dnes);
         const posledni = seznamDni.length - 1;
         // Zastávky: dny, kdy začíná veřejná událost, a dnešek.
         const zastavky = seznamDni.map((den, i) => i).filter((i) => i === posledni || udalostiOd(seznamDni[i]).length);
-        orloj.plynule({ ...data, dnes: seznamDni[0] }, 0);
         popisek.classList.add('skryty');
+        if (prvni) {
+          orloj.plynule({ ...data, dnes: seznamDni[0] }, 0);
+          prvni = false;
+        } else if (posledni > 0) {
+          // Návrat na začátek: plynule pozpátku, rychleji než cesta vpřed (nejvýš 3,5 s).
+          if (!(await prejed(cislo, seznamDni, posledni, 0, KROK / 3, 3500))) return;
+        }
         await cekej(800);
         let odkud = 0;
         for (const kam of zastavky) {

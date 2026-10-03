@@ -29,7 +29,7 @@ Verze 1 převede do repa kánon, kalendář, obchody, postavy a ilustrace míst.
 
 ## Potvrzená rozhodnutí
 
-Rozhodnutí 1–12 potvrdil DM 2. 10. 2026. Rozhodnutí 13–24 vzešla z první oponentury zadání, 25–32 z oponentury postupu výroby; DM je přijal týž den. Rozhodnutí 33–38 potvrdil DM 2. 10. 2026 při kontrole ⚠ návrhů Bloku 0. Nepotvrzené návrhy jsou výslovně označené a shrnuté v Otevřených bodech.
+Rozhodnutí 1–12 potvrdil DM 2. 10. 2026. Rozhodnutí 13–24 vzešla z první oponentury zadání, 25–32 z oponentury postupu výroby; DM je přijal týž den. Rozhodnutí 39–42 potvrdil DM 3. 10. 2026 (akceptace Bloku 1b a start Bloku 2). Rozhodnutí 33–38 potvrdil DM 2. 10. 2026 při kontrole ⚠ návrhů Bloku 0. Nepotvrzené návrhy jsou výslovně označené a shrnuté v Otevřených bodech.
 
 | # | Rozhodnutí | Důsledek |
 | --- | --- | --- |
@@ -60,9 +60,7 @@ Rozhodnutí 1–12 potvrdil DM 2. 10. 2026. Rozhodnutí 13–24 vzešla z první
 | 25 | Master zadání je `ZADANI.md` v repu | Claude Doc je archiv. Změny zadání jdou přes PR |
 | 26 | Pravidla pro práci Claude Code jsou v `CLAUDE.md` v kořeni repa | Co zadání neřeší a má vliv na data, chování nebo UI, je v PR označené ⚠ návrh a přidané do Otevřených bodů. Interní detaily kódu rozhoduje Claude sám |
 | 27 | Každý blok se vyvíjí ve vlastní větvi (`blok-0`, `blok-1a` …) a slučuje se přes pull request | PR je místo kontroly všech ⚠ návrhů |
-| 28 | ⚠ Datum ve Stavu kampaně | Datum jde měnit ve Stavu kampaně i v Kalendáři, v obou místech stejným výběrem (den, měsíc nebo svátek, rok), aby šlo uložit jen platné datum Harptosu | Akceptace Bloku 1b |
-| 29 | ⚠ Sestava scén a zdrojů v OBS | Revize, cílová sestava do Bloku 2 a postup přestavby v `reference/obs-sceny.md`: sdílené zdroje z Hubu, jména podle obsahu, scény Start, Mirabar, Longsaddle, Lurkwood, Cesta, Mapa, Obchod, Pauza, Boj. Odpovědi DM: numpad nepoužívá, stará Cesta se nahradí, Lurkwood dostane medailon | Akceptace Bloku 1b |
-| 30 | Obrázek obchodu v Hubu | Obrázek patří k sortimentu a Ukázat v OBS vymění obrázek i ceník najednou. Na pokyn DM až s ilustrační dílnou | Blok 2 |
+| 28 | Testy běží v GitHub Actions na `ubuntu-latest` i `windows-latest` | Rozdíly Windows (zámky souborů, hlídání souborů, cesty) se odhalí před akceptací doma |
 | 29 | Verze Node.js je na jednom místě: `.nvmrc`; `engines` v `hub/package.json` musí sedět | CI čte verzi z `.nvmrc` a při neshodě s `engines` selže |
 | 30 | Konce řádků jsou v repu vždy LF (`.gitattributes`: `* text=auto eol=lf`) | Testy porovnávající obsah souborů se na Windows chovají stejně jako na Linuxu |
 | 31 | Git hook je krátký shell skript, logika je v Node.js (`hub/hooks/pre-commit.js`) | Git na Windows spouští hooky přes svůj `sh`; logika se testuje na obou systémech |
@@ -73,6 +71,10 @@ Rozhodnutí 1–12 potvrdil DM 2. 10. 2026. Rozhodnutí 13–24 vzešla z první
 | 36 | Nastavení se ukládá tlačítkem Uložit nastavení | Výjimka z autosave: rozepsané heslo se neposílá po písmenech |
 | 37 | Pilotní místo Bloku 2 je tábor lupičů kousek od Longsaddle | Celé příští sezení je bojové v tomto táboře |
 | 38 | Počasí: déšť, sníh, mlha. Intenzita: tři úrovně | Rozsah efektů Bloku 2 |
+| 39 | Pole `lhuta` u události kalendáře | Počet dní předem (1–999), kdy se událost ukazuje v OBS; starší pole `odpocet` z `kalendar-data.js` importér převede |
+| 40 | Poznámky a sezení nesou datum v Harptosu | Poznámka `- 18:05 (19. Eleint) — text`; hlavička sezení `harptos_zacatek` a `harptos_konec` |
+| 41 | Ilustrace míst a OBS pozadí patří do repa | Z `src/` se přesunou s Blokem 2; v repu jsou veřejné včetně skrytých ilustrací (rozhodnutí 2) |
+| 42 | Ilustrace zatím vznikají ručně přes ChatGPT | Dílna připraví prompt a zpracuje obrázek; přímé generování přes API je cíl do budoucna (otevřený bod 1) |
 
 ## Architektura
 
@@ -515,7 +517,7 @@ Nic z této sekce zatím neplatí. Každý bod se rozhodne nejpozději na začá
 
 | # | Otázka | Návrh (nepotvrzený) | Rozhodnout do |
 | --- | --- | --- | --- |
-| 1 | Přímé generování ilustrací přes API | Začít poloautomaticky přes ChatGPT bez dalších nákladů. API (OpenAI Images) doplnit, pokud se kopírování ukáže jako brzda: platí se za každý obrázek a klíč patří do `hub/.env` | Blok 2 |
+| 1 | Přímé generování ilustrací přes API | Cíl DM je generovat automaticky (rozhodnutí 42). Až se napojí: OpenAI Images, klíč v `hub/.env`, platí se za každý obrázek; dílna ho přidá jako další způsob v kroku 1 | Po Bloku 2 |
 | 2 | ⚠ Formát data v `udalosti.yaml`, `stav.md` a `kampan.yaml` | Převzatý z `kalendar-data.js`, zapsaný na jednom řádku: `{ rok: 1491, mesic: Eleint, den: 19 }`, svátek `{ rok: 1491, svatek: Highharvestide }`. Starší text „19. Eleint 1491“ Hub přečte a při první změně přepíše. Importér zapíše i `startovni_datum` v `kampan.yaml` | Akceptace Bloku 1b |
 | 4 | České názvy schopností druhů v připomínkách | Doplnit z PHB 2024 a přidat do `prekladovy-klic-cz.md` | Blok 1b |
 | 6 | Ilustrace v IIO bez internetu | IIO čte obrázky z GitHubu; ověřit, zda export může odkazovat na lokální server | Verze 2 |
@@ -527,12 +529,11 @@ Nic z této sekce zatím neplatí. Každý bod se rozhodne nejpozději na začá
 | 17 | ⚠ Kontrolní seznam při Ukončit sezení | Poznámky zapsané; datum a místo odpovídají konci sezení; uložit do GitHubu. Seznam je jen připomínka, nic nevynucuje | Akceptace Bloku 1a |
 | 18 | ⚠ Uložit do GitHubu commituje jen `kampan/` | Kód Hubu a jiné soubory tlačítko nikdy necommituje. Bez internetu zůstane commit lokálně a panel to řekne | Akceptace Bloku 1a |
 | 19 | `odpocet.html` nebyl nalezen | V `C:\Users\Matej\Documents\DnD` chybí. Pokud je jinde, přidat ho a převzít barevný přechod; jinak zůstane vzhled výstupu z Bloku 1a | Akceptace Bloku 1a |
-| 20 | Ilustrace míst a OBS pozadí mimo repo | `src/places` (Cesta vč. `tabor.png`, Longsaddle, Lurkwood, mirabar), `src/obs` (`start.png`, `pause.png`, `obchod.png`), `map.png` jsou jen lokálně. Převezmou se s Blokem 2 | Blok 2 |
 | 21 | ⚠ Po doběhnutí odpočtu přepnout na první scénu sezení | Na obrazovce Odpočet i v Nastavení „Scéna po odpočtu“ (`OBS_SCENA_PO_ODPOCTU` v `hub/.env`). Server po doběhnutí přepne jednou; po restartu Hubu nebo výpadku OBS jen do 10 minut od konce, jinak to jen napíše na obrazovce Odpočet | Akceptace Bloku 1b |
-| 22 | ⚠ Rekapitulace kalendáře během odpočtu | Výstup `vystupy/rekapitulace.html`: orloj jede plynule od začátku kampaně po dnešek (nejvýš posledních 120 dní), zpomalí a zastaví se jen u dne s veřejnou událostí a na dnešku, pak začne znovu. Tempo je pevné (`?krok` ms na den jízdy, `?udalost`, `?dnes` ms zastávky), ne podle zbývajícího času, aby smyčka běžela i v pauze | Akceptace Bloku 1b |
-| 23 | ⚠ Pole `lhuta` u události | Pole `odpocet` z `kalendar-data.js` se v `udalosti.yaml` jmenuje `lhuta` (počet dní předem, 1–999), aby se nepletlo s odpočtem do začátku sezení. Importér ho převede | Akceptace Bloku 1b |
-| 24 | ⚠ Datum v Harptosu u poznámek a sezení | Poznámka: `- 18:05 (19. Eleint) — text`. Hlavička sezení dostane `harptos_zacatek` a `harptos_konec` | Akceptace Bloku 1b |
+| 22 | ⚠ Rekapitulace kalendáře během odpočtu | Výstup `vystupy/rekapitulace.html`: orloj jede plynule od začátku kampaně po dnešek (nejvýš posledních 120 dní), zpomalí a zastaví se jen u dne s veřejnou událostí a na dnešku, pak se plynule vrátí na začátek (rychleji, nejvýš 3,5 s) a začne znovu. Tempo je pevné (`?krok` ms na den jízdy, `?udalost`, `?dnes` ms zastávky), ne podle zbývajícího času, aby smyčka běžela i v pauze | Akceptace Bloku 1b |
 | 25 | ⚠ Sortimenty a aktivní obchod | Sortiment v `kampan/obchody/sortimenty/<obchod-mesto>.yaml`, obsah stejný jako `sortiment.json` z generátoru. V OBS je jedna scéna Obchod (rozhodnutí DM): tlačítko Ukázat v OBS na obrazovce Obchody vymění ceník a přepne na scénu obchodu (`OBS_SCENA_OBCHOD`). Co právě visí v OBS, je nastavení tohoto PC (`hub/.stav/obchod.json`, mimo Git). Sloty 1–3 z původního generátoru v Hubu odpadly. Obrázek obchodu do Bloku 2 ručně jako Image source (`reference/obs-sceny.md`) | Akceptace Bloku 1b |
 | 26 | ⚠ Další den v panelu | Před otázkou na důkladný odpočinek ukáže, co nový den čeká (události i skryté, svátek, lhůty); datum se posune až po odpovědi. Poznámka „Nový den: 20. Eleint 1491 DR (po důkladném odpočinku)“. Tlačítka ±1 den v Kalendáři posunou datum bez poznámky a připomínek | Akceptace Bloku 1b |
 | 27 | Banner kalendáře | Odloženo na pokyn DM; vrátí se k němu později | Později |
-| 28 | ⚠ Datum ve Stavu kampaně | Datum se mění jen v Kalendáři (posun, výběr data, Další den); Stav kampaně ho ukazuje s odkazem. Volný text by obešel kontrolu data | Akceptace Bloku 1b |
+| 28 | ⚠ Datum ve Stavu kampaně | Datum jde měnit ve Stavu kampaně i v Kalendáři, v obou místech stejným výběrem (den, měsíc nebo svátek, rok), aby šlo uložit jen platné datum Harptosu | Akceptace Bloku 1b |
+| 29 | ⚠ Sestava scén a zdrojů v OBS | Revize, cílová sestava do Bloku 2 a postup přestavby v `reference/obs-sceny.md`: sdílené zdroje z Hubu, jména podle obsahu, scény Start, Mirabar, Longsaddle, Lurkwood, Cesta, Mapa, Obchod, Pauza, Boj. Odpovědi DM: numpad nepoužívá, stará Cesta se nahradí, Lurkwood dostane medailon | Akceptace Bloku 1b |
+| 30 | Obrázek obchodu v Hubu | Obrázek patří k sortimentu a Ukázat v OBS vymění obrázek i ceník najednou. Na pokyn DM až s ilustrační dílnou | Blok 2 |

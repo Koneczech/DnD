@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <title>DM Hub — obchod</title>
+  <style>
+    /* Scéna obchodu pro OBS (Blok 2, bod 30): obrázek interiéru přes celé plátno a ceník
+       v pravé třetině. Browser Source 1920 × 1080. Ukázat v OBS v panelu vymění obojí naráz;
+       obchod bez vlastního obrázku má výchozí pozadí kampan/obs/obchod.png. */
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
+    #obraz, .vrstva { position: absolute; inset: 0; }
+    .vrstva { background-size: cover; background-position: center; opacity: 0; }
+    iframe {
+      position: absolute; top: 0; right: 0;
+      width: 33.334vw; height: 100vh; border: 0; background: transparent;
+    }
+  </style>
+</head>
+<body>
+  <div id="obraz"></div>
+  <iframe src="/vystupy/cenik.html" title="Ceník" allowtransparency="true"></iframe>
+  <script type="module">
+    import { sledovat, Prolinac } from '/sdilene/vystup.js';
+    const prolinac = new Prolinac(document.getElementById('obraz'), { trvaniMs: 1000 });
+    sledovat('ceniky', '/api/obchody/ceniky', (d) => prolinac.ukazat(d?.obrazek ?? '/kampan/obs/obchod.png'));
+  </script>
+</body>
+</html>

@@ -27,9 +27,10 @@ function cas() {
 /* ---------- Navigace ---------- */
 
 function ukazObrazovku(jmeno) {
-  const platne = ['prehled', 'odpocet', 'sceny', 'kalendar', 'obchody', 'kontrola', 'nastaveni'];
+  const platne = ['prehled', 'odpocet', 'sceny', 'kalendar', 'mista', 'dilna', 'obchody', 'kontrola', 'nastaveni'];
   const cil = platne.includes(jmeno) ? jmeno : 'prehled';
   if (cil === 'kalendar') nactiImport();
+  if (cil === 'dilna') vykresliDilnu();
   for (const s of document.querySelectorAll('.obrazovka')) s.hidden = s.id !== `obrazovka-${cil}`;
   for (const a of document.querySelectorAll('.moduly a')) {
     if (a.dataset.obrazovka === cil) a.setAttribute('aria-current', 'page');
@@ -295,6 +296,7 @@ function vykresliVyberSouboje() {
     ['#pole-scena-po-odpoctu', 'scenaPoOdpoctu', '— nepřepínat —'],
     ['#odpocet-scena', 'scenaPoOdpoctu', '— nepřepínat —'],
     ['#obchod-scena', 'scenaObchod', '— nepřepínat —'],
+    ['#misto-scena', 'scenaMisto', '— nepřepínat —'],
   ]) {
     const select = $(id);
     if (document.activeElement === select) continue;
@@ -346,6 +348,7 @@ function prekresli() {
   vykresliVyberSouboje();
   vykresliKalendar();
   vykresliObchody();
+  vykresliMista();
 }
 
 async function nactiPrehled() {
@@ -383,6 +386,12 @@ function pripojitUdalosti() {
   zdroj.addEventListener('sezeni', aktualizuj('sezeni'));
   zdroj.addEventListener('kalendar-dm', aktualizuj('kalendar'));
   zdroj.addEventListener('obchody', aktualizuj('obchody'));
+  zdroj.addEventListener('mista', aktualizuj('mista'));
+  zdroj.addEventListener('scena', (e) => {
+    if (!stav.prehled) return;
+    stav.prehled.scena = JSON.parse(e.data);
+    vykresliScenu();
+  });
   zdroj.addEventListener('odpocet', (e) => {
     if (!stav.prehled) return;
     stav.prehled.odpocet = JSON.parse(e.data);
@@ -1092,6 +1101,7 @@ function vykresliObchody() {
       if (jeAktivni) tr.dataset.dnes = 'true';
       const nazev = td(`${s.nazev}${s.mesto ? `, ${s.mesto}` : ''}`);
       if (jeAktivni) nazev.append(Object.assign(document.createElement('small'), { textContent: ' · v OBS' }));
+      if (s.obrazek) nazev.append(Object.assign(document.createElement('small'), { textContent: ' · má obrázek' }));
       const akce = document.createElement('td');
       akce.className = 'akce-radku';
       const ukazat = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Ukázat v OBS', className: 'hlavni' });
@@ -1123,6 +1133,405 @@ function vykresliObchody() {
   );
 }
 
+/* ---------- Místa a scéna místa (Blok 2) ---------- */
+
+let vybraneMisto = null; // místo zobrazené v panelu (nemusí být to, co je v OBS)
+
+function textIlustrace(il) {
+  return [il.varianta, il.stav].filter(Boolean).join(' · ') || 'vždy';
+}
+
+function vykresliScenu() {
+  const s = stav.prehled?.scena;
+  if (!s) return;
+  $('#scena-nazev').textContent = s.misto ? `V OBS: ${s.misto.nazev}` : 'V OBS není žádné místo.';
+  $('#scena-detail').textContent = s.misto
+    ? s.ilustrace
+      ? `${s.ilustrace.soubor} (${s.poradi}/${s.pocet})${s.stridani.zapnuto && s.pocet > 1 ? `, střídá se po ${s.stridani.sekund} s` : ''}`
+      : 'Pro tuhle denní dobu a stav nemá místo žádnou odkrytou ilustraci; OBS je černé.'
+    : 'Vyber místo níže a dej Ukázat v OBS.';
+  const mini = $('#mista-mini');
+  mini.hidden = !s.misto;
+  mini.textContent = s.misto?.nazev ?? '';
+  for (const seg of document.querySelectorAll('.prepinace .segment')) {
+    const hodnota = String(s[seg.dataset.pole]);
+    for (const b of seg.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.v === hodnota));
+  }
+  const vyberStavu = $('#sc-stav');
+  if (document.activeElement !== vyberStavu) {
+    vyberStavu.replaceChildren(new Option('výchozí', ''), ...s.stavy.map((x) => new Option(x, x)));
+    vyberStavu.value = s.stav ?? '';
+    vyberStavu.disabled = !s.stavy.length;
+  }
+  if (document.activeElement !== $('#scena-sekund')) $('#scena-sekund').value = s.stridani.sekund;
+  $('#scena-stridani').checked = s.stridani.zapnuto;
+  for (const id of ['#scena-predchozi', '#scena-dalsi']) $(id).disabled = !(s.pocet > 1);
+  vykresliMista();
+}
+
+async function scenaApi(cesta, metoda, telo) {
+  try {
+    const r = await api(cesta, { metoda, telo });
+    if (r.chybaObs) toast(r.chybaObs, { chyba: true });
+    return r;
+  } catch (chyba) {
+    toast(chyba.message, { chyba: true });
+    return null;
+  }
+}
+
+for (const seg of document.querySelectorAll('.prepinace .segment')) {
+  seg.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    const pole = seg.dataset.pole;
+    scenaApi('/api/scena', 'PUT', { [pole]: pole === 'intenzita' ? Number(b.dataset.v) : b.dataset.v });
+  });
+}
+$('#sc-stav').addEventListener('change', (e) => scenaApi('/api/scena', 'PUT', { stav: e.target.value || null }));
+$('#scena-predchozi').addEventListener('click', () => scenaApi('/api/scena/dalsi', 'POST', { smer: -1 }));
+$('#scena-dalsi').addEventListener('click', () => scenaApi('/api/scena/dalsi', 'POST', { smer: 1 }));
+$('#scena-stridani').addEventListener('change', (e) => scenaApi('/api/scena', 'PUT', { stridani: { zapnuto: e.target.checked } }));
+$('#scena-sekund').addEventListener('change', (e) => scenaApi('/api/scena', 'PUT', { stridani: { sekund: Number(e.target.value) } }));
+
+function vykresliMista() {
+  const seznam = stav.prehled?.mista?.mista ?? [];
+  const s = stav.prehled?.scena;
+  if (!vybraneMisto || !seznam.some((m) => m.id === vybraneMisto)) vybraneMisto = s?.misto?.id ?? null;
+  $('#seznam-mist').replaceChildren(
+    ...seznam.map((m) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'karta-mista';
+      b.setAttribute('aria-pressed', String(m.id === vybraneMisto));
+      const odkryte = m.ilustrace.filter((il) => !il.skryta && il.ucel === 'scena');
+      const nahled = odkryte[0] ?? m.ilustrace[0];
+      if (nahled) b.style.backgroundImage = `url("${nahled.url}")`;
+      const popis = document.createElement('span');
+      popis.textContent = `${m.nazev}${s?.misto?.id === m.id ? ' · v OBS' : ''}`;
+      const pocet = document.createElement('small');
+      pocet.textContent = `${odkryte.length} odkrytých, ${m.ilustrace.length - odkryte.length} skrytých`;
+      b.append(popis, pocet);
+      b.addEventListener('click', () => {
+        vybraneMisto = m.id;
+        vykresliMista();
+      });
+      return b;
+    }),
+  );
+  const m = seznam.find((x) => x.id === vybraneMisto);
+  $('#misto-detail').hidden = !m;
+  if (!m) return;
+  $('#misto-nazev').textContent = m.nazev;
+  const vObs = s?.misto?.id === m.id;
+  $('#misto-ukazat').textContent = vObs ? 'Znovu přepnout OBS na místo' : 'Ukázat v OBS';
+  $('#misto-souhrn').textContent = m.ilustrace.length
+    ? `Klikni na odkrytou ilustraci a ukáže se v OBS. Skryté (šedé) do OBS nejdou, dokud je neodkryješ.`
+    : 'Místo zatím nemá žádnou ilustraci. Vytvoř ji v Ilustrační dílně.';
+  if (document.activeElement !== $('#misto-popis')) $('#misto-popis').value = m.popisObrazu;
+  const mrizka = $('#misto-ilustrace');
+  // Nepřekresluj pod rukama, když DM právě píše stav nebo vybírá variantu (tlačítka nevadí).
+  const aktivni = document.activeElement;
+  if (mrizka.contains(aktivni) && ['INPUT', 'SELECT'].includes(aktivni.tagName)) return;
+  mrizka.replaceChildren(
+    ...m.ilustrace.map((il) => {
+      const karta = document.createElement('div');
+      karta.className = 'karta-ilustrace';
+      karta.dataset.skryta = String(il.skryta);
+      if (vObs && s.ilustrace?.soubor === il.soubor) karta.dataset.aktualni = 'true';
+      const obr = document.createElement('button');
+      obr.type = 'button';
+      obr.className = 'obrazek';
+      obr.style.backgroundImage = `url("${il.url}")`;
+      obr.title = il.skryta ? 'Skrytá: nejdřív ji odkryj' : 'Ukázat v OBS';
+      obr.disabled = il.skryta || il.ucel !== 'scena';
+      obr.addEventListener('click', () => scenaApi('/api/scena/zobrazit', 'POST', { misto: m.id, ilustrace: il.soubor, prepnout: !vObs }));
+      const jmeno = document.createElement('p');
+      jmeno.className = 'jmeno';
+      jmeno.textContent = il.soubor;
+      const stitky = document.createElement('p');
+      stitky.className = 'stitky';
+      stitky.textContent = `${il.skryta ? 'skrytá · ' : ''}${textIlustrace(il)}${il.prompt ? ' · má prompt' : ''}`;
+      const ovl = document.createElement('div');
+      ovl.className = 'ovladani-ilustrace';
+      const odkryt = Object.assign(document.createElement('button'), { type: 'button', textContent: il.skryta ? 'Odkrýt' : 'Skrýt' });
+      if (il.skryta) odkryt.className = 'hlavni';
+      odkryt.addEventListener('click', () => upravIlustraci(m.id, il.soubor, { skryta: !il.skryta }));
+      const varianta = document.createElement('select');
+      varianta.title = 'Denní doba';
+      varianta.append(new Option('vždy', ''), new Option('den', 'den'), new Option('noc', 'noc'));
+      varianta.value = il.varianta ?? '';
+      varianta.addEventListener('change', () => upravIlustraci(m.id, il.soubor, { varianta: varianta.value || null }));
+      const stavPole = Object.assign(document.createElement('input'), { value: il.stav ?? '', placeholder: 'stav', title: 'Stav místa (např. po-pozaru); prázdné = výchozí' });
+      stavPole.className = 'stav-ilustrace';
+      stavPole.addEventListener('change', () => upravIlustraci(m.id, il.soubor, { stav: stavPole.value.trim() || null }));
+      const zahodit = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Zahodit' });
+      zahodit.addEventListener('click', async () => {
+        if (zahodit.dataset.potvrd !== 'true') {
+          zahodit.dataset.potvrd = 'true';
+          zahodit.textContent = 'Opravdu?';
+          setTimeout(() => {
+            zahodit.dataset.potvrd = '';
+            zahodit.textContent = 'Zahodit';
+          }, 4000);
+          return;
+        }
+        try {
+          await api(`/api/mista/${m.id}/ilustrace/${encodeURIComponent(il.soubor)}`, { metoda: 'DELETE' });
+          toast(`Zahozeno: ${il.soubor}`);
+        } catch (chyba) {
+          toast(chyba.message, { chyba: true });
+        }
+      });
+      ovl.append(odkryt, varianta, stavPole, zahodit);
+      karta.append(obr, jmeno, stitky, ovl);
+      return karta;
+    }),
+  );
+}
+
+async function upravIlustraci(misto, soubor, zmeny) {
+  try {
+    await api(`/api/mista/${misto}/ilustrace/${encodeURIComponent(soubor)}`, { metoda: 'PUT', telo: zmeny });
+  } catch (chyba) {
+    toast(chyba.message, { chyba: true });
+  }
+}
+
+$('#misto-ukazat').addEventListener('click', async () => {
+  const r = await scenaApi('/api/scena/zobrazit', 'POST', { misto: vybraneMisto, prepnout: true });
+  if (r && !r.chybaObs) toast(`V OBS: ${r.misto?.nazev ?? ''}${r.scenaObs ? ` (scéna ${r.scenaObs})` : ''}`);
+});
+$('#misto-popis-ulozit').addEventListener('click', async () => {
+  try {
+    await api(`/api/mista/${vybraneMisto}/popis`, { metoda: 'PUT', telo: { popis: $('#misto-popis').value } });
+    toast('Popis uložen.');
+  } catch (chyba) {
+    toast(chyba.message, { chyba: true });
+  }
+});
+$('#misto-do-dilny').addEventListener('click', () => (dilna.cil = `misto:${vybraneMisto}`));
+$('#misto-scena').addEventListener('change', async (e) => {
+  try {
+    const odpoved = await api('/api/nastaveni', { metoda: 'PUT', telo: { scenaMisto: e.target.value } });
+    stav.prehled.nastaveni = odpoved.nastaveni;
+    toast(e.target.value ? `Scéna místa: ${e.target.value}` : 'Ukázat v OBS nebude přepínat scénu.');
+  } catch (chyba) {
+    toast(chyba.message, { chyba: true });
+  }
+});
+
+/* ---------- Ilustrační dílna ---------- */
+
+const dilna = { cil: null, obrazek: null, posun: 0.5 };
+const CIL_W = 1920;
+const CIL_H = 1080;
+
+function cilDilny() {
+  const [typ, id] = String($('#dilna-cil').value || '').split(':');
+  return { typ, id };
+}
+
+function vykresliDilnu() {
+  const mista = stav.prehled?.mista?.mista ?? [];
+  const obchody = stav.prehled?.obchody?.sortimenty ?? [];
+  const vyber = $('#dilna-cil');
+  const puvodni = dilna.cil ?? vyber.value;
+  const skupinaM = document.createElement('optgroup');
+  skupinaM.label = 'Místa';
+  skupinaM.append(...mista.map((m) => new Option(m.nazev, `misto:${m.id}`)));
+  const skupinaO = document.createElement('optgroup');
+  skupinaO.label = 'Obchody (obrázek interiéru)';
+  skupinaO.append(...obchody.map((o) => new Option(`${o.nazev}${o.mesto ? `, ${o.mesto}` : ''}`, `obchod:${o.id}`)));
+  vyber.replaceChildren(skupinaM, ...(obchody.length ? [skupinaO] : []));
+  if (puvodni && [...vyber.options].some((o) => o.value === puvodni)) vyber.value = puvodni;
+  dilna.cil = null;
+  prepnoutCil();
+}
+
+function prepnoutCil() {
+  const { typ, id } = cilDilny();
+  for (const el of document.querySelectorAll('.jen-misto')) el.hidden = typ !== 'misto';
+  for (const el of document.querySelectorAll('.jen-obchod')) el.hidden = typ !== 'obchod';
+  if (typ === 'misto') {
+    const m = (stav.prehled?.mista?.mista ?? []).find((x) => x.id === id);
+    const predloha = $('#dilna-predloha');
+    const bylo = predloha.value;
+    predloha.replaceChildren(new Option('— nová kompozice —', ''), ...(m?.ilustrace ?? []).map((il) => new Option(il.soubor, il.url)));
+    if ([...predloha.options].some((o) => o.value === bylo)) predloha.value = bylo;
+    sestavitPrompt();
+  }
+}
+
+async function sestavitPrompt() {
+  const { typ, id } = cilDilny();
+  if (typ !== 'misto') return;
+  const predloha = $('#dilna-predloha').value;
+  $('#dilna-predloha-info').hidden = !predloha;
+  if (predloha) $('#dilna-predloha-odkaz').href = predloha;
+  const q = new URLSearchParams({
+    misto: id,
+    zaber: $('#dilna-zaber').value,
+    varianta: $('#dilna-varianta').value || 'den',
+    stav: $('#dilna-stav').value.trim(),
+    pocasi: $('#dilna-pocasi').value,
+    predloha: predloha ? '1' : '0',
+  });
+  try {
+    const r = await api(`/api/dilna/prompt?${q}`);
+    $('#dilna-prompt').value = r.prompt;
+  } catch (chyba) {
+    $('#dilna-prompt').value = '';
+    toast(chyba.message, { chyba: true });
+  }
+}
+
+$('#dilna-cil').addEventListener('change', prepnoutCil);
+for (const id of ['#dilna-zaber', '#dilna-varianta', '#dilna-pocasi', '#dilna-predloha']) $(id).addEventListener('change', sestavitPrompt);
+$('#dilna-stav').addEventListener('change', sestavitPrompt);
+$('#dilna-sestavit').addEventListener('click', sestavitPrompt);
+$('#dilna-kopirovat').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText($('#dilna-prompt').value);
+    toast('Prompt je ve schránce. Vlož ho do ChatGPT a přilož stylovou předlohu.');
+  } catch {
+    $('#dilna-prompt').select();
+    toast('Schránka nejde použít, prompt je označený: zkopíruj ho Ctrl+C.', { chyba: true });
+  }
+});
+
+/* Import: ořez na 16:9 s posuvným výřezem, zvětšení na 1920 × 1080 (canvas v prohlížeči). */
+
+function vyrez(img, posun) {
+  const W = img.naturalWidth;
+  const H = img.naturalHeight;
+  const pomer = CIL_W / CIL_H;
+  if (W / H > pomer) {
+    const w = Math.round(H * pomer);
+    return { x: Math.round((W - w) * posun), y: 0, w, h: H, smer: 'vodorovně' };
+  }
+  const h = Math.round(W / pomer);
+  return { x: 0, y: Math.round((H - h) * posun), w: W, h, smer: 'svisle' };
+}
+
+function vykresliOrez() {
+  const img = dilna.obrazek;
+  if (!img) return;
+  const c = $('#dilna-nahled');
+  const meritko = Math.min(960 / img.naturalWidth, 640 / img.naturalHeight);
+  c.width = Math.round(img.naturalWidth * meritko);
+  c.height = Math.round(img.naturalHeight * meritko);
+  const g = c.getContext('2d');
+  g.drawImage(img, 0, 0, c.width, c.height);
+  const v = vyrez(img, dilna.posun);
+  g.fillStyle = 'rgba(10,13,20,0.65)';
+  g.fillRect(0, 0, c.width, c.height);
+  g.drawImage(img, v.x, v.y, v.w, v.h, v.x * meritko, v.y * meritko, v.w * meritko, v.h * meritko);
+  g.strokeStyle = '#c6a15b';
+  g.lineWidth = 2;
+  g.strokeRect(v.x * meritko + 1, v.y * meritko + 1, v.w * meritko - 2, v.h * meritko - 2);
+  const presne = v.w === img.naturalWidth && v.h === img.naturalHeight;
+  $('#dilna-rozmer').textContent = `Původní ${img.naturalWidth} × ${img.naturalHeight}, výřez ${v.w} × ${v.h} → 1920 × 1080.${presne ? '' : ` Posuvníkem posuneš výřez ${v.smer}.`}`;
+  $('#dilna-posun').disabled = presne;
+}
+
+function nacistSoubor(soubor) {
+  if (!soubor || !soubor.type.startsWith('image/')) {
+    toast('Tohle není obrázek.', { chyba: true });
+    return;
+  }
+  const url = URL.createObjectURL(soubor);
+  const img = new Image();
+  img.onload = () => {
+    dilna.obrazek = img;
+    dilna.posun = 0.5;
+    $('#dilna-posun').value = 500;
+    $('#dilna-orez').hidden = false;
+    $('#dilna-vysledek').textContent = '';
+    vykresliOrez();
+  };
+  img.onerror = () => toast('Obrázek nejde načíst.', { chyba: true });
+  img.src = url;
+}
+
+const zona = $('#dilna-dropzona');
+zona.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  zona.dataset.nad = 'true';
+});
+zona.addEventListener('dragleave', () => (zona.dataset.nad = ''));
+zona.addEventListener('drop', (e) => {
+  e.preventDefault();
+  zona.dataset.nad = '';
+  nacistSoubor(e.dataTransfer.files[0]);
+});
+document.addEventListener('paste', (e) => {
+  if (location.hash !== '#dilna') return;
+  const soubor = [...(e.clipboardData?.files ?? [])].find((f) => f.type.startsWith('image/'));
+  if (soubor) nacistSoubor(soubor);
+});
+$('#dilna-soubor').addEventListener('change', (e) => nacistSoubor(e.target.files[0]));
+$('#dilna-posun').addEventListener('input', (e) => {
+  dilna.posun = Number(e.target.value) / 1000;
+  vykresliOrez();
+});
+$('#dilna-zrusit').addEventListener('click', () => {
+  dilna.obrazek = null;
+  $('#dilna-orez').hidden = true;
+  $('#dilna-soubor').value = '';
+});
+
+function naBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(',')[1]);
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(blob);
+  });
+}
+
+$('#dilna-ulozit').addEventListener('click', async () => {
+  const img = dilna.obrazek;
+  if (!img) return;
+  const { typ, id } = cilDilny();
+  const v = vyrez(img, dilna.posun);
+  const c = document.createElement('canvas');
+  c.width = CIL_W;
+  c.height = CIL_H;
+  const g = c.getContext('2d');
+  g.imageSmoothingEnabled = true;
+  g.imageSmoothingQuality = 'high';
+  g.drawImage(img, v.x, v.y, v.w, v.h, 0, 0, CIL_W, CIL_H);
+  const vysledek = $('#dilna-vysledek');
+  vysledek.className = 'ulozeni';
+  vysledek.textContent = 'Ukládám…';
+  try {
+    const blob = await new Promise((resolve) => c.toBlob(resolve, 'image/png'));
+    const telo = { cil: { typ, id }, png: await naBase64(blob) };
+    if (typ === 'misto') {
+      Object.assign(telo, {
+        zaber: $('#dilna-zaber').value,
+        varianta: $('#dilna-varianta').value || null,
+        stav: $('#dilna-stav').value.trim() || null,
+        prompt: $('#dilna-prompt').value,
+      });
+    }
+    const r = await api('/api/dilna/ilustrace', { metoda: 'POST', telo });
+    dilna.obrazek = null;
+    $('#dilna-orez').hidden = true;
+    $('#dilna-soubor').value = '';
+    if (typ === 'misto') {
+      vysledek.textContent = `Uloženo jako ${r.soubor} (skrytá). Odkryj ji na obrazovce Místa.`;
+      vybraneMisto = id;
+    } else {
+      vysledek.textContent = 'Obrázek obchodu uložen. Ukáže se s ceníkem po Ukázat v OBS.';
+    }
+  } catch (chyba) {
+    vysledek.className = 'ulozeni chyba';
+    vysledek.textContent = `Neuloženo: ${chyba.message}`;
+  }
+});
+
 /* ---------- Adresy výstupů ---------- */
 
 const adresaOdpoctu = `${location.origin}/vystupy/odpocet.html`;
@@ -1130,7 +1539,8 @@ $('#adresa-odpoctu').textContent = adresaOdpoctu;
 $('#adresa-orloj-velky').textContent = `${location.origin}/vystupy/kalendar-velky.html`;
 $('#adresa-orloj-maly').textContent = `${location.origin}/vystupy/kalendar-maly.html`;
 $('#adresa-rekapitulace').textContent = `${location.origin}/vystupy/rekapitulace.html`;
-$('#adresa-cenik').textContent = `${location.origin}/vystupy/cenik.html`;
+$('#adresa-cenik').textContent = `${location.origin}/vystupy/obchod.html`;
+$('#adresa-misto').textContent = `${location.origin}/vystupy/misto.html`;
 for (const b of document.querySelectorAll('[data-kopirovat]')) {
   b.addEventListener('click', async () => {
     await navigator.clipboard?.writeText($(`#${b.dataset.kopirovat}`).textContent).catch(() => {});

@@ -103,6 +103,7 @@ export class Obchody extends EventEmitter {
     this.sortimenty = new Map(); // id → sortiment
     this.vadne = []; // soubory, které nejde přečíst
     this.aktivni = null; // id obchodu, který ceník právě ukazuje
+    this.obrazky = new Set(); // id sortimentů, které mají vlastní obrázek <id>.png (Blok 2)
   }
 
   async nacist() {
@@ -120,11 +121,14 @@ export class Obchody extends EventEmitter {
     const mapa = new Map();
     const vadne = [];
     let soubory = [];
+    let vse = [];
     try {
-      soubory = (await fs.readdir(this.slozka)).filter((f) => f.endsWith('.yaml'));
+      vse = await fs.readdir(this.slozka);
     } catch {
       /* složka zatím není */
     }
+    soubory = vse.filter((f) => f.endsWith('.yaml'));
+    this.obrazky = new Set(vse.filter((f) => f.endsWith('.png')).map((f) => f.slice(0, -4)));
     for (const f of soubory.sort()) {
       const id = f.slice(0, -5);
       try {
@@ -148,15 +152,39 @@ export class Obchody extends EventEmitter {
         lokalita: s.obchod.lokalita,
         pocet: s.polozky.length,
         vygenerovano: s.meta.vygenerovano,
+        obrazek: this.obrazky.has(id) ? this.urlObrazku(id) : null,
       })),
       aktivni: this.sortimenty.has(this.aktivni) ? this.aktivni : null,
       vadne: this.vadne,
     };
   }
 
-  /** Co ukazuje ceník v OBS: celý aktivní sortiment, nebo null (panel se skryje). */
+  urlObrazku(id) {
+    return `/kampan/obchody/sortimenty/${encodeURIComponent(id)}.png`;
+  }
+
+  /**
+   * Co ukazuje OBS: celý aktivní sortiment (null = ceník skrytý) a obrázek interiéru.
+   * Obchod bez vlastního obrázku má výchozí pozadí kampan/obs/obchod.png.
+   */
   ceniky() {
-    return { id: this.seznam().aktivni, sortiment: this.sortimenty.get(this.aktivni) ?? null };
+    const id = this.seznam().aktivni;
+    return {
+      id,
+      sortiment: this.sortimenty.get(this.aktivni) ?? null,
+      obrazek: id && this.obrazky.has(id) ? this.urlObrazku(id) : '/kampan/obs/obchod.png',
+    };
+  }
+
+  /** Obrázek interiéru z dílny (PNG už oříznuté a zvětšené v panelu). Přepíše předchozí. */
+  async ulozitObrazek(id, png) {
+    if (!jeId(id) || !this.sortimenty.has(id)) throw chyba('Sortiment neexistuje.', 404);
+    if (!Buffer.isBuffer(png) || png.length < 8 || png.readUInt32BE(0) !== 0x89504e47) throw chyba('Obrázek musí být PNG.');
+    if (png.length > 25 * 1024 * 1024) throw chyba('Obrázek je větší než 25 MB.');
+    await zapsatAtomicky(path.join(this.slozka, `${id}.png`), png);
+    this.obrazky.add(id);
+    this.oznam();
+    return { obrazek: this.urlObrazku(id) };
   }
 
   oznam() {
@@ -195,6 +223,8 @@ export class Obchody extends EventEmitter {
     if (!jeId(id) || !this.sortimenty.has(id)) throw chyba('Sortiment neexistuje.', 404);
     await this.zapisovac.zrusit(this.cestaSortimentu(id));
     await fs.rm(this.cestaSortimentu(id), { force: true });
+    await fs.rm(path.join(this.slozka, `${id}.png`), { force: true });
+    this.obrazky.delete(id);
     this.sortimenty.delete(id);
     if (this.aktivni === id) await this.ulozitAktivni(null);
     this.oznam();
@@ -239,7 +269,13 @@ export class Obchody extends EventEmitter {
 
   async souborZmenen(soubor) {
     const rel = path.relative(this.slozka, path.resolve(soubor));
-    if (rel.startsWith('..') || path.isAbsolute(rel) || !rel.endsWith('.yaml')) return false;
+    if (rel.startsWith('..') || path.isAbsolute(rel)) return false;
+    if (rel.endsWith('.png')) {
+      await this.nacistSortimenty();
+      this.oznam();
+      return true;
+    }
+    if (!rel.endsWith('.yaml')) return false;
     // Vlastní zápis už je v paměti; jinak (Obsidian, git pull) načti složku znovu.
     let text;
     try {

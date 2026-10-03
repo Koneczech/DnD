@@ -332,3 +332,58 @@ a { color: var(--mosaz); }
 .odpocet-scena { margin-top: 1.75rem; }
 .aktivni-obchod { display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; }
 .aktivni-obchod p { margin: 0; font-size: 1.1rem; }
+
+/* ---------- Blok 2: místa a ilustrační dílna ---------- */
+
+.scena-ovladani { display: flex; flex-wrap: wrap; gap: 1rem 2rem; align-items: center; justify-content: space-between; background: var(--deska); border: 1px solid var(--linka); border-radius: var(--zaobleni); padding: 0.9rem 1.1rem; margin: 1rem 0; }
+.scena-nazev { margin: 0; font-family: var(--pismo-svet); font-size: 1.5rem; color: var(--mosaz); }
+.scena-stav .ulozeni { margin: 0.2rem 0 0; }
+.scena-ovladani .tlacitka { margin: 0; align-items: center; }
+.scena-ovladani .zaskrtavaci { display: flex; gap: 0.4rem; align-items: center; }
+.kratke-cislo { width: 5rem; }
+
+.prepinace { display: flex; flex-wrap: wrap; gap: 1rem 1.75rem; }
+.prepinac { display: grid; gap: 0.3rem; color: var(--mlha); font-size: 0.9rem; }
+.segment { display: inline-flex; border: 1px solid var(--linka); border-radius: var(--zaobleni); overflow: hidden; }
+.segment button { border: 0; border-radius: 0; border-right: 1px solid var(--linka); padding: 0.5rem 0.9rem; min-width: 3rem; }
+.segment button:last-child { border-right: 0; }
+.segment button[aria-pressed="true"] { background: var(--mosaz); color: var(--noc); font-weight: 600; }
+
+.seznam-mist { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: 0.75rem; }
+.karta-mista {
+  min-height: 6.5rem; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; gap: 0.1rem;
+  background-size: cover; background-position: center; text-align: left; padding: 0.6rem 0.75rem;
+  box-shadow: inset 0 -4rem 3rem -1rem rgb(10 13 20 / 0.9);
+}
+.karta-mista span { font-weight: 600; text-shadow: 0 1px 3px #000; }
+.karta-mista small { color: var(--mlha); text-shadow: 0 1px 3px #000; }
+.karta-mista[aria-pressed="true"] { border-color: var(--mosaz); box-shadow: inset 0 -4rem 3rem -1rem rgb(10 13 20 / 0.9), 0 0 0 2px var(--mosaz); }
+
+.misto-hlava { display: flex; align-items: center; gap: 1rem; margin-top: 1.75rem; }
+.misto-hlava h2 { margin: 0; }
+.ilustrace { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 1rem; margin-top: 0.75rem; }
+.karta-ilustrace { background: var(--deska); border: 1px solid var(--linka); border-radius: var(--zaobleni); overflow: hidden; display: grid; }
+.karta-ilustrace[data-aktualni="true"] { border-color: var(--mosaz); box-shadow: 0 0 0 1px var(--mosaz); }
+.karta-ilustrace .obrazek { aspect-ratio: 16 / 9; border: 0; border-radius: 0; background-size: cover; background-position: center; padding: 0; }
+.karta-ilustrace .obrazek:disabled { opacity: 1; cursor: default; }
+.karta-ilustrace[data-skryta="true"] .obrazek { filter: grayscale(1) brightness(0.45); }
+.karta-ilustrace .jmeno { margin: 0.5rem 0.7rem 0; font-size: 0.9rem; word-break: break-all; }
+.karta-ilustrace .stitky { margin: 0.1rem 0.7rem 0.4rem; color: var(--mlha); font-size: 0.82rem; }
+.karta-ilustrace[data-skryta="true"] .stitky { color: var(--jantar); }
+.ovladani-ilustrace { display: flex; flex-wrap: wrap; gap: 0.35rem; padding: 0 0.7rem 0.7rem; }
+.ovladani-ilustrace button, .ovladani-ilustrace select, .ovladani-ilustrace input { font-size: 0.85rem; padding: 0.3rem 0.5rem; }
+.ovladani-ilustrace .stav-ilustrace { width: 6.5rem; }
+.ovladani-ilustrace button[data-potvrd="true"] { border-color: var(--rez); color: var(--rez); }
+.popis-obrazu { margin-top: 1rem; }
+.popis-obrazu summary { cursor: pointer; color: var(--mlha); }
+.popis-obrazu textarea { margin-top: 0.5rem; }
+
+#dilna-prompt { font-family: Consolas, "Cascadia Mono", monospace; font-size: 0.85rem; margin-top: 0.75rem; }
+.dropzona { border: 2px dashed var(--linka); border-radius: 10px; padding: 1.75rem; text-align: center; color: var(--mlha); }
+.dropzona[data-nad="true"] { border-color: var(--mosaz); color: var(--kost); }
+.dropzona p { margin: 0; }
+label.odkaz { color: var(--mosaz); text-decoration: underline; cursor: pointer; }
+#dilna-orez { margin-top: 1rem; }
+#dilna-nahled { display: block; max-width: 100%; border-radius: var(--zaobleni); background: var(--noc); }
+.posuvnik { display: flex; gap: 0.75rem; align-items: center; color: var(--mlha); margin-top: 0.6rem; max-width: 40rem; }
+.posuvnik input { flex: 1; }

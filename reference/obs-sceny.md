@@ -1,5 +1,24 @@
 # Scény a zdroje v OBS
 
+## Kolekce DnD 2 (Blok 2)
+
+Od Bloku 2 platí kolekce **DnD 2** (`Documents\DnD\OBS\DnD-2-sceny.json`, import přes *Kolekce scén → Importovat*):
+
+| Scéna | Zdroje odspodu nahoru |
+| --- | --- |
+| Start | Obrázek – start (`repo/kampan/obs/start.png`), Hub – rekapitulace, Hub – odpočet |
+| Místo | Hub – místo (`/vystupy/misto.html`, 1920 × 1080), Hub – medailon |
+| Mapa | Obrázek – mapa (`repo/kampan/obs/mapa.png`), Hub – medailon |
+| Obchod | Hub – obchod (`/vystupy/obchod.html`: obrázek obchodu + ceník) |
+| Pauza | Obrázek – pauza (`repo/kampan/obs/pauza.png`), Text – pauza |
+| Boj | Improved Initiative |
+| TEST | do akceptace |
+
+Scény Mirabar, Longsaddle, Lurkwood a Cesta nahradila scéna **Místo**: místo, ilustraci, den/noc, počasí a intenzitu přepínáš v Hubu na obrazovce Místa. V Hubu nastav scénu místa na *Místo* a scénu obchodu na *Obchod*.
+
+Níže je původní revize z Bloku 1b.
+
+
 Revize kolekce scén z PC u stolu (3. 10. 2026). Popisuje, co v OBS je, co je potřeba změnit a jak má sestava vypadat až do Bloku 2. DM odpověděl na otázky revize (níže); sestava je **⚠ návrh** k akceptaci Bloku 1b (Otevřený bod 29 v `ZADANI.md`).
 
 ## Co v OBS je dnes

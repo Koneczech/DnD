@@ -25,7 +25,7 @@ Repo `Koneczech/DnD` drží data kampaně D&D a aplikaci DM Hub. Zadání je v `
 ## Zmrazené soubory
 
 - `monsters/` je zmrazená: Improved Initiative z ní čte ilustrace přes URL. Nic nepřesouvej, nepřejmenovávej ani nepřidávej.
-- Portréty `Alba.png`, `Koudur.png`, `Leta.png`, `Tusker.png` v kořeni a `Places/Mirabar/` zůstávají na místě, dokud je nepřesune blok uvedený v `ZADANI.md` (Migrace existujících dat).
+- Portréty `Alba.png`, `Koudur.png`, `Leta.png`, `Tusker.png` v kořeni zůstávají na místě, dokud je nepřesune blok uvedený v `ZADANI.md` (Migrace existujících dat).
 - Přesun existujícího souboru = jeden commit, který zároveň opraví všechny odkazy.
 
 ## Cílová platforma

@@ -18,6 +18,9 @@ import { Kalendar } from './kalendar.js';
 import { DalsiDen } from './dalsiden.js';
 import { Obchody } from './obchody.js';
 import { HUB_DIR } from './cesty.js';
+import { Mista } from './mista.js';
+import { Scena } from './scena.js';
+import { nacistStyl, sestavPrompt, ZABERY } from './dilna.js';
 
 /** Po kolika ms od konce odpočtu se scéna po restartu Hubu ještě přepne (otevřený bod 21). */
 export const PREPNUTI_PO_RESTARTU_MS = 10 * 60 * 1000;
@@ -30,7 +33,13 @@ const TYPY_SOUBORU = {
   '.png': 'image/png',
   '.ico': 'image/x-icon',
   '.woff2': 'font/woff2',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
 };
+
+/** Z kampan/ se přes HTTP servírují jen obrázky (výstupy pro OBS a náhledy v panelu). */
+const OBRAZKY_KAMPANE = new Set(['.png', '.jpg', '.jpeg', '.webp']);
 
 const LOOPBACK = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
 
@@ -81,6 +90,8 @@ export class Hub {
     this.kalendar = new Kalendar({ cesty: this.c, data: this.data, zapisovac: this.zapisovac });
     this.dalsiDen = new DalsiDen({ cesty: this.c, kalendar: this.kalendar, sezeni: this.sezeni });
     this.obchody = new Obchody({ cesty: this.c, zapisovac: this.zapisovac });
+    this.mista = new Mista({ cesty: this.c, zapisovac: this.zapisovac });
+    this.scena = new Scena({ soubor: path.join(this.c.lokalniStav, 'scena.json'), mista: this.mista });
     this.casovacOdpoctu = null;
     this.server = null;
     this.spusteno = new Date().toISOString();
@@ -113,12 +124,19 @@ export class Hub {
     this.kalendar.on('verejne', (k) => this.vyslatKalendar(k));
     this.obchody.on('zmena', (o) => this.vysilac.vyslat('obchody', o));
     this.obchody.on('ceniky', (c) => this.vysilac.vyslat('ceniky', c));
+    this.mista.on('zmena', (m) => {
+      this.vysilac.vyslat('mista', m);
+      this.scena.mistaZmenena();
+    });
+    this.scena.on('stav', (s) => this.vysilac.vyslat('scena', s));
     this.hlidac.on('zmena', ({ soubor }) => this.souborZmenen(soubor).catch(() => {}));
 
     await this.zapisovac.obnovit();
     await this.data.nacist();
     await this.kalendar.nacist();
     await this.obchody.nacist();
+    await this.mista.nacist();
+    await this.scena.nacist();
     await this.odpocet.nacist();
     this.vysilac.vyslat('odpocet', this.odpocet.verejny());
     await this.hlidac.spustit();
@@ -144,6 +162,10 @@ export class Hub {
   async souborZmenen(soubor) {
     if (await this.kalendar.souborZmenen(soubor)) return;
     if (await this.obchody.souborZmenen(soubor)) return;
+    if (await this.mista.souborZmenen(soubor)) {
+      this.data.naplanovatKontrolu();
+      return;
+    }
     await this.data.souborZmenen(soubor);
   }
 
@@ -222,6 +244,8 @@ export class Hub {
       kontrola: this.data.kontrola,
       kalendar: this.kalendar.stavDm(),
       obchody: this.obchody.seznam(),
+      mista: this.mista.seznam(),
+      scena: this.scena.verejny(),
       obs: this.obs.verejnyStav(),
       git: this.git.stav,
       nastaveni: this.nastaveni.verejne(),
@@ -355,6 +379,10 @@ export class Hub {
       const v = await this.apiKalendar(req, m, p);
       if (v !== undefined) return poslatJson(res, 200, v);
     }
+    if (p.startsWith('/api/mista') || p.startsWith('/api/scena') || p.startsWith('/api/dilna')) {
+      const v = await this.apiMista(req, m, p, url);
+      if (v !== undefined) return poslatJson(res, 200, v);
+    }
     if (p.startsWith('/api/obchody')) {
       const v = await this.apiObchody(req, m, p);
       if (v !== undefined) return poslatJson(res, 200, v);
@@ -377,6 +405,7 @@ export class Hub {
       await this.data.nacist();
       await this.kalendar.nacist();
       await this.obchody.nacist();
+      await this.mista.nacist();
       this.vysilac.vyslat('git', this.git.stav);
       return poslatJson(res, 200, this.git.stav);
     }
@@ -409,6 +438,72 @@ export class Hub {
       const { dukladny } = await nacistJson(req);
       if (typeof dukladny !== 'boolean') throw Object.assign(new Error('Odpověz, jestli proběhl důkladný odpočinek.'), { status: 400 });
       return this.dalsiDen.provest({ dukladny });
+    }
+    return undefined;
+  }
+
+  /** Přepne OBS na scénu místa, je-li nastavená. Chybu OBS vrátí jako text, scénu v Hubu nechá. */
+  async prepnoutNaMisto() {
+    const scena = this.nastaveni.hodnoty.OBS_SCENA_MISTO || null;
+    if (!scena) return { scenaObs: null, chybaObs: null };
+    try {
+      await this.obs.prepnoutScenu(scena);
+      return { scenaObs: scena, chybaObs: null };
+    } catch (e) {
+      return { scenaObs: scena, chybaObs: `OBS scénu nepřeplo: ${e.message}` };
+    }
+  }
+
+  async apiMista(req, m, p, url) {
+    if (p === '/api/mista' && m === 'GET') return this.mista.seznam();
+    const il = /^\/api\/mista\/([a-z0-9-]{1,60})\/ilustrace\/([^/]{1,120})$/.exec(p);
+    if (il && m === 'PUT') return this.mista.upravitIlustraci(il[1], decodeURIComponent(il[2]), await nacistJson(req));
+    if (il && m === 'DELETE') return this.mista.smazatIlustraci(il[1], decodeURIComponent(il[2]));
+    const popis = /^\/api\/mista\/([a-z0-9-]{1,60})\/popis$/.exec(p);
+    if (popis && m === 'PUT') return this.mista.nastavitPopis(popis[1], (await nacistJson(req)).popis);
+
+    if (p === '/api/scena' && m === 'GET') return this.scena.verejny();
+    if (p === '/api/scena/zobrazit' && m === 'POST') {
+      const telo = await nacistJson(req);
+      const stav = await this.scena.zobrazit({ misto: telo.misto, ilustrace: telo.ilustrace });
+      const obs = telo.prepnout ? await this.prepnoutNaMisto() : {};
+      return { ...stav, ...obs };
+    }
+    if (p === '/api/scena/dalsi' && m === 'POST') {
+      const { smer } = await nacistJson(req);
+      return this.scena.posun(smer === -1 ? -1 : 1);
+    }
+    if (p === '/api/scena' && m === 'PUT') return this.scena.nastavit(await nacistJson(req));
+
+    if (p === '/api/dilna/prompt' && m === 'GET') {
+      const q = Object.fromEntries(url.searchParams);
+      const misto = this.mista.get(q.misto);
+      const styl = await nacistStyl(this.c.koren);
+      return {
+        prompt: sestavPrompt({
+          misto,
+          zaber: ZABERY[q.zaber] ? q.zaber : 'celek',
+          varianta: q.varianta === 'noc' ? 'noc' : 'den',
+          stav: q.stav || null,
+          pocasi: q.pocasi || 'zadne',
+          predloha: q.predloha === '1',
+          styl,
+        }),
+        zabery: Object.keys(ZABERY),
+      };
+    }
+    if (p === '/api/dilna/ilustrace' && m === 'POST') {
+      // PNG je oříznuté a zvětšené v panelu; jde jako base64 v JSON (jen localhost, limit 40 MB).
+      const telo = await nacistJson(req, 40 * 1024 * 1024);
+      const png = Buffer.from(String(telo.png ?? ''), 'base64');
+      if (telo.cil?.typ === 'obchod') return this.obchody.ulozitObrazek(String(telo.cil.id), png);
+      return this.mista.pridatIlustraci(String(telo.cil?.id ?? ''), {
+        png,
+        zaber: telo.zaber,
+        varianta: telo.varianta || null,
+        stav: telo.stav || null,
+        prompt: telo.prompt || '',
+      });
     }
     return undefined;
   }
@@ -461,6 +556,10 @@ export class Hub {
     else if (url.pathname.startsWith('/vystupy/')) {
       koren = this.c.vystupy;
       soubor = path.join(koren, decodeURIComponent(url.pathname.slice(9)));
+    } else if (url.pathname.startsWith('/kampan/')) {
+      koren = this.c.kampan;
+      soubor = path.join(koren, decodeURIComponent(url.pathname.slice(8)));
+      if (!OBRAZKY_KAMPANE.has(path.extname(soubor).toLowerCase())) throw Object.assign(new Error('Stránka neexistuje'), { status: 404 });
     } else if (url.pathname.startsWith('/sdilene/')) {
       // Moduly sdílené serverem i výstupy (motor Harptos, orloj).
       koren = path.join(HUB_DIR, 'sdilene');
@@ -469,21 +568,37 @@ export class Hub {
     const rel = path.relative(koren, soubor);
     if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) throw Object.assign(new Error('Stránka neexistuje'), { status: 404 });
     let obsah;
+    let info;
+    try {
+      info = await fs.stat(soubor);
+      if (!info.isFile()) throw new Error('není soubor');
+    } catch {
+      throw Object.assign(new Error('Stránka neexistuje'), { status: 404 });
+    }
+    // ETag: obrázky ve výstupech se při každém prolnutí jen ověří (304), nestahují se znovu.
+    const etag = `"${info.size.toString(36)}-${Math.floor(info.mtimeMs).toString(36)}"`;
+    const hlavicky = {
+      'Content-Type': TYPY_SOUBORU[path.extname(soubor).toLowerCase()] || 'application/octet-stream',
+      'Cache-Control': 'no-cache',
+      'X-Content-Type-Options': 'nosniff',
+      ETag: etag,
+    };
+    if (req.headers['if-none-match'] === etag) {
+      res.writeHead(304, hlavicky);
+      return res.end();
+    }
     try {
       obsah = await fs.readFile(soubor);
     } catch {
       throw Object.assign(new Error('Stránka neexistuje'), { status: 404 });
     }
-    res.writeHead(200, {
-      'Content-Type': TYPY_SOUBORU[path.extname(soubor)] || 'application/octet-stream',
-      'Cache-Control': 'no-cache',
-      'X-Content-Type-Options': 'nosniff',
-    });
+    res.writeHead(200, hlavicky);
     res.end(req.method === 'HEAD' ? undefined : obsah);
   }
 
   async zastavit() {
     clearTimeout(this.casovacOdpoctu);
+    this.scena.zastavit();
     this.vysilac.zavrit();
     await this.hlidac.zastavit();
     await this.obs.ukoncit();

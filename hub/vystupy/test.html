@@ -29,7 +29,7 @@
     function vykresli(data) {
       const s = data && data.stav;
       if (!s) return;
-      document.getElementById('datum').textContent = s.datum || '';
+      document.getElementById('datum').textContent = s.datumText || '';
       document.getElementById('misto').textContent = s.misto || '';
       document.getElementById('sezeni').textContent = Number.isInteger(s.sezeni) ? 'Sezení ' + s.sezeni : '';
     }

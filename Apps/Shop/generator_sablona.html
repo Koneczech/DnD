@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Generátor sortimentu</title>
+<style>
+:root{
+  --kamen:#22262a; --kamen-hi:#2c3238; --kamen-lo:#1b1e21;
+  --krida:#e8e4da; --krida-dim:#8d949a; --linka:#3a4147;
+  --patina:#6f9d8e; --mosaz:#c28f45; --ruda:#a8564a;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--kamen);color:var(--krida);font:15px/1.5 var(--sans)}
+.plocha{display:grid;grid-template-columns:300px 1fr;gap:0;min-height:100vh}
+
+/* ---- levý sloupec: ovládání ---- */
+.rail{background:var(--kamen-lo);border-right:1px solid var(--linka);padding:24px 20px;display:flex;flex-direction:column;gap:20px}
+.rail h1{font:600 17px/1.3 var(--sans);margin:0 0 4px;letter-spacing:.01em}
+.rail p.pod{margin:0;color:var(--krida-dim);font-size:13px}
+.pole{display:flex;flex-direction:column;gap:6px}
+.pole > label{font-size:13px;color:var(--krida-dim)}
+select,input[type=text],input[type=number]{
+  background:var(--kamen-hi);color:var(--krida);border:1px solid var(--linka);
+  border-radius:3px;padding:7px 9px;font:14px var(--sans);width:100%}
+select:focus,input:focus,button:focus-visible{outline:2px solid var(--patina);outline-offset:1px}
+.segment{display:flex;border:1px solid var(--linka);border-radius:3px;overflow:hidden}
+.segment button{flex:1;background:var(--kamen-hi);color:var(--krida-dim);border:0;
+  padding:7px 4px;font:13px var(--sans);cursor:pointer;border-right:1px solid var(--linka)}
+.segment button:last-child{border-right:0}
+.segment button[aria-pressed=true]{background:var(--patina);color:var(--kamen-lo);font-weight:600}
+.hlavni-tlacitko{background:var(--patina);color:var(--kamen-lo);border:0;border-radius:3px;
+  padding:11px;font:600 15px var(--sans);cursor:pointer;width:100%}
+.hlavni-tlacitko:hover{filter:brightness(1.08)}
+.druhe-tlacitko{background:transparent;color:var(--krida);border:1px solid var(--linka);
+  border-radius:3px;padding:9px;font:14px var(--sans);cursor:pointer;width:100%}
+.druhe-tlacitko:hover{border-color:var(--patina)}
+.rada{display:flex;gap:8px}
+hr{border:0;border-top:1px solid var(--linka);margin:0}
+
+/* ---- pravý sloupec: tabule ---- */
+.tabule{padding:36px 40px 48px;max-width:760px}
+.hlava{border-bottom:2px solid var(--linka);padding-bottom:14px;margin-bottom:8px}
+.hlava .nazev{font:600 30px/1.15 var(--serif);margin:0}
+.hlava .misto{color:var(--krida-dim);font-size:14px;margin:6px 0 0}
+.hlava .podtitul{font:italic 15px/1.4 var(--serif);color:var(--krida-dim);margin:4px 0 0}
+
+ol.polozky{list-style:none;margin:0;padding:0}
+ol.polozky li{display:flex;align-items:baseline;gap:8px;padding:9px 0}
+.tik{width:14px;flex:0 0 14px;color:var(--mosaz);font-size:13px;text-align:center}
+.jmeno{font:18px/1.35 var(--serif);flex:0 1 auto}
+.jmeno[contenteditable]:focus{outline:1px dashed var(--patina);outline-offset:2px}
+.vodic{flex:1 1 auto;min-width:20px;transform:translateY(-5px);
+  border-bottom:1px dotted #454c52;opacity:.75}
+.cena{font:17px var(--serif);font-variant-numeric:tabular-nums;white-space:nowrap}
+.cena input{width:78px;text-align:right;font:16px var(--serif);font-variant-numeric:tabular-nums;
+  background:transparent;border:0;border-bottom:1px solid transparent;color:var(--krida);padding:0}
+.cena input:hover{border-bottom-color:var(--linka)}
+.cena input:focus{border-bottom-color:var(--patina);outline:none}
+.mn{width:46px;text-align:right;font:13px var(--sans);color:var(--krida-dim);
+  background:transparent;border:0;padding:0}
+.mn::placeholder{color:transparent}
+ol.polozky li:hover .mn::placeholder,.mn:focus::placeholder{color:#5d6469}
+.mn:focus{color:var(--krida);outline:1px solid var(--patina)}
+.pryc{background:none;border:0;color:transparent;cursor:pointer;font-size:17px;line-height:1;padding:0 2px}
+ol.polozky li:hover .pryc,.pryc:focus{color:var(--krida-dim)}
+.pryc:hover{color:var(--ruda)}
+
+.prazdno{color:var(--krida-dim);font:italic 16px/1.6 var(--serif);padding:40px 0}
+.pata{margin-top:22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.pata .stav{color:var(--krida-dim);font-size:13px;font-variant-numeric:tabular-nums}
+.pridat{margin-top:20px;display:flex;gap:8px;align-items:center}
+.pridat input{flex:1;max-width:340px}
+.zprava{color:var(--patina);font-size:13px;min-height:18px;margin-top:10px}
+.zprava.chyba{color:var(--ruda)}
+.slozka{display:flex;align-items:baseline;gap:8px;margin-top:-12px;font-size:12px;color:var(--krida-dim)}
+.slozka span{flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slozka button{background:none;border:0;padding:0;color:var(--patina);cursor:pointer;
+  font:12px var(--sans);text-decoration:underline;flex:0 0 auto}
+
+@media (max-width:820px){
+  .plocha{grid-template-columns:1fr}
+  .rail{border-right:0;border-bottom:1px solid var(--linka)}
+  .tabule{padding:24px 20px 40px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="plocha">
+
+<aside class="rail">
+  <div>
+    <h1>Generátor sortimentu</h1>
+    <p class="pod">Vylosuj zboží, projdi ho, škrtni, ulož.</p>
+  </div>
+
+  <div class="pole">
+    <label for="typ">Typ obchodu</label>
+    <select id="typ"></select>
+  </div>
+
+  <div class="pole">
+    <label>Lokalita</label>
+    <div class="segment" id="lokalita" role="group" aria-label="Lokalita">
+      <button type="button" data-v="rural">vesnice</button>
+      <button type="button" data-v="urban" aria-pressed="true">město</button>
+      <button type="button" data-v="premium">velkoměsto</button>
+    </div>
+  </div>
+
+  <div class="pole">
+    <label>Zámožnost obchodu</label>
+    <div class="segment" id="zamoznost" role="group" aria-label="Zámožnost">
+      <button type="button" data-v="0.40">chudý</button>
+      <button type="button" data-v="0.28" aria-pressed="true">běžný</button>
+      <button type="button" data-v="0.16">bohatý</button>
+    </div>
+  </div>
+
+  <div class="pole">
+    <label for="pocet">Počet řádků</label>
+    <input type="number" id="pocet" value="9" min="4" max="16">
+  </div>
+
+  <hr>
+
+  <div class="pole">
+    <label for="nazev">Název obchodu</label>
+    <input type="text" id="nazev" placeholder="U Kovadliny">
+  </div>
+  <div class="pole">
+    <label for="mesto">Město</label>
+    <input type="text" id="mesto" placeholder="Mirabar">
+  </div>
+  <div class="pole">
+    <label for="podtitul">Podtitul</label>
+    <input type="text" id="podtitul" placeholder="Trpasličí kovárna v Hornické čtvrti">
+  </div>
+
+  <hr>
+
+  <button type="button" class="hlavni-tlacitko" id="losuj">Vylosovat sortiment</button>
+
+  <div class="pole">
+    <label for="seed">Seed (přepiš pro zopakování)</label>
+    <div class="rada">
+      <input type="text" id="seed" inputmode="numeric">
+      <button type="button" class="druhe-tlacitko" id="znovu" style="width:auto;padding:9px 14px">Zopakovat</button>
+    </div>
+  </div>
+
+  <div class="pole">
+    <label>Slot ceníku pro OBS</label>
+    <div class="segment" id="slot" role="group" aria-label="Slot ceníku">
+      <button type="button" data-v="1" aria-pressed="true">1</button>
+      <button type="button" data-v="2">2</button>
+      <button type="button" data-v="3">3</button>
+    </div>
+  </div>
+
+  <button type="button" class="druhe-tlacitko" id="uloz">Uložit sortiment.json</button>
+  <div class="slozka">
+    <span id="v-slozka"></span>
+    <button type="button" id="pripoj">připojit</button>
+  </div>
+  <button type="button" class="druhe-tlacitko" id="prompt">Zkopírovat prompt pro obrázek</button>
+  <p class="zprava" id="zprava"></p>
+</aside>
+
+<main class="tabule">
+  <div class="hlava">
+    <p class="nazev" id="v-nazev">Zatím nic</p>
+    <p class="misto" id="v-misto"></p>
+    <p class="podtitul" id="v-podtitul" hidden></p>
+  </div>
+
+  <ol class="polozky" id="seznam"></ol>
+  <p class="prazdno" id="v-prazdno">Vyber typ obchodu a lokalitu, pak vylosuj. Ceny i názvy jdou po vylosování přepsat přímo tady.</p>
+
+  <div class="pridat">
+    <input type="text" id="hledej" list="fond" placeholder="Přidat položku z fondu…">
+    <datalist id="fond"></datalist>
+    <button type="button" class="druhe-tlacitko" id="pridej" style="width:auto;padding:8px 16px">Přidat</button>
+  </div>
+
+  <div class="pata">
+    <span class="stav" id="v-stav"></span>
+  </div>
+</main>
+
+</div>
+
+<script id="data" type="application/json">%%DATA%%</script>
+<script>
+"use strict";
+const DB = JSON.parse(document.getElementById('data').textContent);
+const POLOZKY = DB.polozky;
+
+const TYPY = {
+  kovarna:'Kovárna a zbrojíř', lukar:'Lukař', kozeluh:'Koželuh',
+  chram:'Chrám', kolonial:'Koloniál', dobrodruzne:'Vybavení pro dobrodruhy',
+  krejci:'Krejčí a látky', klenotnik:'Klenotník a kamenoryt',
+  alchymista:'Alchymista', arkanni:'Arkánní krám', staje:'Stáje a povozník',
+  pristavni:'Přístavní zboží', magicke:'Magické zboží', prekupnik:'Překupník',
+  umeni_hry:'Umění a hry'
+};
+const LOK = {rural:'vesnice', urban:'město', premium:'velkoměsto'};
+
+/* --- měna --- */
+function zl(md){
+  const z=Math.floor(md/100), zb=md%100, s=Math.floor(zb/10), m=zb%10;
+  const c=[]; if(z)c.push(z+' zl'); if(s)c.push(s+' st'); if(m)c.push(m+' md');
+  return c.length?c.join(' '):'0 md';
+}
+function parsujCenu(txt){
+  let md=0, nasel=false;
+  const re=/(\d+)\s*(zl|st|md|gp|sp|cp)?/gi; let m;
+  while((m=re.exec(txt))!==null){
+    const n=parseInt(m[1],10); const j=(m[2]||'zl').toLowerCase();
+    md += n * ({zl:100,gp:100,st:10,sp:10,md:1,cp:1}[j]); nasel=true;
+  }
+  return nasel?md:null;
+}
+
+/* --- seedovaný generátor (mulberry32) --- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);
+  t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+
+/* --- losování --- */
+function fond(typ,lokalita){
+  return POLOZKY.filter(p=>p.typy.includes(typ)&&p.lokality.includes(lokalita));
+}
+function vaha(p,exp){
+  return Math.pow(Math.max(p.cena_md,1),-exp) * (p.bezne?6:1);
+}
+function losuj(typ,lokalita,pocet,exp,seed){
+  const rnd=mulberry32(seed);
+  const zbyva=fond(typ,lokalita).slice();
+  const vybrane=[];
+  const n=Math.min(pocet,zbyva.length);
+  for(let i=0;i<n;i++){
+    const vahy=zbyva.map(p=>vaha(p,exp));
+    let soucet=vahy.reduce((a,b)=>a+b,0), r=rnd()*soucet, idx=zbyva.length-1;
+    for(let j=0;j<zbyva.length;j++){ r-=vahy[j]; if(r<=0){idx=j;break;} }
+    const p=zbyva.splice(idx,1)[0];
+    let jmeno=p.nazev_cs;
+    if(p.kategorie==='Drahokamy'&&p.kameny&&p.kameny.length){
+      jmeno='Drahokam — '+p.kameny[Math.floor(rnd()*p.kameny.length)];
+    }
+    vybrane.push({nazev:jmeno, cena_md:p.cena_md, mnozstvi:null, jadro:!!p.bezne,
+                  kat:p.kategorie, en:p.kategorie==='Drahokamy'?'a cut gemstone on a felt tray':p.nazev_en});
+  }
+  vybrane.sort((a,b)=>a.nazev.localeCompare(b.nazev,'cs'));
+  return vybrane;
+}
+
+/* --- stav --- */
+let stav={typ:null, lokalita:'urban', exp:0.28, seed:null, slot:1, polozky:[]};
+
+/* --- vykreslení --- */
+const el=id=>document.getElementById(id);
+function vykresli(){
+  el('v-nazev').textContent = el('nazev').value.trim() || 'Bez názvu';
+  const casti=[el('mesto').value.trim(), stav.typ?TYPY[stav.typ]:null, LOK[stav.lokalita]].filter(Boolean);
+  el('v-misto').textContent = casti.join(' · ');
+  const pt=el('podtitul').value.trim();
+  el('v-podtitul').textContent=pt; el('v-podtitul').hidden=!pt;
+
+  const s=el('seznam'); s.innerHTML='';
+  el('v-prazdno').hidden = stav.polozky.length>0;
+  stav.polozky.forEach((p,i)=>{
+    const li=document.createElement('li');
+    li.innerHTML=`
+      <span class="tik" title="${p.jadro?'stálé zboží':''}">${p.jadro?'●':''}</span>
+      <span class="jmeno" contenteditable="plaintext-only" data-i="${i}">${p.nazev}</span>
+      <span class="vodic"></span>
+      <input class="mn" data-i="${i}" value="${p.mnozstvi??''}" placeholder="ks" aria-label="množství">
+      <span class="cena"><input data-i="${i}" value="${zl(p.cena_md)}" aria-label="cena"></span>
+      <button class="pryc" data-i="${i}" title="Odebrat" aria-label="Odebrat ${p.nazev}">×</button>`;
+    s.appendChild(li);
+  });
+  const soucet=stav.polozky.reduce((a,p)=>a+p.cena_md*(p.mnozstvi||1),0);
+  el('v-stav').textContent = stav.polozky.length
+    ? `${stav.polozky.length} položek · hodnota skladu ${zl(soucet)} · seed ${stav.seed??'—'}`
+    : '';
+}
+
+function zprava(t,chyba){const z=el('zprava');z.textContent=t;z.className='zprava'+(chyba?' chyba':'');
+  if(t)setTimeout(()=>{if(z.textContent===t)z.textContent='';},4000);}
+
+/* --- události --- */
+el('seznam').addEventListener('click',e=>{
+  const b=e.target.closest('.pryc'); if(!b)return;
+  stav.polozky.splice(+b.dataset.i,1); vykresli();
+});
+el('seznam').addEventListener('change',e=>{
+  const i=+e.target.dataset.i;
+  if(e.target.classList.contains('mn')){
+    const v=e.target.value.trim();
+    const n=v===''?null:parseInt(v,10);
+    stav.polozky[i].mnozstvi = (n&&n>0)?n:null;
+  } else if(e.target.closest('.cena')){
+    const md=parsujCenu(e.target.value);
+    if(md===null||md<=0){zprava('Cenu nerozumím. Zkus „15 zl" nebo „5 st".',true);}
+    else stav.polozky[i].cena_md=md;
+  }
+  vykresli();
+});
+el('seznam').addEventListener('blur',e=>{
+  if(!e.target.classList||!e.target.classList.contains('jmeno'))return;
+  const i=+e.target.dataset.i, t=e.target.textContent.trim();
+  if(t) stav.polozky[i].nazev=t; else vykresli();
+},true);
+
+document.querySelectorAll('.segment').forEach(seg=>{
+  seg.addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b)return;
+    seg.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed','false'));
+    b.setAttribute('aria-pressed','true');
+    if(seg.id==='lokalita') stav.lokalita=b.dataset.v;
+    else if(seg.id==='slot') stav.slot=parseInt(b.dataset.v,10);
+    else stav.exp=parseFloat(b.dataset.v);
+    naplnFond(); vykresli();
+  });
+});
+['nazev','mesto','podtitul'].forEach(id=>el(id).addEventListener('input',vykresli));
+el('typ').addEventListener('change',()=>{stav.typ=el('typ').value;naplnFond();vykresli();});
+
+function provedLosovani(seed){
+  if(!stav.typ){zprava('Vyber nejdřív typ obchodu.',true);return;}
+  const f=fond(stav.typ,stav.lokalita);
+  if(!f.length){zprava('Pro tuhle kombinaci nemá fond žádné zboží.',true);return;}
+  stav.seed=seed;
+  el('seed').value=seed;
+  const pocet=Math.max(4,Math.min(16,parseInt(el('pocet').value,10)||9));
+  stav.polozky=losuj(stav.typ,stav.lokalita,pocet,stav.exp,seed);
+  if(stav.polozky.length<pocet) zprava(`Fond má jen ${f.length} položek, vylosováno ${stav.polozky.length}.`);
+  vykresli();
+}
+el('losuj').addEventListener('click',()=>provedLosovani(Math.floor(Math.random()*1e9)));
+el('znovu').addEventListener('click',()=>{
+  const s=parseInt(el('seed').value,10);
+  if(!Number.isFinite(s)){zprava('Seed musí být číslo.',true);return;}
+  provedLosovani(s);
+});
+
+/* --- přidání ručně --- */
+function naplnFond(){
+  const dl=el('fond'); dl.innerHTML='';
+  if(!stav.typ)return;
+  fond(stav.typ,stav.lokalita)
+    .slice().sort((a,b)=>a.nazev_cs.localeCompare(b.nazev_cs,'cs'))
+    .forEach(p=>{const o=document.createElement('option');o.value=p.nazev_cs;dl.appendChild(o);});
+}
+el('pridej').addEventListener('click',()=>{
+  const t=el('hledej').value.trim(); if(!t)return;
+  const p=POLOZKY.find(x=>x.nazev_cs===t);
+  if(!p){zprava('Takovou položku ve fondu nemám.',true);return;}
+  if(stav.polozky.some(x=>x.nazev===p.nazev_cs)){zprava('Tohle už v sortimentu je.',true);return;}
+  stav.polozky.push({nazev:p.nazev_cs,cena_md:p.cena_md,mnozstvi:null,jadro:!!p.bezne,
+                     kat:p.kategorie,en:p.nazev_en});
+  stav.polozky.sort((a,b)=>a.nazev.localeCompare(b.nazev,'cs'));
+  el('hledej').value=''; vykresli();
+});
+el('hledej').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();el('pridej').click();}});
+
+/* --- prompt pro obrázek --- */
+const INTERIER = {
+  kovarna:"a blacksmith's forge and armoury: a glowing coal hearth, a scarred anvil, a quenching trough, racks of blades and half-finished armour, soot-darkened stone walls",
+  lukar:"a bowyer's workshop: bow staves clamped in vices, bundles of arrow shafts and feathers, wood shavings underfoot",
+  kozeluh:"a leatherworker's shop: hides stretched on drying frames, tanning vats, awls and waxed thread on a worn bench",
+  chram:"a temple's supply alcove: beeswax candles, censers, holy symbols laid out on plain cloth, quiet stone niches",
+  kolonial:"a village general store: crowded shelves, barrels and grain sacks, hanging lanterns, coils of rope, a plank counter",
+  dobrodruzne:"an outfitter's shop for travellers: backpacks and bedrolls stacked high, coiled rope, hooded lanterns, iron spikes in crates",
+  krejci:"a tailor's shop: bolts of cloth stood on end, a cutting table strewn with chalk and shears, garments on wooden forms",
+  klenotnik:"a jeweller and stonecutter's workshop: felt trays of cut gemstones, a jeweller's loupe, fine files and tweezers, a small balance scale",
+  alchymista:"an alchemist's shop: glass vessels and a copper distillation rig, drying herbs hung in bunches, sealed clay jars on shelves",
+  arkanni:"an arcane curio shop: scroll cases in racks, orbs and wands on carved stands, heavy clasped books, a cluttered reading desk",
+  staje:"a stable and carter's yard: stalls with horses, harness and saddles hung on pegs, a cart with its shafts down, straw and feed sacks",
+  pristavni:"a riverside chandler's shop: fishing nets and cork floats, spare oars, coiled tarred rope, traps and tackle",
+  magicke:"a shop of magical oddities: faintly glowing objects under glass, unlikely containers, shelves that don't quite line up",
+  prekupnik:"a fence's back room: goods stacked without order or care, a curtained doorway, a single shuttered window, low light",
+  umeni_hry:"a shop of games and instruments: painted boards and dice, a lute hung on the wall, carved pieces in open boxes"
+};
+const MESTA = {
+  'mirabar':"Mirabar, a walled dwarven mining city in the cold north — heavy stone construction, iron fittings, dwarven proportions, cold daylight",
+  'longsaddle':"Longsaddle, a small farming village on the Long Road — timber and thatch, modest scale, open country beyond the door",
+  'triboar':"Triboar, a busy caravan crossroads town — timber buildings, wagon traffic passing outside the window",
+  'yartar':"Yartar, a walled river port on the Dessarin — damp stone, river light through small windows"
+};
+function jeSluzba(p){
+  return p.kat==='Služby' || /\(den\)|\(za den\)|\(za kus\)/.test(p.nazev);
+}
+function sestavPrompt(){
+  const rnd=mulberry32((stav.seed||1)^0x5f3a);
+  const viditelne=stav.polozky.filter(p=>!jeSluzba(p));
+  if(!viditelne.length) return null;
+  // 2 nejdražší + až 3 dolosované, ať tam není jen luxus
+  const dle=viditelne.slice().sort((a,b)=>b.cena_md-a.cena_md);
+  const rekvizity=dle.slice(0,2);
+  const zbytek=dle.slice(2);
+  while(rekvizity.length<5 && zbytek.length){
+    rekvizity.push(zbytek.splice(Math.floor(rnd()*zbytek.length),1)[0]);
+  }
+  const jmena=rekvizity.map(p=>p.en||p.nazev);
+  const mesto=(el('mesto').value||'').trim();
+  const mk=MESTA[mesto.toLowerCase()];
+  const radky=[
+    'Interior of '+(INTERIER[stav.typ]||'a shop')+'.',
+    mk ? 'Setting: '+mk+'.' : (mesto?'Setting: a shop in '+mesto+', a town on the northern Sword Coast in the Forgotten Realms.':'Setting: a town on the northern Sword Coast in the Forgotten Realms.'),
+    'These items must be clearly visible as the main props: '+jmena.join('; ')+'.',
+    'Composition: 16:9. Put the props and all visual interest in the left two thirds. Keep the right third calm and uncluttered — plain wall, shelving in shadow, or empty floor — an interface panel will be laid over it.',
+    'Lighting: warm practical light from the hearth, lantern or window; the rest of the room falling into shadow.',
+    'Match the style of the attached reference illustration.',
+    'Important: no text, no lettering, no signage, no price tags, no numbers, and no readable writing anywhere in the image. No people.'
+  ];
+  return radky.join('\n\n');
+}
+el('prompt').addEventListener('click',async()=>{
+  if(!stav.polozky.length){zprava('Nejdřív vylosuj sortiment.',true);return;}
+  const t=sestavPrompt();
+  if(!t){zprava('V sortimentu jsou samé služby, není co nakreslit.',true);return;}
+  try{ await navigator.clipboard.writeText(t); zprava('Prompt je ve schránce. Ke zprávě v ChatGPT přilož stylovou předlohu.'); }
+  catch(e){
+    const ta=document.createElement('textarea');
+    ta.value=t; ta.style.cssText='position:fixed;top:8px;right:8px;width:420px;height:280px;z-index:99';
+    document.body.appendChild(ta); ta.select();
+    zprava('Schránka nedostupná — prompt je v poli vpravo nahoře, zkopíruj ručně.',true);
+  }
+});
+
+/* --- složka projektu (File System Access) ---
+   Handle přežije restart prohlížeče v IndexedDB, povolení k zápisu ne — Chrome ho
+   jednou za spuštění chce potvrdit. Když složka není nebo zápis selže, spadne se
+   na stahování, aby generátor fungoval i bez toho. */
+const maFSA = typeof window.showDirectoryPicker === 'function';
+let slozka = null;
+
+function dbOtevri(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open('generator',1);
+    r.onupgradeneeded=()=>r.result.createObjectStore('handles');
+    r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
+  });
+}
+async function handleUloz(h){
+  const d=await dbOtevri();
+  await new Promise((res,rej)=>{const tx=d.transaction('handles','readwrite');
+    tx.objectStore('handles').put(h,'projekt');
+    tx.oncomplete=res; tx.onerror=()=>rej(tx.error);});
+  d.close();
+}
+async function handleNacti(){
+  const d=await dbOtevri();
+  const h=await new Promise((res,rej)=>{const tx=d.transaction('handles','readonly');
+    const q=tx.objectStore('handles').get('projekt');
+    q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error);});
+  d.close(); return h;
+}
+function vykresliSlozku(){
+  el('v-slozka').textContent = slozka ? 'píše do '+slozka.name+'/'
+    : (maFSA ? 'složka nepřipojená — stahuje se'
+             : 'bez zápisu do složky — stahuje se');
+  el('pripoj').textContent = slozka ? 'změnit' : 'připojit';
+  el('pripoj').hidden = !maFSA;
+  el('uloz').textContent = slozka ? 'Uložit a postavit ceník' : 'Uložit sortiment.json';
+}
+async function povoleno(){
+  if(await slozka.queryPermission({mode:'readwrite'})==='granted') return true;
+  return await slozka.requestPermission({mode:'readwrite'})==='granted';
+}
+async function zapisSoubor(jmeno,text){
+  const f=await slozka.getFileHandle(jmeno,{create:true});
+  const w=await f.createWritable(); await w.write(text); await w.close();
+}
+function cilCeniku(){ return stav.slot===1 ? 'cenik.html' : 'cenik'+stav.slot+'.html'; }
+
+el('pripoj').addEventListener('click',async()=>{
+  try{
+    const h=await window.showDirectoryPicker({mode:'readwrite'});
+    try{ await h.getFileHandle('cenik_sablona.html'); }
+    catch(e){ zprava('V té složce není cenik_sablona.html — to nebude složka projektu.',true); return; }
+    slozka=h; await handleUloz(h); vykresliSlozku();
+    zprava('Složka připojená: '+h.name);
+  }catch(e){ if(e.name!=='AbortError') zprava('Připojení selhalo: '+e.message,true); }
+});
+
+/* --- export --- */
+function sestavSortiment(){
+  return {
+    verze:1,
+    obchod:{
+      nazev:el('nazev').value.trim()||'Bez názvu',
+      typ:stav.typ, lokalita:stav.lokalita,
+      mesto:el('mesto').value.trim()||null,
+      podtitul:el('podtitul').value.trim()||null
+    },
+    meta:{vygenerovano:new Date().toISOString(),seed:stav.seed,generator:'generator.html v1'},
+    polozky:stav.polozky.map(({nazev,cena_md,mnozstvi,jadro})=>({nazev,cena_md,mnozstvi,jadro}))
+  };
+}
+function stahni(out){
+  const b=new Blob([JSON.stringify(out,null,1)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);
+  a.download='sortiment.json';
+  a.click(); URL.revokeObjectURL(a.href);
+  zprava('Uloženo jako sortiment.json.');
+}
+async function zapisDoSlozky(out){
+  await zapisSoubor('sortiment.json', JSON.stringify(out,null,1));
+  const sab=await slozka.getFileHandle('cenik_sablona.html');
+  const html=await (await sab.getFile()).text();
+  if(!html.includes('%%SORTIMENT%%')) throw new Error('šablona nemá značku %%SORTIMENT%%');
+  const blob=JSON.stringify(out).replace(/<\//g,'<\\/');
+  await zapisSoubor(cilCeniku(), html.replace('%%SORTIMENT%%',()=>blob));
+}
+el('uloz').addEventListener('click',async()=>{
+  if(!stav.polozky.length){zprava('Není co ukládat.',true);return;}
+  const out=sestavSortiment();
+  if(slozka){
+    try{
+      if(!await povoleno()){zprava('Chrome zápis nepovolil.',true);return;}
+      await zapisDoSlozky(out);
+      zprava('Hotovo: sortiment.json a '+cilCeniku()+'. V OBS obnov zdroj.');
+      return;
+    }catch(e){ zprava('Zápis selhal ('+e.message+'). Stahuju místo toho.',true); }
+  }
+  stahni(out);
+});
+
+/* --- start --- */
+(function(){
+  const dostupne=new Set(POLOZKY.flatMap(p=>p.typy));
+  const sel=el('typ');
+  sel.innerHTML='<option value="">— vyber —</option>';
+  Object.entries(TYPY).filter(([k])=>dostupne.has(k))
+    .sort((a,b)=>a[1].localeCompare(b[1],'cs'))
+    .forEach(([k,v])=>{const o=document.createElement('option');o.value=k;o.textContent=v;sel.appendChild(o);});
+  vykresli();
+  vykresliSlozku();
+  if(maFSA) handleNacti().then(h=>{if(h){slozka=h;vykresliSlozku();}}).catch(()=>{});
+})();
+</script>
+</body>
+</html>

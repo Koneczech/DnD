@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kalendář kampaně</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;500&family=Alegreya+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Paleta a písma. Změna stylu = úprava těchto proměnných. */
+:root {
+  --kamen: #2C2C2A;
+  --kamen-svetly: #444441;
+  --kamen-hluboky: #1E1E1C;
+  --bronz: #BA7517;
+  --bronz-tmavy: #854F0B;
+  --zlato: #EF9F27;
+  --zlato-svetle: #FAC775;
+  --pergamen: #EDE6D6;
+  --pergamen-tlumeny: #B9B1A0;
+  --varovani: #F0997B;
+  --pismo: "Alegreya", Georgia, "Times New Roman", serif;
+  --pismo-ui: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+  --animace: 1.2s;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { background: transparent; }
+body.s-pozadim { background: var(--kamen-hluboky); }
+
+/* Orloj */
+svg text { font-family: var(--pismo); font-variant-numeric: lining-nums; }
+.o-disk { fill: var(--kamen); stroke: var(--bronz); }
+.o-linka { fill: none; stroke: var(--bronz); }
+.o-linka-tmava { fill: none; stroke: var(--bronz-tmavy); }
+.o-zvyrazneni { fill: var(--kamen-svetly); }
+.o-klenot, .o-ukazatel { fill: var(--zlato); }
+.o-klenot-duty { fill: none; stroke: var(--zlato); }
+.o-oblouk { fill: none; stroke: var(--zlato); }
+.o-text { fill: var(--zlato-svetle); }
+.o-text-zlaty { fill: var(--zlato); }
+.o-text-bronz { fill: var(--bronz); }
+.o-kotouc { transition: transform var(--animace) cubic-bezier(0.4, 0, 0.2, 1); }
+@media (prefers-reduced-motion: reduce) { .o-kotouc { transition: none; } }
+
+/* Samostatné pohledy pro OBS */
+body.p-velky { height: 100vh; overflow: hidden; display: grid; place-items: center; }
+body.p-velky svg { width: min(100vw, 100vh); height: min(100vw, 100vh); display: block; }
+body.p-maly { overflow: hidden; }
+body.p-maly svg { width: 100vw; height: auto; display: block; }
+
+/* Editor */
+body.p-editor {
+  background: var(--kamen-hluboky);
+  color: var(--pergamen);
+  font-family: var(--pismo-ui);
+  font-size: 16px;
+  line-height: 1.55;
+  min-height: 100vh;
+}
+.p-editor h1, .p-editor h2, .p-editor h3 { font-family: var(--pismo); font-weight: 500; color: var(--zlato-svetle); margin: 0; }
+.p-editor h1 { font-size: 32px; line-height: 1.2; }
+.p-editor h2 { font-size: 22px; margin-bottom: 0.75rem; }
+.p-editor h3 { font-size: 18px; color: var(--zlato); margin-bottom: 0.4rem; }
+.p-editor a { color: var(--zlato); }
+.p-editor button {
+  font: inherit; font-size: 15px; color: var(--zlato-svetle);
+  background: transparent; border: 1px solid var(--bronz-tmavy); border-radius: 6px;
+  padding: 0.4rem 0.85rem; cursor: pointer;
+}
+.p-editor button:hover { border-color: var(--bronz); background: var(--kamen); }
+.p-editor button.hlavni { background: var(--zlato); border-color: var(--zlato); color: var(--kamen-hluboky); font-weight: 500; }
+.p-editor button.hlavni:hover { background: var(--zlato-svetle); border-color: var(--zlato-svetle); }
+.p-editor button.odkaz { border: none; padding: 0.2rem 0; color: var(--zlato); text-decoration: underline; text-underline-offset: 3px; }
+.p-editor button.odkaz:hover { background: transparent; color: var(--zlato-svetle); }
+.p-editor button.male { font-size: 14px; padding: 0.2rem 0.6rem; }
+.p-editor :focus-visible { outline: 2px solid var(--zlato); outline-offset: 2px; }
+.p-editor input[type="text"], .p-editor input[type="number"], .p-editor select {
+  font: inherit; color: var(--pergamen); background: var(--kamen);
+  border: 1px solid var(--bronz-tmavy); border-radius: 6px; padding: 0.4rem 0.6rem; min-height: 38px;
+}
+.p-editor input[type="checkbox"] { accent-color: var(--zlato); width: 18px; height: 18px; margin: 0; }
+.p-editor label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 14px; color: var(--pergamen-tlumeny); }
+.p-editor label.zaskrt { flex-direction: row; align-items: center; gap: 0.55rem; font-size: 16px; color: var(--pergamen); }
+
+.ed { max-width: 1180px; margin: 0 auto; padding: 1.5rem; }
+.ed-hlava {
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;
+  padding-bottom: 1.25rem; border-bottom: 1px solid var(--bronz-tmavy); margin-bottom: 0.5rem;
+}
+.ed-soubor { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.stav { font-size: 14px; color: var(--pergamen-tlumeny); }
+.stav.zmeneno { color: var(--zlato); }
+.stav.chyba { color: var(--varovani); }
+.stav.zive { color: var(--zlato); }
+.p-editor label.zive-prepinac { font-size: 15px; border: 1px solid var(--bronz-tmavy); border-radius: 6px; padding: 0.35rem 0.7rem; }
+.p-editor label.zive-prepinac:has(input:checked) { border-color: var(--zlato); color: var(--zlato-svetle); }
+.ed-telo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 420px); gap: 2.5rem; align-items: start; }
+@media (max-width: 920px) { .ed-telo { grid-template-columns: minmax(0, 1fr); } }
+.blok { padding: 1.4rem 0; border-bottom: 1px solid var(--kamen-svetly); }
+.blok:last-child { border-bottom: none; }
+.velke-datum { font-family: var(--pismo); font-size: 40px; line-height: 1.1; color: var(--zlato-svetle); margin: 0 0 0.9rem; }
+.posun, .akce { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
+.akce { margin: 0.9rem 0 0; }
+.vyber-data { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end; margin-bottom: 0.6rem; }
+.vyber-data .v-rok { width: 6.5rem; }
+.vyber-data .v-den { width: 5rem; }
+.vyber-data select { min-width: 13rem; }
+#udText { width: 100%; }
+.p-editor #udVyber + button { margin-bottom: 0.9rem; }
+.napoveda { font-size: 14px; color: var(--pergamen-tlumeny); margin: 0.35rem 0 0.6rem; }
+.napoveda.pozor { color: var(--zlato); }
+.chyba-text { font-size: 14px; color: var(--varovani); margin: 0.4rem 0 0; min-height: 1.2em; }
+.skupina { padding: 0.8rem 0; border-top: 1px solid var(--kamen-svetly); }
+.skupina:first-child { border-top: none; padding-top: 0; }
+.znacka { font-family: var(--pismo-ui); font-size: 13px; color: var(--kamen-hluboky); background: var(--zlato); border-radius: 4px; padding: 0.05rem 0.4rem; vertical-align: 3px; }
+.udalost { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; padding: 0.35rem 0; }
+.ud-text { flex: 1 1 14rem; }
+.udalost.skryta .ud-text { color: var(--pergamen-tlumeny); font-style: italic; }
+.ud-stitek { font-size: 13px; color: var(--pergamen-tlumeny); border: 1px solid var(--kamen-svetly); border-radius: 4px; padding: 0 0.4rem; }
+.ud-akce { display: flex; gap: 0.4rem; }
+.prazdno { color: var(--pergamen-tlumeny); margin: 0; }
+.ed-nahled { position: sticky; top: 1rem; padding-top: 1.4rem; }
+.nahled-pas { padding: 1.4rem 0 0.4rem; border-bottom: 1px solid var(--kamen-svetly); }
+.nahled-pas .nahled { max-width: 1000px; margin: 0 auto 0.6rem; }
+.odpocet-radek { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-top: 0.8rem; }
+.p-editor label.vradku { flex-direction: row; align-items: center; gap: 0.5rem; font-size: 16px; color: var(--pergamen); }
+.p-editor label.vradku input { width: 5rem; }
+.p-editor input:disabled { opacity: 0.45; }
+.p-editor button.potvrdit { border-color: var(--varovani); color: var(--varovani); }
+.popis-pole { font-family: var(--pismo); font-size: 17px; color: var(--zlato); margin: 0 0 0.4rem; }
+.p-editor label.rozsah-zap { margin: 0 0 0.9rem; }
+#udKonecObal { margin-bottom: 0.6rem; }
+.p-editor textarea { width: 100%; font: 13px/1.45 ui-monospace, Consolas, monospace; color: var(--pergamen); background: var(--kamen); border: 1px solid var(--bronz-tmavy); border-radius: 6px; padding: 0.6rem; resize: vertical; }
+.ud-stitek.bezi { color: var(--zlato); border-color: var(--bronz); }
+.nahled { margin-bottom: 1.2rem; }
+.nahled svg { width: 100%; height: auto; display: block; }
+.nahled-velky { max-width: 360px; margin-left: auto; margin-right: auto; }
+.odkazy { font-size: 14px; color: var(--pergamen-tlumeny); }
+</style>
+<!-- Data kampaně. Pokud soubor chybí, použijí se výchozí data níže. -->
+<script src="kalendar-data.js"></script>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function () {
+"use strict";
+
+/* HARPTOS-START */
+const MESICE = ["Hammer", "Alturiak", "Ches", "Tarsakh", "Mirtul", "Kythorn",
+  "Flamerule", "Eleasis", "Eleint", "Marpenoth", "Uktar", "Nightal"];
+// Svátky stojí mimo měsíce, vždy po měsíci s daným indexem. Shieldmeet jen v přestupném roce.
+const SVATKY = { 0: ["Midwinter"], 3: ["Greengrass"], 6: ["Midsummer", "Shieldmeet"], 8: ["Highharvestide"], 10: ["Feast of the Moon"] };
+const RIMSKE = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
+const VYCHOZI = {
+  dnes: { rok: 1491, mesic: "Eleint", den: 14 },
+  zacatek: { rok: 1491, mesic: "Eleint", den: 12 },
+  udalosti: []
+};
+
+const Harptos = {
+  _cache: {},
+  jePrestupny(rok) { return rok % 4 === 0; },
+  dny(rok) {
+    if (this._cache[rok]) return this._cache[rok];
+    const out = [];
+    MESICE.forEach((mesic, mi) => {
+      for (let den = 1; den <= 30; den++) out.push({ rok, mesic, den, mi });
+      (SVATKY[mi] || []).forEach(svatek => {
+        if (svatek === "Shieldmeet" && !this.jePrestupny(rok)) return;
+        out.push({ rok, svatek, po: mi });
+      });
+    });
+    return (this._cache[rok] = out);
+  },
+  klic(d) { return d.svatek ? d.rok + "|" + d.svatek : d.rok + "|" + d.mesic + "|" + d.den; },
+  index(d) { const k = this.klic(d); return this.dny(d.rok).findIndex(x => this.klic(x) === k); },
+  poradi(d) { return d.rok * 1000 + this.index(d); },
+  cisty(x) { return x.svatek ? { rok: x.rok, svatek: x.svatek } : { rok: x.rok, mesic: x.mesic, den: x.den }; },
+  posun(d, n) {
+    let rok = d.rok, i = this.index(d) + n;
+    while (i < 0) { rok--; i += this.dny(rok).length; }
+    while (i >= this.dny(rok).length) { i -= this.dny(rok).length; rok++; }
+    return this.cisty(this.dny(rok)[i]);
+  },
+  normalizuj(x) {
+    if (!x || !Number.isInteger(x.rok) || x.rok < 1) return null;
+    if (x.svatek) return this.dny(x.rok).some(d => d.svatek === x.svatek) ? { rok: x.rok, svatek: x.svatek } : null;
+    if (MESICE.indexOf(x.mesic) < 0 || !Number.isInteger(x.den) || x.den < 1 || x.den > 30) return null;
+    return { rok: x.rok, mesic: x.mesic, den: x.den };
+  },
+  // Pořadové číslo dne od počátku letopočtu; rozdíl dvou dat = počet dní mezi nimi.
+  absolutni(d) { return 365 * (d.rok - 1) + Math.floor((d.rok - 1) / 4) + this.index(d); },
+  rozdil(od, do_) { return this.absolutni(do_) - this.absolutni(od); },
+  kratce(d) { return d.svatek ? d.svatek : d.den + ". " + d.mesic; },
+  // „12.–15. Eleint 1491 DR“, „28. Eleint – 3. Marpenoth 1491 DR“, přes rok celé datum na obou stranách
+  formatRozsah(a, b) {
+    if (!b) return this.format(a);
+    if (a.rok !== b.rok) return this.format(a) + " – " + this.format(b);
+    if (!a.svatek && !b.svatek && a.mesic === b.mesic) return a.den + ".–" + b.den + ". " + a.mesic + " " + a.rok + " DR";
+    return this.kratce(a) + " – " + this.kratce(b) + " " + a.rok + " DR";
+  },
+  format(d) { return d.svatek ? d.svatek + " " + d.rok + " DR" : d.den + ". " + d.mesic + " " + d.rok + " DR"; },
+  popisSvatku(d) {
+    const x = this.dny(d.rok)[this.index(d)];
+    return x.svatek === "Shieldmeet" ? "po svátku Midsummer" : "po měsíci " + MESICE[x.po];
+  }
+};
+
+function normalizujData(raw) {
+  raw = raw || {};
+  const data = {
+    dnes: Harptos.normalizuj(raw.dnes) || Object.assign({}, VYCHOZI.dnes),
+    zacatek: raw.zacatek ? Harptos.normalizuj(raw.zacatek) : null,
+    udalosti: []
+  };
+  (Array.isArray(raw.udalosti) ? raw.udalosti : []).forEach(u => {
+    const datum = Harptos.normalizuj(u && u.datum);
+    if (!datum || !u.text) return;
+    const zaznam = { id: u.id || noveId(), datum, text: String(u.text), verejna: u.verejna !== false };
+    const konec = Harptos.normalizuj(u.konec);
+    if (konec && Harptos.rozdil(datum, konec) >= 1) zaznam.konec = konec;
+    if (Number.isInteger(u.odpocet) && u.odpocet >= 1 && u.odpocet <= 999) zaznam.odpocet = u.odpocet;
+    data.udalosti.push(zaznam);
+  });
+  return data;
+}
+
+// Veřejné události s odpočtem, které se mají dnes ukázat: 1 až N dní před událostí, nejbližší první.
+function aktivniOdpocty(data) {
+  return data.udalosti
+    .filter(u => u.verejna && u.odpocet)
+    .map(u => ({ u, zbyva: Harptos.rozdil(data.dnes, u.datum) }))
+    .filter(x => x.zbyva >= 1 && x.zbyva <= x.u.odpocet)
+    .sort((a, b) => a.zbyva - b.zbyva);
+}
+// Veřejné události, které dnes probíhají: nejdřív ty, co dnes začínají (v pořadí zápisu), pak vícedenní rozběhnuté dřív.
+function udalostiDne(data) {
+  const dnes = Harptos.absolutni(data.dnes), zacinaji = [], probihaji = [];
+  data.udalosti.forEach(u => {
+    if (!u.verejna) return;
+    const z = Harptos.absolutni(u.datum), k = u.konec ? Harptos.absolutni(u.konec) : z;
+    if (dnes < z || dnes > k) return;
+    const x = { u, den: dnes - z + 1, celkem: k - z + 1 };
+    (z === dnes ? zacinaji : probihaji).push(x);
+  });
+  probihaji.sort((a, b) => Harptos.absolutni(a.u.datum) - Harptos.absolutni(b.u.datum));
+  return zacinaji.concat(probihaji);
+}
+function dnyText(n) { return n === 1 ? "1 den" : n + (n >= 2 && n <= 4 ? " dny" : " dní"); }
+function zbyvaText(n) { return n === 1 ? "zítra" : "za " + n + (n >= 2 && n <= 4 ? " dny" : " dní"); }
+
+function noveId() { return "u" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+/* HARPTOS-END */
+
+/* ---------- Kreslení ---------- */
+const NS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, rodic) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (rodic) rodic.appendChild(e);
+  return e;
+}
+function text(rodic, x, y, velikost, trida, kotva, styl) {
+  const t = el("text", { x, y, "text-anchor": kotva || "middle", class: trida }, rodic);
+  t.style.fontSize = velikost + "px";
+  if (styl) Object.assign(t.style, styl);
+  return t;
+}
+// Zmenší písmo, dokud se text nevejde; když nestačí, zkrátí ho výpustkou.
+function vejdiSe(t, max, min) {
+  try {
+    let fs = parseFloat(t.style.fontSize);
+    while (t.getComputedTextLength() > max && fs > min) { fs -= 1; t.style.fontSize = fs + "px"; }
+    let s = t.textContent;
+    while (s.length > 1 && t.getComputedTextLength() > max) { s = s.slice(0, -1); t.textContent = s.trimEnd() + "…"; }
+  } catch (e) { /* prvek není vykreslený */ }
+}
+
+class Kotouc {
+  constructor(svg, cx, cy, geo) {
+    this.cx = cx; this.cy = cy; this.geo = geo;
+    this.g = el("g", { class: "o-kotouc" }, svg);
+    this.g.style.transformBox = "view-box";
+    this.g.style.transformOrigin = cx + "px " + cy + "px";
+    this.rok = null; this.rot = null;
+  }
+  bod(r, uhel) {
+    const a = (uhel - 90) * Math.PI / 180;
+    return [this.cx + r * Math.cos(a), this.cy + r * Math.sin(a)];
+  }
+  oblouk(r, a1, a2) {
+    const p = this.bod(r, a1), q = this.bod(r, a2);
+    return "M" + p[0] + " " + p[1] + "A" + r + " " + r + " 0 " + (a2 - a1 > 180 ? 1 : 0) + " 1 " + q[0] + " " + q[1];
+  }
+  vysec(r1, r2, a1, a2) {
+    const p = this.bod(r2, a1), q = this.bod(r2, a2), u = this.bod(r1, a2), v = this.bod(r1, a1), l = a2 - a1 > 180 ? 1 : 0;
+    return "M" + p[0] + " " + p[1] + "A" + r2 + " " + r2 + " 0 " + l + " 1 " + q[0] + " " + q[1] +
+      "L" + u[0] + " " + u[1] + "A" + r1 + " " + r1 + " 0 " + l + " 0 " + v[0] + " " + v[1] + "Z";
+  }
+  sestav(rok) {
+    const G = this.geo, dny = Harptos.dny(rok);
+    this.rok = rok; this.rot = null;
+    this.krok = 360 / dny.length;
+    while (this.g.firstChild) this.g.removeChild(this.g.firstChild);
+    this.zvyr = el("path", { class: "o-zvyrazneni" }, this.g);
+    this.obl = G.rOblouk ? el("path", { class: "o-oblouk", "stroke-width": 3, "stroke-linecap": "round" }, this.g) : null;
+    G.kruhy.forEach(([r, w]) => el("circle", { cx: this.cx, cy: this.cy, r, class: "o-linka", "stroke-width": w }, this.g));
+    dny.forEach((d, i) => {
+      const u = i * this.krok;
+      let r1 = G.rDen, w = G.wDen, trida = "o-linka-tmava";
+      if (d.svatek || d.den === 1) { r1 = G.rMesic; w = 1; trida = "o-linka"; }
+      else if (d.den === 11 || d.den === 21) { r1 = G.rDekada; w = 0.75; trida = "o-linka"; }
+      const p = this.bod(r1, u), q = this.bod(G.rVnejsi, u);
+      el("line", { x1: p[0], y1: p[1], x2: q[0], y2: q[1], class: trida, "stroke-width": w }, this.g);
+      if (d.svatek) {
+        const c = (i + 0.5) * this.krok, k = this.bod(G.rKlenot, c), s = G.klenot;
+        el("rect", { x: k[0] - s / 2, y: k[1] - s / 2, width: s, height: s, class: "o-klenot",
+          transform: "rotate(" + (c + 45) + " " + k[0] + " " + k[1] + ")" }, this.g);
+      }
+      if (d.den === 16) {
+        const rot = "rotate(" + u + " " + this.cx + " " + this.cy + ")";
+        if (G.rJmena) { const t = text(this.g, this.cx, this.cy - G.rJmena, G.pismoJmena, "o-text"); t.setAttribute("transform", rot); t.textContent = d.mesic; }
+        if (G.rRimske) { const t = text(this.g, this.cx, this.cy - G.rRimske, G.pismoRimske, "o-text-bronz"); t.setAttribute("transform", rot); t.textContent = RIMSKE[d.mi]; }
+      }
+    });
+  }
+  nastav(dnes, zacIdx, animovat) {
+    if (this.rok !== dnes.rok) { this.sestav(dnes.rok); animovat = false; }
+    const G = this.geo, k = this.krok, i = Harptos.index(dnes), x = Harptos.dny(this.rok)[i];
+    const s = x.svatek ? i : i - (x.den - 1), e = x.svatek ? i + 1 : s + 30;
+    this.zvyr.setAttribute("d", this.vysec(G.pasmo[0], G.pasmo[1], s * k, e * k));
+    if (this.obl) this.obl.setAttribute("d", zacIdx == null ? "" : this.oblouk(G.rOblouk, zacIdx * k, Math.min((i + 1) * k, zacIdx * k + 359.9)));
+    const cil = -(i + 0.5) * k;
+    if (this.rot === null || !animovat) {
+      this.rot = cil;
+      this.g.style.transition = "none";
+      this.g.style.transform = "rotate(" + cil + "deg)";
+      void this.g.getBoundingClientRect();
+      this.g.style.transition = "";
+    } else {
+      this.rot += (((cil - this.rot) % 360) + 540) % 360 - 180;
+      this.g.style.transform = "rotate(" + this.rot + "deg)";
+    }
+  }
+}
+
+function indexZacatku(data) {
+  const z = data.zacatek, d = data.dnes;
+  if (!z || z.rok > d.rok) return null;
+  if (z.rok < d.rok) return 0;
+  const zi = Harptos.index(z);
+  return zi <= Harptos.index(d) ? zi : null;
+}
+
+/* Velký orloj: celá obrazovka na začátku sezení */
+function velkyOrloj(kontejner) {
+  const svg = el("svg", { viewBox: "0 0 600 600", role: "img", "aria-label": "Orloj kalendáře Harptos" }, kontejner);
+  el("circle", { cx: 300, cy: 300, r: 294, class: "o-disk", "stroke-width": 2 }, svg);
+  const kotouc = new Kotouc(svg, 300, 300, {
+    kruhy: [[285, 1], [262, 0.5], [225, 1]], pasmo: [225, 285],
+    rVnejsi: 285, rDen: 276, rDekada: 262, rMesic: 150, wDen: 0.5,
+    rKlenot: 244, klenot: 10, rJmena: 237, pismoJmena: 17, rRimske: 200, pismoRimske: 12, rOblouk: 180
+  });
+  el("circle", { cx: 300, cy: 300, r: 150, class: "o-disk", "stroke-width": 1.5 }, svg);
+  el("circle", { cx: 300, cy: 300, r: 141, class: "o-linka-tmava", "stroke-width": 0.75 }, svg);
+  el("path", { d: "M287 2 L313 2 L300 32 Z", class: "o-ukazatel" }, svg);
+  const rok = text(svg, 300, 222, 18, "o-text-zlaty", "middle", { letterSpacing: "3px" });
+  const den = text(svg, 300, 336, 110, "o-text");
+  const mesic = text(svg, 300, 386, 32, "o-text");
+  const svatek = text(svg, 300, 312, 26, "o-text");
+  const svatekPo = text(svg, 300, 345, 15, "o-text-zlaty");
+  return {
+    obnov(data, animovat) {
+      const d = data.dnes;
+      kotouc.nastav(d, indexZacatku(data), animovat);
+      rok.textContent = d.rok + " DR";
+      if (d.svatek) {
+        den.textContent = ""; mesic.textContent = "";
+        svatek.style.fontSize = "26px"; svatek.textContent = d.svatek; vejdiSe(svatek, 250, 16);
+        svatekPo.textContent = Harptos.popisSvatku(d);
+      } else {
+        den.textContent = d.den; mesic.textContent = d.mesic;
+        svatek.textContent = ""; svatekPo.textContent = "";
+      }
+    }
+  };
+}
+
+/* Malý orloj: medailon uprostřed, vpravo události dne, vlevo odpočty (zrcadlo = strany prohozené) */
+function malyOrloj(kontejner, zrcadlo) {
+  const W = 1000, mx = 500, cy = 135;
+  const svg = el("svg", { viewBox: "0 0 " + W + " 270", role: "img", "aria-label": "Dnešní datum, události a odpočty" }, kontejner);
+  const stranaUdalosti = zrcadlo ? -1 : 1, stranaOdpoctu = -stranaUdalosti;
+  function stitek(strana) {
+    const x = strana > 0 ? mx - 15 : 8, w = strana > 0 ? (W - 8) - (mx - 15) : (mx + 15) - 8;
+    return { strana, ram: el("rect", { x, y: cy, width: w, height: 0, rx: 6, class: "o-disk", "stroke-width": 1.5 }, svg), radky: null };
+  }
+  const stUd = stitek(stranaUdalosti), stOd = stitek(stranaOdpoctu);
+  stUd.radky = el("g", {}, svg); stOd.radky = el("g", {}, svg);
+  el("circle", { cx: mx, cy, r: 130, class: "o-disk", "stroke-width": 2 }, svg);
+  const kotouc = new Kotouc(svg, mx, cy, {
+    kruhy: [[124, 1], [106, 1]], pasmo: [106, 124],
+    rVnejsi: 124, rDen: 119, rDekada: 110, rMesic: 80, wDen: 0.4,
+    rKlenot: 115, klenot: 7, rJmena: null, rRimske: 89, pismoRimske: 11, rOblouk: null
+  });
+  el("circle", { cx: mx, cy, r: 80, class: "o-disk", "stroke-width": 1.25 }, svg);
+  el("path", { d: "M" + (mx - 8) + " 1 L" + (mx + 8) + " 1 L" + mx + " 20 Z", class: "o-ukazatel" }, svg);
+  const rok = text(svg, mx, 96, 12, "o-text-zlaty", "middle", { letterSpacing: "2px" });
+  const den = text(svg, mx, 152, 58, "o-text");
+  const mesic = text(svg, mx, 180, 19, "o-text");
+  const svatek = text(svg, mx, 140, 16, "o-text");
+  const svatekPo = text(svg, mx, 160, 11, "o-text-zlaty");
+
+  // Vykreslí jeden štítek. Položka: { text, pocet? }. pocet = { typ: "odpocet", n } nebo { typ: "rozsah", den, celkem };
+  // stojí u vnějšího okraje. Odpočet má dutý kosočtverec, událost dne plný.
+  // Šířka štítku se řídí nejdelším řádkem, aby u krátkých textů nezůstávala prázdná plocha.
+  function sirkaTextu(t, nahradni) { try { return t.getComputedTextLength() || nahradni; } catch (e) { return nahradni; } }
+  function vykresli(st, polozky) {
+    const g = st.radky, s = st.strana;
+    while (g.firstChild) g.removeChild(g.firstChild);
+    if (!polozky.length) { st.ram.style.display = "none"; return; }
+    st.ram.style.display = "";
+    const h = polozky.length * 46 + 22, horni = cy - h / 2;
+    st.ram.setAttribute("y", horni); st.ram.setAttribute("height", h);
+    const vnitrni = mx + s * 171, jx = mx + s * 157;
+    const maxObsah = (s > 0 ? W - 26 : 26) * s - vnitrni * s;   // nejvíc místa pro text a počet dní
+    const MEZERA = 16, MIN_OBSAH = 110, OKRAJ = 20;
+    const radky = polozky.map((p, i) => {
+      const b = horni + 11 + 46 * i, odpocet = !!(p.pocet && p.pocet.typ === "odpocet");
+      el("rect", { x: jx - 4, y: b + 17, width: 8, height: 8, transform: "rotate(45 " + jx + " " + (b + 21) + ")",
+        class: odpocet ? "o-klenot-duty" : "o-klenot", "stroke-width": 1.25 }, g);
+      let pocet = null, sirkaPoctu = 0;
+      if (p.pocet) {
+        pocet = el("text", { x: vnitrni, y: b + 30, "text-anchor": s > 0 ? "end" : "start", class: "o-text-zlaty" }, g);
+        const kus = (t, px) => { const e = el("tspan", {}, pocet); e.style.fontSize = px + "px"; e.textContent = t; };
+        if (p.pocet.typ === "odpocet" && p.pocet.n === 1) kus("zítra", 19);
+        else if (p.pocet.typ === "odpocet") { kus("za ", 14); kus(p.pocet.n, 24); kus(p.pocet.n <= 4 ? " dny" : " dní", 14); }
+        else { kus("den ", 14); kus(p.pocet.den, 24); kus("/" + p.pocet.celkem, 14); }
+        sirkaPoctu = sirkaTextu(pocet, 80);
+      }
+      const t = text(g, vnitrni, b + 30, 19, "o-text", s > 0 ? "start" : "end");
+      t.textContent = p.text;
+      const volno = maxObsah - (pocet ? sirkaPoctu + MEZERA : 0);
+      vejdiSe(t, volno, 15);
+      return { b, pocet, potreba: Math.min(volno, sirkaTextu(t, volno)) + (pocet ? sirkaPoctu + MEZERA : 0) };
+    });
+    const obsah = Math.max(MIN_OBSAH, ...radky.map(r => r.potreba));
+    const vnejsiText = vnitrni + s * obsah;          // kde končí nejdelší řádek
+    const hranaRamu = vnejsiText + s * OKRAJ;        // vnější hrana štítku
+    radky.forEach((r, i) => {
+      if (r.pocet) r.pocet.setAttribute("x", vnejsiText);
+      if (i > 0) el("line", { x1: mx + s * 155, y1: r.b, x2: vnejsiText + s * 6, y2: r.b, class: "o-linka-tmava", "stroke-width": 0.5 }, g);
+    });
+    if (s > 0) { st.ram.setAttribute("x", mx - 15); st.ram.setAttribute("width", hranaRamu - (mx - 15)); }
+    else { st.ram.setAttribute("x", hranaRamu); st.ram.setAttribute("width", (mx + 15) - hranaRamu); }
+  }
+
+  return {
+    obnov(data, animovat) {
+      const d = data.dnes;
+      kotouc.nastav(d, null, animovat);
+      rok.textContent = d.rok + " DR";
+      if (d.svatek) {
+        den.textContent = ""; mesic.textContent = "";
+        svatek.style.fontSize = "16px"; svatek.textContent = d.svatek; vejdiSe(svatek, 140, 11);
+        svatekPo.textContent = Harptos.popisSvatku(d);
+      } else {
+        den.textContent = d.den; mesic.textContent = d.mesic;
+        svatek.textContent = ""; svatekPo.textContent = "";
+      }
+      vykresli(stUd, udalostiDne(data).slice(0, 3).map(x => ({ text: x.u.text, pocet: x.celkem > 1 ? { typ: "rozsah", den: x.den, celkem: x.celkem } : null })));
+      vykresli(stOd, aktivniOdpocty(data).slice(0, 3).map(x => ({ text: x.u.text, pocet: { typ: "odpocet", n: x.zbyva } })));
+    }
+  };
+}
+
+/* Samostatný pohled si každých pár sekund znovu načte data, takže změna z editoru se v OBS projeví sama. */
+function sleduj(orloj, sekund) {
+  let posledni = JSON.stringify(window.KALENDAR || null);
+  setInterval(() => {
+    const s = document.createElement("script");
+    s.src = "kalendar-data.js?t=" + Date.now();
+    s.onload = () => {
+      s.remove();
+      const t = JSON.stringify(window.KALENDAR || null);
+      if (t !== posledni) { posledni = t; orloj.obnov(normalizujData(window.KALENDAR), true); }
+    };
+    s.onerror = () => s.remove();
+    document.head.appendChild(s);
+  }, sekund * 1000);
+}
+
+/* ---------- Výběr data (sdílený prvek formuláře) ---------- */
+function vyberData(kontejner, pocatek, priZmene) {
+  kontejner.className = "vyber-data";
+  kontejner.innerHTML =
+    '<label>Rok<input type="number" class="v-rok" min="1" max="3000" step="1"></label>' +
+    '<label>Měsíc nebo svátek<select class="v-mesic"></select></label>' +
+    '<label class="v-den-obal">Den<input type="number" class="v-den" min="1" max="30" step="1"></label>';
+  const rok = kontejner.querySelector(".v-rok"), sel = kontejner.querySelector(".v-mesic");
+  const den = kontejner.querySelector(".v-den"), denObal = kontejner.querySelector(".v-den-obal");
+  function naplnVyber(r, hodnota) {
+    sel.innerHTML = "";
+    const pridej = (v, popis) => { const o = document.createElement("option"); o.value = v; o.textContent = popis; sel.appendChild(o); };
+    MESICE.forEach((m, i) => {
+      pridej("m:" + m, m);
+      (SVATKY[i] || []).forEach(s => {
+        if (s === "Shieldmeet" && !Harptos.jePrestupny(r)) return;
+        pridej("s:" + s, s + " (svátek)");
+      });
+    });
+    sel.value = hodnota;
+    if (sel.value !== hodnota) sel.value = hodnota === "s:Shieldmeet" ? "s:Midsummer" : "m:Hammer";
+  }
+  function nastav(d) {
+    rok.value = d.rok;
+    naplnVyber(d.rok, d.svatek ? "s:" + d.svatek : "m:" + d.mesic);
+    den.value = d.den || 1;
+    denObal.hidden = !!d.svatek;
+  }
+  function ziskej() {
+    const r = parseInt(rok.value, 10), v = sel.value;
+    if (!Number.isInteger(r)) return null;
+    if (v.startsWith("s:")) return Harptos.normalizuj({ rok: r, svatek: v.slice(2) });
+    return Harptos.normalizuj({ rok: r, mesic: v.slice(2), den: parseInt(den.value, 10) });
+  }
+  rok.addEventListener("change", () => { naplnVyber(parseInt(rok.value, 10) || 1491, sel.value); zmena(); });
+  sel.addEventListener("change", zmena);
+  den.addEventListener("change", () => {
+    const n = parseInt(den.value, 10);
+    den.value = Number.isInteger(n) ? Math.min(30, Math.max(1, n)) : 1;
+    zmena();
+  });
+  function zmena() {
+    denObal.hidden = sel.value.startsWith("s:");
+    const d = ziskej();
+    if (d && priZmene) priZmene(d);
+  }
+  nastav(pocatek);
+  return { nastav, ziskej };
+}
+
+/* ---------- Editor ---------- */
+function editor() {
+  document.body.classList.add("p-editor");
+  let data = normalizujData(window.KALENDAR || VYCHOZI);
+  let zmeneno = false, soubor = null, upravovane = null;
+  const app = document.getElementById("app");
+  app.innerHTML = `
+  <div class="ed">
+    <header class="ed-hlava">
+      <h1>Kalendář kampaně</h1>
+      <div class="ed-soubor">
+        <span id="stav" class="stav" role="status"></span>
+        <button type="button" id="nacist">Načíst data ze souboru</button>
+        <label class="zaskrt zive-prepinac" id="ziveObal" hidden><input type="checkbox" id="zive">Živě do OBS</label>
+        <button type="button" id="ulozit" class="hlavni">Uložit data</button>
+        <input type="file" id="souborVstup" accept=".js,.json" hidden>
+      </div>
+    </header>
+    <section class="nahled-pas">
+      <h2>Malý orloj</h2>
+      <p class="napoveda">Vpravo události dne, vlevo odpočty k budoucím událostem. Bez obsahu se štítek skryje.</p>
+      <div id="nahledMaly" class="nahled"></div>
+      <p class="napoveda pozor" id="stitkyNavic" hidden></p>
+    </section>
+    <div class="ed-telo">
+      <main>
+        <section class="blok">
+          <h2>Dnešní den ve hře</h2>
+          <p class="velke-datum" id="dnesText"></p>
+          <div class="posun">
+            <button type="button" id="minus">−1 den</button>
+            <button type="button" id="plus">+1 den</button>
+          </div>
+          <div id="dnesVyber"></div>
+        </section>
+        <section class="blok" id="udBlok">
+          <h2 id="udNadpis">Nová událost</h2>
+          <p class="popis-pole" id="udDatumPopis">Datum</p>
+          <div id="udVyber"></div>
+          <button type="button" id="naDnes" class="odkaz">Nastavit na dnešní den</button>
+          <label class="zaskrt rozsah-zap"><input type="checkbox" id="udRozsahZap">Trvá víc dní</label>
+          <div id="udKonecObal" hidden>
+            <p class="popis-pole">Konec (poslední den události)</p>
+            <div id="udKonec"></div>
+          </div>
+          <label>Text události<input type="text" id="udText" maxlength="120" autocomplete="off"></label>
+          <p class="napoveda" id="udDelka"></p>
+          <label class="zaskrt"><input type="checkbox" id="udVerejna" checked>Vidí ji hráči</label>
+          <div class="odpocet-radek">
+            <label class="zaskrt"><input type="checkbox" id="udOdpocetZap">Ukazovat odpočet</label>
+            <label class="vradku">od<input type="number" id="udOdpocet" min="1" max="999" step="1" value="10" disabled>dní předem</label>
+          </div>
+          <p class="napoveda">Odpočet se v malém orloji objeví vlevo zadaný počet dní před událostí. V den události se z něj stane běžná událost dne vpravo. Skrytá událost odpočet neukazuje.</p>
+          <p class="chyba-text" id="udChyba" role="alert"></p>
+          <div class="akce">
+            <button type="button" id="udUlozit" class="hlavni">Přidat událost</button>
+            <button type="button" id="udZrusit" hidden>Zrušit úpravu</button>
+          </div>
+        </section>
+        <section class="blok">
+          <h2>Zapsané události</h2>
+          <div id="seznam"></div>
+        </section>
+        <section class="blok">
+          <h2>Začátek kampaně</h2>
+          <p class="napoveda">Od tohoto dne kreslí velký orloj zlatý oblouk odehraného času.</p>
+          <label class="zaskrt" style="margin-bottom:0.8rem"><input type="checkbox" id="zacZap">Kreslit oblouk odehraného času</label>
+          <div id="zacVyber"></div>
+        </section>
+        <section class="blok">
+          <h2>Přenos dat</h2>
+          <p class="napoveda">Když nejde uložit soubor (třeba v náhledu v Claude), zkopíruj data odsud a vlož je do souboru kalendar-data.js. Opačně sem vložený text načteš tlačítkem.</p>
+          <textarea id="dataText" rows="8" spellcheck="false" aria-label="Data kalendáře jako text"></textarea>
+          <div class="akce"><button type="button" id="dataNacist">Načíst data z textu</button></div>
+        </section>
+      </main>
+      <aside class="ed-nahled">
+        <h2>Velký orloj</h2>
+        <p class="napoveda">Celá obrazovka na začátek sezení</p>
+        <div id="nahledVelky" class="nahled nahled-velky"></div>
+        <p class="odkazy">Otevřít samostatně:
+          <a href="?pohled=velky&amp;pozadi=1" target="_blank">velký</a>,
+          <a href="?pohled=maly&amp;pozadi=1" target="_blank">malý</a>,
+          <a href="?pohled=maly&amp;zrcadlo=1&amp;pozadi=1" target="_blank">malý s prohozenými stranami</a></p>
+      </aside>
+    </div>
+  </div>`;
+  const $ = s => app.querySelector(s);
+
+  const nahledMaly = malyOrloj($("#nahledMaly"), false);
+  const nahledVelky = velkyOrloj($("#nahledVelky"));
+  const dnesVyber = vyberData($("#dnesVyber"), data.dnes, d => { data.dnes = d; zmena(true); });
+  const udVyber = vyberData($("#udVyber"), data.dnes, null);
+  const konecVyber = vyberData($("#udKonec"), Harptos.posun(data.dnes, 1), null);
+  const zacVyber = vyberData($("#zacVyber"), data.zacatek || data.dnes, d => { if ($("#zacZap").checked) { data.zacatek = d; zmena(false); } });
+
+  function oznam(zprava, trida) { const s = $("#stav"); s.textContent = zprava; s.className = "stav" + (trida ? " " + trida : ""); }
+  function zmena(animovat) {
+    zmeneno = true;
+    prekresli(animovat);
+    ulozDoUloziste();
+    if (zive) zapisZive(); else oznam("Neuložené změny", "zmeneno");
+  }
+  function prekresli(animovat) {
+    $("#dnesText").textContent = Harptos.format(data.dnes);
+    dnesVyber.nastav(data.dnes);
+    nahledMaly.obnov(data, animovat);
+    nahledVelky.obnov(data, animovat);
+    vykresliSeznam();
+    const zbytek = n => n === 1 ? "jeden další čeká." : n <= 4 ? n + " další čekají." : n + " dalších čeká.";
+    const navicOd = aktivniOdpocty(data).length - 3, navicUd = udalostiDne(data).length - 3, zpravy = [];
+    if (navicUd > 0) zpravy.push("Dnes probíhá víc veřejných událostí, než se vejde na štítek. Ukazují se tři, " + zbytek(navicUd));
+    if (navicOd > 0) zpravy.push("Běží víc odpočtů, než se vejde. Štítek ukazuje tři nejbližší, " + zbytek(navicOd));
+    $("#stitkyNavic").hidden = !zpravy.length;
+    $("#stitkyNavic").textContent = zpravy.join(" ");
+    if (document.activeElement !== $("#dataText")) $("#dataText").value = serializuj();
+    if (!upravovane && !$("#udText").value) udVyber.nastav(data.dnes);
+  }
+  function uplneObnov() {
+    dnesVyber.nastav(data.dnes);
+    $("#zacZap").checked = !!data.zacatek;
+    zacVyber.nastav(data.zacatek || data.dnes);
+    ukonciUpravu();
+    prekresli(false);
+  }
+
+  $("#minus").addEventListener("click", () => { data.dnes = Harptos.posun(data.dnes, -1); zmena(true); });
+  $("#plus").addEventListener("click", () => { data.dnes = Harptos.posun(data.dnes, 1); zmena(true); });
+  $("#zacZap").addEventListener("change", () => { data.zacatek = $("#zacZap").checked ? zacVyber.ziskej() : null; zmena(false); });
+
+  /* Formulář události */
+  function pocetZnaku(n) { return n === 1 ? "1 znak" : (n >= 2 && n <= 4 ? n + " znaky" : n + " znaků"); }
+  function aktualizujDelku() {
+    const n = $("#udText").value.trim().length, p = $("#udDelka");
+    const limit = $("#udOdpocetZap").checked || $("#udRozsahZap").checked ? 22 : 30;
+    p.textContent = n > limit ? pocetZnaku(n) + ". Na štítku se text zmenší, případně zkrátí." : pocetZnaku(n) + ". Na štítek se vejde zhruba " + limit + (limit === 22 ? " (zbytek místa zabere počet dní)." : ".");
+    p.className = "napoveda" + (n > limit ? " pozor" : "");
+  }
+  function chyba(z) { $("#udChyba").textContent = z; }
+  function ukonciUpravu() {
+    upravovane = null;
+    $("#udNadpis").textContent = "Nová událost";
+    $("#udUlozit").textContent = "Přidat událost";
+    $("#udZrusit").hidden = true;
+    $("#udText").value = ""; $("#udVerejna").checked = true;
+    nastavOdpocet(null); nastavRozsah(null);
+    chyba(""); aktualizujDelku();
+    udVyber.nastav(data.dnes);
+  }
+  function nastavRozsah(konec) {
+    $("#udRozsahZap").checked = !!konec;
+    $("#udKonecObal").hidden = !konec;
+    $("#udDatumPopis").textContent = konec ? "Začátek" : "Datum";
+    if (konec) konecVyber.nastav(konec);
+    aktualizujDelku();
+  }
+  $("#udRozsahZap").addEventListener("change", () => {
+    nastavRozsah($("#udRozsahZap").checked ? Harptos.posun(udVyber.ziskej() || data.dnes, 1) : null);
+  });
+  function nastavOdpocet(n) {
+    $("#udOdpocetZap").checked = !!n;
+    $("#udOdpocet").value = n || 10;
+    $("#udOdpocet").disabled = !n;
+    aktualizujDelku();
+  }
+  $("#udOdpocetZap").addEventListener("change", () => {
+    $("#udOdpocet").disabled = !$("#udOdpocetZap").checked;
+    aktualizujDelku();
+    if ($("#udOdpocetZap").checked) $("#udOdpocet").focus();
+  });
+  function ulozUdalost() {
+    const txt = $("#udText").value.trim(), datum = udVyber.ziskej();
+    if (!txt) { chyba("Napiš text události."); $("#udText").focus(); return; }
+    if (!datum) { chyba("Datum není platné. Zkontroluj rok a den (1–30)."); return; }
+    const verejna = $("#udVerejna").checked;
+    let odpocet = null;
+    if ($("#udOdpocetZap").checked) {
+      odpocet = parseInt($("#udOdpocet").value, 10);
+      if (!Number.isInteger(odpocet) || odpocet < 1 || odpocet > 999) { chyba("Odpočet musí být 1 až 999 dní."); $("#udOdpocet").focus(); return; }
+    }
+    let konec = null;
+    if ($("#udRozsahZap").checked) {
+      konec = konecVyber.ziskej();
+      if (!konec || Harptos.rozdil(datum, konec) < 1) { chyba("Konec musí být až po začátku. Zkontroluj datum konce."); return; }
+    }
+    if (upravovane) {
+      const u = data.udalosti.find(x => x.id === upravovane);
+      if (u) {
+        Object.assign(u, { datum, text: txt, verejna });
+        if (konec) u.konec = konec; else delete u.konec;
+        if (odpocet) u.odpocet = odpocet; else delete u.odpocet;
+      }
+      ukonciUpravu();
+    } else {
+      const u = { id: noveId(), datum, text: txt, verejna };
+      if (konec) u.konec = konec;
+      if (odpocet) u.odpocet = odpocet;
+      data.udalosti.push(u);
+      $("#udText").value = ""; aktualizujDelku();
+      nastavOdpocet(null); nastavRozsah(null);
+    }
+    chyba("");
+    zmena(false);
+    $("#udText").focus();
+  }
+  $("#udUlozit").addEventListener("click", ulozUdalost);
+  $("#udText").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); ulozUdalost(); } });
+  $("#udText").addEventListener("input", () => { chyba(""); aktualizujDelku(); });
+  $("#udZrusit").addEventListener("click", ukonciUpravu);
+  $("#naDnes").addEventListener("click", () => udVyber.nastav(data.dnes));
+
+  function zacniUpravu(u) {
+    upravovane = u.id;
+    udVyber.nastav(u.datum);
+    $("#udText").value = u.text; $("#udVerejna").checked = u.verejna;
+    nastavOdpocet(u.odpocet || null);
+    nastavRozsah(u.konec || null);
+    $("#udNadpis").textContent = "Úprava události";
+    $("#udUlozit").textContent = "Uložit úpravu";
+    $("#udZrusit").hidden = false;
+    chyba(""); aktualizujDelku();
+    $("#udBlok").scrollIntoView({ behavior: "smooth", block: "start" });
+    $("#udText").focus({ preventScroll: true });
+  }
+
+  function tlacitko(popis, akce) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "male"; b.textContent = popis;
+    if (akce) b.addEventListener("click", akce);
+    return b;
+  }
+  // Dvoukrokové potvrzení přímo na tlačítku. Nepoužívá confirm(), který náhled v Claude blokuje.
+  function potvrzeni(b, dotaz, akce) {
+    const puvodni = b.textContent;
+    let casovac = null;
+    const vrat = () => { clearTimeout(casovac); casovac = null; b.textContent = puvodni; b.classList.remove("potvrdit"); };
+    b.addEventListener("click", () => {
+      if (casovac) { vrat(); akce(); return; }
+      b.textContent = dotaz; b.classList.add("potvrdit");
+      casovac = setTimeout(vrat, 4000);
+    });
+    b.addEventListener("blur", () => { if (casovac) vrat(); });
+    return b;
+  }
+  function vykresliSeznam() {
+    const box = $("#seznam");
+    box.replaceChildren();
+    if (!data.udalosti.length) {
+      const p = document.createElement("p"); p.className = "prazdno";
+      p.textContent = "Zatím tu nejsou žádné události. Zapiš první formulářem výše.";
+      box.append(p); return;
+    }
+    const skupiny = new Map();
+    data.udalosti.slice().sort((a, b) => Harptos.poradi(b.datum) - Harptos.poradi(a.datum)).forEach(u => {
+      const k = Harptos.klic(u.datum);
+      if (!skupiny.has(k)) skupiny.set(k, []);
+      skupiny.get(k).push(u);
+    });
+    const dnesK = Harptos.klic(data.dnes);
+    skupiny.forEach((seznam, k) => {
+      const sk = document.createElement("div"); sk.className = "skupina";
+      const h = document.createElement("h3"); h.textContent = Harptos.format(seznam[0].datum);
+      if (k === dnesK) { const z = document.createElement("span"); z.className = "znacka"; z.textContent = "dnes"; h.append(" ", z); }
+      sk.append(h);
+      seznam.forEach(u => {
+        const r = document.createElement("div"); r.className = "udalost" + (u.verejna ? "" : " skryta");
+        const t = document.createElement("span"); t.className = "ud-text"; t.textContent = u.text; r.append(t);
+        if (!u.verejna) { const s = document.createElement("span"); s.className = "ud-stitek"; s.textContent = "skrytá"; r.append(s); }
+        if (u.konec) {
+          const celkem = Harptos.rozdil(u.datum, u.konec) + 1, den = Harptos.rozdil(u.datum, data.dnes) + 1;
+          const s = document.createElement("span"); s.className = "ud-stitek";
+          s.textContent = "do " + (u.konec.rok !== u.datum.rok ? Harptos.format(u.konec) : Harptos.kratce(u.konec)) + ", " + dnyText(celkem);
+          r.append(s);
+          if (u.verejna && den >= 1 && den <= celkem) {
+            const b = document.createElement("span"); b.className = "ud-stitek bezi"; b.textContent = "probíhá: den " + den + "/" + celkem; r.append(b);
+          }
+        }
+        if (u.odpocet) {
+          const s = document.createElement("span"); s.className = "ud-stitek";
+          s.textContent = "odpočet " + u.odpocet + (u.odpocet >= 2 && u.odpocet <= 4 ? " dny" : u.odpocet === 1 ? " den" : " dní") + " předem";
+          r.append(s);
+          const zbyva = Harptos.rozdil(data.dnes, u.datum);
+          if (u.verejna && zbyva >= 1 && zbyva <= u.odpocet) {
+            const b = document.createElement("span"); b.className = "ud-stitek bezi"; b.textContent = "na štítku: " + zbyvaText(zbyva); r.append(b);
+          }
+        }
+        const a = document.createElement("div"); a.className = "ud-akce";
+        a.append(
+          tlacitko(u.verejna ? "Skrýt před hráči" : "Ukázat hráčům", () => { u.verejna = !u.verejna; zmena(false); }),
+          tlacitko("Upravit", () => zacniUpravu(u)),
+          potvrzeni(tlacitko("Smazat", null), "Opravdu smazat?", () => {
+            data.udalosti = data.udalosti.filter(x => x.id !== u.id);
+            if (upravovane === u.id) ukonciUpravu();
+            zmena(false);
+            oznam("Událost „" + u.text + "“ smazána, změny zatím nejsou uložené", "zmeneno");
+          })
+        );
+        r.append(a); sk.append(r);
+      });
+      box.append(sk);
+    });
+  }
+
+  /* Ukládání a načítání */
+  // V náhledu v Claude není soubor s daty; editor si proto data průběžně ukládá do úložiště náhledu.
+  const nahledUloziste = !window.KALENDAR && !!(window.storage && window.storage.get && window.storage.set);
+  let casovacUloziste = null;
+  function ulozDoUloziste() {
+    if (!nahledUloziste) return;
+    clearTimeout(casovacUloziste);
+    casovacUloziste = setTimeout(async () => {
+      try { await window.storage.set("kalendar-data", JSON.stringify({ dnes: data.dnes, zacatek: data.zacatek, udalosti: data.udalosti }), false); }
+      catch (e) { /* úložiště nedostupné */ }
+    }, 400);
+  }
+  async function nactiZUloziste() {
+    try {
+      const r = await window.storage.get("kalendar-data", false);
+      if (r && r.value) { data = normalizujData(JSON.parse(r.value)); zmeneno = false; uplneObnov(); oznam("Data načtena z úložiště náhledu v Claude"); return; }
+    } catch (e) { /* zatím nic uloženo */ }
+    oznam("Náhled v Claude: změny se průběžně ukládají do úložiště náhledu.");
+  }
+  $("#dataNacist").addEventListener("click", () => nactiText($("#dataText").value));
+  function serializuj() {
+    const ven = { dnes: data.dnes, zacatek: data.zacatek, udalosti: data.udalosti };
+    return "// Data kalendáře kampaně (Harptos). Soubor zapisuje editor: kalendar.html?pohled=editor\n" +
+      "// Ruční úpravy jsou možné, ale zachovej formát JSON (uvozovky kolem názvů, žádné čárky navíc).\n" +
+      "window.KALENDAR = " + JSON.stringify(ven, null, 2) + ";\n";
+  }
+  function stahni(obsah) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([obsah], { type: "text/javascript" }));
+    a.download = "kalendar-data.js";
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  /* Zápis do souboru. Přístup k souboru si editor pamatuje (IndexedDB), takže po znovuotevření stačí povolit úpravy. */
+  const Pamet = {
+    otevri() {
+      return new Promise((ok, chyba) => {
+        const r = indexedDB.open("kalendar-harptos", 1);
+        r.onupgradeneeded = () => r.result.createObjectStore("s");
+        r.onsuccess = () => ok(r.result); r.onerror = () => chyba(r.error);
+      });
+    },
+    async cti(k) {
+      try { const db = await this.otevri(); return await new Promise(ok => { const q = db.transaction("s").objectStore("s").get(k); q.onsuccess = () => ok(q.result); q.onerror = () => ok(null); }); }
+      catch (e) { return null; }
+    },
+    async zapis(k, v) {
+      try { const db = await this.otevri(); await new Promise(ok => { const q = db.transaction("s", "readwrite").objectStore("s").put(v, k); q.onsuccess = q.onerror = () => ok(); }); }
+      catch (e) { /* bez paměti se jen pokaždé zeptá na soubor */ }
+    }
+  };
+  const lzeZapisovat = !!window.showSaveFilePicker && !nahledUloziste;
+  let zive = false, frontaZapisu = Promise.resolve(), casovacZive = null;
+  function nastavSoubor(h) { soubor = h; Pamet.zapis("soubor", h); }
+  // Zajistí soubor s právem zápisu. Volat jen z kliknutí (prohlížeč jinak dialog nepovolí).
+  async function pripravSoubor() {
+    if (soubor) {
+      try {
+        let pravo = await soubor.queryPermission({ mode: "readwrite" });
+        if (pravo !== "granted") pravo = await soubor.requestPermission({ mode: "readwrite" });
+        if (pravo === "granted") return true;
+      } catch (e) { /* zkusíme vybrat znovu */ }
+    }
+    nastavSoubor(await window.showSaveFilePicker({
+      suggestedName: "kalendar-data.js",
+      types: [{ description: "Data kalendáře", accept: { "text/javascript": [".js"] } }]
+    }));
+    return true;
+  }
+  async function zapisDoSouboru() {
+    const w = await soubor.createWritable();
+    await w.write(serializuj()); await w.close();
+    zmeneno = false;
+  }
+  function zapisZive() {
+    clearTimeout(casovacZive);
+    casovacZive = setTimeout(() => {
+      frontaZapisu = frontaZapisu.then(zapisDoSouboru).then(() => {
+        const cas = new Date().toLocaleTimeString("cs-CZ");
+        oznam("Živě do OBS: zapsáno v " + cas, "zive");
+      }).catch(() => {
+        zive = false; $("#zive").checked = false; Pamet.zapis("zive", false);
+        oznam("Živý zápis selhal, přepnuto na ruční ukládání. Zkus Živě do OBS zapnout znovu.", "chyba");
+      });
+    }, 120);
+  }
+  async function uloz() {
+    if (lzeZapisovat) {
+      try {
+        await pripravSoubor();
+        await zapisDoSouboru();
+        oznam(zive ? "Živě do OBS: zapsáno" : "Uloženo do souboru " + soubor.name, zive ? "zive" : "");
+        return;
+      } catch (e) {
+        if (e.name === "AbortError") return;
+        soubor = null;
+      }
+    }
+    stahni(serializuj());
+    zmeneno = false;
+    oznam("Soubor kalendar-data.js je ve Stažených. Přesuň ho ke kalendar.html a přepiš starý.");
+  }
+  if (lzeZapisovat) {
+    $("#ziveObal").hidden = false;
+    $("#zive").addEventListener("change", async () => {
+      if (!$("#zive").checked) {
+        zive = false; Pamet.zapis("zive", false);
+        oznam(zmeneno ? "Neuložené změny" : "Živý režim vypnutý, ukládáš ručně (Ctrl+S).", zmeneno ? "zmeneno" : "");
+        return;
+      }
+      try {
+        await pripravSoubor();
+        await zapisDoSouboru();
+        zive = true; Pamet.zapis("zive", true);
+        oznam("Živě do OBS: každá změna se hned zapíše do " + soubor.name, "zive");
+      } catch (e) {
+        $("#zive").checked = false;
+        if (e.name !== "AbortError") oznam("Soubor se nepodařilo připojit. Zkus to znovu.", "chyba");
+      }
+    });
+    // Po otevření editoru: pokud byl živý režim zapnutý a právo k souboru trvá, rovnou pokračuj.
+    (async () => {
+      const h = await Pamet.cti("soubor"), bylZive = await Pamet.cti("zive");
+      if (!h) return;
+      soubor = h;
+      let pravo = "prompt";
+      try { pravo = await h.queryPermission({ mode: "readwrite" }); } catch (e) { /* neznámé */ }
+      if (bylZive && pravo === "granted") {
+        zive = true; $("#zive").checked = true;
+        oznam("Živě do OBS: připojeno k " + h.name, "zive");
+      } else if (bylZive) {
+        oznam("Pro živý režim klikni na Živě do OBS a povol úpravy souboru.", "zmeneno");
+      }
+    })();
+  }
+  function nactiText(t) {
+    try {
+      const a = t.indexOf("{"), b = t.lastIndexOf("}");
+      data = normalizujData(JSON.parse(t.slice(a, b + 1)));
+      zmeneno = false;
+      uplneObnov();
+      ulozDoUloziste();
+      oznam("Data načtena");
+      if (zive) zapisZive();
+    } catch (e) {
+      oznam("Soubor se nepodařilo přečíst. Musí to být kalendar-data.js uložený tímto editorem.", "chyba");
+    }
+  }
+  $("#ulozit").addEventListener("click", uloz);
+  let nacistPotvrzeno = 0;
+  $("#nacist").addEventListener("click", async () => {
+    const b = $("#nacist");
+    if (zmeneno && Date.now() - nacistPotvrzeno > 4000) {
+      nacistPotvrzeno = Date.now();
+      b.textContent = "Zahodit změny a načíst?"; b.classList.add("potvrdit");
+      setTimeout(() => { b.textContent = "Načíst data ze souboru"; b.classList.remove("potvrdit"); }, 4000);
+      return;
+    }
+    nacistPotvrzeno = 0; b.textContent = "Načíst data ze souboru"; b.classList.remove("potvrdit");
+    if (window.showOpenFilePicker) {
+      try {
+        const [h] = await window.showOpenFilePicker({ types: [{ description: "Data kalendáře", accept: { "text/javascript": [".js"] } }] });
+        nactiText(await (await h.getFile()).text());
+        nastavSoubor(h);
+        if (zive) zapisZive();
+        return;
+      } catch (e) { if (e.name === "AbortError") return; }
+    }
+    $("#souborVstup").click();
+  });
+  $("#souborVstup").addEventListener("change", async e => {
+    const f = e.target.files[0];
+    if (f) nactiText(await f.text());
+    e.target.value = "";
+  });
+  document.addEventListener("keydown", e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); uloz(); }
+  });
+  window.addEventListener("beforeunload", e => { if (zmeneno) { e.preventDefault(); e.returnValue = ""; } });
+
+  uplneObnov();
+  oznam(window.KALENDAR ? "Data načtena ze souboru kalendar-data.js" : "Soubor kalendar-data.js nebyl nalezen, pracuješ s výchozími daty.");
+  if (nahledUloziste) nactiZUloziste();
+  if (document.fonts) document.fonts.ready.then(() => prekresli(false));
+}
+
+/* ---------- Start ---------- */
+const P = new URLSearchParams(location.search);
+const pohled = P.get("pohled") || "editor";
+if (pohled === "velky" || pohled === "maly") {
+  document.body.classList.add("p-" + pohled);
+  if (P.get("pozadi") === "1") document.body.classList.add("s-pozadim");
+  const orloj = pohled === "velky" ? velkyOrloj(document.getElementById("app")) : malyOrloj(document.getElementById("app"), P.get("zrcadlo") === "1");
+  orloj.obnov(normalizujData(window.KALENDAR || VYCHOZI), false);
+  if (document.fonts) document.fonts.ready.then(() => orloj.obnov(normalizujData(window.KALENDAR || VYCHOZI), false));
+  const sekund = P.has("obnova") ? parseFloat(P.get("obnova")) : 0.5;
+  if (sekund > 0) sleduj(orloj, sekund);
+} else {
+  editor();
+}
+})();
+</script>
+</body>
+</html>

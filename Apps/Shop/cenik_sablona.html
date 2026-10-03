@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<title>Ceník</title>
+<style>
+:root{
+  --panel:rgba(24,27,30,.90);
+  --krida:#efece3; --krida-dim:#a9b0b5; --linka:#4a5158;
+  --mosaz:#c9954c;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+
+}
+*{box-sizing:border-box;margin:0;padding:0}
+/* Velikost si určuje Browser Source v OBS. Soubor je jen panel — kam se umístí,
+   je věc OBS, ne tohohle souboru. */
+html,body{width:100%;height:100%;overflow:hidden;background:transparent}
+body{font-family:var(--sans);color:var(--krida)}
+
+.panel{
+  width:100%; height:100%;
+  background:var(--panel);
+  border:1px solid rgba(201,149,76,.35);
+  border-radius:2px;
+  padding:34px 38px 30px;
+  display:flex; flex-direction:column;
+}
+.hlava{border-bottom:2px solid var(--linka);padding-bottom:16px;margin-bottom:18px;flex:0 0 auto}
+.hlava .nazev{font-family:var(--serif);font-weight:600;line-height:1.1;font-size:42px}
+.hlava .misto{color:var(--krida-dim);font-size:20px;margin-top:8px;line-height:1.3}
+.hlava .podtitul{font-family:var(--serif);font-style:italic;color:var(--krida-dim);
+                 font-size:21px;margin-top:6px;line-height:1.3}
+
+ol{list-style:none;flex:1 1 auto;min-height:0}
+li{display:flex;align-items:baseline;gap:12px;padding:var(--mezera,9px) 0}
+.tik{flex:0 0 16px;color:var(--mosaz);font-size:15px;text-align:center;line-height:1}
+.jmeno{font-family:var(--serif);font-size:var(--pismo,30px);line-height:1.25}
+.vodic{flex:1 1 auto;min-width:24px;border-bottom:2px dotted #545b62;
+       transform:translateY(-8px);opacity:.8}
+.cena{font-family:var(--serif);font-size:var(--pismo,30px);white-space:nowrap;
+      font-variant-numeric:tabular-nums}
+.mn{color:var(--krida-dim);font-family:var(--sans);font-size:calc(var(--pismo,30px)*.62);
+    white-space:nowrap}
+
+.prazdno{font-family:var(--serif);font-style:italic;color:var(--krida-dim);font-size:26px;padding:24px 0}
+</style>
+</head>
+<body>
+<div class="panel" id="panel">
+  <div class="hlava">
+    <div class="nazev" id="v-nazev"></div>
+    <div class="misto" id="v-misto"></div>
+    <div class="podtitul" id="v-podtitul" hidden></div>
+  </div>
+  <ol id="seznam"></ol>
+</div>
+
+<script id="sortiment" type="application/json">%%SORTIMENT%%</script>
+<script>
+"use strict";
+const TYPY={kovarna:'Kovárna a zbrojíř',lukar:'Lukař',kozeluh:'Koželuh',chram:'Chrám',
+ kolonial:'Koloniál',dobrodruzne:'Vybavení pro dobrodruhy',krejci:'Krejčí a látky',
+ klenotnik:'Klenotník a kamenoryt',alchymista:'Alchymista',arkanni:'Arkánní krám',
+ staje:'Stáje a povozník',pristavni:'Přístavní zboží',magicke:'Magické zboží',
+ prekupnik:'Překupník',umeni_hry:'Umění a hry'};
+
+function zl(md){
+  const z=Math.floor(md/100), zb=md%100, s=Math.floor(zb/10), m=zb%10, c=[];
+  if(z)c.push(z+' zl'); if(s)c.push(s+' st'); if(m)c.push(m+' md');
+  return c.length?c.join(' '):'0 md';
+}
+
+const D=JSON.parse(document.getElementById('sortiment').textContent);
+const el=id=>document.getElementById(id);
+const o=D.obchod||{}, pol=D.polozky||[];
+
+el('v-nazev').textContent=o.nazev||'';
+el('v-misto').textContent=[o.mesto,TYPY[o.typ]].filter(Boolean).join(' · ');
+if(o.podtitul){el('v-podtitul').textContent=o.podtitul;el('v-podtitul').hidden=false;}
+
+const s=el('seznam');
+if(!pol.length){
+  s.innerHTML='<li class="prazdno">Sortiment je prázdný.</li>';
+}else{
+  pol.forEach(p=>{
+    const li=document.createElement('li');
+    const tik=document.createElement('span'); tik.className='tik'; tik.textContent=p.jadro?'●':'';
+    const jm=document.createElement('span'); jm.className='jmeno'; jm.textContent=p.nazev;
+    const vo=document.createElement('span'); vo.className='vodic';
+    li.append(tik,jm,vo);
+    if(p.mnozstvi){const m=document.createElement('span');m.className='mn';m.textContent='×'+p.mnozstvi;li.append(m);}
+    const c=document.createElement('span'); c.className='cena'; c.textContent=zl(p.cena_md);
+    li.append(c);
+    s.append(li);
+  });
+}
+
+/* Písmo se přizpůsobí počtu řádků, aby panel nepřetekl.
+   Zmenšuje se jen tehdy, když je to nutné — dolní mez 22 px drží čitelnost z 1,5 m. */
+/* Písmo se přizpůsobí výšce zdroje, aby poslední řádek nespadl pod okraj panelu.
+   Měří se skutečná pozice posledního řádku, nedopočítává se. Dolní mez 22 px drží
+   čitelnost z 1,5 m; pod ni se nejde a místo toho se ohlásí přetečení. */
+(function dopasuj(){
+  const panel=el('panel'), root=document.documentElement.style;
+  const radky=[...document.querySelectorAll('#seznam li')];
+  if(!radky.length) return;
+  const dno=()=>panel.getBoundingClientRect().bottom
+                - parseFloat(getComputedStyle(panel).paddingBottom);
+  let pismo=34, mezera=11;
+  for(;;){
+    root.setProperty('--pismo',pismo+'px');
+    root.setProperty('--mezera',mezera+'px');
+    if(radky[radky.length-1].getBoundingClientRect().bottom<=dno()) break;
+    if(pismo<=22){document.body.dataset.pretekl='ano';break;}
+    pismo-=1; if(mezera>5) mezera-=0.5;
+  }
+})();
+</script>
+</body>
+</html>

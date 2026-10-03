@@ -1,0 +1,101 @@
+{
+ "verze": 1,
+ "obchod": {
+  "nazev": "Bez názvu",
+  "typ": "kolonial",
+  "lokalita": "premium",
+  "mesto": null,
+  "podtitul": null
+ },
+ "meta": {
+  "vygenerovano": "2026-09-07T20:07:30.597Z",
+  "seed": 190317357,
+  "generator": "generator.html v1"
+ },
+ "polozky": [
+  {
+   "nazev": "Kotlík, železný",
+   "cena_md": 200,
+   "mnozstvi": null,
+   "jadro": true
+  },
+  {
+   "nazev": "Koželužské nářadí",
+   "cena_md": 500,
+   "mnozstvi": null,
+   "jadro": true
+  },
+  {
+   "nazev": "Krmivo (den)",
+   "cena_md": 5,
+   "mnozstvi": null,
+   "jadro": true
+  },
+  {
+   "nazev": "Kuchařské náčiní",
+   "cena_md": 100,
+   "mnozstvi": null,
+   "jadro": true
+  },
+  {
+   "nazev": "Láhev, skleněná",
+   "cena_md": 200,
+   "mnozstvi": null,
+   "jadro": true
+  },
+  {
+   "nazev": "Lano (50 stop)",
+   "cena_md": 100,
+   "mnozstvi": null,
+   "jadro": true
+  },
+  {
+   "nazev": "Pytel",
+   "cena_md": 1,
+   "mnozstvi": null,
+   "jadro": true
+  },
+  {
+   "nazev": "Rýč",
+   "cena_md": 200,
+   "mnozstvi": null,
+   "jadro": true
+  },
+  {
+   "nazev": "Řezbářské nářadí",
+   "cena_md": 100,
+   "mnozstvi": null,
+   "jadro": true
+  },
+  {
+   "nazev": "Svíce",
+   "cena_md": 1,
+   "mnozstvi": null,
+   "jadro": true
+  },
+  {
+   "nazev": "Tesařské nářadí",
+   "cena_md": 800,
+   "mnozstvi": null,
+   "jadro": true
+  },
+  {
+   "nazev": "Tkalcovské nářadí",
+   "cena_md": 100,
+   "mnozstvi": null,
+   "jadro": true
+  },
+  {
+   "nazev": "Truhla",
+   "cena_md": 500,
+   "mnozstvi": null,
+   "jadro": false
+  },
+  {
+   "nazev": "Váček",
+   "cena_md": 50,
+   "mnozstvi": null,
+   "jadro": true
+  }
+ ]
+}

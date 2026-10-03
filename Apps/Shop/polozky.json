@@ -1,0 +1,4283 @@
+{
+ "_pravidlo_prodeje": "SRD 5.2.1, Selling Equipment: běžné vybavení se prodává za polovinu ceny, ale drahokamy a umělecké předměty si drží plnou hodnotu.",
+ "polozky": [
+  {
+   "nazev_en": "Club",
+   "cena_md": 10,
+   "kategorie": "Zbraně",
+   "podkategorie": "Simple Melee Weapons",
+   "lokality": [
+    "rural"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne"
+   ],
+   "nazev_cs": "Kyj"
+  },
+  {
+   "nazev_en": "Dagger",
+   "cena_md": 200,
+   "kategorie": "Zbraně",
+   "podkategorie": "Simple Melee Weapons",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "dobrodruzne",
+    "kovarna"
+   ],
+   "nazev_cs": "Dýka"
+  },
+  {
+   "nazev_en": "Greatclub",
+   "cena_md": 20,
+   "kategorie": "Zbraně",
+   "podkategorie": "Simple Melee Weapons",
+   "lokality": [
+    "rural",
+    "urban"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne"
+   ],
+   "nazev_cs": "Kyj, těžký"
+  },
+  {
+   "nazev_en": "Handaxe",
+   "cena_md": 500,
+   "kategorie": "Zbraně",
+   "podkategorie": "Simple Melee Weapons",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "dobrodruzne",
+    "kovarna"
+   ],
+   "nazev_cs": "Sekyra, ruční"
+  },
+  {
+   "nazev_en": "Javelin",
+   "cena_md": 50,
+   "kategorie": "Zbraně",
+   "podkategorie": "Simple Melee Weapons",
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Oštěp"
+  },
+  {
+   "nazev_en": "Light Hammer",
+   "cena_md": 200,
+   "kategorie": "Zbraně",
+   "podkategorie": "Simple Melee Weapons",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne",
+    "kovarna"
+   ],
+   "nazev_cs": "Kladivo, lehké"
+  },
+  {
+   "nazev_en": "Mace",
+   "cena_md": 500,
+   "kategorie": "Zbraně",
+   "podkategorie": "Simple Melee Weapons",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Palcát"
+  },
+  {
+   "nazev_en": "Quarterstaff",
+   "cena_md": 20,
+   "kategorie": "Zbraně",
+   "podkategorie": "Simple Melee Weapons",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "arkanni",
+    "dobrodruzne"
+   ],
+   "nazev_cs": "Hůl, dlouhá"
+  },
+  {
+   "nazev_en": "Sickle",
+   "cena_md": 100,
+   "kategorie": "Zbraně",
+   "podkategorie": "Simple Melee Weapons",
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Srp"
+  },
+  {
+   "nazev_en": "Spear",
+   "cena_md": 100,
+   "kategorie": "Zbraně",
+   "podkategorie": "Simple Melee Weapons",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "kovarna",
+    "pristavni"
+   ],
+   "nazev_cs": "Kopí"
+  },
+  {
+   "nazev_en": "Dart",
+   "cena_md": 5,
+   "kategorie": "Zbraně",
+   "podkategorie": "Simple Ranged Weapons",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne"
+   ],
+   "nazev_cs": "Šipka, vrhací"
+  },
+  {
+   "nazev_en": "Shortbow",
+   "cena_md": 2500,
+   "kategorie": "Zbraně",
+   "podkategorie": "Simple Ranged Weapons",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "dobrodruzne",
+    "lukar"
+   ],
+   "nazev_cs": "Luk, krátký"
+  },
+  {
+   "nazev_en": "Sling",
+   "cena_md": 10,
+   "kategorie": "Zbraně",
+   "podkategorie": "Simple Ranged Weapons",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne",
+    "kozeluh"
+   ],
+   "nazev_cs": "Prak"
+  },
+  {
+   "nazev_en": "Battleaxe",
+   "cena_md": 1000,
+   "kategorie": "Zbraně",
+   "podkategorie": "Martial Melee Weapons",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Sekyra, válečná"
+  },
+  {
+   "nazev_en": "Flail",
+   "cena_md": 1000,
+   "kategorie": "Zbraně",
+   "podkategorie": "Martial Melee Weapons",
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Řemdih"
+  },
+  {
+   "nazev_en": "Glaive",
+   "cena_md": 2000,
+   "kategorie": "Zbraně",
+   "podkategorie": "Martial Melee Weapons",
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Kůsa"
+  },
+  {
+   "nazev_en": "Greataxe",
+   "cena_md": 3000,
+   "kategorie": "Zbraně",
+   "podkategorie": "Martial Melee Weapons",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Sekyra, obouruční"
+  },
+  {
+   "nazev_en": "Greatsword",
+   "cena_md": 5000,
+   "kategorie": "Zbraně",
+   "podkategorie": "Martial Melee Weapons",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Meč, obouruční"
+  },
+  {
+   "nazev_en": "Halberd",
+   "cena_md": 2000,
+   "kategorie": "Zbraně",
+   "podkategorie": "Martial Melee Weapons",
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Halapartna"
+  },
+  {
+   "nazev_en": "Lance",
+   "cena_md": 1000,
+   "kategorie": "Zbraně",
+   "podkategorie": "Martial Melee Weapons",
+   "lokality": [
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Dřevec"
+  },
+  {
+   "nazev_en": "Longsword",
+   "cena_md": 1500,
+   "kategorie": "Zbraně",
+   "podkategorie": "Martial Melee Weapons",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Meč, dlouhý"
+  },
+  {
+   "nazev_en": "Maul",
+   "cena_md": 1000,
+   "kategorie": "Zbraně",
+   "podkategorie": "Martial Melee Weapons",
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Palice"
+  },
+  {
+   "nazev_en": "Morningstar",
+   "cena_md": 1500,
+   "kategorie": "Zbraně",
+   "podkategorie": "Martial Melee Weapons",
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Kropáč"
+  },
+  {
+   "nazev_en": "Pike",
+   "cena_md": 500,
+   "kategorie": "Zbraně",
+   "podkategorie": "Martial Melee Weapons",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Píka"
+  },
+  {
+   "nazev_en": "Rapier",
+   "cena_md": 2500,
+   "kategorie": "Zbraně",
+   "podkategorie": "Martial Melee Weapons",
+   "lokality": [
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Rapír"
+  },
+  {
+   "nazev_en": "Scimitar",
+   "cena_md": 2500,
+   "kategorie": "Zbraně",
+   "podkategorie": "Martial Melee Weapons",
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Scimitar"
+  },
+  {
+   "nazev_en": "Shortsword",
+   "cena_md": 1000,
+   "kategorie": "Zbraně",
+   "podkategorie": "Martial Melee Weapons",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Meč, krátký"
+  },
+  {
+   "nazev_en": "Trident",
+   "cena_md": 500,
+   "kategorie": "Zbraně",
+   "podkategorie": "Martial Melee Weapons",
+   "lokality": [
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Trojzubec"
+  },
+  {
+   "nazev_en": "Warhammer",
+   "cena_md": 1500,
+   "kategorie": "Zbraně",
+   "podkategorie": "Martial Melee Weapons",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Kladivo, válečné"
+  },
+  {
+   "nazev_en": "War Pick",
+   "cena_md": 500,
+   "kategorie": "Zbraně",
+   "podkategorie": "Martial Melee Weapons",
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Cepín"
+  },
+  {
+   "nazev_en": "Whip",
+   "cena_md": 200,
+   "kategorie": "Zbraně",
+   "podkategorie": "Martial Melee Weapons",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne"
+   ],
+   "nazev_cs": "Bič"
+  },
+  {
+   "nazev_en": "Blowgun",
+   "cena_md": 1000,
+   "kategorie": "Zbraně",
+   "podkategorie": "Martial Ranged Weapons",
+   "lokality": [
+    "rural"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne"
+   ],
+   "nazev_cs": "Foukačka"
+  },
+  {
+   "nazev_en": "Hand Crossbow",
+   "cena_md": 7500,
+   "kategorie": "Zbraně",
+   "podkategorie": "Martial Ranged Weapons",
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne",
+    "lukar"
+   ],
+   "nazev_cs": "Kuše, ruční"
+  },
+  {
+   "nazev_en": "Light Crossbow",
+   "cena_md": 2500,
+   "kategorie": "Zbraně",
+   "podkategorie": "Simple Ranged Weapons",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne",
+    "lukar"
+   ],
+   "nazev_cs": "Kuše, lehká"
+  },
+  {
+   "nazev_en": "Heavy Crossbow",
+   "cena_md": 5000,
+   "kategorie": "Zbraně",
+   "podkategorie": "Martial Ranged Weapons",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne",
+    "lukar"
+   ],
+   "nazev_cs": "Kuše, těžká"
+  },
+  {
+   "nazev_en": "Longbow",
+   "cena_md": 5000,
+   "kategorie": "Zbraně",
+   "podkategorie": "Martial Ranged Weapons",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "dobrodruzne",
+    "lukar"
+   ],
+   "nazev_cs": "Luk, dlouhý"
+  },
+  {
+   "nazev_en": "Padded Armor",
+   "cena_md": 500,
+   "kategorie": "Zbroj",
+   "podkategorie": "Light Armor",
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne"
+   ],
+   "nazev_cs": "Vycpávaná zbroj"
+  },
+  {
+   "nazev_en": "Leather Armor",
+   "cena_md": 1000,
+   "kategorie": "Zbroj",
+   "podkategorie": "Light Armor",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "dobrodruzne",
+    "kozeluh"
+   ],
+   "nazev_cs": "Kožená zbroj"
+  },
+  {
+   "nazev_en": "Studded Leather Armor",
+   "cena_md": 4500,
+   "kategorie": "Zbroj",
+   "podkategorie": "Light Armor",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne",
+    "kovarna",
+    "kozeluh"
+   ],
+   "nazev_cs": "Kožená zbroj pobitá cvočky"
+  },
+  {
+   "nazev_en": "Hide Armor",
+   "cena_md": 1000,
+   "kategorie": "Zbroj",
+   "podkategorie": "Medium Armor",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "dobrodruzne",
+    "kozeluh"
+   ],
+   "nazev_cs": "Usňová zbroj"
+  },
+  {
+   "nazev_en": "Chain Shirt",
+   "cena_md": 5000,
+   "kategorie": "Zbroj",
+   "podkategorie": "Medium Armor",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Kroužková košile"
+  },
+  {
+   "nazev_en": "Scale Mail",
+   "cena_md": 5000,
+   "kategorie": "Zbroj",
+   "podkategorie": "Medium Armor",
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Šupinová zbroj"
+  },
+  {
+   "nazev_en": "Breastplate",
+   "cena_md": 40000,
+   "kategorie": "Zbroj",
+   "podkategorie": "Medium Armor",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Kyrys"
+  },
+  {
+   "nazev_en": "Half Plate Armor",
+   "cena_md": 75000,
+   "kategorie": "Zbroj",
+   "podkategorie": "Medium Armor",
+   "lokality": [
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Poloplátová zbroj"
+  },
+  {
+   "nazev_en": "Ring Mail",
+   "cena_md": 3000,
+   "kategorie": "Zbroj",
+   "podkategorie": "Heavy Armor",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Zbroj pošitá kroužky"
+  },
+  {
+   "nazev_en": "Chain Mail",
+   "cena_md": 7500,
+   "kategorie": "Zbroj",
+   "podkategorie": "Heavy Armor",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Kroužková zbroj"
+  },
+  {
+   "nazev_en": "Splint Armor",
+   "cena_md": 20000,
+   "kategorie": "Zbroj",
+   "podkategorie": "Heavy Armor",
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Lamelová zbroj"
+  },
+  {
+   "nazev_en": "Plate Armor",
+   "cena_md": 150000,
+   "kategorie": "Zbroj",
+   "podkategorie": "Heavy Armor",
+   "lokality": [
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Plátová zbroj"
+  },
+  {
+   "nazev_en": "Shield",
+   "cena_md": 1000,
+   "kategorie": "Zbroj",
+   "podkategorie": "Shield",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "kovarna",
+    "kozeluh"
+   ],
+   "nazev_cs": "Štít"
+  },
+  {
+   "nazev_en": "Acid",
+   "cena_md": 2500,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "alchymista",
+    "prekupnik"
+   ],
+   "nazev_cs": "Kyselina (lahvička)"
+  },
+  {
+   "nazev_en": "Alchemist’s Fire",
+   "cena_md": 5000,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "alchymista"
+   ],
+   "nazev_cs": "Alchymistický oheň (baňka)"
+  },
+  {
+   "nazev_en": "Antitoxin",
+   "cena_md": 5000,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "alchymista",
+    "prekupnik"
+   ],
+   "nazev_cs": "Protijed (lahvička)"
+  },
+  {
+   "nazev_en": "Backpack",
+   "cena_md": 200,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "dobrodruzne",
+    "krejci"
+   ],
+   "nazev_cs": "Batoh"
+  },
+  {
+   "nazev_en": "Ball Bearings",
+   "cena_md": 100,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kovarna"
+   ],
+   "nazev_cs": "Kuličky (pytlík)"
+  },
+  {
+   "nazev_en": "Barrel",
+   "cena_md": 200,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kolonial"
+   ],
+   "nazev_cs": "Sud"
+  },
+  {
+   "nazev_en": "Basket",
+   "cena_md": 40,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "krejci"
+   ],
+   "nazev_cs": "Koš"
+  },
+  {
+   "nazev_en": "Bedroll",
+   "cena_md": 100,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "dobrodruzne",
+    "krejci"
+   ],
+   "nazev_cs": "Spací pytel"
+  },
+  {
+   "nazev_en": "Bell",
+   "cena_md": 100,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "chram",
+    "kovarna"
+   ],
+   "nazev_cs": "Zvonek"
+  },
+  {
+   "nazev_en": "Blanket",
+   "cena_md": 50,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "chram",
+    "dobrodruzne",
+    "kolonial",
+    "krejci"
+   ],
+   "nazev_cs": "Přikrývka"
+  },
+  {
+   "nazev_en": "Block and Tackle",
+   "cena_md": 100,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne",
+    "kovarna"
+   ],
+   "nazev_cs": "Kladkostroj"
+  },
+  {
+   "nazev_en": "Bottle, Glass",
+   "cena_md": 200,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "alchymista",
+    "arkanni",
+    "dobrodruzne",
+    "kolonial"
+   ],
+   "nazev_cs": "Láhev, skleněná"
+  },
+  {
+   "nazev_en": "Bucket",
+   "cena_md": 5,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kolonial"
+   ],
+   "nazev_cs": "Vědro"
+  },
+  {
+   "nazev_en": "Caltrops",
+   "cena_md": 100,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "prekupnik"
+   ],
+   "nazev_cs": "Ježci (pytlík)"
+  },
+  {
+   "nazev_en": "Candle",
+   "cena_md": 1,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "arkanni",
+    "chram",
+    "dobrodruzne",
+    "kolonial"
+   ],
+   "nazev_cs": "Svíčka"
+  },
+  {
+   "nazev_en": "Case, Crossbow Bolt",
+   "cena_md": 100,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne",
+    "lukar"
+   ],
+   "nazev_cs": "Pouzdro na šipky"
+  },
+  {
+   "nazev_en": "Case, Map or Scroll",
+   "cena_md": 100,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "arkanni",
+    "chram",
+    "dobrodruzne"
+   ],
+   "nazev_cs": "Tubus na mapy či svitky"
+  },
+  {
+   "nazev_en": "Chain",
+   "cena_md": 500,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "dobrodruzne",
+    "kovarna"
+   ],
+   "nazev_cs": "Řetěz (10 stop)"
+  },
+  {
+   "nazev_en": "Chest",
+   "cena_md": 500,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne",
+    "kolonial"
+   ],
+   "nazev_cs": "Truhla"
+  },
+  {
+   "nazev_en": "Climber’s Kit",
+   "cena_md": 2500,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne"
+   ],
+   "nazev_cs": "Lezecká souprava"
+  },
+  {
+   "nazev_en": "Clothes, Fine",
+   "cena_md": 1500,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kolonial",
+    "krejci"
+   ],
+   "nazev_cs": "Honosné oblečení"
+  },
+  {
+   "nazev_en": "Clothes, Traveler’s",
+   "cena_md": 200,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "dobrodruzne",
+    "krejci"
+   ],
+   "nazev_cs": "Cestovní oblečení"
+  },
+  {
+   "nazev_en": "Component Pouch",
+   "cena_md": 2500,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "alchymista",
+    "arkanni",
+    "krejci",
+    "magicke"
+   ],
+   "nazev_cs": "Brašnička na suroviny"
+  },
+  {
+   "nazev_en": "Crowbar",
+   "cena_md": 200,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "dobrodruzne",
+    "kovarna"
+   ],
+   "nazev_cs": "Páčidlo"
+  },
+  {
+   "nazev_en": "Flask",
+   "cena_md": 2,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "alchymista",
+    "chram"
+   ],
+   "nazev_cs": "Čutora"
+  },
+  {
+   "nazev_en": "Grappling Hook",
+   "cena_md": 200,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "dobrodruzne",
+    "kovarna"
+   ],
+   "nazev_cs": "Kotvička"
+  },
+  {
+   "nazev_en": "Healer’s Kit",
+   "cena_md": 500,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "alchymista",
+    "chram",
+    "dobrodruzne"
+   ],
+   "nazev_cs": "Léčitelská souprava"
+  },
+  {
+   "nazev_en": "Holy Water",
+   "cena_md": 2500,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "chram"
+   ],
+   "nazev_cs": "Svěcená voda (baňka)"
+  },
+  {
+   "nazev_en": "Hunting Trap",
+   "cena_md": 500,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne",
+    "kovarna"
+   ],
+   "nazev_cs": "Lovecká past"
+  },
+  {
+   "nazev_en": "Ink",
+   "cena_md": 1000,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "alchymista",
+    "arkanni",
+    "chram",
+    "dobrodruzne",
+    "kolonial"
+   ],
+   "nazev_cs": "Inkoust (lahvička)"
+  },
+  {
+   "nazev_en": "Ink Pen",
+   "cena_md": 2,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "arkanni",
+    "chram",
+    "dobrodruzne",
+    "kolonial"
+   ],
+   "nazev_cs": "Inkoustové pero"
+  },
+  {
+   "nazev_en": "Jug",
+   "cena_md": 2,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "alchymista"
+   ],
+   "nazev_cs": "Džbán"
+  },
+  {
+   "nazev_en": "Ladder",
+   "cena_md": 10,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne",
+    "kolonial"
+   ],
+   "nazev_cs": "Žebřík (10 stop)"
+  },
+  {
+   "nazev_en": "Lamp",
+   "cena_md": 50,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "chram",
+    "kovarna"
+   ],
+   "nazev_cs": "Lampa"
+  },
+  {
+   "nazev_en": "Lantern, Bullseye",
+   "cena_md": 1000,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne",
+    "kovarna"
+   ],
+   "nazev_cs": "Lucerna, směrová"
+  },
+  {
+   "nazev_en": "Lantern, Hooded",
+   "cena_md": 500,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "chram",
+    "dobrodruzne",
+    "kolonial",
+    "kovarna"
+   ],
+   "nazev_cs": "Lucerna, krytá"
+  },
+  {
+   "nazev_en": "Lock",
+   "cena_md": 1000,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne",
+    "kolonial",
+    "kovarna"
+   ],
+   "nazev_cs": "Zámek"
+  },
+  {
+   "nazev_en": "Manacles",
+   "cena_md": 200,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kovarna",
+    "prekupnik"
+   ],
+   "nazev_cs": "Okovy"
+  },
+  {
+   "nazev_en": "Net",
+   "cena_md": 100,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "pristavni"
+   ],
+   "nazev_cs": "Síť"
+  },
+  {
+   "nazev_en": "Oil",
+   "cena_md": 10,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "alchymista",
+    "chram",
+    "prekupnik"
+   ],
+   "nazev_cs": "Olej (baňka)"
+  },
+  {
+   "nazev_en": "Paper",
+   "cena_md": 20,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "arkanni",
+    "chram",
+    "dobrodruzne",
+    "kolonial"
+   ],
+   "nazev_cs": "Papír (list)"
+  },
+  {
+   "nazev_en": "Parchment",
+   "cena_md": 10,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "arkanni",
+    "chram",
+    "dobrodruzne",
+    "kolonial"
+   ],
+   "nazev_cs": "Pergamen (list)"
+  },
+  {
+   "nazev_en": "Perfume",
+   "cena_md": 500,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "alchymista",
+    "chram"
+   ],
+   "nazev_cs": "Parfém (lahvička)"
+  },
+  {
+   "nazev_en": "Poison, Basic",
+   "cena_md": 10000,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "alchymista",
+    "prekupnik"
+   ],
+   "nazev_cs": "Základní jed (lahvička)"
+  },
+  {
+   "nazev_en": "Pole",
+   "cena_md": 5,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne"
+   ],
+   "nazev_cs": "Tyč (10 stop)"
+  },
+  {
+   "nazev_en": "Pot, Iron",
+   "cena_md": 200,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "dobrodruzne",
+    "kolonial",
+    "kovarna"
+   ],
+   "nazev_cs": "Železný hrnec"
+  },
+  {
+   "nazev_en": "Potion of Healing",
+   "cena_md": 5000,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "alchymista",
+    "chram",
+    "magicke"
+   ],
+   "nazev_cs": "Léčivý lektvar"
+  },
+  {
+   "nazev_en": "Pouch",
+   "cena_md": 50,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "arkanni",
+    "dobrodruzne",
+    "kolonial",
+    "krejci"
+   ],
+   "nazev_cs": "Váček"
+  },
+  {
+   "nazev_en": "Quiver",
+   "cena_md": 100,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "dobrodruzne",
+    "lukar"
+   ],
+   "nazev_cs": "Toulec"
+  },
+  {
+   "nazev_en": "Ram, Portable",
+   "cena_md": 400,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "prekupnik"
+   ],
+   "nazev_cs": "Přenosné beranidlo"
+  },
+  {
+   "nazev_en": "Rations",
+   "cena_md": 50,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "chram",
+    "dobrodruzne"
+   ],
+   "nazev_cs": "Zásoby (den)"
+  },
+  {
+   "nazev_en": "Sack",
+   "cena_md": 1,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "dobrodruzne",
+    "kolonial",
+    "krejci"
+   ],
+   "nazev_cs": "Pytel"
+  },
+  {
+   "nazev_en": "Shovel",
+   "cena_md": 200,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "dobrodruzne",
+    "kolonial"
+   ],
+   "nazev_cs": "Lopata"
+  },
+  {
+   "nazev_en": "Signal Whistle",
+   "cena_md": 5,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne"
+   ],
+   "nazev_cs": "Signální píšťalka"
+  },
+  {
+   "nazev_en": "Spikes, Iron",
+   "cena_md": 100,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kovarna",
+    "prekupnik"
+   ],
+   "nazev_cs": "Železné hřeby (10)"
+  },
+  {
+   "nazev_en": "Spyglass",
+   "cena_md": 100000,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne"
+   ],
+   "nazev_cs": "Dalekohled"
+  },
+  {
+   "nazev_en": "Tinderbox",
+   "cena_md": 50,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "dobrodruzne"
+   ],
+   "nazev_cs": "Křesadlo"
+  },
+  {
+   "nazev_en": "Torch",
+   "cena_md": 1,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "chram",
+    "dobrodruzne"
+   ],
+   "nazev_cs": "Pochodeň"
+  },
+  {
+   "nazev_en": "Vial",
+   "cena_md": 100,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "alchymista",
+    "arkanni",
+    "chram",
+    "dobrodruzne",
+    "kolonial"
+   ],
+   "nazev_cs": "Flakónek"
+  },
+  {
+   "nazev_en": "Waterskin",
+   "cena_md": 20,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "chram",
+    "dobrodruzne",
+    "kozeluh"
+   ],
+   "nazev_cs": "Vodní měch"
+  },
+  {
+   "nazev_en": "Arrows (20)",
+   "cena_md": 100,
+   "kategorie": "Munice",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "dobrodruzne",
+    "lukar"
+   ],
+   "nazev_cs": "Šípy (20)"
+  },
+  {
+   "nazev_en": "Bullets, Sling (20)",
+   "cena_md": 4,
+   "kategorie": "Munice",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne"
+   ],
+   "nazev_cs": "Kameny do praku (20)"
+  },
+  {
+   "nazev_en": "Crystal",
+   "cena_md": 1000,
+   "kategorie": "Ohnisko",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "arkanni",
+    "klenotnik",
+    "magicke"
+   ],
+   "nazev_cs": "Krystal"
+  },
+  {
+   "nazev_en": "Orb",
+   "cena_md": 2000,
+   "kategorie": "Ohnisko",
+   "podkategorie": null,
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "arkanni",
+    "klenotnik",
+    "magicke"
+   ],
+   "nazev_cs": "Koule"
+  },
+  {
+   "nazev_en": "Rod",
+   "cena_md": 1000,
+   "kategorie": "Ohnisko",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "arkanni",
+    "magicke"
+   ],
+   "nazev_cs": "Žezlo"
+  },
+  {
+   "nazev_en": "Staff",
+   "cena_md": 500,
+   "kategorie": "Ohnisko",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "arkanni",
+    "magicke"
+   ],
+   "nazev_cs": "Hůl"
+  },
+  {
+   "nazev_en": "Wand",
+   "cena_md": 1000,
+   "kategorie": "Ohnisko",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "arkanni",
+    "magicke"
+   ],
+   "nazev_cs": "Hůlka"
+  },
+  {
+   "nazev_en": "Sprig of Mistletoe",
+   "cena_md": 100,
+   "kategorie": "Ohnisko",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "arkanni"
+   ],
+   "nazev_cs": "Snítka jmelí"
+  },
+  {
+   "nazev_en": "Totem",
+   "cena_md": 100,
+   "kategorie": "Ohnisko",
+   "podkategorie": null,
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "arkanni"
+   ],
+   "nazev_cs": "Totem"
+  },
+  {
+   "nazev_en": "Wooden Staff",
+   "cena_md": 500,
+   "kategorie": "Ohnisko",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "arkanni"
+   ],
+   "nazev_cs": "Hůl, dřevěná"
+  },
+  {
+   "nazev_en": "Yew Wand",
+   "cena_md": 1000,
+   "kategorie": "Ohnisko",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "arkanni"
+   ],
+   "nazev_cs": "Hůlka, tisová"
+  },
+  {
+   "nazev_en": "Amulet",
+   "cena_md": 500,
+   "kategorie": "Ohnisko",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "chram"
+   ],
+   "nazev_cs": "Amulet"
+  },
+  {
+   "nazev_en": "Emblem",
+   "cena_md": 500,
+   "kategorie": "Ohnisko",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "chram"
+   ],
+   "nazev_cs": "Emblém"
+  },
+  {
+   "nazev_en": "Reliquary",
+   "cena_md": 500,
+   "kategorie": "Ohnisko",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "chram"
+   ],
+   "nazev_cs": "Relikviář"
+  },
+  {
+   "nazev_en": "Alchemist’s Supplies",
+   "cena_md": 5000,
+   "kategorie": "Nástroje",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "alchymista",
+    "arkanni"
+   ],
+   "nazev_cs": "Alchymistické pomůcky"
+  },
+  {
+   "nazev_en": "Brewer’s Supplies",
+   "cena_md": 2000,
+   "kategorie": "Nástroje",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "alchymista"
+   ],
+   "nazev_cs": "Pivovarnické potřeby"
+  },
+  {
+   "nazev_en": "Calligrapher’s Supplies",
+   "cena_md": 1000,
+   "kategorie": "Nástroje",
+   "podkategorie": null,
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "arkanni",
+    "chram",
+    "umeni_hry"
+   ],
+   "nazev_cs": "Kaligrafické potřeby"
+  },
+  {
+   "nazev_en": "Carpenter’s Tools",
+   "cena_md": 800,
+   "kategorie": "Nástroje",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "kolonial",
+    "kovarna"
+   ],
+   "nazev_cs": "Tesařské nástroje"
+  },
+  {
+   "nazev_en": "Cartographer’s Tools",
+   "cena_md": 1500,
+   "kategorie": "Nástroje",
+   "podkategorie": null,
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne"
+   ],
+   "nazev_cs": "Kartografické pomůcky"
+  },
+  {
+   "nazev_en": "Cobbler’s Tools",
+   "cena_md": 500,
+   "kategorie": "Nástroje",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kolonial",
+    "kozeluh"
+   ],
+   "nazev_cs": "Ševcovské nářadí"
+  },
+  {
+   "nazev_en": "Cook’s Utensils",
+   "cena_md": 100,
+   "kategorie": "Nástroje",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "alchymista",
+    "kolonial"
+   ],
+   "nazev_cs": "Kuchařské nástroje"
+  },
+  {
+   "nazev_en": "Glassblower’s Tools",
+   "cena_md": 3000,
+   "kategorie": "Nástroje",
+   "podkategorie": null,
+   "lokality": [
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kolonial",
+    "umeni_hry"
+   ],
+   "nazev_cs": "Sklářské nástroje"
+  },
+  {
+   "nazev_en": "Jeweler’s Tools",
+   "cena_md": 2500,
+   "kategorie": "Nástroje",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne",
+    "klenotnik"
+   ],
+   "nazev_cs": "Klenotnické nářadí"
+  },
+  {
+   "nazev_en": "Leatherworker’s Tools",
+   "cena_md": 500,
+   "kategorie": "Nástroje",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "kolonial",
+    "kozeluh"
+   ],
+   "nazev_cs": "Koželužnické pomůcky"
+  },
+  {
+   "nazev_en": "Mason’s Tools",
+   "cena_md": 1000,
+   "kategorie": "Nástroje",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "kolonial",
+    "kovarna"
+   ],
+   "nazev_cs": "Zednické nářadí"
+  },
+  {
+   "nazev_en": "Painter’s Supplies",
+   "cena_md": 1000,
+   "kategorie": "Nástroje",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "umeni_hry"
+   ],
+   "nazev_cs": "Malířské potřeby"
+  },
+  {
+   "nazev_en": "Potter’s Tools",
+   "cena_md": 1000,
+   "kategorie": "Nástroje",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kolonial",
+    "umeni_hry"
+   ],
+   "nazev_cs": "Hrnčířské nástroje"
+  },
+  {
+   "nazev_en": "Smith’s Tools",
+   "cena_md": 2000,
+   "kategorie": "Nástroje",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "kolonial",
+    "kovarna"
+   ],
+   "nazev_cs": "Kovářské nástroje"
+  },
+  {
+   "nazev_en": "Tinker’s Tools",
+   "cena_md": 5000,
+   "kategorie": "Nástroje",
+   "podkategorie": null,
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "dobrodruzne",
+    "kovarna"
+   ],
+   "nazev_cs": "Kutilské pomůcky"
+  },
+  {
+   "nazev_en": "Weaver’s Tools",
+   "cena_md": 100,
+   "kategorie": "Nástroje",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "kolonial",
+    "krejci",
+    "umeni_hry"
+   ],
+   "nazev_cs": "Tkalcovské potřeby"
+  },
+  {
+   "nazev_en": "Woodcarver’s Tools",
+   "cena_md": 100,
+   "kategorie": "Nástroje",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "kolonial",
+    "umeni_hry"
+   ],
+   "nazev_cs": "Řezbářské nástroje"
+  },
+  {
+   "nazev_en": "Disguise Kit",
+   "cena_md": 2500,
+   "kategorie": "Nástroje",
+   "podkategorie": null,
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "prekupnik",
+    "umeni_hry"
+   ],
+   "nazev_cs": "Souprava pro přestrojování"
+  },
+  {
+   "nazev_en": "Forgery Kit",
+   "cena_md": 1500,
+   "kategorie": "Nástroje",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "prekupnik"
+   ],
+   "nazev_cs": "Padělatelská souprava"
+  },
+  {
+   "nazev_en": "Herbalism Kit",
+   "cena_md": 500,
+   "kategorie": "Nástroje",
+   "podkategorie": null,
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "chram",
+    "dobrodruzne"
+   ],
+   "nazev_cs": "Bylinkářská souprava"
+  },
+  {
+   "nazev_en": "Navigator’s Tools",
+   "cena_md": 2500,
+   "kategorie": "Nástroje",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "dobrodruzne"
+   ],
+   "nazev_cs": "Navigační pomůcky"
+  },
+  {
+   "nazev_en": "Poisoner’s Kit",
+   "cena_md": 5000,
+   "kategorie": "Nástroje",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "alchymista",
+    "prekupnik"
+   ],
+   "nazev_cs": "Travičská souprava"
+  },
+  {
+   "nazev_en": "Thieves’ Tools",
+   "cena_md": 2500,
+   "kategorie": "Nástroje",
+   "podkategorie": null,
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "prekupnik"
+   ],
+   "nazev_cs": "Zlodějské náčiní"
+  },
+  {
+   "nazev_en": "Dragonchess",
+   "cena_md": 100,
+   "kategorie": "Nástroje",
+   "podkategorie": "Hudební nástroj / hra",
+   "lokality": [
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "umeni_hry"
+   ],
+   "nazev_cs": "Dračí šachy"
+  },
+  {
+   "nazev_en": "Bagpipes",
+   "cena_md": 3000,
+   "kategorie": "Nástroje",
+   "podkategorie": "Hudební nástroj / hra",
+   "lokality": [
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kozeluh",
+    "umeni_hry"
+   ],
+   "nazev_cs": "Dudy"
+  },
+  {
+   "nazev_en": "Drum",
+   "cena_md": 600,
+   "kategorie": "Nástroje",
+   "podkategorie": "Hudební nástroj / hra",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "kozeluh",
+    "umeni_hry"
+   ],
+   "nazev_cs": "Buben"
+  },
+  {
+   "nazev_en": "Dulcimer",
+   "cena_md": 2500,
+   "kategorie": "Nástroje",
+   "podkategorie": "Hudební nástroj / hra",
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "umeni_hry"
+   ],
+   "nazev_cs": "Cimbál"
+  },
+  {
+   "nazev_en": "Flute",
+   "cena_md": 200,
+   "kategorie": "Nástroje",
+   "podkategorie": "Hudební nástroj / hra",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "chram",
+    "umeni_hry"
+   ],
+   "nazev_cs": "Flétna"
+  },
+  {
+   "nazev_en": "Lute",
+   "cena_md": 3500,
+   "kategorie": "Nástroje",
+   "podkategorie": "Hudební nástroj / hra",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "arkanni",
+    "umeni_hry"
+   ],
+   "nazev_cs": "Loutna"
+  },
+  {
+   "nazev_en": "Lyre",
+   "cena_md": 3000,
+   "kategorie": "Nástroje",
+   "podkategorie": "Hudební nástroj / hra",
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true,
+   "typy": [
+    "arkanni",
+    "chram",
+    "umeni_hry"
+   ],
+   "nazev_cs": "Lyra"
+  },
+  {
+   "nazev_en": "Viol",
+   "cena_md": 3000,
+   "kategorie": "Nástroje",
+   "podkategorie": "Hudební nástroj / hra",
+   "lokality": [
+    "premium"
+   ],
+   "bezne": false,
+   "typy": [
+    "umeni_hry"
+   ],
+   "nazev_cs": "Viola"
+  },
+  {
+   "nazev_en": "Book",
+   "cena_md": 2500,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "typy": [
+    "arkanni",
+    "kolonial"
+   ],
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Kniha",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Burglar’s Pack",
+   "cena_md": 1600,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "typy": [
+    "dobrodruzne",
+    "prekupnik"
+   ],
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Lupičský balíček",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Costume",
+   "cena_md": 500,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "typy": [
+    "krejci",
+    "prekupnik"
+   ],
+   "lokality": [
+    "premium"
+   ],
+   "nazev_cs": "Kostým",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Diplomat’s Pack",
+   "cena_md": 3900,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "typy": [
+    "kolonial",
+    "krejci"
+   ],
+   "lokality": [
+    "premium"
+   ],
+   "nazev_cs": "Diplomatův balíček",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Dungeoneer’s Pack",
+   "cena_md": 1200,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "typy": [
+    "dobrodruzne"
+   ],
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Jeskyňářský balíček",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Entertainer’s Pack",
+   "cena_md": 4000,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "typy": [
+    "krejci",
+    "umeni_hry"
+   ],
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Bavičův balíček",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Explorer’s Pack",
+   "cena_md": 1000,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "typy": [
+    "dobrodruzne",
+    "kolonial"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Průzkumnický balíček",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Magnifying Glass",
+   "cena_md": 10000,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "typy": [
+    "arkanni",
+    "klenotnik"
+   ],
+   "lokality": [
+    "premium"
+   ],
+   "nazev_cs": "Lupa",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Map",
+   "cena_md": 100,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "typy": [
+    "dobrodruzne",
+    "kolonial"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Mapa",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Mirror",
+   "cena_md": 500,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "typy": [
+    "dobrodruzne",
+    "kolonial",
+    "kovarna"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Zrcátko",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Priest’s Pack",
+   "cena_md": 3300,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "typy": [
+    "chram",
+    "kolonial"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Kněžský balíček",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Robe",
+   "cena_md": 100,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "typy": [
+    "arkanni",
+    "krejci"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Roucho",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Rope",
+   "cena_md": 100,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "typy": [
+    "dobrodruzne",
+    "kolonial"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Provaz (50 stop)",
+   "bezne": true
+  },
+  {
+   "nazev_en": "Scholar’s Pack",
+   "cena_md": 4000,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "typy": [
+    "arkanni",
+    "kolonial"
+   ],
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Učencův balíček",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Spell Scroll (Cantrip)",
+   "cena_md": 3000,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "typy": [
+    "arkanni",
+    "magicke"
+   ],
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Kouzelný svitek triku",
+   "bezne": false
+  },
+  {
+   "nazev_en": "String",
+   "cena_md": 10,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "typy": [
+    "dobrodruzne",
+    "kolonial"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Šňůra (10 stop)",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Tent",
+   "cena_md": 200,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "typy": [
+    "dobrodruzne",
+    "krejci"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Stan",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Bolts (20)",
+   "cena_md": 100,
+   "kategorie": "Munice",
+   "podkategorie": null,
+   "typy": [
+    "dobrodruzne",
+    "lukar"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Šipky do kuše (20)",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Needles (50)",
+   "cena_md": 100,
+   "kategorie": "Munice",
+   "podkategorie": null,
+   "typy": [
+    "dobrodruzne"
+   ],
+   "lokality": [
+    "rural"
+   ],
+   "nazev_cs": "Jehly do foukačky (50)",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Shawm",
+   "cena_md": 200,
+   "kategorie": "Nástroje",
+   "podkategorie": "Hudební nástroj / hra",
+   "typy": [
+    "umeni_hry"
+   ],
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Šalmaj",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Horse, Draft",
+   "cena_md": 5000,
+   "kategorie": "Zvířata a vozy",
+   "podkategorie": null,
+   "typy": [
+    "staje"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Kůň tažný",
+   "bezne": true
+  },
+  {
+   "nazev_en": "Horse, Riding",
+   "cena_md": 7500,
+   "kategorie": "Zvířata a vozy",
+   "podkategorie": null,
+   "typy": [
+    "staje"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Kůň jezdecký",
+   "bezne": true
+  },
+  {
+   "nazev_en": "Mastiff",
+   "cena_md": 2500,
+   "kategorie": "Zvířata a vozy",
+   "podkategorie": null,
+   "typy": [
+    "staje"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Mastif",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Mule",
+   "cena_md": 800,
+   "kategorie": "Zvířata a vozy",
+   "podkategorie": null,
+   "typy": [
+    "staje"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Mula",
+   "bezne": true
+  },
+  {
+   "nazev_en": "Pony",
+   "cena_md": 3000,
+   "kategorie": "Zvířata a vozy",
+   "podkategorie": null,
+   "typy": [
+    "staje"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Poník",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Warhorse",
+   "cena_md": 40000,
+   "kategorie": "Zvířata a vozy",
+   "podkategorie": null,
+   "typy": [
+    "staje"
+   ],
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Kůň válečný",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Carriage",
+   "cena_md": 10000,
+   "kategorie": "Zvířata a vozy",
+   "podkategorie": null,
+   "typy": [
+    "staje"
+   ],
+   "lokality": [
+    "premium"
+   ],
+   "nazev_cs": "Kočár",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Cart",
+   "cena_md": 1500,
+   "kategorie": "Zvířata a vozy",
+   "podkategorie": null,
+   "typy": [
+    "staje"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Kára",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Chariot",
+   "cena_md": 25000,
+   "kategorie": "Zvířata a vozy",
+   "podkategorie": null,
+   "typy": [
+    "staje"
+   ],
+   "lokality": [
+    "premium"
+   ],
+   "nazev_cs": "Válečný vůz",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Feed per day",
+   "cena_md": 5,
+   "kategorie": "Zvířata a vozy",
+   "podkategorie": null,
+   "typy": [
+    "kolonial",
+    "staje",
+    "hospoda"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Krmivo (den)",
+   "bezne": true
+  },
+  {
+   "nazev_en": "Sled",
+   "cena_md": 2000,
+   "kategorie": "Zvířata a vozy",
+   "podkategorie": null,
+   "typy": [
+    "staje"
+   ],
+   "lokality": [
+    "rural",
+    "urban"
+   ],
+   "nazev_cs": "Sáně",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Stabling per day",
+   "cena_md": 50,
+   "kategorie": "Zvířata a vozy",
+   "podkategorie": null,
+   "typy": [
+    "staje",
+    "hospoda"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Ustájení (den)",
+   "bezne": true
+  },
+  {
+   "nazev_en": "Wagon",
+   "cena_md": 3500,
+   "kategorie": "Zvířata a vozy",
+   "podkategorie": null,
+   "typy": [
+    "staje"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Vůz",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Exotic Saddle",
+   "cena_md": 6000,
+   "kategorie": "Zvířata a vozy",
+   "podkategorie": "Sedlo",
+   "typy": [
+    "staje"
+   ],
+   "lokality": [
+    "premium"
+   ],
+   "nazev_cs": "Sedlo, cizokrajné",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Military Saddle",
+   "cena_md": 2000,
+   "kategorie": "Zvířata a vozy",
+   "podkategorie": "Sedlo",
+   "typy": [
+    "staje"
+   ],
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Sedlo, vojenské",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Riding Saddle",
+   "cena_md": 1000,
+   "kategorie": "Zvířata a vozy",
+   "podkategorie": "Sedlo",
+   "typy": [
+    "staje"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Sedlo, jezdecké",
+   "bezne": true
+  },
+  {
+   "nazev_en": "Rowboat",
+   "cena_md": 5000,
+   "kategorie": "Zvířata a vozy",
+   "podkategorie": null,
+   "typy": [
+    "pristavni",
+    "staje"
+   ],
+   "lokality": [
+    "rural",
+    "urban"
+   ],
+   "nazev_cs": "Veslice",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Spellbook",
+   "cena_md": 500,
+   "kategorie": "Výbava",
+   "podkategorie": null,
+   "typy": [
+    "arkanni",
+    "magicke"
+   ],
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "nazev_cs": "Kouzelná kniha",
+   "bezne": false
+  },
+  {
+   "nazev_en": "Earrings, plain",
+   "nazev_cs": "Náušnice, prosté",
+   "cena_md": 200,
+   "kategorie": "Šperky",
+   "podkategorie": "prostý",
+   "kotva": "Perfume 5 GP / Clothes, Traveler's 2 GP",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Ring, plain",
+   "nazev_cs": "Prsten, prostý",
+   "cena_md": 300,
+   "kategorie": "Šperky",
+   "podkategorie": "prostý",
+   "kotva": "Clothes, Traveler's 2 GP",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Brooch, plain",
+   "nazev_cs": "Spona, prostá",
+   "cena_md": 300,
+   "kategorie": "Šperky",
+   "podkategorie": "prostý",
+   "kotva": "Crowbar 2 GP (tepaný kov)",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Signet ring",
+   "nazev_cs": "Pečetní prsten",
+   "cena_md": 500,
+   "kategorie": "Šperky",
+   "podkategorie": "prostý",
+   "kotva": "Costume 5 GP (znak stavu)",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Bracelet, plain",
+   "nazev_cs": "Náramek, prostý",
+   "cena_md": 500,
+   "kategorie": "Šperky",
+   "podkategorie": "prostý",
+   "kotva": "Perfume 5 GP",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Necklace, plain",
+   "nazev_cs": "Náhrdelník, prostý",
+   "cena_md": 800,
+   "kategorie": "Šperky",
+   "podkategorie": "prostý",
+   "kotva": "Carpenter's Tools 8 GP",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Earrings, silver",
+   "nazev_cs": "Náušnice, stříbrné",
+   "cena_md": 1500,
+   "kategorie": "Šperky",
+   "podkategorie": "kvalitní",
+   "kotva": "Clothes, Fine 15 GP",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Ring, silver",
+   "nazev_cs": "Prsten, stříbrný",
+   "cena_md": 2500,
+   "kategorie": "Šperky",
+   "podkategorie": "kvalitní",
+   "kotva": "Jeweler's Tools 25 GP",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Brooch, silver",
+   "nazev_cs": "Spona, stříbrná",
+   "cena_md": 2500,
+   "kategorie": "Šperky",
+   "podkategorie": "kvalitní",
+   "kotva": "Jeweler's Tools 25 GP",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Bracelet, silver",
+   "nazev_cs": "Náramek, stříbrný",
+   "cena_md": 4000,
+   "kategorie": "Šperky",
+   "podkategorie": "kvalitní",
+   "kotva": "Glassblower's Tools 30 GP",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Necklace, silver",
+   "nazev_cs": "Náhrdelník, stříbrný",
+   "cena_md": 6000,
+   "kategorie": "Šperky",
+   "podkategorie": "kvalitní",
+   "kotva": "Tinker's Tools 50 GP",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Earrings, gold",
+   "nazev_cs": "Náušnice, zlaté s kamenem",
+   "cena_md": 10000,
+   "kategorie": "Šperky",
+   "podkategorie": "vybraný",
+   "kotva": "Magnifying Glass 100 GP",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Ring, gold",
+   "nazev_cs": "Prsten, zlatý s kamenem",
+   "cena_md": 15000,
+   "kategorie": "Šperky",
+   "podkategorie": "vybraný",
+   "kotva": "Magnifying Glass 100 GP",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Brooch, gold",
+   "nazev_cs": "Spona, zlatá s kamenem",
+   "cena_md": 17500,
+   "kategorie": "Šperky",
+   "podkategorie": "vybraný",
+   "kotva": "Splint Armor 200 GP (zlatnická práce)",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Bracelet, gold",
+   "nazev_cs": "Náramek, zlatý s kamenem",
+   "cena_md": 25000,
+   "kategorie": "Šperky",
+   "podkategorie": "vybraný",
+   "kotva": "Splint Armor 200 GP",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Necklace, gold",
+   "nazev_cs": "Náhrdelník, zlatý s kamenem",
+   "cena_md": 40000,
+   "kategorie": "Šperky",
+   "podkategorie": "vybraný",
+   "kotva": "Breastplate 400 GP",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Circlet, gold",
+   "nazev_cs": "Čelenka, zlatá",
+   "cena_md": 75000,
+   "kategorie": "Šperky",
+   "podkategorie": "vybraný",
+   "kotva": "Half Plate 750 GP",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Gem appraisal",
+   "nazev_cs": "Odhad drahokamu (za kus)",
+   "cena_md": 100,
+   "kategorie": "Služby",
+   "podkategorie": null,
+   "kotva": "Skilled hireling 2 GP/den → cca hodina práce",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Cleaning & polishing",
+   "nazev_cs": "Vyčištění a vyleštění šperku",
+   "cena_md": 20,
+   "kategorie": "Služby",
+   "podkategorie": null,
+   "kotva": "Untrained hireling 2 SP/den",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Ring resizing",
+   "nazev_cs": "Úprava velikosti prstenu",
+   "cena_md": 50,
+   "kategorie": "Služby",
+   "podkategorie": null,
+   "kotva": "Skilled hireling 2 GP/den → čtvrtden",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Engraving",
+   "nazev_cs": "Rytina (nápis nebo znak)",
+   "cena_md": 200,
+   "kategorie": "Služby",
+   "podkategorie": null,
+   "kotva": "Skilled hireling 2 GP/den",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Gem setting",
+   "nazev_cs": "Zasazení kamene (+ cena kamene)",
+   "cena_md": 500,
+   "kategorie": "Služby",
+   "podkategorie": null,
+   "kotva": "Skilled hireling 2 GP/den → 2–3 dny",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Stonecutting, per day",
+   "nazev_cs": "Kamenické práce (za den)",
+   "cena_md": 200,
+   "kategorie": "Služby",
+   "podkategorie": null,
+   "kotva": "Skilled hireling 2 GP/den — přímo ze SRD",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Magic appraisal",
+   "nazev_cs": "Určení magického předmětu",
+   "cena_md": 5000,
+   "kategorie": "Služby",
+   "podkategorie": null,
+   "kotva": "Spellcasting Services, kouzlo 1. úrovně = 50 GP — přímo ze SRD",
+   "typy": [
+    "arkanni",
+    "magicke"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Fishing tackle",
+   "nazev_cs": "Rybářské náčiní",
+   "cena_md": 100,
+   "kategorie": "Vodní",
+   "podkategorie": null,
+   "kotva": "Cook's Utensils 1 GP",
+   "typy": [
+    "pristavni"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Bait, one day",
+   "nazev_cs": "Návnada (na den rybolovu)",
+   "cena_md": 10,
+   "kategorie": "Vodní",
+   "podkategorie": null,
+   "kotva": "Rations 5 SP → levnější",
+   "typy": [
+    "pristavni"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Harpoon",
+   "nazev_cs": "Harpuna",
+   "cena_md": 500,
+   "kategorie": "Vodní",
+   "podkategorie": null,
+   "kotva": "Trident 5 GP (statisticky totéž)",
+   "typy": [
+    "pristavni"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Eel trap",
+   "nazev_cs": "Vrš na úhoře",
+   "cena_md": 50,
+   "kategorie": "Vodní",
+   "podkategorie": null,
+   "kotva": "Hunting Trap 5 GP → prostší, proutěná",
+   "typy": [
+    "pristavni"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Tar, bucket",
+   "nazev_cs": "Dehet (kbelík, na těsnění)",
+   "cena_md": 50,
+   "kategorie": "Vodní",
+   "podkategorie": null,
+   "kotva": "Oil (flask) 1 SP × objem",
+   "typy": [
+    "pristavni"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Sailcloth, sq yd",
+   "nazev_cs": "Plachtovina (čtvereční sáh)",
+   "cena_md": 20,
+   "kategorie": "Vodní",
+   "podkategorie": null,
+   "kotva": "Tent 2 GP → zlomek",
+   "typy": [
+    "pristavni"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Cork float",
+   "nazev_cs": "Korkový plovací měchýř",
+   "cena_md": 100,
+   "kategorie": "Vodní",
+   "podkategorie": null,
+   "kotva": "Waterskin 2 SP → větší, řemeslné",
+   "typy": [
+    "pristavni"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Oar, spare",
+   "nazev_cs": "Veslo, náhradní",
+   "cena_md": 50,
+   "kategorie": "Vodní",
+   "podkategorie": null,
+   "kotva": "Pole 5 CP → opracované dřevo",
+   "typy": [
+    "pristavni"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Anchor, small",
+   "nazev_cs": "Kotva, malá",
+   "cena_md": 1000,
+   "kategorie": "Vodní",
+   "podkategorie": null,
+   "kotva": "Chain (10 ft) 5 GP + kované závaží",
+   "typy": [
+    "pristavni"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Gemstone, 10 gp",
+   "nazev_cs": "Drahokam, 10 zl",
+   "cena_md": 1000,
+   "kategorie": "Drahokamy",
+   "podkategorie": "prostý",
+   "kameny": [
+    "achát",
+    "hematit",
+    "jaspis",
+    "malachit",
+    "obsidián",
+    "křemen mléčný",
+    "tyrkys"
+   ],
+   "kotva": "pod nejnižší doloženou hodnotou v SRD — čistě konvence, viz poznámka",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Gemstone, 50 gp",
+   "nazev_cs": "Drahokam, 50 zl",
+   "cena_md": 5000,
+   "kategorie": "Drahokamy",
+   "podkategorie": "drobný",
+   "kameny": [
+    "ametyst",
+    "granát",
+    "jantar",
+    "karneol",
+    "onyx",
+    "křišťál horský",
+    "lapis lazuli"
+   ],
+   "kotva": "SRD: složka kouzla — diamant v hodnotě 50+ GP",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Gemstone, 100 gp",
+   "nazev_cs": "Drahokam, 100 zl",
+   "cena_md": 10000,
+   "kategorie": "Drahokamy",
+   "podkategorie": "kvalitní",
+   "kameny": [
+    "akvamarín",
+    "měsíční kámen",
+    "perla",
+    "turmalín",
+    "olivín",
+    "almandin"
+   ],
+   "kotva": "SRD: složka kouzla — ohnisko v hodnotě 100+ GP",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Gemstone, 500 gp",
+   "nazev_cs": "Drahokam, 500 zl",
+   "cena_md": 50000,
+   "kategorie": "Drahokamy",
+   "podkategorie": "vzácný",
+   "kameny": [
+    "opál ohnivý",
+    "topaz zlatý",
+    "nefrit",
+    "spinel",
+    "alexandrit"
+   ],
+   "kotva": "SRD: složka kouzla — diamant v hodnotě 500+ GP",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Gemstone, 1000 gp",
+   "nazev_cs": "Drahokam, 1000 zl",
+   "cena_md": 100000,
+   "kategorie": "Drahokamy",
+   "podkategorie": "velmi vzácný",
+   "kameny": [
+    "safír",
+    "rubín",
+    "smaragd",
+    "achát mistrovský"
+   ],
+   "kotva": "SRD: složka kouzla — achát v hodnotě 1 000+ GP",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Gemstone, 5000 gp",
+   "nazev_cs": "Drahokam, 5000 zl",
+   "cena_md": 500000,
+   "kategorie": "Drahokamy",
+   "podkategorie": "legendární",
+   "kameny": [
+    "diamant",
+    "safír hvězdný",
+    "perla černá",
+    "rubín holubí krve"
+   ],
+   "kotva": "SRD: složka kouzla — diamant v hodnotě 5 000+ GP",
+   "typy": [
+    "klenotnik"
+   ],
+   "lokality": [
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Ale (mug)",
+   "nazev_cs": "Pivo (korbel)",
+   "cena_md": 4,
+   "kategorie": "Jídlo a pití",
+   "podkategorie": null,
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Bread (loaf)",
+   "nazev_cs": "Chléb (bochník)",
+   "cena_md": 2,
+   "kategorie": "Jídlo a pití",
+   "podkategorie": null,
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Cheese (wedge)",
+   "nazev_cs": "Sýr (klín)",
+   "cena_md": 10,
+   "kategorie": "Jídlo a pití",
+   "podkategorie": null,
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Wine, common (bottle)",
+   "nazev_cs": "Víno, obyčejné (láhev)",
+   "cena_md": 20,
+   "kategorie": "Jídlo a pití",
+   "podkategorie": null,
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Wine, fine (bottle)",
+   "nazev_cs": "Víno, výtečné (láhev)",
+   "cena_md": 1000,
+   "kategorie": "Jídlo a pití",
+   "podkategorie": null,
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Inn Stay, Squalid",
+   "nazev_cs": "Nocleh, mizerný",
+   "cena_md": 7,
+   "kategorie": "Nocleh",
+   "podkategorie": "mizerný",
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Inn Stay, Poor",
+   "nazev_cs": "Nocleh, chudý",
+   "cena_md": 10,
+   "kategorie": "Nocleh",
+   "podkategorie": "chudý",
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Inn Stay, Modest",
+   "nazev_cs": "Nocleh, skromný",
+   "cena_md": 50,
+   "kategorie": "Nocleh",
+   "podkategorie": "skromný",
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Inn Stay, Comfortable",
+   "nazev_cs": "Nocleh, pohodlný",
+   "cena_md": 80,
+   "kategorie": "Nocleh",
+   "podkategorie": "pohodlný",
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Inn Stay, Wealthy",
+   "nazev_cs": "Nocleh, bohatý",
+   "cena_md": 200,
+   "kategorie": "Nocleh",
+   "podkategorie": "bohatý",
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Inn Stay, Aristocratic",
+   "nazev_cs": "Nocleh, aristokratický",
+   "cena_md": 400,
+   "kategorie": "Nocleh",
+   "podkategorie": "aristokratický",
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Meal, Squalid",
+   "nazev_cs": "Strava, mizerná",
+   "cena_md": 1,
+   "kategorie": "Strava",
+   "podkategorie": "mizerná",
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Meal, Poor",
+   "nazev_cs": "Strava, chudá",
+   "cena_md": 2,
+   "kategorie": "Strava",
+   "podkategorie": "chudá",
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Meal, Modest",
+   "nazev_cs": "Strava, skromná",
+   "cena_md": 10,
+   "kategorie": "Strava",
+   "podkategorie": "skromná",
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Meal, Comfortable",
+   "nazev_cs": "Strava, pohodlná",
+   "cena_md": 20,
+   "kategorie": "Strava",
+   "podkategorie": "pohodlná",
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Meal, Wealthy",
+   "nazev_cs": "Strava, bohatá",
+   "cena_md": 30,
+   "kategorie": "Strava",
+   "podkategorie": "bohatá",
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Meal, Aristocratic",
+   "nazev_cs": "Strava, aristokratická",
+   "cena_md": 60,
+   "kategorie": "Strava",
+   "podkategorie": "aristokratická",
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "premium"
+   ],
+   "bezne": true
+  },
+  {
+   "nazev_en": "Ale, dark/strong (mug)",
+   "nazev_cs": "Pivo, tmavé/silné",
+   "cena_md": 8,
+   "kategorie": "Jídlo a pití",
+   "podkategorie": null,
+   "kotva": "Ale (mug) 4 CP → silnější várka",
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Cider (mug)",
+   "nazev_cs": "Jablečný mošt",
+   "cena_md": 3,
+   "kategorie": "Jídlo a pití",
+   "podkategorie": null,
+   "kotva": "Ale (mug) 4 CP → bez alkoholu, levnější",
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Mead (mug)",
+   "nazev_cs": "Medovina",
+   "cena_md": 15,
+   "kategorie": "Jídlo a pití",
+   "podkategorie": null,
+   "kotva": "Wine, common 2 SP → medová obdoba",
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Mulled wine (mug)",
+   "nazev_cs": "Svařené/kořeněné víno",
+   "cena_md": 25,
+   "kategorie": "Jídlo a pití",
+   "podkategorie": null,
+   "kotva": "Wine, common 2 SP → koření navíc",
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Spirits (shot)",
+   "nazev_cs": "Pálenka",
+   "cena_md": 60,
+   "kategorie": "Jídlo a pití",
+   "podkategorie": null,
+   "kotva": "mezi Wine common (2 SP) a Wine fine (10 GP)",
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Beet soup",
+   "nazev_cs": "Řepná polévka",
+   "cena_md": 2,
+   "kategorie": "Jídlo a pití",
+   "podkategorie": null,
+   "kotva": "Meal, Poor 2 CP → typické chudé jídlo",
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Stew with bread",
+   "nazev_cs": "Dušené maso s chlebem",
+   "cena_md": 12,
+   "kategorie": "Jídlo a pití",
+   "podkategorie": null,
+   "kotva": "Meal, Modest 1 SP",
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Roast chicken with potato",
+   "nazev_cs": "Pečené kuře s bramborem",
+   "cena_md": 22,
+   "kategorie": "Jídlo a pití",
+   "podkategorie": null,
+   "kotva": "Meal, Comfortable 2 SP",
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Charcuterie & cheese plate",
+   "nazev_cs": "Uzeninový talíř se sýrem",
+   "cena_md": 18,
+   "kategorie": "Jídlo a pití",
+   "podkategorie": null,
+   "kotva": "Cheese 1 SP + Meal, Modest 1 SP",
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Fruit tart",
+   "nazev_cs": "Ovocný koláč",
+   "cena_md": 6,
+   "kategorie": "Jídlo a pití",
+   "podkategorie": null,
+   "kotva": "Bread (loaf) 2 CP → sladké pečivo",
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Hot bath",
+   "nazev_cs": "Lázeň / horká koupel",
+   "cena_md": 15,
+   "kategorie": "Služby",
+   "podkategorie": null,
+   "kotva": "Untrained hireling 2 SP/den → čtvrtina dne",
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  },
+  {
+   "nazev_en": "Floor spot by the fire",
+   "nazev_cs": "Místo u ohně na podlaze",
+   "cena_md": 3,
+   "kategorie": "Služby",
+   "podkategorie": null,
+   "kotva": "Inn Stay, Squalid 7 CP → levnější než nejnižší tarif",
+   "typy": [
+    "hospoda"
+   ],
+   "lokality": [
+    "rural",
+    "urban",
+    "premium"
+   ],
+   "bezne": false
+  }
+ ]
+}

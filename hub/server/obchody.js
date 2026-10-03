@@ -1,5 +1,6 @@
-// Obchody (Blok 1b): uložené sortimenty v kampan/obchody/sortimenty/<id>.yaml, tři sloty ceníku
-// pro OBS (hub/.stav/ceniky.json) a generátor servírovaný Hubem s daty z kampan/obchody/polozky.json.
+// Obchody (Blok 1b): uložené sortimenty v kampan/obchody/sortimenty/<id>.yaml, aktivní obchod,
+// který ukazuje ceník v OBS (hub/.stav/obchod.json), a generátor servírovaný Hubem
+// s daty z kampan/obchody/polozky.json.
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { EventEmitter } from 'node:events';
@@ -7,7 +8,6 @@ import YAML from 'yaml';
 import { HUB_DIR } from './cesty.js';
 import { zapsatAtomicky } from './zapis.js';
 
-export const SLOTY = Object.freeze(['1', '2', '3']);
 export const LOKALITY = Object.freeze(['rural', 'urban', 'premium']);
 const MAX_POLOZEK = 60;
 
@@ -89,7 +89,7 @@ export function stihlePolozky(databaze) {
 }
 
 /**
- * Události: 'zmena' (seznam pro panel), 'ceniky' (obsah slotů pro OBS)
+ * Události: 'zmena' (seznam pro panel), 'ceniky' (aktivní obchod pro OBS)
  */
 export class Obchody extends EventEmitter {
   constructor({ cesty, zapisovac }) {
@@ -99,19 +99,19 @@ export class Obchody extends EventEmitter {
     this.slozka = path.join(cesty.kampan, 'obchody', 'sortimenty');
     this.databaze = path.join(cesty.kampan, 'obchody', 'polozky.json');
     this.sablona = path.join(HUB_DIR, 'nastroje', 'generator_sablona.html');
-    this.souborSlotu = path.join(cesty.lokalniStav, 'ceniky.json');
+    this.souborAktivniho = path.join(cesty.lokalniStav, 'obchod.json');
     this.sortimenty = new Map(); // id → sortiment
     this.vadne = []; // soubory, které nejde přečíst
-    this.sloty = Object.fromEntries(SLOTY.map((s) => [s, null]));
+    this.aktivni = null; // id obchodu, který ceník právě ukazuje
   }
 
   async nacist() {
     await this.nacistSortimenty();
     try {
-      const d = JSON.parse(await fs.readFile(this.souborSlotu, 'utf8'));
-      for (const s of SLOTY) this.sloty[s] = jeId(d?.[s]) ? d[s] : null;
+      const d = JSON.parse(await fs.readFile(this.souborAktivniho, 'utf8'));
+      this.aktivni = jeId(d?.aktivni) ? d.aktivni : null;
     } catch {
-      /* žádné sloty */
+      this.aktivni = null;
     }
     this.oznam();
   }
@@ -149,14 +149,14 @@ export class Obchody extends EventEmitter {
         pocet: s.polozky.length,
         vygenerovano: s.meta.vygenerovano,
       })),
-      sloty: { ...this.sloty },
+      aktivni: this.sortimenty.has(this.aktivni) ? this.aktivni : null,
       vadne: this.vadne,
     };
   }
 
-  /** Co ukazují ceníky v OBS: celý sortiment ve slotu, nebo null (panel se skryje). */
+  /** Co ukazuje ceník v OBS: celý aktivní sortiment, nebo null (panel se skryje). */
   ceniky() {
-    return { sloty: Object.fromEntries(SLOTY.map((s) => [s, this.sortimenty.get(this.sloty[s]) ?? null])) };
+    return { id: this.seznam().aktivni, sortiment: this.sortimenty.get(this.aktivni) ?? null };
   }
 
   oznam() {
@@ -172,7 +172,7 @@ export class Obchody extends EventEmitter {
    * Uloží sortiment z generátoru. Bez id vznikne nový soubor podle názvu obchodu
    * (při shodě jména s číslem), s id se přepíše existující.
    */
-  async ulozit({ sortiment, id, slot } = {}) {
+  async ulozit({ sortiment, id } = {}) {
     const s = overSortiment(sortiment);
     let cil = id;
     if (cil !== undefined && cil !== null && cil !== '') {
@@ -187,7 +187,6 @@ export class Obchody extends EventEmitter {
     dok.commentBefore = ' Sortiment obchodu z generátoru (Hub, obrazovka Obchody). Ceny v měďácích: 1 zl = 100 md, 1 st = 10 md.';
     const { vysledek } = await this.zapisovac.zapsat(this.cestaSortimentu(cil), dok.toString({ lineWidth: 0 }));
     this.sortimenty.set(cil, s);
-    if (slot !== undefined && slot !== null && slot !== '') await this.nastavitSlot(String(slot), cil, { oznamit: false });
     this.oznam();
     return { id: cil, vysledek };
   }
@@ -197,31 +196,24 @@ export class Obchody extends EventEmitter {
     await this.zapisovac.zrusit(this.cestaSortimentu(id));
     await fs.rm(this.cestaSortimentu(id), { force: true });
     this.sortimenty.delete(id);
-    let zmenaSlotu = false;
-    for (const s of SLOTY) {
-      if (this.sloty[s] === id) {
-        this.sloty[s] = null;
-        zmenaSlotu = true;
-      }
-    }
-    if (zmenaSlotu) await this.ulozitSloty();
+    if (this.aktivni === id) await this.ulozitAktivni(null);
     this.oznam();
     return { ok: true };
   }
 
-  async nastavitSlot(slot, id, { oznamit = true } = {}) {
-    if (!SLOTY.includes(slot)) throw chyba('Slot musí být 1, 2 nebo 3.');
+  /** Obchod, který má ceník v OBS ukázat (null = ceník skrýt). */
+  async nastavitAktivni(id) {
     if (id !== null && !this.sortimenty.has(id)) throw chyba('Sortiment neexistuje.', 404);
-    this.sloty[slot] = id;
-    await this.ulozitSloty();
-    if (oznamit) this.oznam();
+    await this.ulozitAktivni(id);
+    this.oznam();
     return this.seznam();
   }
 
-  async ulozitSloty() {
-    // Sloty jsou nastavení tohoto PC (co právě visí v OBS), ne data kampaně: hub/.stav, mimo Git.
-    await fs.mkdir(path.dirname(this.souborSlotu), { recursive: true });
-    await zapsatAtomicky(this.souborSlotu, JSON.stringify(this.sloty, null, 2));
+  async ulozitAktivni(id) {
+    // Co právě visí v OBS je nastavení tohoto PC, ne data kampaně: hub/.stav, mimo Git.
+    this.aktivni = id;
+    await fs.mkdir(path.dirname(this.souborAktivniho), { recursive: true });
+    await zapsatAtomicky(this.souborAktivniho, JSON.stringify({ aktivni: id }, null, 2));
   }
 
   /** generator.html se zapečenými položkami a příznakem, že běží v Hubu. */
@@ -257,7 +249,6 @@ export class Obchody extends EventEmitter {
     }
     if (text !== undefined && this.zapisovac.jeVlastniZapis(soubor, text)) return true;
     await this.nacistSortimenty();
-    for (const s of SLOTY) if (this.sloty[s] && !this.sortimenty.has(this.sloty[s])) this.sloty[s] = null;
     this.oznam();
     return true;
   }

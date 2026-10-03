@@ -201,32 +201,33 @@ test('sortiment: ověření jako nacti_sortiment.py a slug bez diakritiky', () =
   assert.throws(() => overSortiment({ ...SORTIMENT, polozky: [] }), /prázdné/);
 });
 
-test('obchody: uložení, přepis podle id, sloty přežijí restart, smazání uvolní slot', async () => {
+test('obchody: uložení, přepis podle id, aktivní obchod přežije restart, smazání ho uvolní', async () => {
   const repo = await pripravitRepo();
   try {
     const zapisovac = new Zapisovac({ zurnal: path.join(repo.c.lokalniStav, 'odlozene-zapisy') });
     const o = new Obchody({ cesty: repo.c, zapisovac });
     await o.nacist();
-    const prvni = await o.ulozit({ sortiment: SORTIMENT, slot: 2 });
+    const prvni = await o.ulozit({ sortiment: SORTIMENT });
     assert.equal(prvni.id, 'testovaci-kram-testov');
     const druhy = await o.ulozit({ sortiment: SORTIMENT });
     assert.equal(druhy.id, 'testovaci-kram-testov-2', 'stejné jméno nepřepíše cizí sortiment');
     await o.ulozit({ sortiment: { ...SORTIMENT, polozky: [SORTIMENT.polozky[0]] }, id: prvni.id });
-    assert.equal(o.ceniky().sloty['2'].polozky.length, 1);
-    assert.equal(o.ceniky().sloty['1'], null);
+    assert.deepEqual(o.ceniky(), { id: null, sortiment: null });
+    await o.nastavitAktivni(prvni.id);
+    assert.equal(o.ceniky().sortiment.polozky.length, 1);
 
     const yaml = await fs.readFile(path.join(repo.c.kampan, 'obchody', 'sortimenty', `${prvni.id}.yaml`), 'utf8');
     assert.equal(YAML.parse(yaml).obchod.nazev, 'Testovací Krám');
 
     const znovu = new Obchody({ cesty: repo.c, zapisovac });
     await znovu.nacist();
-    assert.equal(znovu.seznam().sloty['2'], prvni.id);
+    assert.equal(znovu.seznam().aktivni, prvni.id);
     assert.equal(znovu.seznam().sortimenty.length, 2);
 
-    await assert.rejects(znovu.nastavitSlot('4', prvni.id), /Slot/);
-    await assert.rejects(znovu.nastavitSlot('1', 'neni'), /neexistuje/);
+    await assert.rejects(znovu.nastavitAktivni('neni'), /neexistuje/);
     await znovu.smazat(prvni.id);
-    assert.equal(znovu.seznam().sloty['2'], null);
+    assert.equal(znovu.seznam().aktivni, null);
+    assert.equal(znovu.ceniky().sortiment, null);
     await zapisovac.dokoncit();
   } finally {
     await repo.smazat();
@@ -298,8 +299,8 @@ test('API Blok 1b: import, změna data a události dorazí do výstupů do 1 s; 
   }
 });
 
-test('API obchody: generátor v Hubu, uložení se slotem a ceník pro OBS', async () => {
-  const h = await spustitHub();
+test('API obchody: generátor v Hubu, uložení, Ukázat v OBS přepne ceník i scénu', async () => {
+  const h = await spustitHub({ env: 'OBS_SCENA_OBCHOD="Tábor"\n' });
   await h.spustit();
   const { hub } = h;
   try {
@@ -312,16 +313,26 @@ test('API obchody: generátor v Hubu, uložení se slotem a ceník pro OBS', asy
     assert.doesNotMatch(r.data, /podkategorie/, 'do generátoru jdou jen potřebná pole');
 
     r = await pozadavek(hub, '/api/obchody/ceniky');
-    assert.deepEqual(r.data, { sloty: { 1: null, 2: null, 3: null } });
-    r = await pozadavek(hub, '/api/obchody/sortimenty', { metoda: 'POST', telo: { sortiment: SORTIMENT, slot: 1 } });
+    assert.deepEqual(r.data, { id: null, sortiment: null });
+    r = await pozadavek(hub, '/api/obchody/sortimenty', { metoda: 'POST', telo: { sortiment: SORTIMENT } });
     assert.equal(r.status, 200);
     const id = r.data.id;
     r = await pozadavek(hub, '/api/obchody/ceniky');
-    assert.equal(r.data.sloty['1'].obchod.nazev, 'Testovací Krám');
-    r = await pozadavek(hub, '/api/obchody/sloty/3', { metoda: 'PUT', telo: { id } });
-    assert.equal(r.data.sloty['3'], id);
-    r = await pozadavek(hub, '/api/obchody/sloty/1', { metoda: 'PUT', telo: { id: null } });
-    assert.equal(r.data.sloty['1'], null);
+    assert.equal(r.data.sortiment, null, 'uložení samo do OBS nic nepošle');
+
+    await dokud(() => h.obs.pripojeno, 2000);
+    r = await pozadavek(hub, '/api/obchody/aktivni', { metoda: 'PUT', telo: { id, prepnout: true } });
+    assert.equal(r.status, 200);
+    assert.equal(r.data.aktivni, id);
+    assert.equal(r.data.scena, 'Tábor');
+    assert.equal(r.data.chybaObs, null);
+    assert.equal(h.obs.scena, 'Tábor');
+    r = await pozadavek(hub, '/api/obchody/ceniky');
+    assert.equal(r.data.sortiment.obchod.nazev, 'Testovací Krám');
+    r = await pozadavek(hub, '/api/obchody/aktivni', { metoda: 'PUT', telo: { id: null } });
+    assert.equal(r.data.aktivni, null);
+    r = await pozadavek(hub, '/api/obchody/aktivni', { metoda: 'PUT', telo: { id: 'neni' } });
+    assert.equal(r.status, 404);
     r = await pozadavek(hub, '/api/obchody/sortimenty', { metoda: 'POST', telo: { sortiment: { ...SORTIMENT, polozky: [] } } });
     assert.equal(r.status, 400);
     r = await pozadavek(hub, `/api/obchody/sortimenty/${id}`, { metoda: 'DELETE' });

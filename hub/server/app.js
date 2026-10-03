@@ -425,10 +425,24 @@ export class Hub {
       return { id: s[1], sortiment };
     }
     if (s && m === 'DELETE') return o.smazat(s[1]);
-    const slot = /^\/api\/obchody\/sloty\/(\d)$/.exec(p);
-    if (slot && m === 'PUT') {
-      const { id } = await nacistJson(req);
-      return o.nastavitSlot(slot[1], id ? String(id) : null);
+    if (p === '/api/obchody/aktivni' && m === 'PUT') {
+      // Ukázat v OBS: ceník převezme obchod a OBS přepne na scénu obchodu (je-li nastavená).
+      const { id, prepnout } = await nacistJson(req);
+      const seznam = await o.nastavitAktivni(id ? String(id) : null);
+      let scena = null;
+      let chybaObs = null;
+      if (id && prepnout) {
+        scena = this.nastaveni.hodnoty.OBS_SCENA_OBCHOD || null;
+        if (!scena) chybaObs = 'Scéna obchodu není nastavená, OBS se nepřeplo. Vyber ji na obrazovce Obchody.';
+        else {
+          try {
+            await this.obs.prepnoutScenu(scena);
+          } catch (e) {
+            chybaObs = `OBS scénu nepřeplo: ${e.message}`;
+          }
+        }
+      }
+      return { ...seznam, scena, chybaObs };
     }
     return undefined;
   }

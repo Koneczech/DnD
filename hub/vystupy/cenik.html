@@ -46,7 +46,7 @@ li{display:flex;align-items:baseline;gap:12px;padding:var(--mezera,9px) 0}
 .prazdno{font-family:var(--serif);font-style:italic;color:var(--krida-dim);font-size:26px;padding:24px 0}
 </style>
 <style>
-/* Prázdný slot: panel se v OBS nezobrazí vůbec. */
+/* Žádný aktivní obchod: panel se v OBS nezobrazí vůbec. */
 body.prazdny .panel { display: none; }
 </style>
 </head>
@@ -62,13 +62,12 @@ body.prazdny .panel { display: none; }
 <script>
 "use strict";
 /* Výstup pro OBS. Vzhled převzatý z Apps/Shop/cenik_sablona.html; sortiment posílá Hub
-   (obrazovka Obchody), ?slot=1|2|3 určuje, který slot ceník ukazuje. Velikost a umístění řeší OBS. */
+   (obrazovka Obchody, Ukázat v OBS). Velikost a umístění řeší OBS. */
 const TYPY={kovarna:'Kovárna a zbrojíř',lukar:'Lukař',kozeluh:'Koželuh',chram:'Chrám',
  kolonial:'Koloniál',dobrodruzne:'Vybavení pro dobrodruhy',krejci:'Krejčí a látky',
  klenotnik:'Klenotník a kamenoryt',alchymista:'Alchymista',arkanni:'Arkánní krám',
  staje:'Stáje a povozník',pristavni:'Přístavní zboží',magicke:'Magické zboží',
  prekupnik:'Překupník',umeni_hry:'Umění a hry'};
-const SLOT=String(Math.min(3,Math.max(1,parseInt(new URLSearchParams(location.search).get('slot'),10)||1)));
 
 function zl(md){
   const z=Math.floor(md/100), zb=md%100, s=Math.floor(zb/10), m=zb%10, c=[];
@@ -126,7 +125,7 @@ function dopasuj(){
 }
 window.addEventListener('resize',dopasuj);
 
-function prevzit(d){ vykresli(d&&d.sloty?d.sloty[SLOT]||null:null); }
+function prevzit(d){ vykresli(d&&d.sortiment?d.sortiment:null); }
 fetch('/api/obchody/ceniky').then(r=>r.json()).then(prevzit).catch(()=>{});
 (function pripojit(){
   const zdroj=new EventSource('/api/udalosti');

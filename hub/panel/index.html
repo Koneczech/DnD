@@ -52,7 +52,8 @@
         <form id="formular-stav" class="formular" autocomplete="off">
           <div class="pole-datum">
             <span>Datum v Harptosu</span>
-            <p><strong id="stav-datum">…</strong> <a href="#kalendar">Změnit v Kalendáři</a></p>
+            <div class="vyber-data" id="vyber-stav"></div>
+            <small>Ukládá se samo. Posun o den a události jsou v <a href="#kalendar">Kalendáři</a>.</small>
           </div>
           <label>Kde je družina
             <input name="misto" id="pole-misto" placeholder="např. Longsaddle">
@@ -98,6 +99,12 @@
           <button type="button" class="hlavni" id="odpocet-spustit">Spustit</button>
           <button type="button" id="odpocet-pauza">Pauza</button>
           <button type="button" id="odpocet-zrusit">Zrušit</button>
+        </div>
+        <div class="formular odpocet-scena">
+          <label>Po doběhnutí přepnout OBS na scénu
+            <select id="odpocet-scena"></select>
+            <small>Hub přepne jednou, hned jak odpočet doběhne. Stejné nastavení je i v Nastavení.</small>
+          </label>
         </div>
         <p class="ulozeni" id="odpocet-prepnuti" aria-live="polite"></p>
         <h2>Výstup pro OBS</h2>

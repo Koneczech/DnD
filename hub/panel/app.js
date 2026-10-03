@@ -43,7 +43,7 @@ window.addEventListener('hashchange', () => ukazObrazovku(location.hash.slice(1)
 function vykresliStav(s) {
   const k = s?.stav;
   $('#lista-datum').textContent = k?.datumText || 'Datum není zadané';
-  $('#stav-datum').textContent = k?.datumText || 'zatím nezadané';
+  vykresliDatumStavu(k);
   $('#lista-misto').textContent = k?.misto || '';
   $('#lista-misto').hidden = !k?.misto;
   $('#lista-sezeni').textContent = k ? `sezení ${k.sezeni}` : '';
@@ -55,6 +55,39 @@ function vykresliStav(s) {
   }
   vykresliUpozorneni();
 }
+
+/* Datum ve Stavu kampaně: stejný výběr jako v Kalendáři, ukládá se samo. */
+let vyberStav = null;
+let posledniDatumStavu;
+function vykresliDatumStavu(k) {
+  vyberStav ??= vyberData($('#vyber-stav'));
+  const box = $('#vyber-stav');
+  if (box.contains(document.activeElement) || stav.rozpracovano.has('datum')) return;
+  const klic = JSON.stringify(k?.datum ?? null);
+  if (klic === posledniDatumStavu) return;
+  posledniDatumStavu = klic;
+  vyberStav.set(k?.datum ?? stav.prehled?.kalendar?.zacatek ?? { rok: 1491, mesic: 'Hammer', den: 1 });
+}
+$('#vyber-stav').addEventListener('change', async () => {
+  const datum = vyberStav.get();
+  const zprava = $('#stav-ulozeni');
+  if (!datum) {
+    zprava.textContent = 'Takové datum v Harptosu není (den 1–30, Shieldmeet jen v přestupném roce).';
+    zprava.className = 'ulozeni chyba';
+    return;
+  }
+  stav.rozpracovano.add('datum');
+  try {
+    const { vysledek } = await api('/api/stav', { metoda: 'PUT', telo: { datum } });
+    zprava.textContent = vysledek === 'odlozeno' ? 'Soubor stav.md drží otevřený jiný program. Změna je v OBS a uloží se, jakmile to půjde.' : `Uloženo v ${cas()}`;
+    zprava.className = vysledek === 'odlozeno' ? 'ulozeni varovani' : 'ulozeni';
+  } catch (e) {
+    zprava.textContent = `Neuloženo: ${e.message}`;
+    zprava.className = 'ulozeni chyba';
+  } finally {
+    stav.rozpracovano.delete('datum');
+  }
+});
 
 const casovaceUlozeni = new Map();
 $('#formular-stav').addEventListener('input', (e) => {
@@ -260,6 +293,7 @@ function vykresliVyberSouboje() {
   for (const [id, klic, prazdna] of [
     ['#pole-scena-souboj', 'scenaSouboj', '— vyber scénu —'],
     ['#pole-scena-po-odpoctu', 'scenaPoOdpoctu', '— nepřepínat —'],
+    ['#odpocet-scena', 'scenaPoOdpoctu', '— nepřepínat —'],
   ]) {
     const select = $(id);
     if (document.activeElement === select) continue;
@@ -566,7 +600,7 @@ function vykresliOdpocet() {
   $('#odpocet-prepnuti').className = pr && !pr.ok ? 'ulozeni varovani' : 'ulozeni';
   $('#odpocet-prepnuti').textContent = pr
     ? pr.ok ? `Po doběhnutí přepnuto na scénu „${pr.scena}“.` : pr.duvod
-    : scena ? `Po doběhnutí se OBS přepne na scénu „${scena}“.` : 'Po doběhnutí se scéna nepřepne (nastavíš v Nastavení).';
+    : scena ? `Po doběhnutí se OBS přepne na scénu „${scena}“.` : 'Po doběhnutí se scéna nepřepne.';
 }
 setInterval(() => {
   if (stav.prehled?.odpocet?.stav === 'bezi') vykresliOdpocet();
@@ -587,6 +621,18 @@ $('#formular-odpocet').addEventListener('submit', async (e) => {
 for (const [id, akce] of [['#odpocet-spustit', 'spustit'], ['#odpocet-pauza', 'pauza'], ['#odpocet-zrusit', 'zrusit']]) {
   $(id).addEventListener('click', () => api(`/api/odpocet/${akce}`, { metoda: 'POST', telo: {} }).catch((chyba) => toast(chyba.message, { chyba: true })));
 }
+
+$('#odpocet-scena').addEventListener('change', async (e) => {
+  try {
+    const odpoved = await api('/api/nastaveni', { metoda: 'PUT', telo: { scenaPoOdpoctu: e.target.value } });
+    stav.prehled.nastaveni = odpoved.nastaveni;
+    vykresliVyberSouboje();
+    vykresliOdpocet();
+    toast(e.target.value ? `Po odpočtu se přepne na „${e.target.value}“.` : 'Po odpočtu se scéna nepřepne.');
+  } catch (chyba) {
+    toast(chyba.message, { chyba: true });
+  }
+});
 
 /* ---------- Uložení do GitHubu ---------- */
 

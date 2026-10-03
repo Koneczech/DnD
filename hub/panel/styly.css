@@ -331,3 +331,4 @@ a { color: var(--mosaz); }
 @media (max-width: 52rem) {
   .import-srovnani { grid-template-columns: 1fr; }
 }
+.odpocet-scena { margin-top: 1.75rem; }

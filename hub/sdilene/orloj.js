@@ -92,6 +92,20 @@ class Kotouc {
       this.g.style.transform = "rotate(" + this.rot + "deg)";
     }
   }
+  /** Plynulé natočení bez CSS přechodu: zlomek 0–1 = jak daleko je kotouč za dneškem (rekapitulace). */
+  nastavPlynule(dnes, zacIdx, zlomek) {
+    if (this.rok !== dnes.rok) this.sestav(dnes.rok);
+    const G = this.geo, k = this.krok, i = Harptos.index(dnes), x = Harptos.dny(this.rok)[i];
+    if (this.plynulyDen !== i) {
+      this.plynulyDen = i;
+      const s = x.svatek ? i : i - (x.den - 1), e = x.svatek ? i + 1 : s + 30;
+      this.zvyr.setAttribute("d", this.vysec(G.pasmo[0], G.pasmo[1], s * k, e * k));
+    }
+    if (this.obl) this.obl.setAttribute("d", zacIdx == null ? "" : this.oblouk(G.rOblouk, zacIdx * k, Math.min((i + 1 + zlomek) * k, zacIdx * k + 359.9)));
+    this.rot = -(i + 0.5 + zlomek) * k;
+    this.g.style.transition = "none";
+    this.g.style.transform = "rotate(" + this.rot + "deg)";
+  }
 }
 
 /* Velký orloj: celá obrazovka na začátku sezení */
@@ -111,9 +125,28 @@ export function velkyOrloj(kontejner) {
   const mesic = text(svg, 300, 386, 32, "o-text");
   const svatek = text(svg, 300, 312, 26, "o-text");
   const svatekPo = text(svg, 300, 345, 15, "o-text-zlaty");
+  function popisky(d) {
+    rok.textContent = d.rok + " DR";
+    if (d.svatek) {
+      den.textContent = ""; mesic.textContent = "";
+      svatek.style.fontSize = "26px"; svatek.textContent = d.svatek; vejdiSe(svatek, 250, 16);
+      svatekPo.textContent = Harptos.popisSvatku(d);
+    } else {
+      den.textContent = d.den; mesic.textContent = d.mesic;
+      svatek.textContent = ""; svatekPo.textContent = "";
+    }
+  }
   return {
+    /** Plynulý pohyb (rekapitulace): data.dnes je den, zlomek 0–1 posun k dalšímu dni. */
+    plynule(data, zlomek) {
+      const d = data.dnes;
+      kotouc.nastavPlynule(d, data.zacatek ? indexZacatku(data.zacatek, d) : null, zlomek);
+      if (Harptos.klic(d) !== this.posledni) { this.posledni = Harptos.klic(d); popisky(d); }
+    },
     obnov(data, animovat) {
       const d = data.dnes;
+      this.posledni = null;
+      kotouc.plynulyDen = null;
       kotouc.nastav(d, data.zacatek ? indexZacatku(data.zacatek, d) : null, animovat);
       rok.textContent = d.rok + " DR";
       if (d.svatek) {

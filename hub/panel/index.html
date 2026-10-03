@@ -15,9 +15,10 @@
     </div>
 
     <nav class="akce" aria-label="Akce sezení">
-      <button type="button" disabled title="Přijde v Bloku 1a">Zahájit sezení</button>
+      <button type="button" id="tlacitko-sezeni">Zahájit sezení</button>
+      <button type="button" id="tlacitko-souboj" title="Přepne OBS na scénu s iniciativou">Souboj</button>
+      <button type="button" id="tlacitko-poznamka" title="Klávesa F2">Poznámka <kbd>F2</kbd></button>
       <button type="button" disabled title="Přijde v Bloku 1b">Další den</button>
-      <button type="button" disabled title="Přijde v Bloku 1a (klávesa F2)">Poznámka</button>
       <button type="button" disabled title="Přijde v Bloku 3">Hledat</button>
     </nav>
 
@@ -31,6 +32,7 @@
   <div class="rozvrzeni">
     <nav class="moduly" aria-label="Moduly">
       <a href="#prehled" data-obrazovka="prehled">Stav kampaně</a>
+      <a href="#odpocet" data-obrazovka="odpocet">Odpočet <span class="odpocet-mini" id="odpocet-mini" hidden></span></a>
       <a href="#sceny" data-obrazovka="sceny">Scény OBS</a>
       <a href="#kontrola" data-obrazovka="kontrola">Kontrola dat <span class="pocet" id="pocet-problemu" hidden></span></a>
       <a href="#nastaveni" data-obrazovka="nastaveni">Nastavení</a>
@@ -54,16 +56,50 @@
           <label>Kde je družina
             <input name="misto" id="pole-misto" placeholder="např. Longsaddle">
           </label>
-          <label class="kratke">Číslo sezení
-            <input name="sezeni" id="pole-sezeni" type="number" min="0" step="1">
+          <label>Poslední odehrané sezení
+            <input name="sezeni" id="pole-sezeni" class="cislo" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+            <small>Zahájit sezení samo přičte 1. Ruční změna jen při opravě.</small>
           </label>
         </form>
         <p class="ulozeni" id="stav-ulozeni" aria-live="polite"></p>
+
+        <h2>Uložení do GitHubu</h2>
+        <p id="git-popis" class="uvod"></p>
+        <div class="tlacitka">
+          <button type="button" id="git-ulozit">Uložit do GitHubu</button>
+          <button type="button" id="git-zkontrolovat">Zkontrolovat změny na GitHubu</button>
+          <button type="button" id="git-stahnout" hidden>Stáhnout změny</button>
+        </div>
+        <p class="ulozeni" id="git-vysledek" aria-live="polite"></p>
 
         <h2>Testovací výstup pro OBS</h2>
         <p>Přidej v OBS zdroj <em>Browser</em> s touto adresou. Ukazuje stav kampaně a ověří, že živé změny dorazí do OBS.</p>
         <p class="adresa"><code id="adresa-vystupu"></code> <button type="button" id="kopirovat-adresu">Kopírovat adresu</button></p>
         <p class="poznamka">Ve vlastnostech zdroje nech vypnuté <em>Shutdown source when not visible</em> i <em>Refresh browser when scene becomes active</em>. Jen tak výstup přežije výpadek Hubu.</p>
+      </section>
+
+      <section id="obrazovka-odpocet" class="obrazovka" hidden>
+        <h1>Odpočet do začátku sezení</h1>
+        <p class="uvod">Nastav, kdy hra začne. Odpočet se v OBS ukáže až po spuštění a běží dál, i když Hub na chvíli vypadne.</p>
+        <p class="odpocet-cas" id="odpocet-cas" aria-live="off">--:--</p>
+        <p class="ulozeni" id="odpocet-popis" aria-live="polite"></p>
+        <form id="formular-odpocet" class="formular radek" autocomplete="off">
+          <label class="kratke">Začátek hry v
+            <input name="cas" id="pole-odpocet-cas" placeholder="19:30" inputmode="numeric">
+          </label>
+          <span class="nebo">nebo</span>
+          <label class="kratke">Za kolik minut
+            <input name="minut" id="pole-odpocet-minut" type="number" min="1" max="1440">
+          </label>
+          <button type="submit">Nastavit</button>
+        </form>
+        <div class="tlacitka">
+          <button type="button" class="hlavni" id="odpocet-spustit">Spustit</button>
+          <button type="button" id="odpocet-pauza">Pauza</button>
+          <button type="button" id="odpocet-zrusit">Zrušit</button>
+        </div>
+        <h2>Výstup pro OBS</h2>
+        <p class="adresa"><code id="adresa-odpoctu"></code> <button type="button" data-kopirovat="adresa-odpoctu">Kopírovat adresu</button></p>
       </section>
 
       <section id="obrazovka-sceny" class="obrazovka" hidden>
@@ -91,6 +127,10 @@
             <label>Adresa WebSocket serveru
               <input name="obsUrl" id="pole-obs-url" placeholder="ws://127.0.0.1:4455">
             </label>
+            <label>Scéna pro tlačítko Souboj
+              <select name="scenaSouboj" id="pole-scena-souboj"></select>
+              <small>Scéna s carouselem iniciativy z Improved Initiative.</small>
+            </label>
             <label>Heslo WebSocket serveru
               <input name="obsHeslo" id="pole-obs-heslo" type="password" autocomplete="new-password">
               <small id="napoveda-heslo">Najdeš ho v OBS: Tools → WebSocket Server Settings → Show Connect Info.</small>
@@ -110,11 +150,64 @@
             </label>
           </fieldset>
           <button type="submit" class="hlavni">Uložit nastavení</button>
+          <p class="poznamka" id="server-info"></p>
           <p class="ulozeni" id="nastaveni-vysledek" aria-live="polite"></p>
         </form>
       </section>
     </main>
   </div>
+
+  <dialog id="dialog-zahajit" class="dialog">
+    <form method="dialog" id="formular-zahajit">
+      <h2>Zahájit sezení <span id="zahajit-cislo"></span></h2>
+      <fieldset>
+        <legend>Kdo je u stolu</legend>
+        <div id="zahajit-hraci" class="hraci"></div>
+      </fieldset>
+      <label class="kratke">Začátek hry v (odpočet)
+        <input name="cas" id="zahajit-cas" placeholder="19:30" inputmode="numeric">
+      </label>
+      <p class="ulozeni varovani" id="zahajit-varovani" hidden></p>
+      <p class="ulozeni chyba" id="zahajit-chyba" aria-live="polite"></p>
+      <div class="tlacitka">
+        <button type="submit" class="hlavni" value="zahajit" id="zahajit-potvrdit">Zahájit sezení</button>
+        <button type="submit" value="zrusit" formnovalidate>Zpět</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dialog-ukoncit" class="dialog">
+    <form method="dialog" id="formular-ukoncit">
+      <h2>Ukončit sezení <span id="ukoncit-cislo"></span></h2>
+      <p class="uvod">Než odejdeš od stolu:</p>
+      <ul class="kontrolni-seznam">
+        <li><label><input type="checkbox"> Poznámky ze stolu jsou zapsané</label></li>
+        <li><label><input type="checkbox"> Datum a místo ve stavu kampaně odpovídají konci sezení</label></li>
+        <li><label><input type="checkbox"> Sezení se uloží do GitHubu (tlačítko níže)</label></li>
+      </ul>
+      <p class="ulozeni" id="ukoncit-vysledek" aria-live="polite"></p>
+      <div class="tlacitka">
+        <button type="submit" class="hlavni" value="ukoncit" id="ukoncit-potvrdit">Ukončit a uložit do GitHubu</button>
+        <button type="submit" value="jen-ukoncit" id="ukoncit-bez-gitu">Jen ukončit</button>
+        <button type="submit" value="zrusit" formnovalidate>Zpět</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dialog-poznamka" class="dialog">
+    <form method="dialog" id="formular-poznamka">
+      <h2>Poznámka</h2>
+      <p class="uvod" id="poznamka-kam"></p>
+      <textarea name="text" id="pole-poznamka" rows="4" placeholder="Co se právě stalo…"></textarea>
+      <p class="ulozeni chyba" id="poznamka-chyba" aria-live="polite"></p>
+      <div class="tlacitka">
+        <button type="submit" class="hlavni" value="ulozit">Zapsat <kbd>Ctrl+Enter</kbd></button>
+        <button type="submit" value="zrusit" formnovalidate>Zavřít <kbd>Esc</kbd></button>
+      </div>
+    </form>
+  </dialog>
+
+  <p class="toast" id="toast" role="status" aria-live="polite" hidden></p>
 
   <script type="module" src="/panel/app.js"></script>
 </body>

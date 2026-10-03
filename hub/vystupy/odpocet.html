@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <title>DM Hub — odpočet</title>
+  <style>
+    /* Výstup pro OBS Browser Source. Průhledné pozadí, velikost a umístění řeší OBS.
+       ⚠ Dočasný vzhled: barevný přechod převezme původní odpocet.html, až bude v repu. */
+    html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+    body {
+      display: grid;
+      place-content: center;
+      font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+      text-shadow: 0 3px 10px rgba(0, 0, 0, 0.85), 0 0 2px rgba(0, 0, 0, 0.9);
+    }
+    #cas {
+      font-size: 34vmin;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      color: #ece4d3;
+      opacity: 0;
+      transition: opacity 0.8s ease, color 1s linear;
+    }
+    #cas.videt { opacity: 1; }
+    #cas.pauza { opacity: 0.7; }
+    #cas.dobehl { animation: tep 2s ease-in-out infinite; }
+    @keyframes tep { 50% { opacity: 0.55; } }
+  </style>
+</head>
+<body>
+  <div id="cas"></div>
+  <script>
+    // Výstup si odpočet počítá sám z času konce. Když Hub vypadne, běží dál
+    // a po znovupřipojení si jen převezme nový stav.
+    const casEl = document.getElementById('cas');
+    let odpocet = null;
+    let odchylka = 0; // rozdíl hodin serveru a prohlížeče (na stejném PC prakticky 0)
+
+    const BARVY = [
+      [1.0, [236, 228, 211]],  // kost
+      [0.5, [236, 228, 211]],
+      [0.15, [226, 166, 75]],  // jantar
+      [0.0, [212, 106, 94]],   // rez
+    ];
+    function barva(pomer) {
+      for (let i = 0; i < BARVY.length - 1; i++) {
+        const [a, ca] = BARVY[i];
+        const [b, cb] = BARVY[i + 1];
+        if (pomer <= a && pomer >= b) {
+          const t = a === b ? 0 : (a - pomer) / (a - b);
+          return 'rgb(' + ca.map((v, j) => Math.round(v + (cb[j] - v) * t)).join(',') + ')';
+        }
+      }
+      return 'rgb(236,228,211)';
+    }
+
+    function format(ms) {
+      const celkem = Math.max(0, Math.ceil(ms / 1000));
+      const h = Math.floor(celkem / 3600);
+      const m = Math.floor((celkem % 3600) / 60);
+      const s = celkem % 60;
+      return (h ? h + ':' + String(m).padStart(2, '0') : String(m)) + ':' + String(s).padStart(2, '0');
+    }
+
+    function vykresli() {
+      const o = odpocet;
+      const videt = o && (o.stav === 'bezi' || o.stav === 'pauza');
+      casEl.className = videt ? 'videt' : '';
+      if (!videt) return;
+      const zbyva = o.stav === 'bezi' ? Math.max(0, Date.parse(o.konec) - (Date.now() + odchylka)) : o.zbyvaMs;
+      casEl.textContent = format(zbyva);
+      casEl.style.color = barva(o.celkemMs ? zbyva / o.celkemMs : 1);
+      if (o.stav === 'pauza') casEl.classList.add('pauza');
+      if (o.stav === 'bezi' && zbyva === 0) casEl.classList.add('dobehl');
+    }
+
+    function prevzit(data) {
+      odpocet = data;
+      if (data && data.serverCas) odchylka = Date.parse(data.serverCas) - Date.now();
+      vykresli();
+    }
+
+    fetch('/api/odpocet').then((r) => r.json()).then(prevzit).catch(() => {});
+    function pripojit() {
+      const zdroj = new EventSource('/api/udalosti');
+      zdroj.addEventListener('odpocet', (e) => prevzit(JSON.parse(e.data)));
+      zdroj.addEventListener('error', () => {
+        if (zdroj.readyState === EventSource.CLOSED) setTimeout(pripojit, 1000);
+      });
+    }
+    pripojit();
+    setInterval(vykresli, 200);
+  </script>
+</body>
+</html>

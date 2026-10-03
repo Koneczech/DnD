@@ -213,10 +213,12 @@ export class DataKampane extends EventEmitter {
 
   /**
    * Změna z panelu. Zapíše se automaticky (autosave) a hned se pošle do výstupů.
-   * @param {{datum?:string, misto?:string, sezeni?:number}} zmeny
+   * @param {{datum?:string, misto?:string, sezeni?:number, sezeniBezi?:boolean}} zmeny
+   * @param {{interni?:boolean}} volby sezeniBezi smí měnit jen Zahájit/Ukončit sezení, ne panel
    */
-  async zmenitStav(zmeny) {
+  async zmenitStav(zmeny, { interni = false } = {}) {
     const povolene = {};
+    if (interni && 'sezeniBezi' in zmeny) povolene.sezeni_bezi = Boolean(zmeny.sezeniBezi);
     if ('datum' in zmeny) povolene.datum = String(zmeny.datum);
     if ('misto' in zmeny) povolene.misto = String(zmeny.misto);
     if ('sezeni' in zmeny) povolene.sezeni = Number(zmeny.sezeni);

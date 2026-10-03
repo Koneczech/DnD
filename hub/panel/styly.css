@@ -178,3 +178,84 @@ input:focus { border-color: var(--mosaz); outline: none; }
 @media (prefers-reduced-motion: no-preference) {
   .svetlo { transition: background-color 0.3s; }
 }
+
+/* ---------- Blok 1a: sezení, odpočet, poznámky ---------- */
+
+kbd {
+  font: 0.75em Consolas, "Cascadia Mono", monospace;
+  border: 1px solid var(--linka);
+  border-radius: 3px;
+  padding: 0 0.3em;
+  margin-left: 0.3em;
+  color: var(--mlha);
+}
+
+/* Běžící sezení: tlačítko Ukončit svítí mosazí, aby bylo jasné, že se zapisuje do sezení */
+#tlacitko-sezeni[data-bezi="true"] { border-color: var(--mosaz); color: var(--mosaz); }
+#tlacitko-souboj { border-color: var(--rez); }
+#tlacitko-souboj:hover:not(:disabled) { background: color-mix(in srgb, var(--rez) 20%, var(--deska-svetla)); border-color: var(--rez); }
+
+select, textarea {
+  font: inherit;
+  color: var(--kost);
+  background: var(--noc);
+  border: 1px solid var(--linka);
+  border-radius: var(--zaobleni);
+  padding: 0.5rem 0.7rem;
+}
+textarea { width: 100%; resize: vertical; min-height: 6rem; }
+select:focus, textarea:focus { border-color: var(--mosaz); outline: none; }
+
+.formular.radek { display: flex; align-items: end; gap: 1rem; flex-wrap: wrap; max-width: none; }
+.formular.radek .nebo { color: var(--mlha); padding-bottom: 0.55rem; }
+.tlacitka { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 1rem; }
+
+.odpocet-cas {
+  font-family: var(--pismo-svet);
+  font-size: clamp(3.5rem, 9vw, 6rem);
+  line-height: 1;
+  margin: 1.5rem 0 0.25rem;
+  color: var(--kost);
+  font-variant-numeric: tabular-nums;
+}
+.odpocet-cas[data-stav="zadny"] { color: var(--linka); }
+.odpocet-cas[data-stav="pauza"] { color: var(--mlha); }
+.odpocet-mini { font-size: 0.85rem; color: var(--mosaz); font-variant-numeric: tabular-nums; }
+
+/* Dialogy */
+.dialog {
+  background: var(--deska);
+  color: var(--kost);
+  border: 1px solid var(--linka);
+  border-radius: 10px;
+  padding: 1.5rem 1.75rem;
+  width: min(34rem, calc(100vw - 2rem));
+}
+.dialog::backdrop { background: rgb(10 13 20 / 0.7); }
+.dialog h2 { margin: 0 0 1rem; font-family: var(--pismo-svet); font-weight: 400; font-size: 1.5rem; }
+.dialog form { display: grid; gap: 1rem; }
+.dialog label { display: grid; gap: 0.3rem; color: var(--mlha); font-size: 0.9rem; }
+.dialog .tlacitka { margin-top: 0.25rem; }
+
+.hraci { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 0.5rem 1rem; }
+.hraci label, .kontrolni-seznam label { display: flex; gap: 0.6rem; align-items: center; color: var(--kost); font-size: 1rem; }
+.hraci small { color: var(--mlha); }
+.kontrolni-seznam { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+
+.toast {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  margin: 0;
+  background: var(--deska-svetla);
+  border: 1px solid var(--mosaz-tlumena);
+  border-radius: var(--zaobleni);
+  padding: 0.6rem 1rem;
+  max-width: 28rem;
+}
+.toast.chyba { border-color: var(--rez); }
+button.hlavni kbd { color: var(--noc); border-color: rgb(22 27 38 / 0.45); }
+.formular label.kratke input { width: 100%; }
+
+input.cislo { max-width: 8rem; }
+.formular label small { color: var(--mlha); }

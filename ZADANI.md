@@ -29,7 +29,7 @@ Verze 1 převede do repa kánon, kalendář, obchody, postavy a ilustrace míst.
 
 ## Potvrzená rozhodnutí
 
-Rozhodnutí 1–12 potvrdil DM 2. 10. 2026. Rozhodnutí 13–24 vzešla z první oponentury zadání, 25–32 z oponentury postupu výroby; DM je přijal týž den. Nepotvrzené návrhy jsou výslovně označené a shrnuté v Otevřených bodech.
+Rozhodnutí 1–12 potvrdil DM 2. 10. 2026. Rozhodnutí 13–24 vzešla z první oponentury zadání, 25–32 z oponentury postupu výroby; DM je přijal týž den. Rozhodnutí 33–38 potvrdil DM 2. 10. 2026 při kontrole ⚠ návrhů Bloku 0. Nepotvrzené návrhy jsou výslovně označené a shrnuté v Otevřených bodech.
 
 | # | Rozhodnutí | Důsledek |
 | --- | --- | --- |
@@ -65,6 +65,12 @@ Rozhodnutí 1–12 potvrdil DM 2. 10. 2026. Rozhodnutí 13–24 vzešla z první
 | 30 | Konce řádků jsou v repu vždy LF (`.gitattributes`: `* text=auto eol=lf`) | Testy porovnávající obsah souborů se na Windows chovají stejně jako na Linuxu |
 | 31 | Git hook je krátký shell skript, logika je v Node.js (`hub/hooks/pre-commit.js`) | Git na Windows spouští hooky přes svůj `sh`; logika se testuje na obou systémech |
 | 32 | Lokální klon repa nesmí ležet v OneDrive | OneDrive soubory zamyká a hlídání souborů hlásí falešné změny. Hub to při startu ověří a upozorní |
+| 33 | Název kampaně: „Limba: Rok kamenné borovice“ | Uložen v `kampan/kampan.yaml` |
+| 34 | Výchozí port Hubu je 7420, jen localhost | Změna jde v Nastavení |
+| 35 | Odložené zápisy přežijí pád serveru | Žurnál v `hub/.stav/odlozene-zapisy/` (mimo Git). Po startu se dokončí; novější soubor na disku má přednost a záznam se zahodí |
+| 36 | Nastavení se ukládá tlačítkem Uložit nastavení | Výjimka z autosave: rozepsané heslo se neposílá po písmenech |
+| 37 | Pilotní místo Bloku 2 je tábor lupičů kousek od Longsaddle | Celé příští sezení je bojové v tomto táboře |
+| 38 | Počasí: déšť, sníh, mlha. Intenzita: tři úrovně | Rozsah efektů Bloku 2 |
 
 ## Architektura
 
@@ -438,7 +444,7 @@ Akceptační kritéria
 - Déšť s nejvyšší intenzitou běží v OBS 10 minut na současném PC a Statistiky OBS ukazují 0 snímků vynechaných kvůli zpoždění vykreslování
 - Od vložení obrázku do dílny po jeho zobrazení v OBS stačí akce v panelu, bez Affinity a bez práce v OBS
 - Každá ilustrace z dílny má v hlavičce prompt, ze kterého vznikla
-- Pilotní místo má kompletní sadu: celek den, celek noc, detail a jednu skrytou stopu (otevřený bod 5)
+- Pilotní místo má kompletní sadu: celek den, celek noc, detail a jednu skrytou stopu (rozhodnutí 37: tábor lupičů u Longsaddle)
 - `Places/Mirabar/fight.png` je v `kampan/mista/mirabar/` a OBS ho zobrazuje přes Hub
 
 ## Blok 3 — Kánon
@@ -509,13 +515,17 @@ Nic z této sekce zatím neplatí. Každý bod se rozhodne nejpozději na začá
 | --- | --- | --- | --- |
 | 1 | Přímé generování ilustrací přes API | Začít poloautomaticky přes ChatGPT bez dalších nákladů. API (OpenAI Images) doplnit, pokud se kopírování ukáže jako brzda: platí se za každý obrázek a klíč patří do `hub/.env` | Blok 2 |
 | 2 | Formát data v `udalosti.yaml` a `stav.md` | Převzít formát z `kalendar-data.js`, aby převod nic neměnil | Blok 1b |
-| 3 | Sada efektů počasí a úrovní intenzity | Počasí: déšť, sníh, mlha. Intenzita: tři úrovně | Blok 2 |
 | 4 | České názvy schopností druhů v připomínkách | Doplnit z PHB 2024 a přidat do `prekladovy-klic-cz.md` | Blok 1b |
-| 5 | Pilotní místo pro Blok 2 | Místo, kam družina dorazí v nejbližším sezení (Longsaddle nebo Triboar) | Blok 2 |
 | 6 | Ilustrace v IIO bez internetu | IIO čte obrázky z GitHubu; ověřit, zda export může odkazovat na lokální server | Verze 2 |
-| 7 | Testy datového motoru Harptos | Ověřit doma, zda jsou v lokálním klonu. Pokud chybí, napsat je v Bloku 1b znovu podle kritéria bloku | Blok 1b |
-| 8 | ⚠ Název kampaně v `kampan.yaml` | Blok 0 použil pracovní název „Mečové pobřeží 1491 DR“. DM ho potvrdí nebo přepíše | Akceptace Bloku 0 |
-| 9 | ⚠ Pole `stav.md` | `datum` (text, zatím prázdné), `misto` (text), `sezeni` (číslo posledního odehraného sezení, nyní 2), `sezeni_bezi`. Formát data doladí bod 2 | Blok 1a |
-| 10 | ⚠ Výchozí port Hubu | 7420 na localhost; jde změnit v Nastavení | Akceptace Bloku 0 |
-| 11 | ⚠ Odložené zápisy přežijí pád serveru | Ukládají se do žurnálu `hub/.stav/odlozene-zapisy/` (mimo Git). Po startu se dokončí; pokud je soubor na disku novější, má přednost a záznam se zahodí | Akceptace Bloku 0 |
-| 12 | ⚠ Nastavení se ukládá tlačítkem | Na rozdíl od dat kampaně (autosave) se Nastavení ukládá tlačítkem Uložit nastavení, aby se rozepsané heslo neposílalo po písmenech | Akceptace Bloku 0 |
+| 7 | Testy datového motoru Harptos | V lokální složce nejsou (vznikly v pracovním prostoru Claude). V Bloku 1b se napíšou znovu nad blokem `HARPTOS-START … HARPTOS-END` v `Apps/Calendar/kalendar.html` | Blok 1b |
+| 9 | ⚠ Pole `stav.md` | `datum` (text, zatím prázdné; DM doplní po zápisu ze sezení 2), `misto` (text), `sezeni` (číslo posledního odehraného sezení, nyní 2), `sezeni_bezi`. Formát data doladí bod 2 | Blok 1a |
+| 13 | ⚠ Hráči v `kampan.yaml` | Pole `hraci` (jméno hráče a postava) pro seznam přítomných při Zahájit sezení: Martin – Tusker, Zaky – Koudur, Adriana – Alba, Anna – Leta | Akceptace Bloku 1a |
+| 14 | ⚠ Soubor sezení | `sezeni/sNN/sNN.md`, hlavička `cislo`, `datum_realne`, `zacatek`, `konec`, `pritomni`, `verejne: false`; poznámky jako odrážky `- 18:05 — text` pod nadpisem Poznámky ze stolu | Akceptace Bloku 1a |
+| 15 | ⚠ Tlačítko Souboj | V horní liště panelu; scéna se vybírá v Nastavení a ukládá do `hub/.env` (`OBS_SCENA_SOUBOJ`), protože jde o nastavení OBS na tomto PC | Akceptace Bloku 1a |
+| 16 | ⚠ Odpočet | Nastaví se časem začátku hry (HH:MM) nebo počtem minut; Zahájit sezení navrhne nejbližší čtvrthodinu za 10 minut. Stav v `hub/.stav/odpocet.json`, Ukončit sezení odpočet zruší. Vzhled ve výstupu je dočasný (barva kost → jantar → rez), převezme se z `odpocet.html` | Akceptace Bloku 1a |
+| 17 | ⚠ Kontrolní seznam při Ukončit sezení | Poznámky zapsané; datum a místo odpovídají konci sezení; uložit do GitHubu. Seznam je jen připomínka, nic nevynucuje | Akceptace Bloku 1a |
+| 18 | ⚠ Uložit do GitHubu commituje jen `kampan/` | Kód Hubu a jiné soubory tlačítko nikdy necommituje. Bez internetu zůstane commit lokálně a panel to řekne | Akceptace Bloku 1a |
+| 19 | `odpocet.html` nebyl nalezen | V `C:\Users\Matej\Documents\DnD` chybí. Pokud je jinde, přidat ho a převzít barevný přechod; jinak zůstane vzhled výstupu z Bloku 1a | Akceptace Bloku 1a |
+| 20 | Ilustrace míst a OBS pozadí mimo repo | `src/places` (Cesta vč. `tabor.png`, Longsaddle, Lurkwood, mirabar), `src/obs` (`start.png`, `pause.png`, `obchod.png`), `map.png` jsou jen lokálně. Převezmou se s Blokem 2 | Blok 2 |
+| 21 | Po doběhnutí odpočtu přepnout na první scénu sezení | Nápad DM z akceptace 1a. Návrh: v Nastavení „Scéna po odpočtu“; server ji po doběhnutí přepne sám (i po restartu, pokud konec mezitím nastal), jen jednou | Blok 1b |
+| 22 | Rekapitulace kalendáře během odpočtu | Nápad DM z akceptace 1a: během odpočtu se orloj protočí od prvního dne kampaně po dnešek a ukazuje veřejné události. Návrh: výstup `vystupy/rekapitulace.html` s délkou podle zbývajícího času | Blok 1b |

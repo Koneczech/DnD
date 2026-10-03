@@ -7,6 +7,7 @@ export const VYCHOZI = Object.freeze({
   HUB_PORT: '7420',
   OBS_URL: 'ws://127.0.0.1:4455',
   OBS_HESLO: '',
+  OBS_SCENA_SOUBOJ: '',
   DOMACI_SIT: '0',
   PIN: '',
 });
@@ -77,6 +78,7 @@ export class Nastaveni {
       port: this.port,
       obsUrl: this.hodnoty.OBS_URL,
       obsHesloNastaveno: Boolean(this.hodnoty.OBS_HESLO),
+      scenaSouboj: this.hodnoty.OBS_SCENA_SOUBOJ || '',
       domaciSit: this.hodnoty.DOMACI_SIT === '1',
       pinNastaven: Boolean(this.hodnoty.PIN),
     };
@@ -94,6 +96,11 @@ export class Nastaveni {
     }
     if (z.obsHeslo) nove.OBS_HESLO = String(z.obsHeslo);
     if (z.smazatObsHeslo) nove.OBS_HESLO = '';
+    if (z.scenaSouboj !== undefined) {
+      const scena = String(z.scenaSouboj).trim();
+      if (scena.length > 200) throw Object.assign(new Error('Název scény je příliš dlouhý'), { status: 400 });
+      nove.OBS_SCENA_SOUBOJ = scena;
+    }
     if (z.port !== undefined) {
       const p = Number(z.port);
       if (!Number.isInteger(p) || p < 1024 || p > 65535) throw Object.assign(new Error('Port musí být číslo 1024–65535'), { status: 400 });

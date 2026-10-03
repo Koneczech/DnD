@@ -1,4 +1,14 @@
 # Základní údaje kampaně. Formát popisuje ZADANI.md (Datový model).
 schema: 1
-nazev: Mečové pobřeží 1491 DR
+nazev: "Limba: Rok kamenné borovice"
 startovni_datum: 12. Eleint 1491 DR   # začátek sezení 1
+# Hráči u stolu; Zahájit sezení z nich nabídne seznam přítomných.
+hraci:
+  - jmeno: Martin
+    postava: Tusker Treestone
+  - jmeno: Zaky
+    postava: Koudur Hardbeard
+  - jmeno: Adriana
+    postava: Albalunna „Alba“ Nox
+  - jmeno: Anna
+    postava: Leta Quickfinger

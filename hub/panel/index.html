@@ -56,8 +56,9 @@
           <label>Kde je družina
             <input name="misto" id="pole-misto" placeholder="např. Longsaddle">
           </label>
-          <label class="kratke">Číslo sezení
-            <input name="sezeni" id="pole-sezeni" type="number" min="0" step="1">
+          <label>Poslední odehrané sezení
+            <input name="sezeni" id="pole-sezeni" class="cislo" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+            <small>Zahájit sezení samo přičte 1. Ruční změna jen při opravě.</small>
           </label>
         </form>
         <p class="ulozeni" id="stav-ulozeni" aria-live="polite"></p>
@@ -147,6 +148,7 @@
             </label>
           </fieldset>
           <button type="submit" class="hlavni">Uložit nastavení</button>
+          <p class="poznamka" id="server-info"></p>
           <p class="ulozeni" id="nastaveni-vysledek" aria-live="polite"></p>
         </form>
       </section>

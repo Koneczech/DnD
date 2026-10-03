@@ -527,3 +527,5 @@ Nic z této sekce zatím neplatí. Každý bod se rozhodne nejpozději na začá
 | 18 | ⚠ Uložit do GitHubu commituje jen `kampan/` | Kód Hubu a jiné soubory tlačítko nikdy necommituje. Bez internetu zůstane commit lokálně a panel to řekne | Akceptace Bloku 1a |
 | 19 | `odpocet.html` nebyl nalezen | V `C:\Users\Matej\Documents\DnD` chybí. Pokud je jinde, přidat ho a převzít barevný přechod; jinak zůstane vzhled výstupu z Bloku 1a | Akceptace Bloku 1a |
 | 20 | Ilustrace míst a OBS pozadí mimo repo | `src/places` (Cesta vč. `tabor.png`, Longsaddle, Lurkwood, mirabar), `src/obs` (`start.png`, `pause.png`, `obchod.png`), `map.png` jsou jen lokálně. Převezmou se s Blokem 2 | Blok 2 |
+| 21 | Po doběhnutí odpočtu přepnout na první scénu sezení | Nápad DM z akceptace 1a. Návrh: v Nastavení „Scéna po odpočtu“; server ji po doběhnutí přepne sám (i po restartu, pokud konec mezitím nastal), jen jednou | Blok 1b |
+| 22 | Rekapitulace kalendáře během odpočtu | Nápad DM z akceptace 1a: během odpočtu se orloj protočí od prvního dne kampaně po dnešek a ukazuje veřejné události. Návrh: výstup `vystupy/rekapitulace.html` s délkou podle zbývajícího času | Blok 1b |

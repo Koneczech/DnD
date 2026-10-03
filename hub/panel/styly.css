@@ -256,3 +256,6 @@ select:focus, textarea:focus { border-color: var(--mosaz); outline: none; }
 .toast.chyba { border-color: var(--rez); }
 button.hlavni kbd { color: var(--noc); border-color: rgb(22 27 38 / 0.45); }
 .formular label.kratke input { width: 100%; }
+
+input.cislo { max-width: 8rem; }
+.formular label small { color: var(--mlha); }

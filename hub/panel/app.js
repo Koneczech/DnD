@@ -65,6 +65,11 @@ $('#formular-stav').addEventListener('input', (e) => {
 $('#formular-stav').addEventListener('submit', (e) => e.preventDefault());
 
 async function ulozPole(pole, input) {
+  if (pole === 'sezeni' && !/^\d+$/.test(input.value.trim())) {
+    $('#stav-ulozeni').textContent = 'Číslo sezení musí být celé číslo.';
+    $('#stav-ulozeni').className = 'ulozeni chyba';
+    return;
+  }
   const hodnota = pole === 'sezeni' ? Number(input.value) : input.value;
   try {
     const { vysledek } = await api('/api/stav', { metoda: 'PUT', telo: { [pole]: hodnota } });
@@ -146,7 +151,9 @@ async function stahnoutZmeny() {
 function vykresliKontrolky() {
   const p = stav.prehled;
   $('#svetlo-server').dataset.stav = stav.serverOk ? (p?.stav?.odlozeneZapisy?.length ? 'varovani' : 'ok') : 'chyba';
-  $('#svetlo-server').parentElement.title = stav.serverOk ? 'Server běží' : 'Server neodpovídá';
+  $('#svetlo-server').parentElement.title = stav.serverOk
+    ? `Server běží (proces node.exe, PID ${p?.server?.pid ?? '?'})`
+    : 'Server neodpovídá';
 
   const o = p?.obs;
   $('#svetlo-obs').dataset.stav = !o?.nastaveno ? 'ceka' : o.pripojeno ? (o.varovaniZdroju?.length ? 'varovani' : 'ok') : 'chyba';
@@ -238,6 +245,10 @@ function vykresliNastaveni(n) {
   $('#pole-domaci-sit').checked = n.domaciSit;
   $('#pole-pin').placeholder = n.pinNastaven ? 'PIN je uložený. Vyplň jen při změně.' : '4–8 číslic';
   vykresliVyberSouboje();
+  const srv = stav.prehled?.server;
+  $('#server-info').textContent = srv
+    ? `Server běží jako node.exe s PID ${srv.pid}. Ve Správci úloh ho najdeš na kartě Podrobnosti; ukončení tohoto procesu otestuje automatický restart.`
+    : '';
 }
 
 /** Výběr scény pro Souboj: scény z OBS, a pokud OBS neběží, aspoň uložená hodnota. */

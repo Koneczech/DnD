@@ -521,18 +521,18 @@ async function zapisDoSlozky(out){
 }
 /* --- režim Hubu ---
    Hub servíruje generátor na /nastroje/generator.html a před data vloží window.DMHUB.
-   Uložit pak pošle sortiment do Hubu (kampan/obchody/sortimenty/) a dá ho do zvoleného
-   slotu ceníku; složka projektu a zápis souborů se nepoužívají. Opakované uložení
-   přepíše tentýž sortiment, dokud se nevylosuje nový. */
+   Uložit pak pošle sortiment do Hubu (kampan/obchody/sortimenty/); do OBS ho pošle
+   tlačítko Ukázat v OBS na obrazovce Obchody. Složka projektu, sloty a zápis souborů
+   se nepoužívají. Opakované uložení přepíše tentýž sortiment, dokud se nevylosuje nový. */
 const HUB = typeof window.DMHUB === 'object' && window.DMHUB !== null;
 let hubId = null;
 async function ulozDoHubu(out){
   const r=await fetch('/api/obchody/sortimenty',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({sortiment:out,slot:stav.slot,id:hubId})});
+    body:JSON.stringify({sortiment:out,id:hubId})});
   const d=await r.json().catch(()=>({}));
   if(!r.ok) throw new Error(d.chyba||('HTTP '+r.status));
   hubId=d.id;
-  zprava('Uloženo do Hubu ('+d.id+') a posláno do ceníku ve slotu '+stav.slot+'.');
+  zprava('Uloženo do Hubu ('+d.id+'). Do OBS ho pošleš v panelu: Obchody → Ukázat v OBS.');
 }
 el('uloz').addEventListener('click',async()=>{
   if(!stav.polozky.length){zprava('Není co ukládat.',true);return;}
@@ -563,6 +563,7 @@ el('uloz').addEventListener('click',async()=>{
   vykresli();
   if(HUB){
     document.querySelector('.slozka').style.display='none';
+    el('slot').closest('.pole').style.display='none';
     el('uloz').textContent='Uložit sortiment do Hubu';
     return;
   }

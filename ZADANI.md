@@ -60,7 +60,9 @@ Rozhodnutí 1–12 potvrdil DM 2. 10. 2026. Rozhodnutí 13–24 vzešla z první
 | 25 | Master zadání je `ZADANI.md` v repu | Claude Doc je archiv. Změny zadání jdou přes PR |
 | 26 | Pravidla pro práci Claude Code jsou v `CLAUDE.md` v kořeni repa | Co zadání neřeší a má vliv na data, chování nebo UI, je v PR označené ⚠ návrh a přidané do Otevřených bodů. Interní detaily kódu rozhoduje Claude sám |
 | 27 | Každý blok se vyvíjí ve vlastní větvi (`blok-0`, `blok-1a` …) a slučuje se přes pull request | PR je místo kontroly všech ⚠ návrhů |
-| 28 | Testy běží v GitHub Actions na `ubuntu-latest` i `windows-latest` | Rozdíly Windows (zámky souborů, hlídání souborů, cesty) se odhalí před akceptací doma |
+| 28 | ⚠ Datum ve Stavu kampaně | Datum jde měnit ve Stavu kampaně i v Kalendáři, v obou místech stejným výběrem (den, měsíc nebo svátek, rok), aby šlo uložit jen platné datum Harptosu | Akceptace Bloku 1b |
+| 29 | ⚠ Sestava scén a zdrojů v OBS | Revize, cílová sestava do Bloku 2 a postup přestavby v `reference/obs-sceny.md`: sdílené zdroje z Hubu, jména podle obsahu, scény Start, Mirabar, Longsaddle, Lurkwood, Cesta, Mapa, Obchod, Pauza, Boj. Odpovědi DM: numpad nepoužívá, stará Cesta se nahradí, Lurkwood dostane medailon | Akceptace Bloku 1b |
+| 30 | Obrázek obchodu v Hubu | Obrázek patří k sortimentu a Ukázat v OBS vymění obrázek i ceník najednou. Na pokyn DM až s ilustrační dílnou | Blok 2 |
 | 29 | Verze Node.js je na jednom místě: `.nvmrc`; `engines` v `hub/package.json` musí sedět | CI čte verzi z `.nvmrc` a při neshodě s `engines` selže |
 | 30 | Konce řádků jsou v repu vždy LF (`.gitattributes`: `* text=auto eol=lf`) | Testy porovnávající obsah souborů se na Windows chovají stejně jako na Linuxu |
 | 31 | Git hook je krátký shell skript, logika je v Node.js (`hub/hooks/pre-commit.js`) | Git na Windows spouští hooky přes svůj `sh`; logika se testuje na obou systémech |
@@ -138,7 +140,7 @@ Hub musí přežít vlastní pád uprostřed sezení bez zásahu do OBS a bez zt
 - Zápis souborů je atomický (dočasný soubor + přejmenování), pád nikdy nenechá rozbitý soubor.
 - **Zamčený soubor.** Na Windows přejmenování přes existující soubor selže (`EPERM`/`EBUSY`/`EACCES`), pokud ho má otevřený Obsidian, antivir nebo indexer. Zápis to zkusí nejvýš 5× v celkovém limitu 1 s. Když nepomůže ani to, změna zůstane v paměti serveru jako odložený zápis, panel ukáže varování a zápis se opakuje na pozadí, dokud neprojde. Data se neztratí a nikdy se nesáhne po neatomickém zápisu.
 - Panel ukazuje stav serveru, OBS a Gitu.
-- Scény, numpad a IIO fungují bez Hubu. Nouzový postup, dokud Hub neprojde Blokem 1b u stolu: scény přepínat numpadem, kalendář, ceník a odpočet spustit z původních souborů v lokálním klonu.
+- Scény a IIO fungují bez Hubu. Nouzový postup, dokud Hub neprojde Blokem 1b u stolu: scény přepínat klikem přímo v OBS (numpad DM nepoužívá, ⚠ bod 29), kalendář, ceník a odpočet spustit z původních souborů v lokálním klonu.
 
 **Ukládání a Git**
 
@@ -526,11 +528,11 @@ Nic z této sekce zatím neplatí. Každý bod se rozhodne nejpozději na začá
 | 18 | ⚠ Uložit do GitHubu commituje jen `kampan/` | Kód Hubu a jiné soubory tlačítko nikdy necommituje. Bez internetu zůstane commit lokálně a panel to řekne | Akceptace Bloku 1a |
 | 19 | `odpocet.html` nebyl nalezen | V `C:\Users\Matej\Documents\DnD` chybí. Pokud je jinde, přidat ho a převzít barevný přechod; jinak zůstane vzhled výstupu z Bloku 1a | Akceptace Bloku 1a |
 | 20 | Ilustrace míst a OBS pozadí mimo repo | `src/places` (Cesta vč. `tabor.png`, Longsaddle, Lurkwood, mirabar), `src/obs` (`start.png`, `pause.png`, `obchod.png`), `map.png` jsou jen lokálně. Převezmou se s Blokem 2 | Blok 2 |
-| 21 | ⚠ Po doběhnutí odpočtu přepnout na první scénu sezení | V Nastavení „Scéna po odpočtu“ (`OBS_SCENA_PO_ODPOCTU` v `hub/.env`). Server po doběhnutí přepne jednou; po restartu Hubu nebo výpadku OBS jen do 10 minut od konce, jinak to jen napíše na obrazovce Odpočet | Akceptace Bloku 1b |
-| 22 | ⚠ Rekapitulace kalendáře během odpočtu | Výstup `vystupy/rekapitulace.html`: orloj se protočí od začátku kampaně po dnešek (nejvýš posledních 120 dní), u dne s veřejnou událostí se zastaví a ukáže ji, pak začne znovu. Tempo je pevné (`?krok`, `?udalost`, `?dnes` v ms), ne podle zbývajícího času, aby smyčka běžela i v pauze | Akceptace Bloku 1b |
+| 21 | ⚠ Po doběhnutí odpočtu přepnout na první scénu sezení | Na obrazovce Odpočet i v Nastavení „Scéna po odpočtu“ (`OBS_SCENA_PO_ODPOCTU` v `hub/.env`). Server po doběhnutí přepne jednou; po restartu Hubu nebo výpadku OBS jen do 10 minut od konce, jinak to jen napíše na obrazovce Odpočet | Akceptace Bloku 1b |
+| 22 | ⚠ Rekapitulace kalendáře během odpočtu | Výstup `vystupy/rekapitulace.html`: orloj jede plynule od začátku kampaně po dnešek (nejvýš posledních 120 dní), zpomalí a zastaví se jen u dne s veřejnou událostí a na dnešku, pak začne znovu. Tempo je pevné (`?krok` ms na den jízdy, `?udalost`, `?dnes` ms zastávky), ne podle zbývajícího času, aby smyčka běžela i v pauze | Akceptace Bloku 1b |
 | 23 | ⚠ Pole `lhuta` u události | Pole `odpocet` z `kalendar-data.js` se v `udalosti.yaml` jmenuje `lhuta` (počet dní předem, 1–999), aby se nepletlo s odpočtem do začátku sezení. Importér ho převede | Akceptace Bloku 1b |
 | 24 | ⚠ Datum v Harptosu u poznámek a sezení | Poznámka: `- 18:05 (19. Eleint) — text`. Hlavička sezení dostane `harptos_zacatek` a `harptos_konec` | Akceptace Bloku 1b |
-| 25 | ⚠ Sortimenty a sloty ceníku | Sortiment v `kampan/obchody/sortimenty/<obchod-mesto>.yaml`, obsah stejný jako `sortiment.json` z generátoru. Co visí v kterém ze tří slotů, je nastavení tohoto PC (`hub/.stav/ceniky.json`, mimo Git). Uložit v generátoru rovnou dá sortiment do zvoleného slotu; další uložení téhož losu ho přepíše, nový los založí nový soubor | Akceptace Bloku 1b |
+| 25 | ⚠ Sortimenty a aktivní obchod | Sortiment v `kampan/obchody/sortimenty/<obchod-mesto>.yaml`, obsah stejný jako `sortiment.json` z generátoru. V OBS je jedna scéna Obchod (rozhodnutí DM): tlačítko Ukázat v OBS na obrazovce Obchody vymění ceník a přepne na scénu obchodu (`OBS_SCENA_OBCHOD`). Co právě visí v OBS, je nastavení tohoto PC (`hub/.stav/obchod.json`, mimo Git). Sloty 1–3 z původního generátoru v Hubu odpadly. Obrázek obchodu do Bloku 2 ručně jako Image source (`reference/obs-sceny.md`) | Akceptace Bloku 1b |
 | 26 | ⚠ Další den v panelu | Před otázkou na důkladný odpočinek ukáže, co nový den čeká (události i skryté, svátek, lhůty); datum se posune až po odpovědi. Poznámka „Nový den: 20. Eleint 1491 DR (po důkladném odpočinku)“. Tlačítka ±1 den v Kalendáři posunou datum bez poznámky a připomínek | Akceptace Bloku 1b |
-| 27 | Banner kalendáře | Nevznikl: chybí návrh, jak má vypadat a kde bude v obraze. DM popíše, pak se doplní jako další výstup | Blok 2 |
+| 27 | Banner kalendáře | Odloženo na pokyn DM; vrátí se k němu později | Později |
 | 28 | ⚠ Datum ve Stavu kampaně | Datum se mění jen v Kalendáři (posun, výběr data, Další den); Stav kampaně ho ukazuje s odkazem. Volný text by obešel kontrolu data | Akceptace Bloku 1b |

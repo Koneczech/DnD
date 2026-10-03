@@ -43,7 +43,7 @@ window.addEventListener('hashchange', () => ukazObrazovku(location.hash.slice(1)
 function vykresliStav(s) {
   const k = s?.stav;
   $('#lista-datum').textContent = k?.datumText || 'Datum není zadané';
-  $('#stav-datum').textContent = k?.datumText || 'zatím nezadané';
+  vykresliDatumStavu(k);
   $('#lista-misto').textContent = k?.misto || '';
   $('#lista-misto').hidden = !k?.misto;
   $('#lista-sezeni').textContent = k ? `sezení ${k.sezeni}` : '';
@@ -55,6 +55,39 @@ function vykresliStav(s) {
   }
   vykresliUpozorneni();
 }
+
+/* Datum ve Stavu kampaně: stejný výběr jako v Kalendáři, ukládá se samo. */
+let vyberStav = null;
+let posledniDatumStavu;
+function vykresliDatumStavu(k) {
+  vyberStav ??= vyberData($('#vyber-stav'));
+  const box = $('#vyber-stav');
+  if (box.contains(document.activeElement) || stav.rozpracovano.has('datum')) return;
+  const klic = JSON.stringify(k?.datum ?? null);
+  if (klic === posledniDatumStavu) return;
+  posledniDatumStavu = klic;
+  vyberStav.set(k?.datum ?? stav.prehled?.kalendar?.zacatek ?? { rok: 1491, mesic: 'Hammer', den: 1 });
+}
+$('#vyber-stav').addEventListener('change', async () => {
+  const datum = vyberStav.get();
+  const zprava = $('#stav-ulozeni');
+  if (!datum) {
+    zprava.textContent = 'Takové datum v Harptosu není (den 1–30, Shieldmeet jen v přestupném roce).';
+    zprava.className = 'ulozeni chyba';
+    return;
+  }
+  stav.rozpracovano.add('datum');
+  try {
+    const { vysledek } = await api('/api/stav', { metoda: 'PUT', telo: { datum } });
+    zprava.textContent = vysledek === 'odlozeno' ? 'Soubor stav.md drží otevřený jiný program. Změna je v OBS a uloží se, jakmile to půjde.' : `Uloženo v ${cas()}`;
+    zprava.className = vysledek === 'odlozeno' ? 'ulozeni varovani' : 'ulozeni';
+  } catch (e) {
+    zprava.textContent = `Neuloženo: ${e.message}`;
+    zprava.className = 'ulozeni chyba';
+  } finally {
+    stav.rozpracovano.delete('datum');
+  }
+});
 
 const casovaceUlozeni = new Map();
 $('#formular-stav').addEventListener('input', (e) => {
@@ -260,6 +293,8 @@ function vykresliVyberSouboje() {
   for (const [id, klic, prazdna] of [
     ['#pole-scena-souboj', 'scenaSouboj', '— vyber scénu —'],
     ['#pole-scena-po-odpoctu', 'scenaPoOdpoctu', '— nepřepínat —'],
+    ['#odpocet-scena', 'scenaPoOdpoctu', '— nepřepínat —'],
+    ['#obchod-scena', 'scenaObchod', '— nepřepínat —'],
   ]) {
     const select = $(id);
     if (document.activeElement === select) continue;
@@ -566,7 +601,7 @@ function vykresliOdpocet() {
   $('#odpocet-prepnuti').className = pr && !pr.ok ? 'ulozeni varovani' : 'ulozeni';
   $('#odpocet-prepnuti').textContent = pr
     ? pr.ok ? `Po doběhnutí přepnuto na scénu „${pr.scena}“.` : pr.duvod
-    : scena ? `Po doběhnutí se OBS přepne na scénu „${scena}“.` : 'Po doběhnutí se scéna nepřepne (nastavíš v Nastavení).';
+    : scena ? `Po doběhnutí se OBS přepne na scénu „${scena}“.` : 'Po doběhnutí se scéna nepřepne.';
 }
 setInterval(() => {
   if (stav.prehled?.odpocet?.stav === 'bezi') vykresliOdpocet();
@@ -587,6 +622,18 @@ $('#formular-odpocet').addEventListener('submit', async (e) => {
 for (const [id, akce] of [['#odpocet-spustit', 'spustit'], ['#odpocet-pauza', 'pauza'], ['#odpocet-zrusit', 'zrusit']]) {
   $(id).addEventListener('click', () => api(`/api/odpocet/${akce}`, { metoda: 'POST', telo: {} }).catch((chyba) => toast(chyba.message, { chyba: true })));
 }
+
+$('#odpocet-scena').addEventListener('change', async (e) => {
+  try {
+    const odpoved = await api('/api/nastaveni', { metoda: 'PUT', telo: { scenaPoOdpoctu: e.target.value } });
+    stav.prehled.nastaveni = odpoved.nastaveni;
+    vykresliVyberSouboje();
+    vykresliOdpocet();
+    toast(e.target.value ? `Po odpočtu se přepne na „${e.target.value}“.` : 'Po odpočtu se scéna nepřepne.');
+  } catch (chyba) {
+    toast(chyba.message, { chyba: true });
+  }
+});
 
 /* ---------- Uložení do GitHubu ---------- */
 
@@ -1006,30 +1053,32 @@ const TYPY_OBCHODU = {
 };
 const LOKALITY = { rural: 'venkov', urban: 'město', premium: 'luxus' };
 
+async function ukazatObchod(id, nazev) {
+  try {
+    const r = await api('/api/obchody/aktivni', { metoda: 'PUT', telo: { id, prepnout: Boolean(id) } });
+    if (r.chybaObs) toast(r.chybaObs, { chyba: true });
+    else toast(id ? `V OBS: ${nazev}${r.scena ? ` (scéna ${r.scena})` : ''}` : 'Ceník skrytý.');
+  } catch (chyba) {
+    toast(chyba.message, { chyba: true });
+  }
+}
+$('#obchod-skryt').addEventListener('click', () => ukazatObchod(null));
+$('#obchod-scena').addEventListener('change', async (e) => {
+  try {
+    const odpoved = await api('/api/nastaveni', { metoda: 'PUT', telo: { scenaObchod: e.target.value } });
+    stav.prehled.nastaveni = odpoved.nastaveni;
+    toast(e.target.value ? `Scéna obchodu: ${e.target.value}` : 'Ukázat v OBS nebude přepínat scénu.');
+  } catch (chyba) {
+    toast(chyba.message, { chyba: true });
+  }
+});
+
 function vykresliObchody() {
   const o = stav.prehled?.obchody;
   if (!o) return;
-  const sloty = $('#sloty');
-  if (!sloty.contains(document.activeElement)) {
-    sloty.replaceChildren(
-      ...['1', '2', '3'].map((n) => {
-        const label = document.createElement('label');
-        const select = document.createElement('select');
-        select.append(new Option('— prázdný (v OBS skrytý) —', ''), ...o.sortimenty.map((s) => new Option(`${s.nazev}${s.mesto ? `, ${s.mesto}` : ''}`, s.id)));
-        select.value = o.sloty[n] ?? '';
-        select.addEventListener('change', async () => {
-          try {
-            await api(`/api/obchody/sloty/${n}`, { metoda: 'PUT', telo: { id: select.value || null } });
-            toast(select.value ? `Slot ${n}: ${select.selectedOptions[0].textContent}` : `Slot ${n} je prázdný.`);
-          } catch (chyba) {
-            toast(chyba.message, { chyba: true });
-          }
-        });
-        label.append(`Slot ${n}`, select);
-        return label;
-      }),
-    );
-  }
+  const aktivni = o.sortimenty.find((s) => s.id === o.aktivni);
+  $('#obchod-aktivni').textContent = aktivni ? `Ceník ukazuje: ${aktivni.nazev}${aktivni.mesto ? `, ${aktivni.mesto}` : ''}` : 'Ceník je skrytý.';
+  $('#obchod-skryt').hidden = !aktivni;
   $('#sortimenty-prazdno').hidden = o.sortimenty.length > 0;
   $('#tabulka-sortimentu').hidden = o.sortimenty.length === 0;
   const vadne = $('#sortimenty-vadne');
@@ -1039,11 +1088,15 @@ function vykresliObchody() {
     ...o.sortimenty.map((s) => {
       const tr = document.createElement('tr');
       const td = (text) => Object.assign(document.createElement('td'), { textContent: text });
-      const vSlotu = Object.entries(o.sloty).filter(([, id]) => id === s.id).map(([n]) => n);
+      const jeAktivni = s.id === o.aktivni;
+      if (jeAktivni) tr.dataset.dnes = 'true';
       const nazev = td(`${s.nazev}${s.mesto ? `, ${s.mesto}` : ''}`);
-      if (vSlotu.length) nazev.append(Object.assign(document.createElement('small'), { textContent: ` · slot ${vSlotu.join(', ')}` }));
+      if (jeAktivni) nazev.append(Object.assign(document.createElement('small'), { textContent: ' · v OBS' }));
       const akce = document.createElement('td');
       akce.className = 'akce-radku';
+      const ukazat = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Ukázat v OBS', className: 'hlavni' });
+      ukazat.addEventListener('click', () => ukazatObchod(s.id, s.nazev));
+      akce.append(ukazat);
       const smazat = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Smazat' });
       smazat.addEventListener('click', async () => {
         if (smazat.dataset.potvrd !== 'true') {
@@ -1077,7 +1130,7 @@ $('#adresa-odpoctu').textContent = adresaOdpoctu;
 $('#adresa-orloj-velky').textContent = `${location.origin}/vystupy/kalendar-velky.html`;
 $('#adresa-orloj-maly').textContent = `${location.origin}/vystupy/kalendar-maly.html`;
 $('#adresa-rekapitulace').textContent = `${location.origin}/vystupy/rekapitulace.html`;
-$('#adresa-cenik').textContent = `${location.origin}/vystupy/cenik.html?slot=1`;
+$('#adresa-cenik').textContent = `${location.origin}/vystupy/cenik.html`;
 for (const b of document.querySelectorAll('[data-kopirovat]')) {
   b.addEventListener('click', async () => {
     await navigator.clipboard?.writeText($(`#${b.dataset.kopirovat}`).textContent).catch(() => {});

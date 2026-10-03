@@ -52,7 +52,8 @@
         <form id="formular-stav" class="formular" autocomplete="off">
           <div class="pole-datum">
             <span>Datum v Harptosu</span>
-            <p><strong id="stav-datum">…</strong> <a href="#kalendar">Změnit v Kalendáři</a></p>
+            <div class="vyber-data" id="vyber-stav"></div>
+            <small>Ukládá se samo. Posun o den a události jsou v <a href="#kalendar">Kalendáři</a>.</small>
           </div>
           <label>Kde je družina
             <input name="misto" id="pole-misto" placeholder="např. Longsaddle">
@@ -98,6 +99,12 @@
           <button type="button" class="hlavni" id="odpocet-spustit">Spustit</button>
           <button type="button" id="odpocet-pauza">Pauza</button>
           <button type="button" id="odpocet-zrusit">Zrušit</button>
+        </div>
+        <div class="formular odpocet-scena">
+          <label>Po doběhnutí přepnout OBS na scénu
+            <select id="odpocet-scena"></select>
+            <small>Hub přepne jednou, hned jak odpočet doběhne. Stejné nastavení je i v Nastavení.</small>
+          </label>
         </div>
         <p class="ulozeni" id="odpocet-prepnuti" aria-live="polite"></p>
         <h2>Výstup pro OBS</h2>
@@ -180,11 +187,20 @@
 
       <section id="obrazovka-obchody" class="obrazovka" hidden>
         <h1>Obchody</h1>
-        <p class="uvod">Sortiment vylosuj v generátoru a ulož do Hubu. Ceník v OBS pak ukáže to, co je ve slotu. Prázdný slot se v OBS skryje.</p>
+        <p class="uvod">Sortiment vylosuj v generátoru a ulož do Hubu. U stolu klikni na <em>Ukázat v OBS</em>: ceník převezme obchod a OBS přepne na scénu obchodu.</p>
         <div class="tlacitka"><a class="tlacitko hlavni" href="/nastroje/generator.html" target="_blank" rel="noopener">Otevřít generátor obchodů</a></div>
 
-        <h2>Sloty ceníku</h2>
-        <div class="sloty" id="sloty"></div>
+        <h2>V OBS teď</h2>
+        <div class="aktivni-obchod">
+          <p id="obchod-aktivni">Ceník je skrytý.</p>
+          <button type="button" id="obchod-skryt" hidden>Skrýt ceník</button>
+        </div>
+        <div class="formular">
+          <label>Scéna obchodu v OBS
+            <select id="obchod-scena"></select>
+            <small>Na ni OBS přepne tlačítko Ukázat v OBS. Prázdné = nepřepínat, jen vyměnit ceník.</small>
+          </label>
+        </div>
 
         <h2>Uložené sortimenty</h2>
         <p class="uvod" id="sortimenty-prazdno">Zatím žádné. Ulož první z generátoru.</p>
@@ -196,7 +212,7 @@
 
         <h2>Výstupy pro OBS</h2>
         <p class="adresa"><code id="adresa-cenik">…</code> <button type="button" data-kopirovat="adresa-cenik">Kopírovat adresu</button></p>
-        <p class="poznamka">Pro sloty 2 a 3 změň konec adresy na <code>?slot=2</code> nebo <code>?slot=3</code>. Velikost a umístění panelu nastav v OBS, písmo se přizpůsobí výšce zdroje.</p>
+        <p class="poznamka">Dej ho do scény obchodu přes pravou třetinu obrazu, pod něj obrázek interiéru (Image source). Velikost a umístění panelu nastav v OBS, písmo se přizpůsobí výšce zdroje.</p>
       </section>
 
       <section id="obrazovka-kontrola" class="obrazovka" hidden>

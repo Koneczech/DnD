@@ -579,8 +579,39 @@ function vykresliGit() {
     return;
   }
   $('#git-ulozit').disabled = false;
-  popis.textContent = `Větev ${g.vetev}. Neuložených souborů v repu: ${g.zmeneno}. Tlačítko uloží jen data kampaně (kampan/), ne kód Hubu.`;
+  $('#git-stahnout').hidden = !(g.pozadu > 0);
+  const kdy = g.kontrolovano ? ` Naposledy zkontrolováno v ${new Date(g.kontrolovano).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}.` : '';
+  popis.textContent = `Větev ${g.vetev}. Neuložených souborů v repu: ${g.zmeneno}.${g.pozadu > 0 ? ` Na GitHubu je ${g.pozadu} novějších změn.` : ''}${kdy} Uložit ukládá jen data kampaně (kampan/), ne kód Hubu.`;
 }
+
+$('#git-zkontrolovat').addEventListener('click', async () => {
+  const v = $('#git-vysledek');
+  v.className = 'ulozeni';
+  v.textContent = 'Zjišťuji stav na GitHubu…';
+  try {
+    const g = await api('/api/git/obnovit', { metoda: 'POST', telo: {} });
+    stav.prehled.git = g;
+    prekresli();
+    v.className = g.chyba ? 'ulozeni varovani' : 'ulozeni';
+    v.textContent = g.chyba ?? (g.pozadu > 0 ? `Na GitHubu je ${g.pozadu} novějších změn.` : 'Lokální kopie je aktuální.');
+  } catch (chyba) {
+    v.className = 'ulozeni chyba';
+    v.textContent = chyba.message;
+  }
+});
+$('#git-stahnout').addEventListener('click', async () => {
+  const v = $('#git-vysledek');
+  v.className = 'ulozeni';
+  v.textContent = 'Stahuji…';
+  try {
+    await api('/api/git/stahnout', { metoda: 'POST', telo: {} });
+    await nactiPrehled();
+    v.textContent = 'Staženo. Pokud se měnil kód Hubu, zavři okno DM Hub a spusť ho znovu.';
+  } catch (chyba) {
+    v.className = 'ulozeni chyba';
+    v.textContent = chyba.message;
+  }
+});
 
 $('#git-ulozit').addEventListener('click', async () => {
   const v = $('#git-vysledek');

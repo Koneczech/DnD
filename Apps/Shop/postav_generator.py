@@ -9,8 +9,10 @@ Když se změní databáze, pusť tenhle skript znovu.
 import json, sys, pathlib
 
 KOREN = pathlib.Path(__file__).parent
-SABLONA = KOREN / 'generator_sablona.html'
-DATA = KOREN / 'polozky.json'
+REPO = KOREN.parent.parent
+# Od Bloku 1b leží databáze v kampan/obchody/ a šablona v hub/nastroje/ (Migrace v ZADANI.md).
+SABLONA = REPO / 'hub' / 'nastroje' / 'generator_sablona.html'
+DATA = REPO / 'kampan' / 'obchody' / 'polozky.json'
 VYSTUP = KOREN / 'generator.html'
 
 def main():

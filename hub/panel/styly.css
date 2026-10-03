@@ -145,7 +145,6 @@ input {
   padding: 0.5rem 0.7rem;
 }
 input:focus { border-color: var(--mosaz); outline: none; }
-#pole-datum { font-family: var(--pismo-svet); font-size: 1.2rem; }
 
 .ulozeni { color: var(--mlha); font-size: 0.9rem; min-height: 1.5em; }
 .ulozeni.chyba { color: var(--rez); }
@@ -259,3 +258,76 @@ button.hlavni kbd { color: var(--noc); border-color: rgb(22 27 38 / 0.45); }
 
 input.cislo { max-width: 8rem; }
 .formular label small { color: var(--mlha); }
+
+/* ---------- Blok 1b: kalendář, Další den, obchody ---------- */
+
+.vizualne-skryte { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+a.tlacitko {
+  display: inline-block;
+  text-decoration: none;
+  color: var(--kost);
+  background: var(--deska-svetla);
+  border: 1px solid var(--linka);
+  border-radius: var(--zaobleni);
+  padding: 0.45rem 0.9rem;
+}
+a.tlacitko.hlavni { background: var(--mosaz); color: var(--noc); border-color: var(--mosaz); font-weight: 600; }
+a { color: var(--mosaz); }
+
+.pole-datum { display: grid; gap: 0.3rem; color: var(--mlha); font-size: 0.9rem; }
+.pole-datum p { margin: 0; color: var(--kost); font-size: 1rem; }
+.pole-datum strong { font-family: var(--pismo-svet); font-size: 1.2rem; font-weight: 400; color: var(--mosaz); margin-right: 0.75rem; }
+
+.vyber-data { display: flex; gap: 0.6rem; align-items: end; flex-wrap: wrap; }
+.vyber-data label { display: grid; gap: 0.3rem; color: var(--mlha); font-size: 0.85rem; }
+.vyber-data label[hidden] { display: none; }
+.vyber-data input.den { width: 4.5rem; }
+.vyber-data input.rok { width: 6rem; }
+
+.kalendar-dnes { margin: 1.25rem 0 0.5rem; }
+.kalendar-datum { font-family: var(--pismo-svet); font-size: clamp(2.2rem, 5vw, 3.2rem); line-height: 1.1; color: var(--mosaz); margin: 0; }
+.kalendar-dnes .formular.radek { margin-top: 1rem; }
+.seznam-lhut { margin: 0; padding-left: 1.2rem; }
+
+.import { border: 1px solid var(--mosaz-tlumena); border-radius: var(--zaobleni); padding: 0.25rem 1.25rem 1rem; margin-top: 2rem; }
+.import h2 { margin-top: 1rem; }
+.import-srovnani { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.import-srovnani h3 { font-size: 0.95rem; font-weight: 500; color: var(--mlha); margin: 0.5rem 0; }
+.import-srovnani ol { margin: 0; padding-left: 1.4rem; font-size: 0.92rem; }
+
+.udalosti { border-collapse: collapse; width: 100%; margin: 0.75rem 0; font-size: 0.95rem; }
+.udalosti th, .udalosti td { text-align: left; padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--linka); vertical-align: top; }
+.udalosti th { color: var(--mlha); font-weight: 500; }
+.udalosti td:first-child { white-space: nowrap; }
+.udalosti td small { color: var(--mlha); }
+.udalosti tr[data-dnes="true"] td { background: color-mix(in srgb, var(--mosaz) 12%, transparent); }
+.udalosti td.skryta { color: var(--mlha); font-style: italic; }
+.akce-radku { white-space: nowrap; text-align: right; }
+.akce-radku button { padding: 0.25rem 0.6rem; font-size: 0.85rem; margin-left: 0.3rem; }
+.akce-radku button[data-potvrd="true"] { border-color: var(--rez); color: var(--rez); }
+.probehle summary { cursor: pointer; color: var(--mlha); margin-top: 0.5rem; }
+
+.vystupy dt { margin-top: 1rem; font-weight: 600; }
+.vystupy dd { margin: 0.3rem 0 0; }
+.vystupy small { color: var(--mlha); }
+
+.sloty { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.75rem 1.25rem; }
+.sloty label { display: grid; gap: 0.3rem; color: var(--mlha); font-size: 0.9rem; }
+
+.dialog-siroky { width: min(42rem, calc(100vw - 2rem)); }
+.dialog label.zaskrtavaci { display: flex; align-items: center; gap: 0.6rem; color: var(--kost); font-size: 1rem; }
+.dialog label.kratke { max-width: 14rem; }
+.dialog h3 { margin: 0.5rem 0 0; font-size: 1.05rem; }
+.den-prehled ul { margin: 0.25rem 0; padding-left: 1.2rem; }
+.den-prehled p { margin: 0.25rem 0; }
+.den-prehled .svatek { color: var(--mosaz); }
+.otazka { font-size: 1.25rem; margin: 1rem 0 0; font-family: var(--pismo-svet); }
+.pripominky { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.45rem; }
+.pripominky li { background: var(--noc); border-left: 3px solid var(--mosaz-tlumena); padding: 0.4rem 0.7rem; border-radius: 0 var(--zaobleni) var(--zaobleni) 0; }
+.pripominky strong { color: var(--mosaz); margin-right: 0.3rem; }
+.pripominky li.chyba { border-left-color: var(--rez); color: var(--rez); }
+
+@media (max-width: 52rem) {
+  .import-srovnani { grid-template-columns: 1fr; }
+}

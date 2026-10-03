@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <title>DM Hub — malý orloj</title>
+  <link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;500&display=swap" rel="stylesheet">
+  <style id="styl-orloje"></style>
+  <style>
+    /* Výstup pro OBS: medailon s dnešními událostmi vpravo a lhůtami vlevo. ?zrcadlo=1 strany prohodí. */
+    html, body { margin: 0; background: transparent; overflow: hidden; }
+    svg { width: 100vw; height: auto; display: block; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module">
+    import { malyOrloj, STYL_ORLOJE, sledovatKalendar } from '/sdilene/orloj.js';
+    document.getElementById('styl-orloje').textContent = STYL_ORLOJE;
+    const zrcadlo = new URLSearchParams(location.search).get('zrcadlo') === '1';
+    const orloj = malyOrloj(document.getElementById('app'), zrcadlo);
+    let posledni = null;
+    sledovatKalendar((data, animovat) => {
+      if (!data.dnes) return;
+      posledni = data;
+      orloj.obnov(data, animovat);
+    });
+    document.fonts?.ready.then(() => posledni && orloj.obnov(posledni, false));
+  </script>
+</body>
+</html>

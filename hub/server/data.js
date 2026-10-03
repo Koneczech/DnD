@@ -6,6 +6,7 @@ import YAML from 'yaml';
 import { rozebrat, upravitHlavicku, odkazy } from './frontmatter.js';
 import { TYPY_SLOZEK, TYPY } from './cesty.js';
 import { PRIPONA_DOCASNA } from './zapis.js';
+import { Harptos } from '../sdilene/harptos.js';
 
 export const SCHEMA = 1;
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -25,12 +26,30 @@ function relativni(koren, soubor) {
   return path.relative(koren, soubor).split(path.sep).join('/');
 }
 
+/**
+ * Datum Harptosu z hlavičky: mapa {rok, mesic, den} / {rok, svatek}, starší text „19. Eleint 1491“,
+ * nebo prázdná hodnota (datum zatím není zadané).
+ * @returns {{platne: boolean, datum: object|null}}
+ */
+export function datumHarptos(hodnota) {
+  if (hodnota === null || hodnota === undefined || hodnota === '') return { platne: true, datum: null };
+  if (typeof hodnota === 'string') {
+    const d = Harptos.zTextu(hodnota);
+    return { platne: Boolean(d), datum: d };
+  }
+  if (typeof hodnota === 'object') {
+    const d = Harptos.normalizuj(hodnota);
+    return { platne: Boolean(d), datum: d };
+  }
+  return { platne: false, datum: null };
+}
+
 /** Ověří hodnoty stavu kampaně. Vrací seznam chyb (prázdný = v pořádku). */
 export function overStav(data) {
   const chyby = [];
   if (!data || typeof data !== 'object') return ['Chybí hlavička'];
   if (data.schema !== SCHEMA) chyby.push(`schema musí být ${SCHEMA}`);
-  if (typeof data.datum !== 'string') chyby.push('datum musí být text');
+  if (!datumHarptos(data.datum).platne) chyby.push('datum musí být datum Harptosu, např. {rok: 1491, mesic: Eleint, den: 19}');
   if (typeof data.misto !== 'string') chyby.push('misto musí být text');
   if (!Number.isInteger(data.sezeni) || data.sezeni < 0) chyby.push('sezeni musí být celé číslo 0 nebo větší');
   if ('sezeni_bezi' in data && typeof data.sezeni_bezi !== 'boolean') chyby.push('sezeni_bezi musí být true nebo false');
@@ -186,7 +205,14 @@ export class DataKampane extends EventEmitter {
         // Poslední platný stav zůstává, aby se výstupy v OBS nevyprázdnily.
       } else {
         this.chybaStavu = null;
-        this.stav = { datum: r.data.datum, misto: r.data.misto, sezeni: r.data.sezeni, sezeniBezi: Boolean(r.data.sezeni_bezi) };
+        const datum = datumHarptos(r.data.datum).datum;
+        this.stav = {
+          datum,
+          datumText: datum ? Harptos.format(datum) : '',
+          misto: r.data.misto,
+          sezeni: r.data.sezeni,
+          sezeniBezi: Boolean(r.data.sezeni_bezi),
+        };
       }
     } catch (e) {
       this.chybaStavu = e.code === 'ENOENT' ? 'Soubor kampan/stav.md chybí' : e.message;
@@ -202,27 +228,36 @@ export class DataKampane extends EventEmitter {
     }
   }
 
+  /** Začátek kampaně (kampan.yaml, startovni_datum) jako datum Harptosu, nebo null. */
+  zacatek() {
+    return datumHarptos(this.kampan?.startovni_datum).datum;
+  }
+
   verejnyStav() {
     return {
       stav: this.stav,
       chyba: this.chybaStavu,
-      kampan: this.kampan ? { nazev: this.kampan.nazev ?? null } : null,
+      kampan: this.kampan ? { nazev: this.kampan.nazev ?? null, zacatek: this.zacatek() } : null,
       odlozeno: Boolean(this.zapisovac.cekajici(this.c.stav)),
     };
   }
 
   /**
    * Změna z panelu. Zapíše se automaticky (autosave) a hned se pošle do výstupů.
-   * @param {{datum?:string, misto?:string, sezeni?:number, sezeniBezi?:boolean}} zmeny
+   * @param {{datum?:object|null, misto?:string, sezeni?:number, sezeniBezi?:boolean}} zmeny
    * @param {{interni?:boolean}} volby sezeniBezi smí měnit jen Zahájit/Ukončit sezení, ne panel
    */
   async zmenitStav(zmeny, { interni = false } = {}) {
     const povolene = {};
     if (interni && 'sezeniBezi' in zmeny) povolene.sezeni_bezi = Boolean(zmeny.sezeniBezi);
-    if ('datum' in zmeny) povolene.datum = String(zmeny.datum);
+    if ('datum' in zmeny) {
+      const d = datumHarptos(zmeny.datum);
+      if (!d.platne) throw Object.assign(new Error('Neplatné datum Harptosu.'), { status: 400 });
+      povolene.datum = d.datum;
+    }
     if ('misto' in zmeny) povolene.misto = String(zmeny.misto);
     if ('sezeni' in zmeny) povolene.sezeni = Number(zmeny.sezeni);
-    const chyby = overStav({ schema: SCHEMA, datum: '', misto: '', sezeni: 0, ...povolene });
+    const chyby = overStav({ schema: SCHEMA, datum: null, misto: '', sezeni: 0, ...povolene });
     if (chyby.length) {
       const e = new Error(chyby.join('; '));
       e.status = 400;

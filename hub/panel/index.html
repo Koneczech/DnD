@@ -18,7 +18,7 @@
       <button type="button" id="tlacitko-sezeni">Zahájit sezení</button>
       <button type="button" id="tlacitko-souboj" title="Přepne OBS na scénu s iniciativou">Souboj</button>
       <button type="button" id="tlacitko-poznamka" title="Klávesa F2">Poznámka <kbd>F2</kbd></button>
-      <button type="button" disabled title="Přijde v Bloku 1b">Další den</button>
+      <button type="button" id="tlacitko-dalsi-den" title="Posune kalendář o den a ukáže připomínky">Další den</button>
       <button type="button" disabled title="Přijde v Bloku 3">Hledat</button>
     </nav>
 
@@ -34,11 +34,11 @@
       <a href="#prehled" data-obrazovka="prehled">Stav kampaně</a>
       <a href="#odpocet" data-obrazovka="odpocet">Odpočet <span class="odpocet-mini" id="odpocet-mini" hidden></span></a>
       <a href="#sceny" data-obrazovka="sceny">Scény OBS</a>
+      <a href="#kalendar" data-obrazovka="kalendar">Kalendář <span class="odpocet-mini" id="kalendar-mini" hidden></span></a>
+      <a href="#obchody" data-obrazovka="obchody">Obchody</a>
       <a href="#kontrola" data-obrazovka="kontrola">Kontrola dat <span class="pocet" id="pocet-problemu" hidden></span></a>
       <a href="#nastaveni" data-obrazovka="nastaveni">Nastavení</a>
       <hr>
-      <span class="pripravuje" title="Blok 1b">Kalendář</span>
-      <span class="pripravuje" title="Blok 1b">Obchody</span>
       <span class="pripravuje" title="Blok 2">Místa a ilustrace</span>
       <span class="pripravuje" title="Blok 3">Kánon</span>
     </nav>
@@ -50,9 +50,10 @@
         <h1>Stav kampaně</h1>
         <p class="uvod">Co tady změníš, se samo uloží do <code>kampan/stav.md</code> a hned se ukáže v OBS.</p>
         <form id="formular-stav" class="formular" autocomplete="off">
-          <label>Datum v Harptosu
-            <input name="datum" id="pole-datum" placeholder="např. 14. Eleint 1491 DR">
-          </label>
+          <div class="pole-datum">
+            <span>Datum v Harptosu</span>
+            <p><strong id="stav-datum">…</strong> <a href="#kalendar">Změnit v Kalendáři</a></p>
+          </div>
           <label>Kde je družina
             <input name="misto" id="pole-misto" placeholder="např. Longsaddle">
           </label>
@@ -98,6 +99,7 @@
           <button type="button" id="odpocet-pauza">Pauza</button>
           <button type="button" id="odpocet-zrusit">Zrušit</button>
         </div>
+        <p class="ulozeni" id="odpocet-prepnuti" aria-live="polite"></p>
         <h2>Výstup pro OBS</h2>
         <p class="adresa"><code id="adresa-odpoctu"></code> <button type="button" data-kopirovat="adresa-odpoctu">Kopírovat adresu</button></p>
       </section>
@@ -106,6 +108,95 @@
         <h1>Scény OBS</h1>
         <p class="uvod" id="obs-popis"></p>
         <div class="sceny" id="seznam-scen"></div>
+      </section>
+
+      <section id="obrazovka-kalendar" class="obrazovka" hidden>
+        <h1>Kalendář</h1>
+        <p class="uvod">Dnešní datum žije v <code>kampan/stav.md</code>, události v <code>kampan/kalendar/udalosti.yaml</code>. Každá změna je v OBS do sekundy.</p>
+
+        <div class="kalendar-dnes">
+          <p class="kalendar-datum" id="kalendar-datum">…</p>
+          <p class="ulozeni" id="kalendar-svatek"></p>
+          <div class="tlacitka">
+            <button type="button" data-posun="-1">− 1 den</button>
+            <button type="button" data-posun="1">+ 1 den</button>
+            <button type="button" class="hlavni" id="kalendar-dalsi-den">Další den…</button>
+          </div>
+          <form id="formular-dnes" class="formular radek" autocomplete="off">
+            <div class="vyber-data" id="vyber-dnes"></div>
+            <button type="submit">Nastavit datum</button>
+          </form>
+          <p class="ulozeni" id="kalendar-vysledek" aria-live="polite"></p>
+        </div>
+
+        <div id="kalendar-lhuty-box" hidden>
+          <h2>Lhůty v OBS</h2>
+          <ul class="seznam-lhut" id="kalendar-lhuty"></ul>
+        </div>
+
+        <section id="kalendar-import" class="import" hidden>
+          <h2>Import ze samostatného kalendáře</h2>
+          <p class="uvod" id="import-popis"></p>
+          <div class="import-srovnani">
+            <div><h3>V <code>kalendar-data.js</code>: <span id="import-pocet-zdroj">0</span></h3><ol id="import-zdroj"></ol></div>
+            <div><h3>V <code>udalosti.yaml</code>: <span id="import-pocet-cil">0</span></h3><ol id="import-cil"></ol></div>
+          </div>
+          <div class="tlacitka">
+            <button type="button" class="hlavni" id="import-spustit">Importovat</button>
+          </div>
+          <p class="ulozeni" id="import-vysledek" aria-live="polite"></p>
+        </section>
+
+        <h2>Události</h2>
+        <div class="tlacitka"><button type="button" id="udalost-nova">Přidat událost</button></div>
+        <p class="ulozeni chyba" id="kalendar-chyba" hidden></p>
+        <table class="udalosti" id="tabulka-udalosti">
+          <thead><tr><th scope="col">Datum</th><th scope="col">Událost</th><th scope="col">V OBS</th><th scope="col"><span class="vizualne-skryte">Akce</span></th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <details class="probehle">
+          <summary>Proběhlé události (<span id="pocet-probehlych">0</span>)</summary>
+          <table class="udalosti" id="tabulka-probehlych">
+            <thead><tr><th scope="col">Datum</th><th scope="col">Událost</th><th scope="col">V OBS</th><th scope="col"><span class="vizualne-skryte">Akce</span></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </details>
+
+        <h2>Výstupy pro OBS</h2>
+        <dl class="vystupy">
+          <dt>Velký orloj</dt>
+          <dd><p class="adresa"><code id="adresa-orloj-velky"></code> <button type="button" data-kopirovat="adresa-orloj-velky">Kopírovat adresu</button></p>
+            <small>Celý rok s cestou družiny a dnešními událostmi. <code>?pozadi=1</code> přidá tmavé pozadí.</small></dd>
+          <dt>Malý medailon</dt>
+          <dd><p class="adresa"><code id="adresa-orloj-maly"></code> <button type="button" data-kopirovat="adresa-orloj-maly">Kopírovat adresu</button></p>
+            <small>Do rohu obrazu; lhůty se ukazují vlevo od orloje. <code>?zrcadlo=1</code> je dá doprava.</small></dd>
+          <dt>Rekapitulace (během odpočtu)</dt>
+          <dd><p class="adresa"><code id="adresa-rekapitulace"></code> <button type="button" data-kopirovat="adresa-rekapitulace">Kopírovat adresu</button></p>
+            <small>Protočí dny od začátku kampaně po dnešek a ukáže veřejné události. Dej ji do scény s odpočtem.</small></dd>
+          <dt>Banner</dt>
+          <dd><small>Zatím nenavržený. Napiš, jak má vypadat a kde bude v obraze.</small></dd>
+        </dl>
+      </section>
+
+      <section id="obrazovka-obchody" class="obrazovka" hidden>
+        <h1>Obchody</h1>
+        <p class="uvod">Sortiment vylosuj v generátoru a ulož do Hubu. Ceník v OBS pak ukáže to, co je ve slotu. Prázdný slot se v OBS skryje.</p>
+        <div class="tlacitka"><a class="tlacitko hlavni" href="/nastroje/generator.html" target="_blank" rel="noopener">Otevřít generátor obchodů</a></div>
+
+        <h2>Sloty ceníku</h2>
+        <div class="sloty" id="sloty"></div>
+
+        <h2>Uložené sortimenty</h2>
+        <p class="uvod" id="sortimenty-prazdno">Zatím žádné. Ulož první z generátoru.</p>
+        <p class="ulozeni chyba" id="sortimenty-vadne" hidden></p>
+        <table class="udalosti" id="tabulka-sortimentu" hidden>
+          <thead><tr><th scope="col">Obchod</th><th scope="col">Typ</th><th scope="col">Položek</th><th scope="col">Uloženo</th><th scope="col"><span class="vizualne-skryte">Akce</span></th></tr></thead>
+          <tbody></tbody>
+        </table>
+
+        <h2>Výstupy pro OBS</h2>
+        <p class="adresa"><code id="adresa-cenik">…</code> <button type="button" data-kopirovat="adresa-cenik">Kopírovat adresu</button></p>
+        <p class="poznamka">Pro sloty 2 a 3 změň konec adresy na <code>?slot=2</code> nebo <code>?slot=3</code>. Velikost a umístění panelu nastav v OBS, písmo se přizpůsobí výšce zdroje.</p>
       </section>
 
       <section id="obrazovka-kontrola" class="obrazovka" hidden>
@@ -130,6 +221,10 @@
             <label>Scéna pro tlačítko Souboj
               <select name="scenaSouboj" id="pole-scena-souboj"></select>
               <small>Scéna s carouselem iniciativy z Improved Initiative.</small>
+            </label>
+            <label>Scéna po odpočtu
+              <select name="scenaPoOdpoctu" id="pole-scena-po-odpoctu"></select>
+              <small>Když odpočet doběhne, Hub na ni OBS jednou přepne. Prázdné = nepřepínat.</small>
             </label>
             <label>Heslo WebSocket serveru
               <input name="obsHeslo" id="pole-obs-heslo" type="password" autocomplete="new-password">
@@ -203,6 +298,51 @@
       <div class="tlacitka">
         <button type="submit" class="hlavni" value="ulozit">Zapsat <kbd>Ctrl+Enter</kbd></button>
         <button type="submit" value="zrusit" formnovalidate>Zavřít <kbd>Esc</kbd></button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dialog-den" class="dialog dialog-siroky">
+    <form method="dialog" id="formular-den">
+      <h2>Další den: <span id="den-datum"></span></h2>
+      <div id="den-krok1">
+        <div class="den-prehled" id="den-nahled"></div>
+        <p class="otazka">Proběhl důkladný odpočinek?</p>
+        <p class="ulozeni chyba" id="den-chyba" aria-live="polite"></p>
+        <div class="tlacitka">
+          <button type="submit" class="hlavni" value="ano">Ano, proběhl</button>
+          <button type="submit" class="hlavni" value="ne">Ne</button>
+          <button type="submit" value="zrusit" formnovalidate>Zpět</button>
+        </div>
+      </div>
+      <div id="den-krok2" hidden>
+        <div class="den-prehled" id="den-vysledek"></div>
+        <h3 id="den-pripominky-nadpis"></h3>
+        <ul class="pripominky" id="den-pripominky"></ul>
+        <p class="ulozeni" id="den-poznamka"></p>
+        <div class="tlacitka"><button type="submit" class="hlavni" value="zavrit">Hotovo</button></div>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dialog-udalost" class="dialog dialog-siroky">
+    <form method="dialog" id="formular-udalost" autocomplete="off">
+      <h2 id="udalost-nadpis">Nová událost</h2>
+      <label>Co se stane
+        <input name="text" id="udalost-text" maxlength="200" required>
+      </label>
+      <div class="pole-datum"><span>Kdy</span><div class="vyber-data" id="vyber-udalost-od"></div></div>
+      <label class="zaskrtavaci"><input type="checkbox" id="udalost-vicedenni"> Trvá víc dní</label>
+      <div class="pole-datum" id="udalost-konec-box" hidden><span>Do (včetně)</span><div class="vyber-data" id="vyber-udalost-do"></div></div>
+      <label class="zaskrtavaci"><input type="checkbox" id="udalost-verejna" checked> Veřejná (ukáže se v OBS)</label>
+      <label class="kratke">Lhůta (dní předem)
+        <input name="lhuta" id="udalost-lhuta" type="number" min="1" max="999" placeholder="žádná">
+        <small>Kolik dní před událostí ji OBS ukazuje vedle malého orloje.</small>
+      </label>
+      <p class="ulozeni chyba" id="udalost-chyba" aria-live="polite"></p>
+      <div class="tlacitka">
+        <button type="submit" class="hlavni" value="ulozit">Uložit</button>
+        <button type="submit" value="zrusit" formnovalidate>Zpět</button>
       </div>
     </form>
   </dialog>

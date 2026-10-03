@@ -8,6 +8,7 @@ export const VYCHOZI = Object.freeze({
   OBS_URL: 'ws://127.0.0.1:4455',
   OBS_HESLO: '',
   OBS_SCENA_SOUBOJ: '',
+  OBS_SCENA_PO_ODPOCTU: '',
   DOMACI_SIT: '0',
   PIN: '',
 });
@@ -79,6 +80,7 @@ export class Nastaveni {
       obsUrl: this.hodnoty.OBS_URL,
       obsHesloNastaveno: Boolean(this.hodnoty.OBS_HESLO),
       scenaSouboj: this.hodnoty.OBS_SCENA_SOUBOJ || '',
+      scenaPoOdpoctu: this.hodnoty.OBS_SCENA_PO_ODPOCTU || '',
       domaciSit: this.hodnoty.DOMACI_SIT === '1',
       pinNastaven: Boolean(this.hodnoty.PIN),
     };
@@ -96,10 +98,11 @@ export class Nastaveni {
     }
     if (z.obsHeslo) nove.OBS_HESLO = String(z.obsHeslo);
     if (z.smazatObsHeslo) nove.OBS_HESLO = '';
-    if (z.scenaSouboj !== undefined) {
-      const scena = String(z.scenaSouboj).trim();
+    for (const [pole, klic] of [['scenaSouboj', 'OBS_SCENA_SOUBOJ'], ['scenaPoOdpoctu', 'OBS_SCENA_PO_ODPOCTU']]) {
+      if (z[pole] === undefined) continue;
+      const scena = String(z[pole]).trim();
       if (scena.length > 200) throw Object.assign(new Error('Název scény je příliš dlouhý'), { status: 400 });
-      nove.OBS_SCENA_SOUBOJ = scena;
+      nove[klic] = scena;
     }
     if (z.port !== undefined) {
       const p = Number(z.port);

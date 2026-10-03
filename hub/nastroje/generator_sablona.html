@@ -334,6 +334,7 @@ function provedLosovani(seed){
   const f=fond(stav.typ,stav.lokalita);
   if(!f.length){zprava('Pro tuhle kombinaci nemá fond žádné zboží.',true);return;}
   stav.seed=seed;
+  hubId=null; // nový los = nový sortiment v Hubu
   el('seed').value=seed;
   const pocet=Math.max(4,Math.min(16,parseInt(el('pocet').value,10)||9));
   stav.polozky=losuj(stav.typ,stav.lokalita,pocet,stav.exp,seed);
@@ -518,9 +519,28 @@ async function zapisDoSlozky(out){
   const blob=JSON.stringify(out).replace(/<\//g,'<\\/');
   await zapisSoubor(cilCeniku(), html.replace('%%SORTIMENT%%',()=>blob));
 }
+/* --- režim Hubu ---
+   Hub servíruje generátor na /nastroje/generator.html a před data vloží window.DMHUB.
+   Uložit pak pošle sortiment do Hubu (kampan/obchody/sortimenty/) a dá ho do zvoleného
+   slotu ceníku; složka projektu a zápis souborů se nepoužívají. Opakované uložení
+   přepíše tentýž sortiment, dokud se nevylosuje nový. */
+const HUB = typeof window.DMHUB === 'object' && window.DMHUB !== null;
+let hubId = null;
+async function ulozDoHubu(out){
+  const r=await fetch('/api/obchody/sortimenty',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({sortiment:out,slot:stav.slot,id:hubId})});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(d.chyba||('HTTP '+r.status));
+  hubId=d.id;
+  zprava('Uloženo do Hubu ('+d.id+') a posláno do ceníku ve slotu '+stav.slot+'.');
+}
 el('uloz').addEventListener('click',async()=>{
   if(!stav.polozky.length){zprava('Není co ukládat.',true);return;}
   const out=sestavSortiment();
+  if(HUB){
+    try{ await ulozDoHubu(out); }catch(e){ zprava('Uložení do Hubu selhalo: '+e.message,true); }
+    return;
+  }
   if(slozka){
     try{
       if(!await povoleno()){zprava('Chrome zápis nepovolil.',true);return;}
@@ -541,6 +561,11 @@ el('uloz').addEventListener('click',async()=>{
     .sort((a,b)=>a[1].localeCompare(b[1],'cs'))
     .forEach(([k,v])=>{const o=document.createElement('option');o.value=k;o.textContent=v;sel.appendChild(o);});
   vykresli();
+  if(HUB){
+    document.querySelector('.slozka').style.display='none';
+    el('uloz').textContent='Uložit sortiment do Hubu';
+    return;
+  }
   vykresliSlozku();
   if(maFSA) handleNacti().then(h=>{if(h){slozka=h;vykresliSlozku();}}).catch(()=>{});
 })();

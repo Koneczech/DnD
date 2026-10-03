@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <title>DM Hub — rekapitulace kalendáře</title>
+  <link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;500&display=swap" rel="stylesheet">
+  <style id="styl-orloje"></style>
+  <style>
+    /* Výstup pro OBS (otevřený bod 22): během odpočtu se orloj protočí od prvního dne kampaně
+       po dnešek a u každého dne ukáže veřejné události, které se družině staly. Pak začne znovu.
+       Parametry: ?krok=2200 (ms na den bez událostí), ?udalost=4500 (ms na den s událostí),
+       ?dnes=12000 (ms na dnešku), ?pozadi=1 (tmavé pozadí). */
+    html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+    body.s-pozadim { background: #1E1E1C; }
+    body {
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto;
+      justify-items: center;
+      font-family: "Alegreya", Georgia, serif;
+      color: #EDE6D6;
+    }
+    #app { min-height: 0; display: grid; place-items: center; padding-top: 3vh; }
+    svg { height: 68vh; width: 68vh; display: block; }
+    .popisek {
+      min-height: 22vh;
+      width: min(90vw, 1100px);
+      text-align: center;
+      padding: 2vh 0 4vh;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+      transition: opacity 0.5s ease;
+    }
+    .popisek.skryty { opacity: 0; }
+    .datum { font-size: 4.2vh; color: #FAC775; margin: 0 0 1.2vh; }
+    .datum.dnes { color: #EF9F27; }
+    ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.8vh; }
+    li { font-size: 3.6vh; line-height: 1.2; }
+    li .rozsah { font-size: 2.6vh; color: #B9B1A0; margin-left: 0.6em; }
+    @media (prefers-reduced-motion: reduce) { .popisek { transition: none; } }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <div class="popisek skryty" id="popisek" aria-live="polite">
+    <p class="datum" id="datum"></p>
+    <ul id="seznam"></ul>
+  </div>
+  <script type="module">
+    import { velkyOrloj, STYL_ORLOJE, sledovatKalendar } from '/sdilene/orloj.js';
+    import { Harptos, udalostiDne } from '/sdilene/harptos.js';
+
+    document.getElementById('styl-orloje').textContent = STYL_ORLOJE;
+    const P = new URLSearchParams(location.search);
+    if (P.get('pozadi') === '1') document.body.classList.add('s-pozadim');
+    const KROK = Number(P.get('krok')) || 2200;
+    const S_UDALOSTI = Number(P.get('udalost')) || 4500;
+    const NA_DNESKU = Number(P.get('dnes')) || 12000;
+    const MAX_DNI = 120; // delší kampaň se zkrátí na posledních 120 dní
+
+    const orloj = velkyOrloj(document.getElementById('app'));
+    const popisek = document.getElementById('popisek');
+    let data = null;
+    let beh = 0; // číslo běhu; nová data spustí rekapitulaci znovu
+
+    const cekej = (ms) => new Promise((r) => setTimeout(r, ms));
+
+    function dny(zacatek, dnes) {
+      if (!zacatek || Harptos.rozdil(zacatek, dnes) < 0) return [dnes];
+      const pocet = Math.min(Harptos.rozdil(zacatek, dnes), MAX_DNI - 1);
+      const start = Harptos.posun(dnes, -pocet);
+      return Array.from({ length: pocet + 1 }, (_, i) => Harptos.posun(start, i));
+    }
+
+    /** Události, které ten den začínají (vícedenní jen v první den, s rozsahem). */
+    function udalostiOd(den) {
+      return udalostiDne(den, data.udalosti).filter((x) => x.den === 1).map((x) => x.u);
+    }
+
+    function ukazPopisek(den, udalosti, jeDnes) {
+      const datum = document.getElementById('datum');
+      datum.textContent = jeDnes ? `Dnes, ${Harptos.format(den)}` : Harptos.format(den);
+      datum.className = jeDnes ? 'datum dnes' : 'datum';
+      const seznam = document.getElementById('seznam');
+      seznam.replaceChildren(
+        ...udalosti.map((u) => {
+          const li = document.createElement('li');
+          li.textContent = u.text;
+          if (u.konec) {
+            const r = document.createElement('span');
+            r.className = 'rozsah';
+            r.textContent = Harptos.formatRozsah(u.datum, u.konec);
+            li.append(r);
+          }
+          return li;
+        }),
+      );
+      popisek.classList.remove('skryty');
+    }
+
+    async function prehrat(cislo) {
+      while (cislo === beh) {
+        const seznamDni = dny(data.zacatek, data.dnes);
+        orloj.obnov({ ...data, dnes: seznamDni[0] }, false);
+        popisek.classList.add('skryty');
+        await cekej(800);
+        for (let i = 0; i < seznamDni.length; i++) {
+          if (cislo !== beh) return;
+          const den = seznamDni[i];
+          const jeDnes = i === seznamDni.length - 1;
+          orloj.obnov({ ...data, dnes: den }, i > 0);
+          const udalosti = jeDnes ? udalostiDne(den, data.udalosti).map((x) => x.u) : udalostiOd(den);
+          if (udalosti.length || jeDnes) ukazPopisek(den, udalosti, jeDnes);
+          else popisek.classList.add('skryty');
+          await cekej(jeDnes ? NA_DNESKU : udalosti.length ? S_UDALOSTI : KROK);
+        }
+        popisek.classList.add('skryty');
+        await cekej(1000);
+      }
+    }
+
+    sledovatKalendar((nova) => {
+      if (!nova.dnes) return;
+      const zmena = !data || JSON.stringify(nova) !== JSON.stringify(data);
+      data = nova;
+      if (zmena) prehrat(++beh);
+    });
+  </script>
+</body>
+</html>

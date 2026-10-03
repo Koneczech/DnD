@@ -14,6 +14,13 @@ import { Vysilac } from './sse.js';
 import { Sezeni, datumCesky } from './sezeni.js';
 import { Odpocet } from './odpocet.js';
 import { jeVOneDrive, nainstalovatHook } from './prostredi.js';
+import { Kalendar } from './kalendar.js';
+import { DalsiDen } from './dalsiden.js';
+import { Obchody } from './obchody.js';
+import { HUB_DIR } from './cesty.js';
+
+/** Po kolika ms od konce odpočtu se scéna po restartu Hubu ještě přepne (otevřený bod 21). */
+export const PREPNUTI_PO_RESTARTU_MS = 10 * 60 * 1000;
 
 const TYPY_SOUBORU = {
   '.html': 'text/html; charset=utf-8',
@@ -71,6 +78,10 @@ export class Hub {
     this.obs = new Obs(obsKlient ? { klient: obsKlient } : {});
     this.git = new Git(this.c.koren);
     this.vysilac = new Vysilac();
+    this.kalendar = new Kalendar({ cesty: this.c, data: this.data, zapisovac: this.zapisovac });
+    this.dalsiDen = new DalsiDen({ cesty: this.c, kalendar: this.kalendar, sezeni: this.sezeni });
+    this.obchody = new Obchody({ cesty: this.c, zapisovac: this.zapisovac });
+    this.casovacOdpoctu = null;
     this.server = null;
     this.spusteno = new Date().toISOString();
     this.prostredi = { oneDrive: jeVOneDrive(this.c.koren), hook: null };
@@ -84,14 +95,30 @@ export class Hub {
     this.zapisovac.on('odlozeno', () => this.vyslatStav());
     this.zapisovac.on('dokonceno', () => this.vyslatStav());
     this.zapisovac.on('zahozeno', () => this.vyslatStav());
-    this.data.on('stav', () => this.vyslatStav());
+    this.data.on('stav', () => {
+      this.vyslatStav();
+      // Datum a začátek kampaně žijí ve stav.md a kampan.yaml; výstupy kalendáře je potřebují hned.
+      this.kalendar.oznam();
+    });
     this.data.on('kontrola', (k) => this.vysilac.vyslat('kontrola', k));
-    this.obs.on('stav', (s) => this.vysilac.vyslat('obs', s));
-    this.odpocet.on('stav', (s) => this.vysilac.vyslat('odpocet', s));
-    this.hlidac.on('zmena', ({ soubor }) => this.data.souborZmenen(soubor).catch(() => {}));
+    this.obs.on('stav', (s) => {
+      this.vysilac.vyslat('obs', s);
+      if (s.pripojeno) this.hlidatOdpocet();
+    });
+    this.odpocet.on('stav', (s) => {
+      this.vysilac.vyslat('odpocet', s);
+      this.hlidatOdpocet();
+    });
+    this.kalendar.on('zmena', (k) => this.vysilac.vyslat('kalendar-dm', k));
+    this.kalendar.on('verejne', (k) => this.vyslatKalendar(k));
+    this.obchody.on('zmena', (o) => this.vysilac.vyslat('obchody', o));
+    this.obchody.on('ceniky', (c) => this.vysilac.vyslat('ceniky', c));
+    this.hlidac.on('zmena', ({ soubor }) => this.souborZmenen(soubor).catch(() => {}));
 
     await this.zapisovac.obnovit();
     await this.data.nacist();
+    await this.kalendar.nacist();
+    await this.obchody.nacist();
     await this.odpocet.nacist();
     this.vysilac.vyslat('odpocet', this.odpocet.verejny());
     await this.hlidac.spustit();
@@ -110,7 +137,57 @@ export class Hub {
       this.obs.nastavit(this.nastaveni.hodnoty.OBS_URL, this.nastaveni.hodnoty.OBS_HESLO);
     }
     this.obnovitGit(this.gitSit);
+    this.hlidatOdpocet();
     return this;
+  }
+
+  async souborZmenen(soubor) {
+    if (await this.kalendar.souborZmenen(soubor)) return;
+    if (await this.obchody.souborZmenen(soubor)) return;
+    await this.data.souborZmenen(soubor);
+  }
+
+  /** Veřejný kalendář do výstupů; stejná data se neposílají dvakrát (orloj by se zbytečně překreslil). */
+  vyslatKalendar(k = this.kalendar.verejne()) {
+    const json = JSON.stringify(k);
+    if (json === this.posledniKalendar) return;
+    this.posledniKalendar = json;
+    this.vysilac.vyslat('kalendar', k);
+  }
+
+  /**
+   * Otevřený bod 21: po doběhnutí odpočtu přepne OBS na „Scénu po odpočtu“, jen jednou.
+   * Když Hub naběhne až po konci, přepne, pokud od konce neuběhlo víc než 10 minut.
+   */
+  hlidatOdpocet() {
+    clearTimeout(this.casovacOdpoctu);
+    this.casovacOdpoctu = null;
+    const s = this.odpocet.stav;
+    if (s.stav !== 'bezi' || s.prepnuti || !s.konec) return;
+    const zbyva = Date.parse(s.konec) - this.odpocet.hodiny();
+    if (zbyva > 0) {
+      // setTimeout zvládne nejvýš ~24,8 dne; odpočet má limit 24 h.
+      this.casovacOdpoctu = setTimeout(() => this.hlidatOdpocet(), Math.min(zbyva, 2 ** 31 - 1));
+      this.casovacOdpoctu.unref?.();
+      return;
+    }
+    this.prepnoutPoOdpoctu(-zbyva).catch(() => {});
+  }
+
+  async prepnoutPoOdpoctu(poKonciMs) {
+    const scena = this.nastaveni.hodnoty.OBS_SCENA_PO_ODPOCTU;
+    if (!scena) return this.odpocet.zaznamenatPrepnuti({ scena: null, ok: false, duvod: 'Scéna po odpočtu není nastavená.' });
+    if (poKonciMs > PREPNUTI_PO_RESTARTU_MS) {
+      return this.odpocet.zaznamenatPrepnuti({ scena, ok: false, duvod: 'Odpočet doběhl dávno před startem Hubu, scéna se nepřepnula.' });
+    }
+    // OBS ještě není připojené (start Hubu, výpadek): přepne se po připojení, pokud je stále v limitu.
+    if (!this.obs.pripojeno) return undefined;
+    try {
+      await this.obs.prepnoutScenu(scena);
+      return this.odpocet.zaznamenatPrepnuti({ scena, ok: true });
+    } catch (e) {
+      return this.odpocet.zaznamenatPrepnuti({ scena, ok: false, duvod: `OBS scénu nepřepnul: ${e.message}` });
+    }
   }
 
   get adresa() {
@@ -143,6 +220,8 @@ export class Hub {
       odpocet: this.odpocet.verejny(),
       stav: { ...this.data.verejnyStav(), odlozeneZapisy: this.odlozeneZapisy() },
       kontrola: this.data.kontrola,
+      kalendar: this.kalendar.stavDm(),
+      obchody: this.obchody.seznam(),
       obs: this.obs.verejnyStav(),
       git: this.git.stav,
       nastaveni: this.nastaveni.verejne(),
@@ -272,6 +351,14 @@ export class Hub {
       await this.obs.prepnoutScenu(scena);
       return poslatJson(res, 200, { ok: true, scena, ms: Date.now() - zacatek });
     }
+    if (p.startsWith('/api/kalendar') || p.startsWith('/api/den/')) {
+      const v = await this.apiKalendar(req, m, p);
+      if (v !== undefined) return poslatJson(res, 200, v);
+    }
+    if (p.startsWith('/api/obchody')) {
+      const v = await this.apiObchody(req, m, p);
+      if (v !== undefined) return poslatJson(res, 200, v);
+    }
     if (p === '/api/git/ulozit' && m === 'POST') {
       const telo = await nacistJson(req);
       const zprava = String(telo.zprava || '').trim() || `Ruční uložení — ${datumCesky()}`;
@@ -288,21 +375,83 @@ export class Hub {
       await nacistJson(req);
       await this.git.stahnout();
       await this.data.nacist();
+      await this.kalendar.nacist();
+      await this.obchody.nacist();
       this.vysilac.vyslat('git', this.git.stav);
       return poslatJson(res, 200, this.git.stav);
     }
     throw Object.assign(new Error('Neznámá adresa'), { status: 404 });
   }
 
+  async apiKalendar(req, m, p) {
+    const k = this.kalendar;
+    if (p === '/api/kalendar' && m === 'GET') return { ...k.stavDm(), import: await k.lzeImportovat() };
+    if (p === '/api/kalendar/verejne' && m === 'GET') return k.verejne();
+    if (p === '/api/kalendar/import' && m === 'POST') {
+      const { prepsat } = await nacistJson(req);
+      return k.importovat({ prepsat: prepsat === true });
+    }
+    if (p === '/api/kalendar/udalosti' && m === 'POST') return k.pridat(await nacistJson(req));
+    const u = /^\/api\/kalendar\/udalosti\/([A-Za-z0-9_-]{1,80})$/.exec(p);
+    if (u && m === 'PUT') return k.upravit(u[1], await nacistJson(req));
+    if (u && m === 'DELETE') return k.smazat(u[1]);
+    if (p === '/api/kalendar/dnes' && m === 'PUT') {
+      const telo = await nacistJson(req);
+      if (telo.posun !== undefined) {
+        const n = Number(telo.posun);
+        if (!Number.isInteger(n) || Math.abs(n) > 3660) throw Object.assign(new Error('Posun musí být celé číslo dní.'), { status: 400 });
+        return k.posunout(n);
+      }
+      return k.nastavitDnes(telo.datum);
+    }
+    if (p === '/api/den/nahled' && m === 'GET') return this.dalsiDen.nahled();
+    if (p === '/api/den/dalsi' && m === 'POST') {
+      const { dukladny } = await nacistJson(req);
+      if (typeof dukladny !== 'boolean') throw Object.assign(new Error('Odpověz, jestli proběhl důkladný odpočinek.'), { status: 400 });
+      return this.dalsiDen.provest({ dukladny });
+    }
+    return undefined;
+  }
+
+  async apiObchody(req, m, p) {
+    const o = this.obchody;
+    if (p === '/api/obchody' && m === 'GET') return o.seznam();
+    if (p === '/api/obchody/ceniky' && m === 'GET') return o.ceniky();
+    if (p === '/api/obchody/sortimenty' && m === 'POST') return o.ulozit(await nacistJson(req, 256 * 1024));
+    const s = /^\/api\/obchody\/sortimenty\/([a-z0-9-]{1,80})$/.exec(p);
+    if (s && m === 'GET') {
+      const sortiment = o.sortimenty.get(s[1]);
+      if (!sortiment) throw Object.assign(new Error('Sortiment neexistuje.'), { status: 404 });
+      return { id: s[1], sortiment };
+    }
+    if (s && m === 'DELETE') return o.smazat(s[1]);
+    const slot = /^\/api\/obchody\/sloty\/(\d)$/.exec(p);
+    if (slot && m === 'PUT') {
+      const { id } = await nacistJson(req);
+      return o.nastavitSlot(slot[1], id ? String(id) : null);
+    }
+    return undefined;
+  }
+
   async staticky(req, res, url) {
     if (req.method !== 'GET' && req.method !== 'HEAD') throw Object.assign(new Error('Metoda není povolena'), { status: 405 });
+    if (url.pathname === '/nastroje/generator.html') {
+      const html = await this.obchody.generator();
+      res.writeHead(200, { 'Content-Type': TYPY_SOUBORU['.html'], 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff' });
+      return res.end(req.method === 'HEAD' ? undefined : html);
+    }
     let soubor;
+    let koren = this.c.panel;
     if (url.pathname === '/' || url.pathname === '/panel' || url.pathname === '/panel/') soubor = path.join(this.c.panel, 'index.html');
     else if (url.pathname.startsWith('/panel/')) soubor = path.join(this.c.panel, decodeURIComponent(url.pathname.slice(7)));
-    else if (url.pathname.startsWith('/vystupy/')) soubor = path.join(this.c.vystupy, decodeURIComponent(url.pathname.slice(9)));
-    else throw Object.assign(new Error('Stránka neexistuje'), { status: 404 });
-
-    const koren = url.pathname.startsWith('/vystupy/') ? this.c.vystupy : this.c.panel;
+    else if (url.pathname.startsWith('/vystupy/')) {
+      koren = this.c.vystupy;
+      soubor = path.join(koren, decodeURIComponent(url.pathname.slice(9)));
+    } else if (url.pathname.startsWith('/sdilene/')) {
+      // Moduly sdílené serverem i výstupy (motor Harptos, orloj).
+      koren = path.join(HUB_DIR, 'sdilene');
+      soubor = path.join(koren, decodeURIComponent(url.pathname.slice(9)));
+    } else throw Object.assign(new Error('Stránka neexistuje'), { status: 404 });
     const rel = path.relative(koren, soubor);
     if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) throw Object.assign(new Error('Stránka neexistuje'), { status: 404 });
     let obsah;
@@ -320,6 +469,7 @@ export class Hub {
   }
 
   async zastavit() {
+    clearTimeout(this.casovacOdpoctu);
     this.vysilac.zavrit();
     await this.hlidac.zastavit();
     await this.obs.ukoncit();

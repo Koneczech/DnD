@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <title>DM Hub — velký orloj</title>
+  <link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;500&display=swap" rel="stylesheet">
+  <style id="styl-orloje"></style>
+  <style>
+    /* Výstup pro OBS: celá obrazovka na začátku sezení. ?pozadi=1 přidá tmavé pozadí. */
+    html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+    body.s-pozadim { background: #1E1E1C; }
+    body { display: grid; place-items: center; }
+    svg { width: min(100vw, 100vh); height: min(100vw, 100vh); display: block; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module">
+    import { velkyOrloj, STYL_ORLOJE, sledovatKalendar } from '/sdilene/orloj.js';
+    document.getElementById('styl-orloje').textContent = STYL_ORLOJE;
+    if (new URLSearchParams(location.search).get('pozadi') === '1') document.body.classList.add('s-pozadim');
+    const orloj = velkyOrloj(document.getElementById('app'));
+    let posledni = null;
+    sledovatKalendar((data, animovat) => {
+      if (!data.dnes) return; // datum ještě není zadané: drž poslední stav
+      posledni = data;
+      orloj.obnov(data, animovat);
+    });
+    document.fonts?.ready.then(() => posledni && orloj.obnov(posledni, false));
+  </script>
+</body>
+</html>

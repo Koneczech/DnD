@@ -25,6 +25,7 @@ test('id sezení a řádek poznámky', () => {
   assert.equal(idSezeni(12), 's12');
   assert.equal(radekPoznamky('Tusker padl', kdy), '- 18:05 — Tusker padl\n');
   assert.equal(radekPoznamky('první\ndruhý', kdy), '- 18:05 — první\n  druhý\n');
+  assert.equal(radekPoznamky('Nový den', kdy, { rok: 1491, svatek: 'Highharvestide' }), '- 18:05 (Highharvestide) — Nový den\n');
   assert.equal(casIso(kdy), '2026-10-03T18:05');
 });
 
@@ -45,7 +46,8 @@ test('Zahájit sezení zvýší číslo, založí soubor sezení a projde Kontro
       { id: s.data.id, typ: s.data.typ, cislo: s.data.cislo, datum: s.data.datum_realne, zacatek: s.data.zacatek, pritomni: s.data.pritomni, verejne: s.data.verejne },
       { id: 's02', typ: 'sezeni', cislo: 2, datum: '2026-10-03', zacatek: '2026-10-03T18:05', pritomni: ['Martin', 'Anna'], verejne: false },
     );
-    assert.match(s.telo, /- 18:05 — Začátek sezení/);
+    assert.match(s.telo, /- 18:05 \(12\. Eleint\) — Začátek sezení/, 'poznámky nesou datum v Harptosu (Blok 1b)');
+    assert.deepEqual(s.data.harptos_zacatek, { rok: 1491, mesic: 'Eleint', den: 12 });
     assert.deepEqual((await kontrolaDat(c)).problemy, []);
 
     await assert.rejects(sezeni.zahajit({ kdy }), /už běží/);
@@ -64,7 +66,7 @@ test('Poznámky jdou do běžícího sezení, mimo sezení do priprava.md', asyn
     // Souběžné poznámky se nesmí přepsat
     await Promise.all([1, 2, 3].map((n) => sezeni.poznamka(`poznámka ${n}`, { kdy })));
     const text = await fs.readFile(path.join(c.kampan, 'sezeni', 's02', 's02.md'), 'utf8');
-    for (const n of [1, 2, 3]) assert.match(text, new RegExp(`- 18:05 — poznámka ${n}`));
+    for (const n of [1, 2, 3]) assert.match(text, new RegExp(`- 18:05 \\(12\\. Eleint\\) — poznámka ${n}`));
     assert.match(await fs.readFile(path.join(c.kampan, 'sezeni', 'priprava.md'), 'utf8'), /Připravit tábor/);
     await assert.rejects(sezeni.poznamka('   '), /prázdná/);
     assert.deepEqual((await kontrolaDat(c)).problemy, []);
@@ -84,7 +86,8 @@ test('Ukončit sezení zapíše konec a vypne příznak; bez sezení vrátí chy
     assert.equal(data.stav.sezeniBezi, false);
     const s = rozebrat(await fs.readFile(path.join(c.kampan, 'sezeni', 's02', 's02.md'), 'utf8'));
     assert.equal(s.data.konec, '2026-10-03T22:41');
-    assert.match(s.telo, /boj v táboře\n- 22:41 — Konec sezení\n$/);
+    assert.match(s.telo, /boj v táboře\n- 22:41 \(12\. Eleint\) — Konec sezení\n$/);
+    assert.deepEqual(s.data.harptos_konec, { rok: 1491, mesic: 'Eleint', den: 12 });
     // Další sezení dostane další číslo
     assert.equal((await sezeni.zahajit({ kdy })).cislo, 3);
   } finally {

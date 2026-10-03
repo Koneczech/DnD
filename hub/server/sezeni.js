@@ -4,6 +4,7 @@ import path from 'node:path';
 import YAML from 'yaml';
 import { rozebrat, upravitHlavicku, slozit } from './frontmatter.js';
 import { SCHEMA } from './data.js';
+import { Harptos } from '../sdilene/harptos.js';
 
 export const ID_PRIPRAVY = 'priprava';
 
@@ -33,10 +34,14 @@ export function idSezeni(cislo) {
   return `s${dvojmistne(cislo)}`;
 }
 
-/** Text poznámky jako položka seznamu; víceřádková poznámka se odsadí. */
-export function radekPoznamky(text, d = new Date()) {
+/**
+ * Text poznámky jako položka seznamu; víceřádková poznámka se odsadí.
+ * S datem Harptosu: „- 18:05 (19. Eleint) — text“.
+ */
+export function radekPoznamky(text, d = new Date(), harptos = null) {
   const radky = String(text).trim().split(/\r?\n/);
-  return `- ${casHodiny(d)} — ${radky[0]}${radky.slice(1).map((r) => `\n  ${r}`).join('')}\n`;
+  const den = harptos ? ` (${Harptos.kratce(harptos)})` : '';
+  return `- ${casHodiny(d)}${den} — ${radky[0]}${radky.slice(1).map((r) => `\n  ${r}`).join('')}\n`;
 }
 
 export class Sezeni {
@@ -117,9 +122,12 @@ export class Sezeni {
         konec: null,
         pritomni: pritomni.map(String),
       };
-      const telo = `\n# Sezení ${cislo}\n\n## Poznámky ze stolu\n\n- ${casHodiny(kdy)} — Začátek sezení\n`;
+      const harptos = stav.datum ?? null;
+      const telo = `\n# Sezení ${cislo}\n\n## Poznámky ze stolu\n\n${radekPoznamky('Začátek sezení', kdy, harptos)}`;
+      let obsah = slozit(hlavicka, telo);
+      if (harptos) obsah = upravitHlavicku(obsah, { harptos_zacatek: harptos });
       await fs.mkdir(path.dirname(soubor), { recursive: true });
-      const { vysledek } = await this.zapisovac.zapsat(soubor, slozit(hlavicka, telo));
+      const { vysledek } = await this.zapisovac.zapsat(soubor, obsah);
       await this.data.zmenitStav({ sezeni: cislo, sezeniBezi: true }, { interni: true });
       return { cislo, soubor: this.relativni(soubor), vysledek };
     });
@@ -139,8 +147,9 @@ export class Sezeni {
       }
       let vysledek = 'zapsano';
       if (text !== null && !rozebrat(text).chyba) {
-        const novy = upravitHlavicku(text, { konec: casIso(kdy) });
-        const konec = `${novy.endsWith('\n') ? '' : '\n'}- ${casHodiny(kdy)} — Konec sezení\n`;
+        const harptos = stav.datum ?? null;
+        const novy = upravitHlavicku(text, { konec: casIso(kdy), ...(harptos ? { harptos_konec: harptos } : {}) });
+        const konec = `${novy.endsWith('\n') ? '' : '\n'}${radekPoznamky('Konec sezení', kdy, harptos)}`;
         ({ vysledek } = await this.zapisovac.zapsat(soubor, novy + konec));
       }
       await this.data.zmenitStav({ sezeniBezi: false }, { interni: true });
@@ -168,7 +177,7 @@ export class Sezeni {
           '\n# Poznámky mimo sezení\n\n',
         );
       }
-      const novy = `${text}${text.endsWith('\n') ? '' : '\n'}${radekPoznamky(obsah, kdy)}`;
+      const novy = `${text}${text.endsWith('\n') ? '' : '\n'}${radekPoznamky(obsah, kdy, this.data.stav?.datum ?? null)}`;
       await fs.mkdir(path.dirname(soubor), { recursive: true });
       const { vysledek } = await this.zapisovac.zapsat(soubor, novy);
       return { soubor: this.relativni(soubor), vysledek, cas: casHodiny(kdy) };

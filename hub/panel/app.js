@@ -1,4 +1,6 @@
 // Ovládací panel DM Hubu. Bez build kroku, čistý JavaScript.
+import { Harptos, MESICE, SVATKY, dnyText, zbyvaText } from '/sdilene/harptos.js';
+
 const $ = (sel) => document.querySelector(sel);
 
 const stav = {
@@ -25,8 +27,9 @@ function cas() {
 /* ---------- Navigace ---------- */
 
 function ukazObrazovku(jmeno) {
-  const platne = ['prehled', 'odpocet', 'sceny', 'kontrola', 'nastaveni'];
+  const platne = ['prehled', 'odpocet', 'sceny', 'kalendar', 'obchody', 'kontrola', 'nastaveni'];
   const cil = platne.includes(jmeno) ? jmeno : 'prehled';
+  if (cil === 'kalendar') nactiImport();
   for (const s of document.querySelectorAll('.obrazovka')) s.hidden = s.id !== `obrazovka-${cil}`;
   for (const a of document.querySelectorAll('.moduly a')) {
     if (a.dataset.obrazovka === cil) a.setAttribute('aria-current', 'page');
@@ -39,12 +42,13 @@ window.addEventListener('hashchange', () => ukazObrazovku(location.hash.slice(1)
 
 function vykresliStav(s) {
   const k = s?.stav;
-  $('#lista-datum').textContent = k?.datum || 'Datum není zadané';
+  $('#lista-datum').textContent = k?.datumText || 'Datum není zadané';
+  $('#stav-datum').textContent = k?.datumText || 'zatím nezadané';
   $('#lista-misto').textContent = k?.misto || '';
   $('#lista-misto').hidden = !k?.misto;
   $('#lista-sezeni').textContent = k ? `sezení ${k.sezeni}` : '';
   if (k) {
-    for (const [pole, hodnota] of [['datum', k.datum], ['misto', k.misto], ['sezeni', k.sezeni]]) {
+    for (const [pole, hodnota] of [['misto', k.misto], ['sezeni', k.sezeni]]) {
       const input = $(`#pole-${pole}`);
       if (!stav.rozpracovano.has(pole) && document.activeElement !== input) input.value = hodnota ?? '';
     }
@@ -251,14 +255,19 @@ function vykresliNastaveni(n) {
     : '';
 }
 
-/** Výběr scény pro Souboj: scény z OBS, a pokud OBS neběží, aspoň uložená hodnota. */
+/** Výběr scén (Souboj, po odpočtu): scény z OBS, a pokud OBS neběží, aspoň uložená hodnota. */
 function vykresliVyberSouboje() {
-  const select = $('#pole-scena-souboj');
-  if (document.activeElement === select) return;
-  const ulozena = stav.prehled?.nastaveni?.scenaSouboj || '';
-  const sceny = [...new Set([...(stav.prehled?.obs?.sceny ?? []), ...(ulozena ? [ulozena] : [])])];
-  select.replaceChildren(new Option('— vyber scénu —', ''), ...sceny.map((n) => new Option(n, n)));
-  select.value = ulozena;
+  for (const [id, klic, prazdna] of [
+    ['#pole-scena-souboj', 'scenaSouboj', '— vyber scénu —'],
+    ['#pole-scena-po-odpoctu', 'scenaPoOdpoctu', '— nepřepínat —'],
+  ]) {
+    const select = $(id);
+    if (document.activeElement === select) continue;
+    const ulozena = stav.prehled?.nastaveni?.[klic] || '';
+    const sceny = [...new Set([...(stav.prehled?.obs?.sceny ?? []), ...(ulozena ? [ulozena] : [])])];
+    select.replaceChildren(new Option(prazdna, ''), ...sceny.map((n) => new Option(n, n)));
+    select.value = ulozena;
+  }
 }
 
 $('#formular-nastaveni').addEventListener('submit', async (e) => {
@@ -269,6 +278,7 @@ $('#formular-nastaveni').addEventListener('submit', async (e) => {
     port: Number(f.get('port')),
     domaciSit: f.get('domaciSit') === 'on',
     scenaSouboj: f.get('scenaSouboj') ?? '',
+    scenaPoOdpoctu: f.get('scenaPoOdpoctu') ?? '',
   };
   if (f.get('obsHeslo')) telo.obsHeslo = f.get('obsHeslo');
   if (f.get('pin')) telo.pin = f.get('pin');
@@ -299,6 +309,8 @@ function prekresli() {
   vykresliOdpocet();
   vykresliGit();
   vykresliVyberSouboje();
+  vykresliKalendar();
+  vykresliObchody();
 }
 
 async function nactiPrehled() {
@@ -334,6 +346,8 @@ function pripojitUdalosti() {
   zdroj.addEventListener('git', aktualizuj('git'));
   zdroj.addEventListener('kontrola', aktualizuj('kontrola'));
   zdroj.addEventListener('sezeni', aktualizuj('sezeni'));
+  zdroj.addEventListener('kalendar-dm', aktualizuj('kalendar'));
+  zdroj.addEventListener('obchody', aktualizuj('obchody'));
   zdroj.addEventListener('odpocet', (e) => {
     if (!stav.prehled) return;
     stav.prehled.odpocet = JSON.parse(e.data);
@@ -547,6 +561,12 @@ function vykresliOdpocet() {
   $('#odpocet-spustit').disabled = !o || o.stav === 'zadny' || o.stav === 'bezi';
   $('#odpocet-pauza').disabled = o?.stav !== 'bezi' || zbyva === 0;
   $('#odpocet-zrusit').disabled = !o || o.stav === 'zadny';
+  const pr = o?.prepnuti;
+  const scena = stav.prehled?.nastaveni?.scenaPoOdpoctu;
+  $('#odpocet-prepnuti').className = pr && !pr.ok ? 'ulozeni varovani' : 'ulozeni';
+  $('#odpocet-prepnuti').textContent = pr
+    ? pr.ok ? `Po doběhnutí přepnuto na scénu „${pr.scena}“.` : pr.duvod
+    : scena ? `Po doběhnutí se OBS přepne na scénu „${scena}“.` : 'Po doběhnutí se scéna nepřepne (nastavíš v Nastavení).';
 }
 setInterval(() => {
   if (stav.prehled?.odpocet?.stav === 'bezi') vykresliOdpocet();
@@ -627,10 +647,437 @@ $('#git-ulozit').addEventListener('click', async () => {
   }
 });
 
+/* ---------- Výběr data v Harptosu ---------- */
+
+/** Rok, měsíc nebo svátek a den. Vrací {get, set}; get() dá datum, nebo null, když je neplatné. */
+function vyberData(kontejner) {
+  const rok = Object.assign(document.createElement('input'), { type: 'number', min: 1, max: 9999, className: 'rok', title: 'Rok DR' });
+  const mesic = document.createElement('select');
+  mesic.title = 'Měsíc nebo svátek';
+  MESICE.forEach((m, mi) => {
+    mesic.append(new Option(`${m} (${mi + 1}.)`, `m:${m}`));
+    for (const sv of SVATKY[mi] || []) mesic.append(new Option(`✦ ${sv}${sv === 'Shieldmeet' ? ' (přestupný rok)' : ''}`, `s:${sv}`));
+  });
+  const den = Object.assign(document.createElement('input'), { type: 'number', min: 1, max: 30, className: 'den', title: 'Den' });
+  const popisky = [['Den', den], ['Měsíc nebo svátek', mesic], ['Rok DR', rok]].map(([t, pole]) => {
+    const l = document.createElement('label');
+    l.append(t, pole);
+    return l;
+  });
+  kontejner.replaceChildren(...popisky);
+  const prepni = () => (popisky[0].hidden = mesic.value.startsWith('s:'));
+  mesic.addEventListener('change', prepni);
+  return {
+    get() {
+      const r = Number(rok.value);
+      const [druh, nazev] = mesic.value.split(':');
+      const d = druh === 's' ? { rok: r, svatek: nazev } : { rok: r, mesic: nazev, den: Number(den.value) };
+      return Harptos.normalizuj(d);
+    },
+    set(d) {
+      if (!d) return;
+      rok.value = d.rok;
+      mesic.value = d.svatek ? `s:${d.svatek}` : `m:${d.mesic}`;
+      den.value = d.svatek ? 1 : d.den;
+      prepni();
+    },
+  };
+}
+
+/* ---------- Kalendář ---------- */
+
+const vyberDnes = vyberData($('#vyber-dnes'));
+const vyberOd = vyberData($('#vyber-udalost-od'));
+const vyberDo = vyberData($('#vyber-udalost-do'));
+let posledniDnes = null;
+
+function textData(u) {
+  return u.konec ? Harptos.formatRozsah(u.datum, u.konec) : Harptos.format(u.datum);
+}
+
+function radekUdalosti(u, dnes) {
+  const tr = document.createElement('tr');
+  const z = Harptos.absolutni(u.datum);
+  const k = u.konec ? Harptos.absolutni(u.konec) : z;
+  const d = dnes ? Harptos.absolutni(dnes) : null;
+  if (d !== null && d >= z && d <= k) tr.dataset.dnes = 'true';
+  const datum = document.createElement('td');
+  datum.textContent = textData(u);
+  if (d !== null && z > d) {
+    const za = document.createElement('small');
+    za.textContent = zbyvaText(z - d);
+    datum.append(document.createElement('br'), za);
+  }
+  const text = document.createElement('td');
+  text.textContent = u.text;
+  const obs = document.createElement('td');
+  obs.textContent = u.verejna ? (u.lhuta ? `ano, lhůta ${dnyText(u.lhuta)}` : 'ano') : 'skrytá';
+  if (!u.verejna) obs.className = 'skryta';
+  const akce = document.createElement('td');
+  akce.className = 'akce-radku';
+  const upravit = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Upravit' });
+  upravit.addEventListener('click', () => otevritUdalost(u));
+  const smazat = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Smazat' });
+  smazat.addEventListener('click', async () => {
+    if (smazat.dataset.potvrd !== 'true') {
+      smazat.dataset.potvrd = 'true';
+      smazat.textContent = 'Opravdu smazat?';
+      setTimeout(() => {
+        smazat.dataset.potvrd = '';
+        smazat.textContent = 'Smazat';
+      }, 4000);
+      return;
+    }
+    try {
+      await api(`/api/kalendar/udalosti/${encodeURIComponent(u.id)}`, { metoda: 'DELETE' });
+      toast(`Smazáno: ${u.text}`);
+    } catch (chyba) {
+      toast(chyba.message, { chyba: true });
+    }
+  });
+  akce.append(upravit, smazat);
+  tr.append(datum, text, obs, akce);
+  return tr;
+}
+
+function vykresliKalendar() {
+  const k = stav.prehled?.kalendar;
+  if (!k) return;
+  const dnes = k.dnes;
+  $('#kalendar-datum').textContent = dnes ? Harptos.format(dnes) : 'Datum není zadané';
+  $('#kalendar-svatek').textContent = dnes?.svatek ? `Svátek ${Harptos.popisSvatku(dnes)}.` : '';
+  for (const b of document.querySelectorAll('[data-posun], #kalendar-dalsi-den, #tlacitko-dalsi-den')) b.disabled = !dnes;
+  if (JSON.stringify(dnes) !== JSON.stringify(posledniDnes) && !$('#formular-dnes').contains(document.activeElement)) {
+    vyberDnes.set(dnes ?? k.zacatek ?? { rok: 1491, mesic: 'Hammer', den: 1 });
+    posledniDnes = dnes;
+  }
+
+  const chyba = $('#kalendar-chyba');
+  chyba.hidden = !k.chyba;
+  chyba.textContent = k.chyba ?? '';
+
+  const d = dnes ? Harptos.absolutni(dnes) : null;
+  const konec = (u) => Harptos.absolutni(u.konec ?? u.datum);
+  const nadchazejici = k.udalosti.filter((u) => d === null || konec(u) >= d);
+  const probehle = k.udalosti.filter((u) => d !== null && konec(u) < d).reverse();
+  $('#tabulka-udalosti tbody').replaceChildren(...nadchazejici.map((u) => radekUdalosti(u, dnes)));
+  $('#tabulka-udalosti').hidden = nadchazejici.length === 0;
+  $('#tabulka-probehlych tbody').replaceChildren(...probehle.map((u) => radekUdalosti(u, dnes)));
+  $('#pocet-probehlych').textContent = probehle.length;
+
+  // Lhůty, které OBS právě ukazuje (stejný výpočet jako výstupy)
+  const lhuty = dnes
+    ? k.udalosti
+        .filter((u) => u.verejna && u.lhuta)
+        .map((u) => ({ u, zbyva: Harptos.rozdil(dnes, u.datum) }))
+        .filter((x) => x.zbyva >= 1 && x.zbyva <= x.u.lhuta)
+        .sort((a, b) => a.zbyva - b.zbyva)
+    : [];
+  $('#kalendar-lhuty-box').hidden = lhuty.length === 0;
+  $('#kalendar-lhuty').replaceChildren(
+    ...lhuty.map(({ u, zbyva }) => Object.assign(document.createElement('li'), { textContent: `${u.text} — ${zbyvaText(zbyva)}` })),
+  );
+  const mini = $('#kalendar-mini');
+  mini.hidden = !dnes;
+  mini.textContent = dnes ? Harptos.kratce(dnes) : '';
+
+  if (!k.existuje) $('#kalendar-import').hidden = false;
+}
+
+async function zmenitDnes(telo) {
+  const v = $('#kalendar-vysledek');
+  try {
+    const r = await api('/api/kalendar/dnes', { metoda: 'PUT', telo });
+    v.className = r.vysledek === 'odlozeno' ? 'ulozeni varovani' : 'ulozeni';
+    v.textContent = r.vysledek === 'odlozeno' ? 'stav.md drží otevřený jiný program; v OBS už je nové datum.' : `Datum nastaveno v ${cas()}.`;
+  } catch (chyba) {
+    v.className = 'ulozeni chyba';
+    v.textContent = chyba.message;
+  }
+}
+for (const b of document.querySelectorAll('[data-posun]')) b.addEventListener('click', () => zmenitDnes({ posun: Number(b.dataset.posun) }));
+$('#formular-dnes').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const datum = vyberDnes.get();
+  if (!datum) {
+    $('#kalendar-vysledek').className = 'ulozeni chyba';
+    $('#kalendar-vysledek').textContent = 'Takové datum v Harptosu není (den 1–30, Shieldmeet jen v přestupném roce).';
+    return;
+  }
+  zmenitDnes({ datum });
+});
+
+/* Import ze samostatného kalendáře */
+
+function seznamImportu(ol, polozky) {
+  // Obě strany podle data, ať jdou porovnat řádek po řádku.
+  const serazene = [...polozky].sort((a, b) => (a.datum ? Harptos.absolutni(a.datum) : Infinity) - (b.datum ? Harptos.absolutni(b.datum) : Infinity));
+  ol.replaceChildren(
+    ...serazene.map((u) => Object.assign(document.createElement('li'), { textContent: `${u.datum ? Harptos.format(u.datum) : 'neplatné datum'} — ${u.text}` })),
+  );
+}
+
+async function nactiImport() {
+  let k;
+  try {
+    k = await api('/api/kalendar');
+  } catch {
+    return;
+  }
+  const box = $('#kalendar-import');
+  const imp = k.import;
+  box.hidden = !imp?.dostupny && k.existuje;
+  if (box.hidden) return;
+  $('#import-pocet-zdroj').textContent = imp.pocet;
+  seznamImportu($('#import-zdroj'), imp.seznam);
+  $('#import-pocet-cil').textContent = k.existuje ? k.udalosti.length : 0;
+  seznamImportu($('#import-cil'), k.existuje ? k.udalosti : []);
+  const b = $('#import-spustit');
+  if (!imp.dostupny) {
+    $('#import-popis').textContent = 'Soubor Apps/Calendar/kalendar-data.js nebyl nalezen. Události přidávej rovnou tady.';
+    b.hidden = true;
+    return;
+  }
+  b.hidden = false;
+  if (k.existuje) {
+    $('#import-popis').textContent = 'Události už v repu jsou. Opakovaný import je přepíše daty ze samostatného kalendáře (ten se od Bloku 1b dál nevyvíjí). Seznamy porovnej vedle sebe.';
+    b.textContent = 'Importovat znovu a přepsat';
+    b.dataset.prepsat = 'true';
+    b.className = '';
+  } else {
+    $('#import-popis').textContent = `Převezme ${imp.pocet} událostí, dnešní datum${imp.dnes ? ` (${Harptos.format(imp.dnes)})` : ''} a začátek kampaně${imp.zacatek ? ` (${Harptos.format(imp.zacatek)})` : ''}. Originál zůstane jako záloha.`;
+    b.textContent = 'Importovat';
+    b.dataset.prepsat = '';
+    b.className = 'hlavni';
+  }
+}
+
+$('#import-spustit').addEventListener('click', async () => {
+  const b = $('#import-spustit');
+  const v = $('#import-vysledek');
+  try {
+    const r = await api('/api/kalendar/import', { metoda: 'POST', telo: { prepsat: b.dataset.prepsat === 'true' } });
+    v.className = r.pocetZdroj === r.pocetCil ? 'ulozeni' : 'ulozeni varovani';
+    v.textContent = r.pocetZdroj === r.pocetCil
+      ? `Hotovo: ${r.pocetZdroj} událostí v kalendar-data.js, ${r.pocetCil} v udalosti.yaml. Počty se shodují.`
+      : `Pozor: ${r.pocetZdroj} událostí v kalendar-data.js, ale ${r.pocetCil} v udalosti.yaml (${r.vadne} s neplatným datem nebo bez textu).`;
+    seznamImportu($('#import-zdroj'), r.zdroj);
+    seznamImportu($('#import-cil'), r.cil);
+    $('#import-pocet-zdroj').textContent = r.pocetZdroj;
+    $('#import-pocet-cil').textContent = r.pocetCil;
+    b.hidden = true;
+  } catch (chyba) {
+    v.className = 'ulozeni chyba';
+    v.textContent = chyba.message;
+  }
+});
+
+/* Formulář události */
+
+let upravovana = null;
+
+function otevritUdalost(u = null) {
+  upravovana = u;
+  const dnes = stav.prehled?.kalendar?.dnes ?? { rok: 1491, mesic: 'Hammer', den: 1 };
+  $('#udalost-nadpis').textContent = u ? 'Upravit událost' : 'Nová událost';
+  $('#udalost-text').value = u?.text ?? '';
+  vyberOd.set(u?.datum ?? dnes);
+  $('#udalost-vicedenni').checked = Boolean(u?.konec);
+  $('#udalost-konec-box').hidden = !u?.konec;
+  vyberDo.set(u?.konec ?? Harptos.posun(u?.datum ?? dnes, 1));
+  $('#udalost-verejna').checked = u ? u.verejna : true;
+  $('#udalost-lhuta').value = u?.lhuta ?? '';
+  $('#udalost-chyba').textContent = '';
+  $('#dialog-udalost').showModal();
+  $('#udalost-text').focus();
+}
+$('#udalost-nova').addEventListener('click', () => otevritUdalost());
+$('#udalost-vicedenni').addEventListener('change', (e) => {
+  $('#udalost-konec-box').hidden = !e.target.checked;
+  if (e.target.checked && vyberOd.get()) vyberDo.set(Harptos.posun(vyberOd.get(), 1));
+});
+
+$('#formular-udalost').addEventListener('submit', async (e) => {
+  if (e.submitter?.value !== 'ulozit') return;
+  e.preventDefault();
+  const chyba = $('#udalost-chyba');
+  const datum = vyberOd.get();
+  const konec = $('#udalost-vicedenni').checked ? vyberDo.get() : null;
+  if (!datum || ($('#udalost-vicedenni').checked && !konec)) {
+    chyba.textContent = 'Takové datum v Harptosu není (den 1–30, Shieldmeet jen v přestupném roce).';
+    return;
+  }
+  const lhuta = $('#udalost-lhuta').value.trim();
+  const telo = {
+    text: $('#udalost-text').value.trim(),
+    datum,
+    konec,
+    verejna: $('#udalost-verejna').checked,
+    lhuta: lhuta ? Number(lhuta) : null,
+  };
+  try {
+    if (upravovana) await api(`/api/kalendar/udalosti/${encodeURIComponent(upravovana.id)}`, { metoda: 'PUT', telo });
+    else await api('/api/kalendar/udalosti', { metoda: 'POST', telo });
+    $('#dialog-udalost').close();
+    toast(upravovana ? 'Událost upravena.' : 'Událost přidána.');
+  } catch (err) {
+    chyba.textContent = err.message;
+  }
+});
+
+/* ---------- Další den ---------- */
+
+function prehledDneEl(den, { nadpis }) {
+  const box = document.createDocumentFragment();
+  const p = (text, trida) => Object.assign(document.createElement('p'), { textContent: text, className: trida ?? '' });
+  if (nadpis) box.append(p(nadpis, 'uvod'));
+  if (den.svatek) box.append(p(`Svátek ${den.svatek}.`, 'svatek'));
+  if (den.udalosti.length) {
+    const ul = document.createElement('ul');
+    for (const u of den.udalosti) {
+      const li = document.createElement('li');
+      li.textContent = `${u.text}${u.celkem > 1 ? ` (den ${u.den} z ${u.celkem})` : ''}${u.verejna ? '' : ' — skrytá, hráči ji nevidí'}`;
+      ul.append(li);
+    }
+    box.append(ul);
+  } else if (!den.svatek) box.append(p('Žádné události.', 'uvod'));
+  if (den.lhuty.length) box.append(p(`Lhůty: ${den.lhuty.map((l) => `${l.text} ${zbyvaText(l.zbyva)}`).join(', ')}.`, 'uvod'));
+  return box;
+}
+
+async function otevritDalsiDen() {
+  if (!stav.prehled?.kalendar?.dnes) {
+    toast('Dnešní datum ještě není zadané. Nastav ho v Kalendáři.', { chyba: true });
+    location.hash = 'kalendar';
+    return;
+  }
+  let n;
+  try {
+    n = await api('/api/den/nahled');
+  } catch (chyba) {
+    toast(chyba.message, { chyba: true });
+    return;
+  }
+  $('#den-datum').textContent = Harptos.format(n.zitra);
+  $('#den-nahled').replaceChildren(prehledDneEl(n.den, { nadpis: 'Co ten den čeká:' }));
+  $('#den-chyba').textContent = '';
+  $('#den-krok1').hidden = false;
+  $('#den-krok2').hidden = true;
+  for (const dlg of document.querySelectorAll('dialog[open]')) dlg.close();
+  $('#dialog-den').showModal();
+}
+
+$('#formular-den').addEventListener('submit', async (e) => {
+  const volba = e.submitter?.value;
+  if (volba !== 'ano' && volba !== 'ne') return;
+  e.preventDefault();
+  try {
+    const r = await api('/api/den/dalsi', { metoda: 'POST', telo: { dukladny: volba === 'ano' } });
+    $('#den-datum').textContent = r.dnesText;
+    $('#den-vysledek').replaceChildren(prehledDneEl(r, { nadpis: '' }));
+    $('#den-pripominky-nadpis').textContent = r.dukladny ? 'Po důkladném odpočinku' : 'Bez důkladného odpočinku';
+    const ul = $('#den-pripominky');
+    ul.replaceChildren(
+      ...r.pripominky.map((p) => {
+        const li = document.createElement('li');
+        const kdo = Object.assign(document.createElement('strong'), { textContent: p.kdo });
+        li.append(kdo, ` ${p.text}`);
+        return li;
+      }),
+    );
+    if (r.chybaPripominek) ul.append(Object.assign(document.createElement('li'), { textContent: r.chybaPripominek, className: 'chyba' }));
+    $('#den-poznamka').textContent = `Zapsáno do ${r.poznamka}.`;
+    $('#den-krok1').hidden = true;
+    $('#den-krok2').hidden = false;
+  } catch (chyba) {
+    $('#den-chyba').textContent = chyba.message;
+  }
+});
+$('#tlacitko-dalsi-den').addEventListener('click', otevritDalsiDen);
+$('#kalendar-dalsi-den').addEventListener('click', otevritDalsiDen);
+
+/* ---------- Obchody ---------- */
+
+const TYPY_OBCHODU = {
+  kovarna: 'Kovárna a zbrojíř', lukar: 'Lukař', kozeluh: 'Koželuh', chram: 'Chrám', kolonial: 'Koloniál',
+  dobrodruzne: 'Vybavení pro dobrodruhy', krejci: 'Krejčí a látky', klenotnik: 'Klenotník a kamenoryt',
+  alchymista: 'Alchymista', arkanni: 'Arkánní krám', staje: 'Stáje a povozník', pristavni: 'Přístavní zboží',
+  magicke: 'Magické zboží', prekupnik: 'Překupník', umeni_hry: 'Umění a hry',
+};
+const LOKALITY = { rural: 'venkov', urban: 'město', premium: 'luxus' };
+
+function vykresliObchody() {
+  const o = stav.prehled?.obchody;
+  if (!o) return;
+  const sloty = $('#sloty');
+  if (!sloty.contains(document.activeElement)) {
+    sloty.replaceChildren(
+      ...['1', '2', '3'].map((n) => {
+        const label = document.createElement('label');
+        const select = document.createElement('select');
+        select.append(new Option('— prázdný (v OBS skrytý) —', ''), ...o.sortimenty.map((s) => new Option(`${s.nazev}${s.mesto ? `, ${s.mesto}` : ''}`, s.id)));
+        select.value = o.sloty[n] ?? '';
+        select.addEventListener('change', async () => {
+          try {
+            await api(`/api/obchody/sloty/${n}`, { metoda: 'PUT', telo: { id: select.value || null } });
+            toast(select.value ? `Slot ${n}: ${select.selectedOptions[0].textContent}` : `Slot ${n} je prázdný.`);
+          } catch (chyba) {
+            toast(chyba.message, { chyba: true });
+          }
+        });
+        label.append(`Slot ${n}`, select);
+        return label;
+      }),
+    );
+  }
+  $('#sortimenty-prazdno').hidden = o.sortimenty.length > 0;
+  $('#tabulka-sortimentu').hidden = o.sortimenty.length === 0;
+  const vadne = $('#sortimenty-vadne');
+  vadne.hidden = !o.vadne.length;
+  vadne.textContent = o.vadne.map((v) => `${v.soubor}: ${v.chyba}`).join(' · ');
+  $('#tabulka-sortimentu tbody').replaceChildren(
+    ...o.sortimenty.map((s) => {
+      const tr = document.createElement('tr');
+      const td = (text) => Object.assign(document.createElement('td'), { textContent: text });
+      const vSlotu = Object.entries(o.sloty).filter(([, id]) => id === s.id).map(([n]) => n);
+      const nazev = td(`${s.nazev}${s.mesto ? `, ${s.mesto}` : ''}`);
+      if (vSlotu.length) nazev.append(Object.assign(document.createElement('small'), { textContent: ` · slot ${vSlotu.join(', ')}` }));
+      const akce = document.createElement('td');
+      akce.className = 'akce-radku';
+      const smazat = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Smazat' });
+      smazat.addEventListener('click', async () => {
+        if (smazat.dataset.potvrd !== 'true') {
+          smazat.dataset.potvrd = 'true';
+          smazat.textContent = 'Opravdu smazat?';
+          setTimeout(() => {
+            smazat.dataset.potvrd = '';
+            smazat.textContent = 'Smazat';
+          }, 4000);
+          return;
+        }
+        try {
+          await api(`/api/obchody/sortimenty/${s.id}`, { metoda: 'DELETE' });
+          toast(`Smazáno: ${s.nazev}`);
+        } catch (chyba) {
+          toast(chyba.message, { chyba: true });
+        }
+      });
+      akce.append(smazat);
+      const kdy = s.vygenerovano ? new Date(s.vygenerovano).toLocaleDateString('cs-CZ') : '';
+      tr.append(nazev, td(`${TYPY_OBCHODU[s.typ] ?? s.typ} (${LOKALITY[s.lokalita] ?? s.lokalita})`), td(String(s.pocet)), td(kdy), akce);
+      return tr;
+    }),
+  );
+}
+
 /* ---------- Adresy výstupů ---------- */
 
 const adresaOdpoctu = `${location.origin}/vystupy/odpocet.html`;
 $('#adresa-odpoctu').textContent = adresaOdpoctu;
+$('#adresa-orloj-velky').textContent = `${location.origin}/vystupy/kalendar-velky.html`;
+$('#adresa-orloj-maly').textContent = `${location.origin}/vystupy/kalendar-maly.html`;
+$('#adresa-rekapitulace').textContent = `${location.origin}/vystupy/rekapitulace.html`;
+$('#adresa-cenik').textContent = `${location.origin}/vystupy/cenik.html?slot=1`;
 for (const b of document.querySelectorAll('[data-kopirovat]')) {
   b.addEventListener('click', async () => {
     await navigator.clipboard?.writeText($(`#${b.dataset.kopirovat}`).textContent).catch(() => {});

@@ -26,8 +26,8 @@ grepovat přímo.
 
 | Soubor | Co dělá |
 |---|---|
-| `polozky.json` | Databáze, 260 položek, česky i anglicky, otagovaná typem obchodu a lokalitou |
-| `generator_sablona.html` | Šablona generátoru se značkou `%%DATA%%` |
+| `kampan/obchody/polozky.json` (od Bloku 1b) | Databáze, 260 položek, česky i anglicky, otagovaná typem obchodu a lokalitou |
+| `hub/nastroje/generator_sablona.html` (od Bloku 1b) | Šablona generátoru se značkou `%%DATA%%` |
 | `postav_generator.py` | Zapeče `polozky.json` do šablony → `generator.html` |
 | `cenik_sablona.html` | Šablona ceníku pro OBS se značkou `%%SORTIMENT%%` |
 | `postav_cenik.py` | Záložní CLI cesta: zapeče `sortiment.json` do šablony → `cenik.html` |

@@ -61,7 +61,7 @@ Rozhodnutí 1–12 potvrdil DM 2. 10. 2026. Rozhodnutí 13–24 vzešla z první
 | 26 | Pravidla pro práci Claude Code jsou v `CLAUDE.md` v kořeni repa | Co zadání neřeší a má vliv na data, chování nebo UI, je v PR označené ⚠ návrh a přidané do Otevřených bodů. Interní detaily kódu rozhoduje Claude sám |
 | 27 | Každý blok se vyvíjí ve vlastní větvi (`blok-0`, `blok-1a` …) a slučuje se přes pull request | PR je místo kontroly všech ⚠ návrhů |
 | 28 | ⚠ Datum ve Stavu kampaně | Datum jde měnit ve Stavu kampaně i v Kalendáři, v obou místech stejným výběrem (den, měsíc nebo svátek, rok), aby šlo uložit jen platné datum Harptosu | Akceptace Bloku 1b |
-| 29 | ⚠ Sestava scén a zdrojů v OBS | Revize a cílová sestava do Bloku 2 v `reference/obs-sceny.md`: sdílené zdroje z Hubu, jména podle obsahu, scény Start, místa, Mapa, Obchod, Pauza, Boj. Tři otázky na konci dokumentu | Akceptace Bloku 1b |
+| 29 | ⚠ Sestava scén a zdrojů v OBS | Revize, cílová sestava do Bloku 2 a postup přestavby v `reference/obs-sceny.md`: sdílené zdroje z Hubu, jména podle obsahu, scény Start, Mirabar, Longsaddle, Lurkwood, Cesta, Mapa, Obchod, Pauza, Boj. Odpovědi DM: numpad nepoužívá, stará Cesta se nahradí, Lurkwood dostane medailon | Akceptace Bloku 1b |
 | 30 | Obrázek obchodu v Hubu | Obrázek patří k sortimentu a Ukázat v OBS vymění obrázek i ceník najednou. Na pokyn DM až s ilustrační dílnou | Blok 2 |
 | 29 | Verze Node.js je na jednom místě: `.nvmrc`; `engines` v `hub/package.json` musí sedět | CI čte verzi z `.nvmrc` a při neshodě s `engines` selže |
 | 30 | Konce řádků jsou v repu vždy LF (`.gitattributes`: `* text=auto eol=lf`) | Testy porovnávající obsah souborů se na Windows chovají stejně jako na Linuxu |
@@ -140,7 +140,7 @@ Hub musí přežít vlastní pád uprostřed sezení bez zásahu do OBS a bez zt
 - Zápis souborů je atomický (dočasný soubor + přejmenování), pád nikdy nenechá rozbitý soubor.
 - **Zamčený soubor.** Na Windows přejmenování přes existující soubor selže (`EPERM`/`EBUSY`/`EACCES`), pokud ho má otevřený Obsidian, antivir nebo indexer. Zápis to zkusí nejvýš 5× v celkovém limitu 1 s. Když nepomůže ani to, změna zůstane v paměti serveru jako odložený zápis, panel ukáže varování a zápis se opakuje na pozadí, dokud neprojde. Data se neztratí a nikdy se nesáhne po neatomickém zápisu.
 - Panel ukazuje stav serveru, OBS a Gitu.
-- Scény, numpad a IIO fungují bez Hubu. Nouzový postup, dokud Hub neprojde Blokem 1b u stolu: scény přepínat numpadem, kalendář, ceník a odpočet spustit z původních souborů v lokálním klonu.
+- Scény a IIO fungují bez Hubu. Nouzový postup, dokud Hub neprojde Blokem 1b u stolu: scény přepínat klikem přímo v OBS (numpad DM nepoužívá, ⚠ bod 29), kalendář, ceník a odpočet spustit z původních souborů v lokálním klonu.
 
 **Ukládání a Git**
 

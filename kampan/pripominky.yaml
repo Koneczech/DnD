@@ -1,0 +1,26 @@
+# Připomínky pro Další den (ZADANI.md, Datový model). Hub nic nesleduje, jen připomíná.
+# kdy: dukladny = po důkladném odpočinku, bez = bez důkladného odpočinku, vzdy = pokaždé
+# Při postupu na vyšší úroveň stačí připsat řádek.
+schema: 1
+pripominky:
+  - kdy: dukladny
+    kdo: Všichni
+    text: Doplnit BV, všechny kostky obnovy a pozice kouzel. Snížit vyčerpání o 1
+  - kdy: dukladny
+    kdo: Tusker
+    text: Obnovit všechna použití Zuřivosti a Návalu adrenalinu (Adrenaline Rush) a Neúnavnou výdrž (Relentless Endurance). Může vyměnit jedno mistrovství zbraně
+  - kdy: dukladny
+    kdo: Koudur
+    text: Obnovit Bardskou inspiraci a použití Kamenného vnímání (Stonecunning)
+  - kdy: dukladny
+    kdo: Alba
+    text: Může změnit připravená kouzla. Obnovit Divoké podoby, Léčivé ruce (Healing Hands) a Nebeské zjevení (Celestial Revelation). Může vyměnit jednu známou podobu
+  - kdy: dukladny
+    kdo: Leta
+    text: Může vyměnit jedno mistrovství zbraně
+  - kdy: vzdy
+    kdo: DM
+    text: Dnešní události a svátky, lhůty, přepnout scénu na ráno
+  - kdy: bez
+    kdo: Všichni
+    text: "Upozornění: zdroje obnovované důkladným odpočinkem se neobnovují"

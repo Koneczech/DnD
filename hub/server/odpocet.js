@@ -33,7 +33,8 @@ export class Odpocet extends EventEmitter {
   }
 
   static prazdny() {
-    return { stav: 'zadny', konec: null, zbyvaMs: null, celkemMs: null, cilovyCas: null };
+    // prepnuti: záznam o přepnutí scény po doběhnutí (otevřený bod 21), aby se přepnulo jen jednou
+    return { stav: 'zadny', konec: null, zbyvaMs: null, celkemMs: null, cilovyCas: null, prepnuti: null };
   }
 
   async nacist() {
@@ -88,7 +89,7 @@ export class Odpocet extends EventEmitter {
     // Odpočet na čas začátku hry míří na ten čas, i když se spustí později.
     const konec = s.stav === 'pripraveny' && s.cilovyCas ? Date.parse(s.cilovyCas) : ted + s.zbyvaMs;
     const celkemMs = s.stav === 'pripraveny' ? Math.max(konec - ted, 1) : s.celkemMs;
-    return this.ulozit({ ...s, stav: 'bezi', konec: new Date(konec).toISOString(), zbyvaMs: null, celkemMs, cilovyCas: null });
+    return this.ulozit({ ...s, stav: 'bezi', konec: new Date(konec).toISOString(), zbyvaMs: null, celkemMs, cilovyCas: null, prepnuti: null });
   }
 
   async pauza() {
@@ -96,6 +97,12 @@ export class Odpocet extends EventEmitter {
     if (s.stav !== 'bezi') throw Object.assign(new Error('Odpočet neběží.'), { status: 409 });
     const zbyvaMs = Math.max(0, Date.parse(s.konec) - this.hodiny());
     return this.ulozit({ ...s, stav: 'pauza', konec: null, zbyvaMs });
+  }
+
+  /** Zapíše, že po doběhnutí už se scéna přepnula (nebo se o to Hub pokusil). */
+  async zaznamenatPrepnuti(info) {
+    if (this.stav.stav !== 'bezi') return this.verejny();
+    return this.ulozit({ ...this.stav, prepnuti: { ...info, cas: new Date(this.hodiny()).toISOString() } });
   }
 
   async zrusit() {

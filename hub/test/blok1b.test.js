@@ -212,7 +212,7 @@ test('obchody: uložení, přepis podle id, aktivní obchod přežije restart, s
     const druhy = await o.ulozit({ sortiment: SORTIMENT });
     assert.equal(druhy.id, 'testovaci-kram-testov-2', 'stejné jméno nepřepíše cizí sortiment');
     await o.ulozit({ sortiment: { ...SORTIMENT, polozky: [SORTIMENT.polozky[0]] }, id: prvni.id });
-    assert.deepEqual(o.ceniky(), { id: null, sortiment: null });
+    assert.deepEqual(o.ceniky(), { id: null, sortiment: null, obrazek: '/kampan/obs/obchod.png' });
     await o.nastavitAktivni(prvni.id);
     assert.equal(o.ceniky().sortiment.polozky.length, 1);
 
@@ -313,7 +313,7 @@ test('API obchody: generátor v Hubu, uložení, Ukázat v OBS přepne ceník i 
     assert.doesNotMatch(r.data, /podkategorie/, 'do generátoru jdou jen potřebná pole');
 
     r = await pozadavek(hub, '/api/obchody/ceniky');
-    assert.deepEqual(r.data, { id: null, sortiment: null });
+    assert.deepEqual(r.data, { id: null, sortiment: null, obrazek: '/kampan/obs/obchod.png' });
     r = await pozadavek(hub, '/api/obchody/sortimenty', { metoda: 'POST', telo: { sortiment: SORTIMENT } });
     assert.equal(r.status, 200);
     const id = r.data.id;

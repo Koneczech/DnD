@@ -311,7 +311,7 @@ Každý existující zdroj má cíl v repu a blok, ve kterém se přesune. Pravi
 | `polozky.json` | `kampan/obchody/polozky.json` | Blok 1b | Formát beze změny |
 | `generator.html` | `hub/nastroje/generator_sablona.html`, Hub ho servíruje na `/nastroje/generator.html` s daty z `kampan/obchody/polozky.json` | Blok 1b | Doplní se Uložit sortiment; plné převzetí do panelu ve verzi 2. `Apps/Shop/generator.html` zůstává jako záloha |
 | `cenik.html` | výstup Hubu; originál do `archiv/nastroje/` | Blok 1b | Originál zůstane, dokud Hub neprojde dvěma sezeními |
-| `Places/Mirabar/fight.png` | `kampan/mista/mirabar/` | Blok 2 | OBS ho od té doby čte přes Hub |
+| `Places/Mirabar/fight.png` | `kampan/mista/mirabar/ulicka-noc.png` | Blok 2 (hotovo) | OBS ho od té doby čte přes Hub |
 | `pripravit_ilustraci.py` | `hub/nastroje/` | Blok 2 | Ilustrační dílna převezme ořez a zvětšení scén |
 | Notion: Campaign Database (NPC, Location, Villain, Item) | `npc/`, `mista/`, `padouchove/`, `predmety/`, `frakce/` | Blok 3 | Postup v Bloku 3 |
 | Notion: Campaign Database, tag Current | `stav.md` | Blok 3 | |
@@ -536,4 +536,14 @@ Nic z této sekce zatím neplatí. Každý bod se rozhodne nejpozději na začá
 | 27 | Banner kalendáře | Odloženo na pokyn DM; vrátí se k němu později | Později |
 | 28 | ⚠ Datum ve Stavu kampaně | Datum jde měnit ve Stavu kampaně i v Kalendáři, v obou místech stejným výběrem (den, měsíc nebo svátek, rok), aby šlo uložit jen platné datum Harptosu | Akceptace Bloku 1b |
 | 29 | ⚠ Sestava scén a zdrojů v OBS | Revize, cílová sestava do Bloku 2 a postup přestavby v `reference/obs-sceny.md`: sdílené zdroje z Hubu, jména podle obsahu, scény Start, Mirabar, Longsaddle, Lurkwood, Cesta, Mapa, Obchod, Pauza, Boj. Odpovědi DM: numpad nepoužívá, stará Cesta se nahradí, Lurkwood dostane medailon | Akceptace Bloku 1b |
-| 30 | Obrázek obchodu v Hubu | Obrázek patří k sortimentu a Ukázat v OBS vymění obrázek i ceník najednou. Na pokyn DM až s ilustrační dílnou | Blok 2 |
+| 30 | ⚠ Obrázek obchodu | Hotovo v Bloku 2: obrázek interiéru je `kampan/obchody/sortimenty/<id>.png` (dílna, cíl Obchod). Výstup `vystupy/obchod.html` ukáže obrázek přes celé plátno a ceník v pravé třetině; obchod bez obrázku má výchozí `kampan/obs/obchod.png`. Ukázat v OBS vymění obojí | Akceptace Bloku 2 |
+| 31 | ⚠ Převod míst do repa | Mirabar, Longsaddle, Lurkwood a Cesta z `src/places` dostaly jména podle obsahu (`trh.png`, `okraj-lesa.png` …). Skryté jsou ilustrace, které nebyly v prezentaci OBS (tábor žoldáků a prokletí v Lurkwoodu, noční ulička v Mirabaru z `fight.png`). Obrázky zůstaly v původním rozlišení; výstup je roztáhne na celé plátno s ořezem okrajů. Pole `puvod` u ilustrace říká, odkud obrázek přišel | Akceptace Bloku 2 |
+| 32 | ⚠ Pole `popis_obrazu` u místa | Anglický popis vzhledu místa v hlavičce; dílna ho vkládá do promptu. Upravuje se v panelu (Místa → Popis vzhledu) i v Obsidianu | Akceptace Bloku 2 |
+| 33 | ⚠ Varianta a stav ilustrace | Ilustrace bez varianty se ukazuje ve dne i v noci, bez stavu v každém stavu místa. Stavy místa jsou ty, které mají ilustrace. Klik na ilustraci jiné varianty nebo stavu přepne scénu na ni | Akceptace Bloku 2 |
+| 34 | ⚠ Stav scény místa | Místo, ilustrace, den/noc, stav, počasí, intenzita a střídání v `hub/.stav/scena.json` (nastavení tohoto PC, mimo Git). Střídání po 50 s postupně (ne náhodně) řídí server, takže panel i OBS ukazují totéž | Akceptace Bloku 2 |
+| 35 | ⚠ Intenzita | 0 = bez úprav, 1–3 = víc tmy, vinětace a méně barev. Zároveň zhoustne déšť, sníh a mlha | Akceptace Bloku 2 |
+| 36 | ⚠ Ořez a zvětšení v dílně | Dělá je panel v prohlížeči (canvas, vyhlazování „high“), ne Affinity. Přijme i jiné poměry stran (4:3, 3:2): výřez 16:9 jde posunout posuvníkem. Obrázek jde přetáhnout, vybrat nebo vložit Ctrl+V | Akceptace Bloku 2 |
+| 37 | ⚠ Styl promptů | Stylová kostra v `reference/styl-ilustraci.md` (z promptů `a_tabor_bandity`, `a_previs_rano` …). Úprava textu mezi značkami změní styl všech nových promptů | Akceptace Bloku 2 |
+| 38 | ⚠ Pozadí OBS v repu | Start, Pauza, Obchod a Mapa v `kampan/obs/`; Image source v OBS čte soubory z klonu repa (funguje i bez Hubu) | Akceptace Bloku 2 |
+| 39 | ⚠ Kolekce scén DnD 2 | Start, Místo (výstup `misto.html` + medailon), Mapa, Obchod (výstup `obchod.html`), Pauza, Boj, TEST. Scény Mirabar, Longsaddle, Lurkwood a Cesta nahradila scéna Místo; Ukázat v OBS na ni přepne (`OBS_SCENA_MISTO`). Popis v `reference/obs-sceny.md` | Akceptace Bloku 2 |
+| 40 | `pripravit_ilustraci.py` | V lokální složce nebyl nalezen. Ořez scén převzala dílna; portréty počkají na verzi 2 | Verze 2 |

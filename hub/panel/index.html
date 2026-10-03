@@ -35,11 +35,12 @@
       <a href="#odpocet" data-obrazovka="odpocet">Odpočet <span class="odpocet-mini" id="odpocet-mini" hidden></span></a>
       <a href="#sceny" data-obrazovka="sceny">Scény OBS</a>
       <a href="#kalendar" data-obrazovka="kalendar">Kalendář <span class="odpocet-mini" id="kalendar-mini" hidden></span></a>
+      <a href="#mista" data-obrazovka="mista">Místa <span class="odpocet-mini" id="mista-mini" hidden></span></a>
+      <a href="#dilna" data-obrazovka="dilna">Ilustrační dílna</a>
       <a href="#obchody" data-obrazovka="obchody">Obchody</a>
       <a href="#kontrola" data-obrazovka="kontrola">Kontrola dat <span class="pocet" id="pocet-problemu" hidden></span></a>
       <a href="#nastaveni" data-obrazovka="nastaveni">Nastavení</a>
       <hr>
-      <span class="pripravuje" title="Blok 2">Místa a ilustrace</span>
       <span class="pripravuje" title="Blok 3">Kánon</span>
     </nav>
 
@@ -183,6 +184,116 @@
           <dt>Banner</dt>
           <dd><small>Zatím nenavržený. Napiš, jak má vypadat a kde bude v obraze.</small></dd>
         </dl>
+      </section>
+
+      <section id="obrazovka-mista" class="obrazovka" hidden>
+        <h1>Místa</h1>
+        <p class="uvod">Scéna místa v OBS. Do OBS jdou jen odkryté ilustrace; co tady změníš, se v OBS prolne do sekundy.</p>
+
+        <div class="scena-ovladani">
+          <div class="scena-stav">
+            <p class="scena-nazev" id="scena-nazev">V OBS není žádné místo.</p>
+            <p class="ulozeni" id="scena-detail"></p>
+          </div>
+          <div class="tlacitka">
+            <button type="button" id="scena-predchozi" title="Předchozí ilustrace">◀</button>
+            <button type="button" id="scena-dalsi" title="Další ilustrace">▶</button>
+            <label class="zaskrtavaci"><input type="checkbox" id="scena-stridani"> Střídat po</label>
+            <input type="number" id="scena-sekund" min="5" max="3600" class="cislo kratke-cislo"> <span>s</span>
+          </div>
+        </div>
+
+        <div class="prepinace">
+          <div class="prepinac"><span>Denní doba</span><div class="segment" id="sc-varianta" data-pole="varianta">
+            <button type="button" data-v="den">Den</button><button type="button" data-v="noc">Noc</button></div></div>
+          <div class="prepinac"><span>Počasí</span><div class="segment" id="sc-pocasi" data-pole="pocasi">
+            <button type="button" data-v="zadne">Žádné</button><button type="button" data-v="dest">Déšť</button><button type="button" data-v="snih">Sníh</button><button type="button" data-v="mlha">Mlha</button></div></div>
+          <div class="prepinac"><span>Intenzita</span><div class="segment" id="sc-intenzita" data-pole="intenzita">
+            <button type="button" data-v="0">0</button><button type="button" data-v="1">1</button><button type="button" data-v="2">2</button><button type="button" data-v="3">3</button></div></div>
+          <div class="prepinac"><span>Stav místa</span><select id="sc-stav"></select></div>
+        </div>
+
+        <h2>Místa</h2>
+        <div class="seznam-mist" id="seznam-mist"></div>
+
+        <div id="misto-detail" hidden>
+          <div class="misto-hlava">
+            <h2 id="misto-nazev"></h2>
+            <button type="button" class="hlavni" id="misto-ukazat">Ukázat v OBS</button>
+          </div>
+          <p class="ulozeni" id="misto-souhrn"></p>
+          <div class="ilustrace" id="misto-ilustrace"></div>
+          <details class="popis-obrazu">
+            <summary>Popis vzhledu pro prompty dílny (anglicky)</summary>
+            <textarea id="misto-popis" rows="3" placeholder="např. a rough bandit camp in a pine forest clearing near the Long Road, tents, a palisade of sharpened stakes…"></textarea>
+            <div class="tlacitka"><button type="button" id="misto-popis-ulozit">Uložit popis</button> <a href="#dilna" id="misto-do-dilny">Nová ilustrace v dílně →</a></div>
+          </details>
+        </div>
+
+        <h2>Nastavení OBS</h2>
+        <div class="formular">
+          <label>Scéna místa v OBS
+            <select id="misto-scena"></select>
+            <small>Na ni OBS přepne tlačítko Ukázat v OBS. Prázdné = nepřepínat, jen vyměnit místo.</small>
+          </label>
+        </div>
+        <p class="adresa"><code id="adresa-misto">…</code> <button type="button" data-kopirovat="adresa-misto">Kopírovat adresu</button></p>
+        <p class="poznamka">Browser Source 1920 × 1080 přes celé plátno, medailon kalendáře nad ním. Scéna místa nahrazuje scény Mirabar, Longsaddle, Lurkwood a Cesta.</p>
+      </section>
+
+      <section id="obrazovka-dilna" class="obrazovka" hidden>
+        <h1>Ilustrační dílna</h1>
+        <p class="uvod">Tři kroky od nápadu k obrázku v OBS: prompt pro ChatGPT, import s ořezem na 16:9 a zvětšením na 1920 × 1080, pak odkrytí na obrazovce Místa. Bez Affinity a bez práce v OBS.</p>
+
+        <h2>1. Prompt</h2>
+        <form id="dilna-formular" class="formular radek" autocomplete="off">
+          <label>Pro
+            <select id="dilna-cil"></select>
+          </label>
+          <label class="jen-misto">Záběr
+            <select id="dilna-zaber">
+              <option value="celek">celek</option><option value="detail">detail</option><option value="interier">interiér</option><option value="vyhled">výhled</option>
+            </select>
+          </label>
+          <label class="jen-misto">Varianta
+            <select id="dilna-varianta"><option value="den">den</option><option value="noc">noc</option><option value="">bez varianty</option></select>
+          </label>
+          <label class="jen-misto kratke">Stav
+            <input id="dilna-stav" placeholder="výchozí">
+          </label>
+          <label class="jen-misto">Počasí v obrázku
+            <select id="dilna-pocasi"><option value="zadne">žádné</option><option value="dest">déšť</option><option value="snih">sníh</option><option value="mlha">mlha</option></select>
+          </label>
+          <label class="jen-misto">Předloha
+            <select id="dilna-predloha"><option value="">— nová kompozice —</option></select>
+          </label>
+        </form>
+        <p class="poznamka jen-misto" id="dilna-predloha-info" hidden>Ke zprávě v ChatGPT přilož předlohu: <a id="dilna-predloha-odkaz" download>stáhnout obrázek</a>. Prompt žádá stejnou kompozici, jen jinou denní dobu nebo stav.</p>
+        <p class="poznamka jen-obchod" hidden>Prompt pro interiér obchodu sestaví generátor (tlačítko Zkopírovat prompt pro obrázek). Tady jen naimportuješ hotový obrázek.</p>
+        <textarea id="dilna-prompt" rows="9" class="jen-misto"></textarea>
+        <div class="tlacitka jen-misto">
+          <button type="button" id="dilna-sestavit">Sestavit znovu</button>
+          <button type="button" class="hlavni" id="dilna-kopirovat">Kopírovat prompt</button>
+          <a class="tlacitko" href="https://chatgpt.com/" target="_blank" rel="noopener">Otevřít ChatGPT</a>
+        </div>
+
+        <h2>2. Import</h2>
+        <div class="dropzona" id="dilna-dropzona" tabindex="0">
+          <p>Přetáhni sem obrázek z ChatGPT, nebo <label class="odkaz">vyber soubor<input type="file" id="dilna-soubor" accept="image/png,image/jpeg,image/webp" hidden></label>.</p>
+        </div>
+        <div id="dilna-orez" hidden>
+          <canvas id="dilna-nahled" width="960" height="640"></canvas>
+          <label class="posuvnik">Výřez <input type="range" id="dilna-posun" min="0" max="1000" value="500"></label>
+          <p class="ulozeni" id="dilna-rozmer"></p>
+          <div class="tlacitka">
+            <button type="button" class="hlavni" id="dilna-ulozit">Oříznout, zvětšit a uložit</button>
+            <button type="button" id="dilna-zrusit">Zahodit</button>
+          </div>
+        </div>
+        <p class="ulozeni" id="dilna-vysledek" aria-live="polite"></p>
+
+        <h2>3. Schválení</h2>
+        <p class="uvod">Nová ilustrace je vždy skrytá. Na obrazovce <a href="#mista">Místa</a> ji odkryješ, nastavíš variantu a stav, nebo zahodíš.</p>
       </section>
 
       <section id="obrazovka-obchody" class="obrazovka" hidden>

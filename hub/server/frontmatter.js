@@ -71,3 +71,16 @@ export function odkazy(text) {
   while ((m = re.exec(String(text)))) vysledek.push(m[1].trim());
   return vysledek;
 }
+
+/**
+ * Úprava hlavičky přímo v dokumentu YAML: `uprava(dokument)` smí měnit uzly.
+ * Komentáře, pořadí klíčů i tělo souboru zůstanou (např. odkrytí jedné ilustrace v seznamu).
+ */
+export function upravitDokument(text, uprava) {
+  const r = rozebrat(text);
+  if (r.chyba) throw new Error(r.chyba);
+  if (!r.maHlavicku) throw new Error('Soubor nemá hlavičku YAML');
+  uprava(r.dokument);
+  const yamlText = r.dokument.toString({ lineWidth: 0 });
+  return `---\n${yamlText}---\n${r.telo}`;
+}

@@ -10,6 +10,7 @@ export const VYCHOZI = Object.freeze({
   OBS_SCENA_SOUBOJ: '',
   OBS_SCENA_PO_ODPOCTU: '',
   OBS_SCENA_OBCHOD: '',
+  OBS_SCENA_MISTO: '',
   DOMACI_SIT: '0',
   PIN: '',
 });
@@ -83,6 +84,7 @@ export class Nastaveni {
       scenaSouboj: this.hodnoty.OBS_SCENA_SOUBOJ || '',
       scenaPoOdpoctu: this.hodnoty.OBS_SCENA_PO_ODPOCTU || '',
       scenaObchod: this.hodnoty.OBS_SCENA_OBCHOD || '',
+      scenaMisto: this.hodnoty.OBS_SCENA_MISTO || '',
       domaciSit: this.hodnoty.DOMACI_SIT === '1',
       pinNastaven: Boolean(this.hodnoty.PIN),
     };
@@ -100,7 +102,7 @@ export class Nastaveni {
     }
     if (z.obsHeslo) nove.OBS_HESLO = String(z.obsHeslo);
     if (z.smazatObsHeslo) nove.OBS_HESLO = '';
-    for (const [pole, klic] of [['scenaSouboj', 'OBS_SCENA_SOUBOJ'], ['scenaPoOdpoctu', 'OBS_SCENA_PO_ODPOCTU'], ['scenaObchod', 'OBS_SCENA_OBCHOD']]) {
+    for (const [pole, klic] of [['scenaSouboj', 'OBS_SCENA_SOUBOJ'], ['scenaPoOdpoctu', 'OBS_SCENA_PO_ODPOCTU'], ['scenaObchod', 'OBS_SCENA_OBCHOD'], ['scenaMisto', 'OBS_SCENA_MISTO']]) {
       if (z[pole] === undefined) continue;
       const scena = String(z[pole]).trim();
       if (scena.length > 200) throw Object.assign(new Error('Název scény je příliš dlouhý'), { status: 400 });

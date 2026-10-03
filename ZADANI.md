@@ -305,7 +305,7 @@ Každý existující zdroj má cíl v repu a blok, ve kterém se přesune. Pravi
 | `kalendar-data.js` (mimo Git) | `kampan/kalendar/udalosti.yaml` | Blok 1b | Importér v Hubu s kontrolou počtu událostí; originál zůstane jako záloha |
 | `kalendar.html` | výstupy Hubu; originál do `archiv/nastroje/` | Blok 1b | Datový motor a testy se převezmou do `hub/` |
 | `polozky.json` | `kampan/obchody/polozky.json` | Blok 1b | Formát beze změny |
-| `generator.html` | `hub/nastroje/generator.html` | Blok 1b | Doplní se Uložit sortiment; plné převzetí do panelu ve verzi 2 |
+| `generator.html` | `hub/nastroje/generator_sablona.html`, Hub ho servíruje na `/nastroje/generator.html` s daty z `kampan/obchody/polozky.json` | Blok 1b | Doplní se Uložit sortiment; plné převzetí do panelu ve verzi 2. `Apps/Shop/generator.html` zůstává jako záloha |
 | `cenik.html` | výstup Hubu; originál do `archiv/nastroje/` | Blok 1b | Originál zůstane, dokud Hub neprojde dvěma sezeními |
 | `Places/Mirabar/fight.png` | `kampan/mista/mirabar/` | Blok 2 | OBS ho od té doby čte přes Hub |
 | `pripravit_ilustraci.py` | `hub/nastroje/` | Blok 2 | Ilustrační dílna převezme ořez a zvětšení scén |
@@ -514,10 +514,9 @@ Nic z této sekce zatím neplatí. Každý bod se rozhodne nejpozději na začá
 | # | Otázka | Návrh (nepotvrzený) | Rozhodnout do |
 | --- | --- | --- | --- |
 | 1 | Přímé generování ilustrací přes API | Začít poloautomaticky přes ChatGPT bez dalších nákladů. API (OpenAI Images) doplnit, pokud se kopírování ukáže jako brzda: platí se za každý obrázek a klíč patří do `hub/.env` | Blok 2 |
-| 2 | Formát data v `udalosti.yaml` a `stav.md` | Převzít formát z `kalendar-data.js`, aby převod nic neměnil | Blok 1b |
+| 2 | ⚠ Formát data v `udalosti.yaml`, `stav.md` a `kampan.yaml` | Převzatý z `kalendar-data.js`, zapsaný na jednom řádku: `{ rok: 1491, mesic: Eleint, den: 19 }`, svátek `{ rok: 1491, svatek: Highharvestide }`. Starší text „19. Eleint 1491“ Hub přečte a při první změně přepíše. Importér zapíše i `startovni_datum` v `kampan.yaml` | Akceptace Bloku 1b |
 | 4 | České názvy schopností druhů v připomínkách | Doplnit z PHB 2024 a přidat do `prekladovy-klic-cz.md` | Blok 1b |
 | 6 | Ilustrace v IIO bez internetu | IIO čte obrázky z GitHubu; ověřit, zda export může odkazovat na lokální server | Verze 2 |
-| 7 | Testy datového motoru Harptos | V lokální složce nejsou (vznikly v pracovním prostoru Claude). V Bloku 1b se napíšou znovu nad blokem `HARPTOS-START … HARPTOS-END` v `Apps/Calendar/kalendar.html` | Blok 1b |
 | 9 | ⚠ Pole `stav.md` | `datum` (text, zatím prázdné; DM doplní po zápisu ze sezení 2), `misto` (text), `sezeni` (číslo posledního odehraného sezení, nyní 2), `sezeni_bezi`. Formát data doladí bod 2 | Blok 1a |
 | 13 | ⚠ Hráči v `kampan.yaml` | Pole `hraci` (jméno hráče a postava) pro seznam přítomných při Zahájit sezení: Martin – Tusker, Zaky – Koudur, Adriana – Alba, Anna – Leta | Akceptace Bloku 1a |
 | 14 | ⚠ Soubor sezení | `sezeni/sNN/sNN.md`, hlavička `cislo`, `datum_realne`, `zacatek`, `konec`, `pritomni`, `verejne: false`; poznámky jako odrážky `- 18:05 — text` pod nadpisem Poznámky ze stolu | Akceptace Bloku 1a |
@@ -527,5 +526,11 @@ Nic z této sekce zatím neplatí. Každý bod se rozhodne nejpozději na začá
 | 18 | ⚠ Uložit do GitHubu commituje jen `kampan/` | Kód Hubu a jiné soubory tlačítko nikdy necommituje. Bez internetu zůstane commit lokálně a panel to řekne | Akceptace Bloku 1a |
 | 19 | `odpocet.html` nebyl nalezen | V `C:\Users\Matej\Documents\DnD` chybí. Pokud je jinde, přidat ho a převzít barevný přechod; jinak zůstane vzhled výstupu z Bloku 1a | Akceptace Bloku 1a |
 | 20 | Ilustrace míst a OBS pozadí mimo repo | `src/places` (Cesta vč. `tabor.png`, Longsaddle, Lurkwood, mirabar), `src/obs` (`start.png`, `pause.png`, `obchod.png`), `map.png` jsou jen lokálně. Převezmou se s Blokem 2 | Blok 2 |
-| 21 | Po doběhnutí odpočtu přepnout na první scénu sezení | Nápad DM z akceptace 1a. Návrh: v Nastavení „Scéna po odpočtu“; server ji po doběhnutí přepne sám (i po restartu, pokud konec mezitím nastal), jen jednou | Blok 1b |
-| 22 | Rekapitulace kalendáře během odpočtu | Nápad DM z akceptace 1a: během odpočtu se orloj protočí od prvního dne kampaně po dnešek a ukazuje veřejné události. Návrh: výstup `vystupy/rekapitulace.html` s délkou podle zbývajícího času | Blok 1b |
+| 21 | ⚠ Po doběhnutí odpočtu přepnout na první scénu sezení | V Nastavení „Scéna po odpočtu“ (`OBS_SCENA_PO_ODPOCTU` v `hub/.env`). Server po doběhnutí přepne jednou; po restartu Hubu nebo výpadku OBS jen do 10 minut od konce, jinak to jen napíše na obrazovce Odpočet | Akceptace Bloku 1b |
+| 22 | ⚠ Rekapitulace kalendáře během odpočtu | Výstup `vystupy/rekapitulace.html`: orloj se protočí od začátku kampaně po dnešek (nejvýš posledních 120 dní), u dne s veřejnou událostí se zastaví a ukáže ji, pak začne znovu. Tempo je pevné (`?krok`, `?udalost`, `?dnes` v ms), ne podle zbývajícího času, aby smyčka běžela i v pauze | Akceptace Bloku 1b |
+| 23 | ⚠ Pole `lhuta` u události | Pole `odpocet` z `kalendar-data.js` se v `udalosti.yaml` jmenuje `lhuta` (počet dní předem, 1–999), aby se nepletlo s odpočtem do začátku sezení. Importér ho převede | Akceptace Bloku 1b |
+| 24 | ⚠ Datum v Harptosu u poznámek a sezení | Poznámka: `- 18:05 (19. Eleint) — text`. Hlavička sezení dostane `harptos_zacatek` a `harptos_konec` | Akceptace Bloku 1b |
+| 25 | ⚠ Sortimenty a sloty ceníku | Sortiment v `kampan/obchody/sortimenty/<obchod-mesto>.yaml`, obsah stejný jako `sortiment.json` z generátoru. Co visí v kterém ze tří slotů, je nastavení tohoto PC (`hub/.stav/ceniky.json`, mimo Git). Uložit v generátoru rovnou dá sortiment do zvoleného slotu; další uložení téhož losu ho přepíše, nový los založí nový soubor | Akceptace Bloku 1b |
+| 26 | ⚠ Další den v panelu | Před otázkou na důkladný odpočinek ukáže, co nový den čeká (události i skryté, svátek, lhůty); datum se posune až po odpovědi. Poznámka „Nový den: 20. Eleint 1491 DR (po důkladném odpočinku)“. Tlačítka ±1 den v Kalendáři posunou datum bez poznámky a připomínek | Akceptace Bloku 1b |
+| 27 | Banner kalendáře | Nevznikl: chybí návrh, jak má vypadat a kde bude v obraze. DM popíše, pak se doplní jako další výstup | Blok 2 |
+| 28 | ⚠ Datum ve Stavu kampaně | Datum se mění jen v Kalendáři (posun, výběr data, Další den); Stav kampaně ho ukazuje s odkazem. Volný text by obešel kontrolu data | Akceptace Bloku 1b |

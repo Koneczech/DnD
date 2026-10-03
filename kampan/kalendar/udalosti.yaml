@@ -1,0 +1,31 @@
+# Události kalendáře kampaně (Harptos). Upravuje je Hub na obrazovce Kalendář;
+# ruční úpravy jsou možné, Hub je načte do 1 s. lhuta = kolik dní předem se událost ukazuje v OBS.
+
+schema: 1
+udalosti:
+  - id: umtwx6gjrtigj
+    datum: { rok: 1491, svatek: Highharvestide }
+    text: Highharvestide
+    verejna: true
+    lhuta: 20
+  - id: umtwx723kf1cx
+    datum: { rok: 1491, mesic: Eleint, den: 12 }
+    text: Opuštění Mirabaru
+    verejna: true
+  - id: umtwx7hnhme81
+    datum: { rok: 1491, mesic: Eleint, den: 13 }
+    text: Setkání s Torvou (a Tavisem)
+    verejna: true
+  - id: umtwx7oqlr83s
+    datum: { rok: 1491, mesic: Eleint, den: 13 }
+    text: První společný tábor
+    verejna: true
+  - id: umtwx8tayh1ds
+    datum: { rok: 1491, mesic: Eleint, den: 14 }
+    konec: { rok: 1491, mesic: Eleint, den: 18 }
+    text: Cesta Long road směr Longsaddle
+    verejna: true
+  - id: umtwxfng7qivb
+    datum: { rok: 1491, mesic: Eleint, den: 18 }
+    text: Longsaddle
+    verejna: true

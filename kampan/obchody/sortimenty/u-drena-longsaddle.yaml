@@ -1,0 +1,50 @@
+# Sortiment obchodu z generátoru (Hub, obrazovka Obchody). Ceny v měďácích: 1 zl = 100 md, 1 st = 10 md.
+
+verze: 1
+obchod:
+  nazev: U Drena
+  typ: kovarna
+  lokalita: rural
+  mesto: Longsaddle
+  podtitul: null
+meta:
+  vygenerovano: 2026-10-03T13:32:53.566Z
+  seed: 677760850
+  generator: generator.html v1
+polozky:
+  - nazev: Dýka
+    cena_md: 200
+    mnozstvi: null
+    jadro: true
+  - nazev: Kovářské nástroje
+    cena_md: 2000
+    mnozstvi: null
+    jadro: true
+  - nazev: Meč, krátký
+    cena_md: 1000
+    mnozstvi: null
+    jadro: true
+  - nazev: Páčidlo
+    cena_md: 200
+    mnozstvi: null
+    jadro: true
+  - nazev: Píka
+    cena_md: 500
+    mnozstvi: null
+    jadro: false
+  - nazev: Sekyra, obouruční
+    cena_md: 3000
+    mnozstvi: null
+    jadro: false
+  - nazev: Štít
+    cena_md: 1000
+    mnozstvi: null
+    jadro: true
+  - nazev: Zednické nářadí
+    cena_md: 1000
+    mnozstvi: null
+    jadro: true
+  - nazev: Železný hrnec
+    cena_md: 200
+    mnozstvi: null
+    jadro: true

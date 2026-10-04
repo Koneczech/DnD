@@ -61,13 +61,18 @@
       { tma: 0.5, vineta: 1 },
     ];
 
-    /* ---------- Počasí: déšť a sníh na canvasu, mlha v CSS ---------- */
+    /* ---------- Počasí: déšť a sníh na canvasu, mlha v CSS; jdou zapnout i všechny naráz ---------- */
     const platno = document.getElementById('pocasi');
     const ctx = platno.getContext('2d');
-    let castice = [];
-    let druh = 'zadne';
+    platno.style.opacity = '1'; // prolínání řeší průhlednost každého efektu zvlášť (alfa níž)
     let animace = null;
     let posledni = 0;
+    // Každý efekt má vlastní částice a průhlednost: zapnutý se do ~0,8 s objeví, vypnutý stejně rychle zmizí.
+    const systemy = {
+      dest: { castice: [], alfa: 0, zap: false },
+      snih: { castice: [], alfa: 0, zap: false },
+    };
+    const PRECHOD_S = 0.8;
 
     function velikost() {
       platno.width = window.innerWidth;
@@ -76,18 +81,39 @@
     window.addEventListener('resize', velikost);
     velikost();
 
-    function vytvor(d, s) {
-      const W = platno.width, H = platno.height;
-      const pocet = d === 'dest' ? 260 + s * 150 : 140 + s * 80;
-      castice = Array.from({ length: pocet }, () => nova(d, W, H, true));
-    }
+    const cilPocet = (d, s) => (d === 'dest' ? 260 + s * 150 : 140 + s * 80);
     function nova(d, W, H, kdekoli) {
-      if (d === 'dest') {
-        const z = Math.random();
-        return { x: Math.random() * W * 1.2, y: kdekoli ? Math.random() * H : -40, v: 1100 + z * 900, d: 14 + z * 22, a: 0.18 + z * 0.3 };
-      }
       const z = Math.random();
-      return { x: Math.random() * W, y: kdekoli ? Math.random() * H : -10, v: 40 + z * 70, r: 1 + z * 2.6, f: Math.random() * Math.PI * 2, a: 0.45 + z * 0.45 };
+      if (d === 'dest') return { x: Math.random() * W * 1.2, y: kdekoli ? Math.random() * H : -40, v: 1100 + z * 900, d: 14 + z * 22 };
+      return { x: Math.random() * W, y: kdekoli ? Math.random() * H : -10, v: 40 + z * 70, r: 1 + z * 2.6, f: Math.random() * Math.PI * 2 };
+    }
+
+    function kresliDest(sys, dt, W, H) {
+      ctx.strokeStyle = 'rgba(200,210,225,0.55)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      const vitr = 0.22;
+      for (const c of sys.castice) {
+        c.y += c.v * dt;
+        c.x -= c.v * vitr * dt;
+        if (c.y > H + 40 || c.x < -40) Object.assign(c, nova('dest', W, H, false));
+        ctx.moveTo(c.x, c.y);
+        ctx.lineTo(c.x + c.d * vitr, c.y - c.d);
+      }
+      ctx.stroke();
+    }
+    function kresliSnih(sys, dt, W, H) {
+      ctx.fillStyle = 'rgba(240,244,250,0.8)';
+      ctx.beginPath();
+      for (const c of sys.castice) {
+        c.y += c.v * dt;
+        c.f += dt * 0.8;
+        c.x += Math.sin(c.f) * 18 * dt;
+        if (c.y > H + 10) Object.assign(c, nova('snih', W, H, false));
+        ctx.moveTo(c.x + c.r, c.y);
+        ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+      }
+      ctx.fill();
     }
 
     function krok(t) {
@@ -95,94 +121,46 @@
       posledni = t;
       const W = platno.width, H = platno.height;
       ctx.clearRect(0, 0, W, H);
-      if (druh === 'dest') {
-        ctx.strokeStyle = 'rgba(200,210,225,0.55)';
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        const vitr = 0.22;
-        for (const c of castice) {
-          c.y += c.v * dt;
-          c.x -= c.v * vitr * dt;
-          if (c.y > H + 40 || c.x < -40) Object.assign(c, nova('dest', W, H, false));
-          ctx.moveTo(c.x, c.y);
-          ctx.lineTo(c.x + c.d * vitr, c.y - c.d);
+      let aktivni = false;
+      for (const [d, sys] of Object.entries(systemy)) {
+        const cil = sys.zap ? 1 : 0;
+        sys.alfa = cil > sys.alfa ? Math.min(cil, sys.alfa + dt / PRECHOD_S) : Math.max(cil, sys.alfa - dt / PRECHOD_S);
+        if (sys.alfa === 0 && !sys.zap) {
+          sys.castice = [];
+          continue;
         }
-        ctx.stroke();
-      } else if (druh === 'snih') {
-        ctx.fillStyle = 'rgba(240,244,250,0.8)';
-        ctx.beginPath();
-        for (const c of castice) {
-          c.y += c.v * dt;
-          c.f += dt * 0.8;
-          c.x += Math.sin(c.f) * 18 * dt;
-          if (c.y > H + 10) Object.assign(c, nova('snih', W, H, false));
-          ctx.moveTo(c.x + c.r, c.y);
-          ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
-        }
-        ctx.fill();
+        aktivni = true;
+        ctx.globalAlpha = sys.alfa;
+        (d === 'dest' ? kresliDest : kresliSnih)(sys, dt, W, H);
       }
-      animace = requestAnimationFrame(krok);
+      ctx.globalAlpha = 1;
+      // Nic nepadá: animaci zastav, v OBS by jinak zbytečně běžela.
+      animace = aktivni ? requestAnimationFrame(krok) : null;
     }
-
-    let zmenaPocasi = 0;
-    const cilPocet = (d, s) => (d === 'dest' ? 260 + s * 150 : 140 + s * 80);
 
     function spustit() {
       if (animace) return;
       posledni = performance.now();
       animace = requestAnimationFrame(krok);
     }
-    function zastavitPozdeji(token) {
-      // Doběhni prolnutí, pak animaci zastav (šetří výkon v OBS).
-      setTimeout(() => {
-        if (token !== zmenaPocasi || !animace) return;
-        cancelAnimationFrame(animace);
-        animace = null;
-        druh = 'zadne';
-        ctx.clearRect(0, 0, platno.width, platno.height);
-      }, 1300);
-    }
 
-    function nastavPocasi(d, s) {
-      const token = ++zmenaPocasi;
+    /** pocasi = seznam efektů ['dest','snih','mlha'] (starší Hub posílal jeden řetězec). */
+    function nastavPocasi(pocasi, s) {
+      const zap = new Set(Array.isArray(pocasi) ? pocasi : pocasi && pocasi !== 'zadne' ? [pocasi] : []);
       document.querySelectorAll('.mlha').forEach((m) => {
-        m.style.opacity = d === 'mlha' ? String(0.55 + s * 0.15) : '0';
+        m.style.opacity = zap.has('mlha') ? String(0.55 + s * 0.15) : '0';
         // Vypnutá mlha se nehýbe: v OBS by jinak zbytečně zatěžovala vykreslování (audit N8).
-        m.style.animationPlayState = d === 'mlha' ? 'running' : 'paused';
+        m.style.animationPlayState = zap.has('mlha') ? 'running' : 'paused';
       });
-      const canvasove = d === 'dest' || d === 'snih';
-      if (!canvasove) {
-        platno.style.opacity = '0';
-        zastavitPozdeji(token);
-        return;
-      }
-      if (animace && druh === d) {
-        // Jen jiná síla: doplň nebo uber částice, ať déšť neposkočí.
+      for (const [d, sys] of Object.entries(systemy)) {
+        sys.zap = zap.has(d);
+        if (!sys.zap) continue;
+        // Zapnutí nebo jiná síla: doplň nebo uber částice, ať efekt neposkočí.
         const cil = cilPocet(d, s);
-        while (castice.length < cil) castice.push(nova(d, platno.width, platno.height, true));
-        castice.length = cil;
-        platno.style.opacity = '1';
-        return;
+        while (sys.castice.length < cil) sys.castice.push(nova(d, platno.width, platno.height, true));
+        sys.castice.length = cil;
       }
-      if (animace && druh !== 'zadne') {
-        // Déšť ↔ sníh: staré počasí rychle rozplyň a nastup s novým, celkem asi 1 s (zadání 0,5–1,5 s, audit N8).
-        platno.style.transition = 'opacity 0.45s ease-in-out';
-        platno.style.opacity = '0';
-        setTimeout(() => {
-          if (token !== zmenaPocasi) return;
-          druh = d;
-          vytvor(d, s);
-          platno.style.opacity = '1';
-          setTimeout(() => {
-            if (token === zmenaPocasi) platno.style.transition = '';
-          }, 500);
-        }, 480);
-        return;
-      }
-      druh = d;
-      vytvor(d, s);
-      spustit();
-      platno.style.opacity = '1';
+      if (Object.values(systemy).some((sys) => sys.zap || sys.alfa > 0)) spustit();
     }
 
     /* Diagnostika: adresa s ?ladeni vypíše do rohu poslední stav a chyby načtení obrázku. */
@@ -200,7 +178,7 @@
 
     function prevzit(s) {
       if (!s) return;
-      zapsat(new Date().toLocaleTimeString('cs') + ' ' + (s.ilustrace ? s.ilustrace.url : '(bez ilustrace)') + ' | ' + s.pocasi + ' ' + s.intenzita);
+      zapsat(new Date().toLocaleTimeString('cs') + ' ' + (s.ilustrace ? s.ilustrace.url : '(bez ilustrace)') + ' | ' + [].concat(s.pocasi).join('+') + ' ' + s.intenzita);
       prolinac.ukazat(s.ilustrace ? s.ilustrace.url : null);
       if (s.dalsi) predNacist(s.dalsi);
       const n = NALADA[s.intenzita] ?? NALADA[0];

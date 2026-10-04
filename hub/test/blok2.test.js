@@ -131,7 +131,12 @@ test('API: scéna místa, skryté ilustrace se do OBS nedostanou, odkrytí se ul
 
     r = await pozadavek(hub, '/api/scena', { metoda: 'PUT', telo: { varianta: 'noc', pocasi: 'dest', intenzita: 3 } });
     assert.equal(r.data.pocet, 2);
-    assert.equal(r.data.pocasi, 'dest');
+    assert.deepEqual(r.data.pocasi, ['dest'], 'starý tvar jednoho řetězce se převede na seznam');
+    r = await pozadavek(hub, '/api/scena', { metoda: 'PUT', telo: { pocasi: ['mlha', 'snih', 'dest'] } });
+    assert.deepEqual(r.data.pocasi, ['dest', 'snih', 'mlha'], 'všechny tři efekty naráz');
+    r = await pozadavek(hub, '/api/scena', { metoda: 'PUT', telo: { pocasi: [] } });
+    assert.deepEqual(r.data.pocasi, []);
+    r = await pozadavek(hub, '/api/scena', { metoda: 'PUT', telo: { pocasi: 'dest' } });
     r = await pozadavek(hub, '/api/scena/dalsi', { metoda: 'POST', telo: { smer: 1 } });
     assert.equal(r.data.ilustrace.soubor, 'celek-noc.png');
     r = await pozadavek(hub, '/api/scena', { metoda: 'PUT', telo: { pocasi: 'kroupy' } });

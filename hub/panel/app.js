@@ -325,11 +325,11 @@ function vykresliKontrolky() {
 
 // Role scén v OBS. Dlaždice ukazuje ovládání té role, kterou má přiřazenou v tabulce Role scén.
 const ROLE_SCEN = [['start', 'scenaStart', 'Start'], ['misto', 'scenaMisto', 'Místo'], ['obchod', 'scenaObchod', 'Obchod'], ['souboj', 'scenaSouboj', 'Souboj']];
-const PANELY = ['start', 'misto', 'obchod', 'souboj', 'bez'];
+const PANELY = ['start', 'misto', 'obchod', 'souboj'];
 const POCASI_TEXT = { dest: 'déšť', snih: 'sníh', mlha: 'mlha' };
 
 stav.stulMisto = null; // místo vybrané na U stolu, dokud ho DM nepošle do OBS (null = to, co je v OBS)
-stav.stulVyber = null; // role vybraná kliknutím na dlaždici; null = podle scény, která je právě v OBS
+stav.stulVyber = null; // otevřená záložka nastavení scény; null = při prvním vykreslení podle scény v OBS
 
 function roleScenyOBS(nazev) {
   const n = stav.prehled?.nastaveni;
@@ -346,23 +346,26 @@ function vykresliSceny() {
   const pripojeno = Boolean(o?.pripojeno);
   let pripojitTlacitko = null;
 
-  let role = stav.stulVyber;
-  if (!role && pripojeno && o.aktualniScena) role = roleScenyOBS(o.aktualniScena) ?? 'bez';
-  if (!role && !pripojeno) role = 'start';
-  if (!PANELY.includes(role)) role = null;
+  // Záložka s nastavením scény je nezávislá na tom, co je v OBS: DM si scénu nejdřív připraví
+  // v záložce a teprve pak ji dlaždicí nahoře přepne. Bez volby se otevře role scény, která je v OBS.
+  if (!stav.stulVyber) stav.stulVyber = (pripojeno && roleScenyOBS(o.aktualniScena)) || 'start';
+  const role = PANELY.includes(stav.stulVyber) ? stav.stulVyber : 'start';
+  const roleVObs = pripojeno ? roleScenyOBS(o.aktualniScena) : null;
 
   if (!stav.prehled) {
     popis.textContent = 'Čekám na server Hubu…';
   } else if (!o?.nastaveno) {
-    popis.textContent = 'OBS ještě není nastavené. Zadej heslo k WebSocket serveru v Nastavení. Ovládání níže funguje i bez OBS, jen nepřepíná scény.';
+    popis.textContent = 'OBS ještě není nastavené. Zadej heslo k WebSocket serveru v Nastavení. Záložky níže fungují i bez OBS, jen se nepřepínají scény.';
   } else if (!pripojeno) {
     popis.textContent = `${o.chyba || 'OBS není připojené.'} Hub to zkouší znovu každých 5 sekund.`;
     pripojitTlacitko = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Připojit teď' });
     pripojitTlacitko.addEventListener('click', () => api('/api/obs/pripojit', { metoda: 'POST', telo: {} }).catch(() => {}));
   } else {
-    popis.textContent = 'Klikni na dlaždici: OBS přepne na scénu a pod ní se ukáže její ovládání. Numpad v OBS funguje dál.';
+    popis.textContent = 'Dlaždice přepínají scény v OBS. Pod nimi jsou záložky s nastavením scén: scénu si nejdřív připrav v záložce, pak ji přepni dlaždicí. Numpad v OBS funguje dál.';
   }
 
+  // Dlaždice: jen přepnutí scény v OBS.
+  seznam.hidden = !pripojeno;
   if (pripojeno) {
     for (const nazev of o.sceny) {
       const b = document.createElement('button');
@@ -370,10 +373,8 @@ function vykresliSceny() {
       const r = roleScenyOBS(nazev);
       b.textContent = nazev;
       b.setAttribute('aria-pressed', String(nazev === o.aktualniScena));
-      if (r) b.title = `Role: ${ROLE_SCEN.find(([id]) => id === r)[2]}`;
+      b.title = `Přepnout OBS na scénu ${nazev}${r ? ` (role ${ROLE_SCEN.find(([id]) => id === r)[2]})` : ''}`;
       b.addEventListener('click', async () => {
-        stav.stulVyber = r ?? 'bez';
-        vykresliSceny();
         try {
           await api('/api/obs/scena', { metoda: 'POST', telo: { nazev } });
         } catch (e) {
@@ -382,26 +383,35 @@ function vykresliSceny() {
       });
       seznam.append(b);
     }
-  } else {
-    // Bez OBS jsou dlaždicemi role: jen vybírají ovládání, nic nepřepínají.
-    for (const [id, klic, jmeno] of ROLE_SCEN) {
+  }
+
+  // Záložky: nastavení scén podle role (Start, Místo, Obchod, Souboj).
+  const zalozky = $('#stul-zalozky');
+  zalozky.replaceChildren(
+    ...ROLE_SCEN.map(([id, klic, jmeno]) => {
       const b = document.createElement('button');
       b.type = 'button';
-      b.textContent = jmeno;
-      b.title = stav.prehled?.nastaveni?.[klic] ? `Scéna v OBS: ${stav.prehled.nastaveni[klic]}` : 'Scéna zatím není přiřazená';
-      b.setAttribute('aria-pressed', String(id === role));
+      b.setAttribute('role', 'tab');
+      b.id = `zalozka-${id}`;
+      b.setAttribute('aria-controls', `stul-${id}`);
+      b.setAttribute('aria-selected', String(id === role));
+      b.tabIndex = id === role ? 0 : -1;
+      const scena = stav.prehled?.nastaveni?.[klic];
+      b.append(Object.assign(document.createElement('span'), { textContent: jmeno }));
+      b.append(Object.assign(document.createElement('small'), { textContent: id === roleVObs ? '● v OBS' : scena ? `scéna ${scena}` : 'bez scény' }));
+      if (id === roleVObs) b.classList.add('v-obs');
       b.addEventListener('click', () => {
         stav.stulVyber = id;
         vykresliSceny();
       });
-      seznam.append(b);
-    }
-  }
+      return b;
+    }),
+  );
 
   // Stav „co je teď v OBS“.
   const sc = stav.prehled?.scena;
   let text = pripojeno ? `V OBS teď: ${o.aktualniScena || 'neznámá scéna'}` : 'OBS není připojené.';
-  if (pripojeno && roleScenyOBS(o.aktualniScena) === 'misto' && sc?.misto) {
+  if (pripojeno && roleVObs === 'misto' && sc?.misto) {
     text += ` · ${sc.misto.nazev}${sc.ilustrace ? ` · ${sc.ilustrace.soubor}` : ''}`;
     if (sc.pocasi !== 'zadne') text += ` · ${POCASI_TEXT[sc.pocasi] ?? sc.pocasi} ${sc.intenzita}`;
   }
@@ -411,6 +421,16 @@ function vykresliSceny() {
   for (const id of PANELY) $(`#stul-${id}`).hidden = id !== role;
   nahledMista(role === 'misto' && !$('#obrazovka-sceny').hidden);
 }
+
+// Šipky vlevo/vpravo mezi záložkami (přístupnost, vzor ARIA tabs).
+$('#stul-zalozky').addEventListener('keydown', (e) => {
+  if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+  const ids = ROLE_SCEN.map(([id]) => id);
+  const i = ids.indexOf(stav.stulVyber);
+  stav.stulVyber = ids[(i + (e.key === 'ArrowRight' ? 1 : ids.length - 1)) % ids.length];
+  vykresliSceny();
+  $(`#zalozka-${stav.stulVyber}`).focus();
+});
 
 /** Živý náhled výstupu místa: iframe 1920 × 1080 zmenšený na šířku rámečku, jen dokud je panel vidět. */
 function nahledMista(zobrazit) {

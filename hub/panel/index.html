@@ -86,7 +86,10 @@
         <p class="stul-stav" id="stul-stav" aria-live="polite"></p>
         <div class="sceny" id="seznam-scen"></div>
 
-        <div class="stul-panel" id="stul-start" hidden>
+        <h2 class="vizualne-skryte">Nastavení scén</h2>
+        <div class="stul-zalozky" id="stul-zalozky" role="tablist" aria-label="Nastavení scén"></div>
+
+        <div class="stul-panel" id="stul-start" role="tabpanel" aria-labelledby="zalozka-start" hidden>
           <h2>Start: odpočet do začátku sezení</h2>
           <p class="uvod">Nastav, kdy hra začne. Odpočet se v OBS ukáže až po spuštění a běží dál, i když Hub na chvíli vypadne.</p>
           <p class="odpocet-cas" id="odpocet-cas" aria-live="off">--:--</p>
@@ -113,7 +116,7 @@
           </details>
         </div>
 
-        <div class="stul-panel" id="stul-misto" hidden>
+        <div class="stul-panel" id="stul-misto" role="tabpanel" aria-labelledby="zalozka-misto" hidden>
           <h2>Místo</h2>
           <p class="uvod">Do OBS jdou jen odkryté ilustrace; co tady změníš, se v OBS prolne do sekundy.</p>
           <!-- Výběr místa je první krok, proto stojí nad náhledem (audit, UI U stolu). -->
@@ -161,7 +164,7 @@
           </details>
         </div>
 
-        <div class="stul-panel" id="stul-obchod" hidden>
+        <div class="stul-panel" id="stul-obchod" role="tabpanel" aria-labelledby="zalozka-obchod" hidden>
           <h2>Obchod</h2>
           <p class="uvod"><em>Ukázat v OBS</em> vymění ceník i obrázek obchodu a přepne OBS na scénu obchodu. Nové sortimenty, obrázky a mazání jsou v <a href="#obchody">Obchody – správa</a>.</p>
           <h3>V OBS teď</h3>
@@ -177,14 +180,11 @@
           </table>
         </div>
 
-        <div class="stul-panel" id="stul-souboj" hidden>
+        <div class="stul-panel" id="stul-souboj" role="tabpanel" aria-labelledby="zalozka-souboj" hidden>
           <h2>Souboj</h2>
           <p class="uvod">Scéna s iniciativou z Improved Initiative. Tlačítko <strong>Souboj</strong> v horní liště přepne OBS sem odkudkoli.</p>
         </div>
 
-        <div class="stul-panel" id="stul-bez" hidden>
-          <p class="uvod">Tahle scéna nemá v Hubu žádné ovládání. Role scén (Start, Místo, Obchod, Souboj) přiřadíš níže.</p>
-        </div>
 
         <h2>Role scén v OBS</h2>
         <p class="uvod">Řekni Hubu, která scéna v OBS co dělá. Podle toho se pod dlaždicí ukáže ovládání a na ni OBS přepnou tlačítka Ukázat v OBS a Souboj.</p>

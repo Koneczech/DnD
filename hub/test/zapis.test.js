@@ -186,3 +186,75 @@ test('Zapisovač pozná vlastní zápis (ozvěnu z hlídání souborů)', async 
     await smazat();
   }
 });
+
+test('Zapisovač: po uvolnění zámku zůstane nejnovější změna, ne ta odložená jako první (audit S1)', async (t) => {
+  const { koren, smazat } = await docasneRepo();
+  const puvodni = fs.rename;
+  let zamceno = true;
+  t.after(() => mock.restoreAll());
+  mock.method(fs, 'rename', async (z, na) => {
+    if (zamceno && na.endsWith('stav.md')) throw chybaZamku();
+    // Starší obsah se přejmenovává pomaleji (antivir ho ještě drží): bez fronty by doběhl až po novějším.
+    const obsah = await fs.readFile(z, 'utf8').catch(() => '');
+    await new Promise((r) => setTimeout(r, obsah === 'A' ? 60 : 5));
+    return puvodni(z, na);
+  });
+  const z = new Zapisovac({ intervalOpakovaniMs: 5, volbyZapisu: { limitMs: 0 } });
+  try {
+    const soubor = path.join(koren, 'kampan', 'stav.md');
+    assert.equal((await z.zapsat(soubor, 'A')).vysledek, 'odlozeno');
+    zamceno = false;
+    // Opakování odloženého A a nový zápis B běží současně.
+    await Promise.all([z.zopakuj(), z.zapsat(soubor, 'B')]);
+    await dokud(() => z.seznamOdlozenych().length === 0);
+    assert.equal(await fs.readFile(soubor, 'utf8'), 'B');
+    assert.ok(z.jeVlastniZapis(soubor, 'B'));
+  } finally {
+    await z.dokoncit();
+    mock.restoreAll();
+    await smazat();
+  }
+});
+
+test('Zapisovač.upravit: souběžné úpravy jednoho souboru se nepřepíšou (audit N1)', async () => {
+  const { koren, smazat } = await docasneRepo();
+  const z = new Zapisovac();
+  try {
+    const soubor = path.join(koren, 'kampan', 'pocitadlo.txt');
+    await z.zapsat(soubor, '');
+    await Promise.all(
+      Array.from({ length: 20 }, (_, i) =>
+        z.upravit(soubor, async (text) => {
+          await new Promise((r) => setTimeout(r, 2));
+          return `${text}${i},`;
+        }),
+      ),
+    );
+    const cisla = (await fs.readFile(soubor, 'utf8')).split(',').filter(Boolean);
+    assert.equal(cisla.length, 20, 'žádná úprava se neztratila');
+  } finally {
+    await smazat();
+  }
+});
+
+test('Zapisovač.upravit: zamčený soubor čte odložený obsah, takže druhá úprava nezahodí první (audit S1)', async (t) => {
+  const { koren, smazat } = await docasneRepo();
+  t.after(() => mock.restoreAll());
+  mock.method(fs, 'rename', async () => {
+    throw chybaZamku();
+  });
+  const z = new Zapisovac({ intervalOpakovaniMs: 60000, volbyZapisu: { limitMs: 0 } });
+  try {
+    const soubor = path.join(koren, 'kampan', 'stav.md');
+    const puvodni = await fs.readFile(soubor, 'utf8');
+    await z.upravit(soubor, (text) => `${text}prvni\n`);
+    const { vysledek, obsah } = await z.upravit(soubor, (text) => `${text}druha\n`);
+    assert.equal(vysledek, 'odlozeno');
+    assert.equal(obsah, `${puvodni}prvni\ndruha\n`);
+    assert.equal(z.cekajici(soubor), obsah);
+  } finally {
+    await z.dokoncit().catch(() => {});
+    mock.restoreAll();
+    await smazat();
+  }
+});

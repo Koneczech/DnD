@@ -2,7 +2,8 @@
 // Pre-commit hook DM Hubu (rozhodnutí 13 a 31). Repo je veřejné, takže commit odmítne:
 //  - soubor .env (kromě vzoru .env.example),
 //  - obsah s hodnotami z hub/.env (heslo OBS, PIN, API klíč),
-//  - řetězce, které vypadají jako známé typy klíčů a tokenů.
+//  - řetězce, které vypadají jako známé typy klíčů a tokenů,
+//  - soubory se značkami konfliktu Gitu (<<<<<<< … >>>>>>>).
 // Shell skript v .git/hooks/pre-commit jen zavolá tento soubor; logika se testuje na Linuxu i Windows.
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -24,6 +25,11 @@ export const VZORY_KLICU = Object.freeze([
   { nazev: 'Tajná hodnota z .env', re: new RegExp(`^\\s*(?:${TAJNE_KLICE.join('|')}|[A-Z0-9_]*(?:API_KEY|SECRET|TOKEN))\\s*=\\s*["']?[^\\s"'#]{4,}`, 'm') },
 ]);
 
+/** Soubor po nedořešeném sloučení: obsahuje začátek i konec bloku konfliktu. */
+export function maZnackyKonfliktu(text) {
+  return /^<{7} /m.test(text) && /^>{7} /m.test(text);
+}
+
 export function jeZakazanySoubor(cesta) {
   const jmeno = path.posix.basename(cesta.replace(/\\/g, '/'));
   if (jmeno === '.env.example') return false;
@@ -44,6 +50,10 @@ export function najdiProblemy(soubory, tajneHodnoty = []) {
       continue;
     }
     if (obsah == null) continue;
+    if (maZnackyKonfliktu(obsah)) {
+      problemy.push({ cesta, duvod: 'obsahuje značky konfliktu Gitu (<<<<<<< … >>>>>>>)' });
+      continue;
+    }
     if (hodnoty.some((h) => obsah.includes(h))) {
       problemy.push({ cesta, duvod: 'obsahuje hodnotu z hub/.env (heslo OBS, PIN nebo klíč)' });
       continue;

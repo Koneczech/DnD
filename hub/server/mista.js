@@ -103,11 +103,10 @@ export class Mista extends EventEmitter {
   }
 
   async upravitSoubor(id, uprava) {
-    const soubor = this.cestaMista(id);
-    const text = await fs.readFile(soubor, 'utf8');
-    const novy = upravitDokument(text, uprava);
-    const { vysledek } = await this.zapisovac.zapsat(soubor, novy);
-    this.mista.set(id, await this.nacistZTextu(id, novy));
+    // Čtení i zápis ve frontě souboru a včetně odložené změny: dvě rychlé úpravy ani zamčený
+    // soubor nezpůsobí, že by druhá úprava zahodila první (audit S1, N1).
+    const { vysledek, obsah } = await this.zapisovac.upravit(this.cestaMista(id), (text) => upravitDokument(text, uprava));
+    this.mista.set(id, await this.nacistZTextu(id, obsah));
     this.oznam();
     return vysledek;
   }
@@ -192,6 +191,7 @@ export class Mista extends EventEmitter {
     if (stav && stav !== 'vychozi') zaznam.stav = stav;
     zaznam.skryta = true;
     if (prompt) zaznam.prompt = String(prompt).slice(0, 4000);
+    const obrazek = path.join(this.slozka, id, soubor);
     await this.upravitSoubor(id, (dok) => {
       let seznam = dok.get('ilustrace', true);
       if (!YAML.isSeq(seznam)) {
@@ -200,6 +200,10 @@ export class Mista extends EventEmitter {
       }
       seznam.flow = false;
       seznam.items.push(dok.createNode(zaznam));
+    }).catch(async (e) => {
+      // Hlavička se nezměnila: obrázek bez záznamu by v repu jen překážel.
+      await fs.rm(obrazek, { force: true }).catch(() => {});
+      throw e;
     });
     return { soubor, misto: this.get(id) };
   }

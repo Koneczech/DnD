@@ -190,7 +190,11 @@ async function sloucitZmeny() {
   try {
     const r = await api('/api/git/sloucit', { metoda: 'POST', telo: {} });
     let text = r.push ? 'Sloučeno a odesláno na GitHub.' : 'Sloučeno, ale odeslání na GitHub se nepodařilo. Zkus Uložit do GitHubu později.';
-    if (r.uschovnaNevracena) text += ' Tvoje neuložené změny zůstaly v úschovně Gitu, protože se nedaly vrátit; pošli to Claudovi.';
+    if (r.vracenoZGitHubu?.length) {
+      text += ` Soubory ${r.vracenoZGitHubu.join(', ')} jsi měl rozdělané a zároveň se změnily na GitHubu: platí verze z GitHubu, tvoje verze je v úschovně Gitu. Pošli to Claudovi.`;
+    } else if (r.uschovnaNevracena) {
+      text += ' Tvoje neuložené změny zůstaly v úschovně Gitu, protože se nedaly vrátit; pošli to Claudovi.';
+    }
     toast(text, { chyba: r.uschovnaNevracena });
     await nactiPrehled();
   } catch (e) {

@@ -80,6 +80,10 @@ export async function zapsatAtomicky(soubor, obsah, { pokusu = 5, limitMs = 1000
 /**
  * Zapisovač s odloženými zápisy.
  *
+ * Všechny operace nad jedním souborem (zápis, úprava, opakování odloženého zápisu, zrušení) běží
+ * ve frontě za sebou. Novější změna tak nikdy nepředběhne starší a opakování odloženého zápisu
+ * zapíše vždy nejnovější obsah, ne ten, který čekal jako první (audit S1, N1).
+ *
  * Události:
  *  - 'odlozeno'  { soubor }  zápis neprošel, změna čeká v paměti
  *  - 'dokonceno' { soubor }  odložený zápis se podařilo dokončit
@@ -99,12 +103,26 @@ export class Zapisovac extends EventEmitter {
     this.odlozene = new Map();
     /** @type {Map<string, string>} soubor -> hash posledního obsahu, který zapsal Hub */
     this.posledniZapsane = new Map();
+    /** @type {Map<string, Promise<unknown>>} soubor -> konec fronty operací nad ním */
+    this.fronty = new Map();
     this.casovac = null;
     this.bezi = false;
   }
 
   static hash(obsah) {
     return crypto.createHash('sha1').update(obsah).digest('hex');
+  }
+
+  /** Spustí operaci nad souborem až po dokončení všech předchozích operací nad ním. */
+  poradi(klic, operace) {
+    const predchozi = this.fronty.get(klic) ?? Promise.resolve();
+    const vysledek = predchozi.catch(() => {}).then(operace);
+    const konec = vysledek.catch(() => {});
+    this.fronty.set(klic, konec);
+    konec.then(() => {
+      if (this.fronty.get(klic) === konec) this.fronty.delete(klic);
+    });
+    return vysledek;
   }
 
   /** Zapsal tento obsah Hub sám? Hlídání souborů tak pozná vlastní ozvěnu. */
@@ -125,9 +143,28 @@ export class Zapisovac extends EventEmitter {
    * Zapíše obsah atomicky. Zamčený soubor nevyhodí chybu, ale vrátí {vysledek:'odlozeno'}.
    * @returns {Promise<{vysledek:'zapsano'|'odlozeno'}>}
    */
-  async zapsat(soubor, obsah) {
+  zapsat(soubor, obsah) {
     const klic = path.resolve(soubor);
-    // Novější změna nahrazuje starší odloženou.
+    return this.poradi(klic, () => this.zapsatTed(klic, obsah));
+  }
+
+  /**
+   * Přečte poslední obsah souboru (včetně odloženého zápisu), nechá ho upravit a zapíše výsledek.
+   * Čtení i zápis běží ve frontě souboru, takže se dvě úpravy nikdy nepřepíšou (read-modify-write).
+   * @param {(text:string) => string|Promise<string>} uprava vrátí nový obsah
+   * @returns {Promise<{vysledek:'zapsano'|'odlozeno', obsah:string}>}
+   */
+  upravit(soubor, uprava) {
+    const klic = path.resolve(soubor);
+    return this.poradi(klic, async () => {
+      const text = this.odlozene.get(klic) ?? (await fs.readFile(klic, 'utf8'));
+      const obsah = await uprava(text);
+      const { vysledek } = await this.zapsatTed(klic, obsah);
+      return { vysledek, obsah };
+    });
+  }
+
+  async zapsatTed(klic, obsah) {
     this.posledniZapsane.set(klic, Zapisovac.hash(obsah));
     try {
       await zapsatAtomicky(klic, obsah, this.volbyZapisu);
@@ -140,6 +177,7 @@ export class Zapisovac extends EventEmitter {
       return { vysledek: 'zapsano' };
     } catch (e) {
       if (!(e instanceof ZamcenySouborError)) throw e;
+      // Novější změna nahrazuje starší odloženou.
       const novy = !this.odlozene.has(klic);
       this.odlozene.set(klic, obsah);
       await this.zapisZurnal(klic, obsah);
@@ -150,13 +188,15 @@ export class Zapisovac extends EventEmitter {
   }
 
   /** Soubor na disku má přednost: zruš odložený zápis, pokud nějaký čeká. */
-  async zrusit(soubor) {
+  zrusit(soubor) {
     const klic = path.resolve(soubor);
-    if (this.odlozene.delete(klic)) {
-      await this.smazZurnal(klic);
-      this.emit('zahozeno', { soubor: klic });
-      this.zastavPokudPrazdne();
-    }
+    return this.poradi(klic, async () => {
+      if (this.odlozene.delete(klic)) {
+        await this.smazZurnal(klic);
+        this.emit('zahozeno', { soubor: klic });
+        this.zastavPokudPrazdne();
+      }
+    });
   }
 
   cestaZurnalu(soubor) {
@@ -232,18 +272,20 @@ export class Zapisovac extends EventEmitter {
     if (this.bezi) return;
     this.bezi = true;
     try {
-      for (const [soubor, obsah] of [...this.odlozene]) {
-        try {
-          await zapsatAtomicky(soubor, obsah, this.volbyZapisu);
-          // Mezitím mohla přijít novější změna; smaž jen pokud čeká pořád tentýž obsah.
-          if (this.odlozene.get(soubor) === obsah) {
+      for (const soubor of [...this.odlozene.keys()]) {
+        await this.poradi(soubor, async () => {
+          // Ve frontě souboru: obsah se čte až teď, takže je to vždy nejnovější odložená změna.
+          const obsah = this.odlozene.get(soubor);
+          if (obsah === undefined) return;
+          try {
+            await zapsatAtomicky(soubor, obsah, this.volbyZapisu);
             this.odlozene.delete(soubor);
             await this.smazZurnal(soubor);
             this.emit('dokonceno', { soubor });
+          } catch (e) {
+            if (!(e instanceof ZamcenySouborError)) this.emit('chyba', { soubor, chyba: e });
           }
-        } catch (e) {
-          if (!(e instanceof ZamcenySouborError)) this.emit('chyba', { soubor, chyba: e });
-        }
+        });
       }
     } finally {
       this.bezi = false;

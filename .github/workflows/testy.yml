@@ -53,6 +53,6 @@ jobs:
         if: failure()
         shell: bash
         run: |
-          grep -n -A 30 '^not ok' vystup-testu.txt | grep -E 'not ok|error:|message|expected|actual|Error|at .*test\.js' | head -60 | while IFS= read -r radek; do
-            echo "::error title=Test (${{ runner.os }})::${radek//%/%25}"
-          done
+          { grep -E -A 25 '^\s*not ok' vystup-testu.txt | head -80; echo '--- konec výstupu ---'; tail -n 25 vystup-testu.txt; } > anotace.txt
+          zprava=$(sed 's/%/%25/g' anotace.txt | awk '{printf "%s%%0A", $0}')
+          echo "::error title=Testy (${{ runner.os }})::${zprava}"

@@ -1,25 +1,18 @@
 // Společné pro výstupy v OBS: odběr živých změn z Hubu a prolínání obrázků bez černého snímku.
+import { odebirat } from './zive.js';
 
 /**
- * První data z `url`, pak živé změny z SSE události `udalost`. Při výpadku Hubu drží poslední
- * stav a sám se znovu připojí; po znovupřipojení si stav načte celý.
+ * První data z `url`, pak živé změny události `udalost` (WebSocket, jen tahle událost).
+ * Při výpadku Hubu drží poslední stav a sám se znovu připojí; po znovupřipojení si stav načte celý.
  */
 export function sledovat(udalost, url, priZmene) {
   const nacist = () => fetch(url).then((r) => r.json()).then(priZmene).catch(() => {});
   nacist();
-  function pripojit() {
-    const zdroj = new EventSource('/api/udalosti');
-    let poVypadku = false;
-    zdroj.addEventListener(udalost, (e) => priZmene(JSON.parse(e.data)));
-    zdroj.addEventListener('open', () => {
-      if (poVypadku) nacist();
-    });
-    zdroj.addEventListener('error', () => {
-      poVypadku = true;
-      if (zdroj.readyState === EventSource.CLOSED) setTimeout(pripojit, 1000);
-    });
-  }
-  pripojit();
+  odebirat([udalost], (_, data) => priZmene(data), {
+    priStavu: (pripojeno, poVypadku) => {
+      if (pripojeno && poVypadku) nacist();
+    },
+  });
 }
 
 /** Načte a dekóduje obrázek předem, aby prolnutí nezačalo prázdnou plochou. */

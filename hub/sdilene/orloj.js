@@ -1,6 +1,7 @@
 // Kreslení orloje kalendáře (SVG). Převzato z Apps/Calendar/kalendar.html beze změny vzhledu;
 // data přicházejí jako { dnes, zacatek, udalosti } z Hubu místo z kalendar-data.js.
 import { Harptos, RIMSKE, udalostiDne, aktivniLhuty, indexZacatku } from './harptos.js';
+import { odebirat } from './zive.js';
 
 /* ---------- Kreslení ---------- */
 const NS = "http://www.w3.org/2000/svg";
@@ -276,16 +277,9 @@ svg text { font-family: var(--pismo); font-variant-numeric: lining-nums; }
 
 /**
  * Připojení výstupu ke kalendáři v Hubu: první data přes /api/kalendar/verejne, pak živé změny
- * přes SSE. Při výpadku Hubu drží poslední stav a sám se znovu připojí.
+ * přes WebSocket (jen veřejný kalendář). Při výpadku Hubu drží poslední stav a sám se znovu připojí.
  */
 export function sledovatKalendar(priZmene) {
   fetch('/api/kalendar/verejne').then((r) => r.json()).then((d) => priZmene(d, false)).catch(() => {});
-  function pripojit() {
-    const zdroj = new EventSource('/api/udalosti');
-    zdroj.addEventListener('kalendar', (e) => priZmene(JSON.parse(e.data), true));
-    zdroj.addEventListener('error', () => {
-      if (zdroj.readyState === EventSource.CLOSED) setTimeout(pripojit, 1000);
-    });
-  }
-  pripojit();
+  odebirat(['kalendar'], (_, data) => priZmene(data, true));
 }

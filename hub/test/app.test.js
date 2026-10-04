@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import http from 'node:http';
 import path from 'node:path';
+import { WebSocket } from 'ws';
 import { Hub } from '../server/app.js';
 import { rozebrat } from '../server/frontmatter.js';
 import { docasneRepo, dokud, FalesnyObs } from './pomoc.js';
@@ -226,6 +227,45 @@ test('Blok 1a: Souboj bez nastavené scény hlásí chybu, s nastavenou přepne 
     assert.equal(s.status, 200);
     assert.ok(Date.now() - zacatek < 500);
     assert.equal(obs.scena, 'Souboj');
+  } finally {
+    await zastavit();
+  }
+});
+
+/** Připojí WebSocket k /api/zive a sbírá zprávy. */
+function zive(hub, dotaz = '', hlavicky = {}) {
+  return new Promise((resolve, reject) => {
+    const ws = new WebSocket(`${hub.adresa.replace('http', 'ws')}/api/zive${dotaz}`, { headers: hlavicky });
+    const zpravy = [];
+    ws.on('message', (d) => zpravy.push(JSON.parse(String(d))));
+    ws.on('open', () => resolve({ ws, zpravy }));
+    ws.on('unexpected-response', (_, res) => reject(Object.assign(new Error('odmítnuto'), { status: res.statusCode })));
+    ws.on('error', reject);
+  });
+}
+
+test('živé změny přes WebSocket: výstup dostane jen události, o které si řekl (audit K1, N9)', async () => {
+  const { hub, zastavit } = await spustitHub();
+  const { ws, zpravy } = await zive(hub, '?udalosti=odpocet');
+  try {
+    await dokud(() => zpravy.some((z) => z.u === 'odpocet'), 2000);
+    await pozadavek(hub, '/api/stav', { metoda: 'PUT', telo: { misto: 'Mirabar' } });
+    await pozadavek(hub, '/api/odpocet/pripravit', { metoda: 'POST', telo: { minut: 5 } });
+    await dokud(() => zpravy.filter((z) => z.u === 'odpocet').length >= 2, 2000);
+    assert.deepEqual([...new Set(zpravy.map((z) => z.u))], ['odpocet'], 'žádný stav kampaně ani skrytý kalendář');
+  } finally {
+    ws.terminate();
+    await zastavit();
+  }
+});
+
+test('WebSocket odmítne cizí stránku (Origin) i cizí Host', async () => {
+  const { hub, zastavit } = await spustitHub();
+  try {
+    await assert.rejects(zive(hub, '', { Origin: 'http://zla-stranka.example' }), (e) => e.status === 403);
+    await assert.rejects(zive(hub, '', { Host: 'zla-stranka.example' }), (e) => e.status === 403);
+    const { ws } = await zive(hub, '', { Origin: hub.adresa });
+    ws.terminate();
   } finally {
     await zastavit();
   }

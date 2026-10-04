@@ -1,5 +1,6 @@
 // Ovládací panel DM Hubu. Bez build kroku, čistý JavaScript.
 import { Harptos, MESICE, SVATKY, dnyText, zbyvaText } from '/sdilene/harptos.js';
+import { odebirat } from '/sdilene/zive.js';
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -9,12 +10,24 @@ const stav = {
   rozpracovano: new Set(), // pole, která DM právě píše a ještě se neodeslala
 };
 
-async function api(cesta, { metoda = 'GET', telo } = {}) {
-  const odpoved = await fetch(cesta, {
-    method: metoda,
-    headers: telo !== undefined ? { 'Content-Type': 'application/json' } : {},
-    body: telo !== undefined ? JSON.stringify(telo) : undefined,
-  });
+/**
+ * Požadavek na Hub. Bez odpovědi do limitu skončí chybou, aby panel tiše nevisel (audit N13).
+ * Operace Gitu a nahrání obrázku z dílny mají delší limit.
+ */
+async function api(cesta, { metoda = 'GET', telo, limitMs } = {}) {
+  const limit = limitMs ?? (cesta.startsWith('/api/git/') || cesta.startsWith('/api/dilna/') ? 180000 : 20000);
+  let odpoved;
+  try {
+    odpoved = await fetch(cesta, {
+      method: metoda,
+      headers: telo !== undefined ? { 'Content-Type': 'application/json' } : {},
+      body: telo !== undefined ? JSON.stringify(telo) : undefined,
+      signal: AbortSignal.timeout(limit),
+    });
+  } catch (e) {
+    if (e.name === 'TimeoutError') throw new Error(`Hub neodpověděl do ${Math.round(limit / 1000)} s. Zkontroluj kontrolku Server vpravo nahoře.`);
+    throw new Error('Hub není dostupný. Běží? (kontrolka Server vpravo nahoře)');
+  }
   const data = await odpoved.json().catch(() => ({}));
   if (!odpoved.ok) throw Object.assign(new Error(data.chyba || `Server vrátil ${odpoved.status}`), { kod: data.kod });
   return data;
@@ -456,39 +469,42 @@ async function nactiPrehled() {
 }
 
 function pripojitUdalosti() {
-  const zdroj = new EventSource('/api/udalosti');
-  zdroj.addEventListener('open', () => {
-    if (!stav.serverOk) nactiPrehled();
-  });
-  zdroj.addEventListener('error', () => {
-    stav.serverOk = false;
-    prekresli();
-    if (zdroj.readyState === EventSource.CLOSED) setTimeout(pripojitUdalosti, 1000);
-  });
-  const aktualizuj = (klic) => (e) => {
+  const aktualizuj = (klic) => (data) => {
     if (!stav.prehled) return;
-    stav.prehled[klic] = JSON.parse(e.data);
+    stav.prehled[klic] = data;
     stav.serverOk = true;
     prekresli();
   };
-  zdroj.addEventListener('stav', aktualizuj('stav'));
-  zdroj.addEventListener('obs', aktualizuj('obs'));
-  zdroj.addEventListener('git', aktualizuj('git'));
-  zdroj.addEventListener('kontrola', aktualizuj('kontrola'));
-  zdroj.addEventListener('sezeni', aktualizuj('sezeni'));
-  zdroj.addEventListener('kalendar-dm', aktualizuj('kalendar'));
-  zdroj.addEventListener('obchody', aktualizuj('obchody'));
-  zdroj.addEventListener('mista', aktualizuj('mista'));
-  zdroj.addEventListener('scena', (e) => {
-    if (!stav.prehled) return;
-    stav.prehled.scena = JSON.parse(e.data);
-    vykresliScenu();
-  });
-  zdroj.addEventListener('odpocet', (e) => {
-    if (!stav.prehled) return;
-    stav.prehled.odpocet = JSON.parse(e.data);
-    stav.odchylkaHodin = Date.parse(stav.prehled.odpocet.serverCas) - Date.now();
-    vykresliOdpocet();
+  const obsluha = {
+    stav: aktualizuj('stav'),
+    obs: aktualizuj('obs'),
+    git: aktualizuj('git'),
+    kontrola: aktualizuj('kontrola'),
+    sezeni: aktualizuj('sezeni'),
+    'kalendar-dm': aktualizuj('kalendar'),
+    obchody: aktualizuj('obchody'),
+    mista: aktualizuj('mista'),
+    scena: (data) => {
+      if (!stav.prehled) return;
+      stav.prehled.scena = data;
+      vykresliScenu();
+    },
+    odpocet: (data) => {
+      if (!stav.prehled) return;
+      stav.prehled.odpocet = data;
+      stav.odchylkaHodin = Date.parse(data.serverCas) - Date.now();
+      vykresliOdpocet();
+    },
+  };
+  odebirat(Object.keys(obsluha), (udalost, data) => obsluha[udalost]?.(data), {
+    priStavu: (pripojeno) => {
+      if (pripojeno) {
+        if (!stav.serverOk) nactiPrehled();
+      } else {
+        stav.serverOk = false;
+        prekresli();
+      }
+    },
   });
 }
 

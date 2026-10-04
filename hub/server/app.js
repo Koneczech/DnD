@@ -10,7 +10,7 @@ import { Hlidac } from './hlidac.js';
 import { Nastaveni } from './nastaveni.js';
 import { Obs } from './obs.js';
 import { Git } from './git.js';
-import { Vysilac } from './sse.js';
+import { Vysilac, filtrUdalosti } from './sse.js';
 import { Sezeni, datumCesky } from './sezeni.js';
 import { Odpocet } from './odpocet.js';
 import { jeVOneDrive, nainstalovatHook } from './prostredi.js';
@@ -142,6 +142,7 @@ export class Hub {
     await this.hlidac.spustit();
 
     this.server = http.createServer((req, res) => this.obsluha(req, res));
+    this.server.on('upgrade', (req, socket, head) => this.upgrade(req, socket, head));
     const host = this.nastaveni.domaciSit ? '0.0.0.0' : '127.0.0.1';
     const port = this.portPrepis ?? this.nastaveni.port;
     await new Promise((resolve, reject) => {
@@ -264,6 +265,33 @@ export class Hub {
     return Boolean(cookie && this.relace.has(cookie[1]));
   }
 
+  /** WebSocket pro živé změny (/api/zive): stejná pravidla přístupu jako HTTP a navíc stejný původ. */
+  upgrade(req, socket, head) {
+    socket.on('error', () => {});
+    let url;
+    try {
+      url = new URL(req.url, 'http://localhost');
+    } catch {
+      return socket.destroy();
+    }
+    // Cizí stránka v prohlížeči DM by se na WebSocket připojit uměla (WebSocket nehlídá CORS),
+    // proto se kontroluje hlavička Origin: musí patřit Hubu, nebo chybět.
+    const origin = req.headers.origin;
+    let stejnyPuvod = !origin;
+    if (origin) {
+      try {
+        stejnyPuvod = new URL(origin).host === req.headers.host;
+      } catch {
+        stejnyPuvod = false;
+      }
+    }
+    if (url.pathname !== '/api/zive' || !stejnyPuvod || !this.povoleno(req)) {
+      socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\nContent-Length: 0\r\n\r\n');
+      return socket.destroy();
+    }
+    return this.vysilac.pripojitWs(req, socket, head, filtrUdalosti(url));
+  }
+
   async obsluha(req, res) {
     const url = new URL(req.url, 'http://localhost');
     try {
@@ -303,7 +331,7 @@ export class Hub {
   async api(req, res, url) {
     const m = req.method;
     const p = url.pathname;
-    if (p === '/api/udalosti' && m === 'GET') return this.vysilac.pripojit(req, res);
+    if (p === '/api/udalosti' && m === 'GET') return this.vysilac.pripojit(req, res, filtrUdalosti(url));
     if (p === '/api/prehled' && m === 'GET') return poslatJson(res, 200, await this.prehled());
     if (p === '/api/zdravi' && m === 'GET') return poslatJson(res, 200, { ok: true, pid: process.pid, spusteno: this.spusteno });
     if (p === '/api/stav' && m === 'GET') return poslatJson(res, 200, (await this.prehled()).stav);

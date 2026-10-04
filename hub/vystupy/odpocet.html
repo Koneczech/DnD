@@ -29,7 +29,8 @@
 </head>
 <body>
   <div id="cas"></div>
-  <script>
+  <script type="module">
+    import { odebirat } from '/sdilene/zive.js';
     // Výstup si odpočet počítá sám z času konce. Když Hub vypadne, běží dál
     // a po znovupřipojení si jen převezme nový stav.
     const casEl = document.getElementById('cas');
@@ -81,14 +82,7 @@
     }
 
     fetch('/api/odpocet').then((r) => r.json()).then(prevzit).catch(() => {});
-    function pripojit() {
-      const zdroj = new EventSource('/api/udalosti');
-      zdroj.addEventListener('odpocet', (e) => prevzit(JSON.parse(e.data)));
-      zdroj.addEventListener('error', () => {
-        if (zdroj.readyState === EventSource.CLOSED) setTimeout(pripojit, 1000);
-      });
-    }
-    pripojit();
+    odebirat(['odpocet'], (_, data) => prevzit(data));
     setInterval(vykresli, 200);
   </script>
 </body>

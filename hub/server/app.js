@@ -409,6 +409,16 @@ export class Hub {
       this.vysilac.vyslat('git', this.git.stav);
       return poslatJson(res, 200, this.git.stav);
     }
+    if (p === '/api/git/sloucit' && m === 'POST') {
+      await nacistJson(req);
+      const vysledek = await this.git.sloucit();
+      await this.data.nacist();
+      await this.kalendar.nacist();
+      await this.obchody.nacist();
+      await this.mista.nacist();
+      this.vysilac.vyslat('git', this.git.stav);
+      return poslatJson(res, 200, { ...vysledek, git: this.git.stav });
+    }
     throw Object.assign(new Error('Neznámá adresa'), { status: 404 });
   }
 

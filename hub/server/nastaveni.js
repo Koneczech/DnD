@@ -7,6 +7,7 @@ export const VYCHOZI = Object.freeze({
   HUB_PORT: '7420',
   OBS_URL: 'ws://127.0.0.1:4455',
   OBS_HESLO: '',
+  OBS_SCENA_START: '',
   OBS_SCENA_SOUBOJ: '',
   OBS_SCENA_PO_ODPOCTU: '',
   OBS_SCENA_OBCHOD: '',
@@ -81,6 +82,7 @@ export class Nastaveni {
       port: this.port,
       obsUrl: this.hodnoty.OBS_URL,
       obsHesloNastaveno: Boolean(this.hodnoty.OBS_HESLO),
+      scenaStart: this.hodnoty.OBS_SCENA_START || '',
       scenaSouboj: this.hodnoty.OBS_SCENA_SOUBOJ || '',
       scenaPoOdpoctu: this.hodnoty.OBS_SCENA_PO_ODPOCTU || '',
       scenaObchod: this.hodnoty.OBS_SCENA_OBCHOD || '',
@@ -102,7 +104,7 @@ export class Nastaveni {
     }
     if (z.obsHeslo) nove.OBS_HESLO = String(z.obsHeslo);
     if (z.smazatObsHeslo) nove.OBS_HESLO = '';
-    for (const [pole, klic] of [['scenaSouboj', 'OBS_SCENA_SOUBOJ'], ['scenaPoOdpoctu', 'OBS_SCENA_PO_ODPOCTU'], ['scenaObchod', 'OBS_SCENA_OBCHOD'], ['scenaMisto', 'OBS_SCENA_MISTO']]) {
+    for (const [pole, klic] of [['scenaStart', 'OBS_SCENA_START'], ['scenaSouboj', 'OBS_SCENA_SOUBOJ'], ['scenaPoOdpoctu', 'OBS_SCENA_PO_ODPOCTU'], ['scenaObchod', 'OBS_SCENA_OBCHOD'], ['scenaMisto', 'OBS_SCENA_MISTO']]) {
       if (z[pole] === undefined) continue;
       const scena = String(z[pole]).trim();
       if (scena.length > 200) throw Object.assign(new Error('Název scény je příliš dlouhý'), { status: 400 });

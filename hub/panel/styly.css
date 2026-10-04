@@ -387,3 +387,21 @@ label.odkaz { color: var(--mosaz); text-decoration: underline; cursor: pointer; 
 #dilna-nahled { display: block; max-width: 100%; border-radius: var(--zaobleni); background: var(--noc); }
 .posuvnik { display: flex; gap: 0.75rem; align-items: center; color: var(--mlha); margin-top: 0.6rem; max-width: 40rem; }
 .posuvnik input { flex: 1; }
+
+/* ---------- U stolu (Blok 2b) ---------- */
+.stul-stav { margin: 0.25rem 0 1rem; font-size: 1.05rem; color: var(--kost); }
+.stul-panel { margin-top: 1.5rem; padding-top: 0.25rem; border-top: 1px solid var(--linka); }
+.stul-panel > h2 { margin-top: 0.75rem; }
+.stul-panel h3 { margin: 1.25rem 0 0.5rem; font-size: 1rem; font-weight: 500; color: var(--mlha); }
+.stul-misto { display: grid; grid-template-columns: minmax(0, 24rem) minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+@media (max-width: 62rem) { .stul-misto { grid-template-columns: minmax(0, 1fr); } }
+.stul-misto .scena-ovladani { margin-top: 0; }
+.stul-nahled { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: #000; border: 1px solid var(--linka); border-radius: var(--zaobleni); --meritko: 0.2; }
+.stul-nahled iframe { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; border: 0; transform: scale(var(--meritko)); transform-origin: 0 0; pointer-events: none; }
+.stul-mista { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: 0.5rem; }
+.karta-mista.mala { min-height: 4.25rem; padding: 0.4rem 0.6rem; box-shadow: inset 0 -3rem 2rem -0.5rem rgb(10 13 20 / 0.9); }
+.karta-mista.mala[aria-pressed="true"] { box-shadow: inset 0 -3rem 2rem -0.5rem rgb(10 13 20 / 0.9), 0 0 0 2px var(--mosaz); }
+.ilustrace-zive { grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 0.75rem; }
+.adresy { margin-top: 1.25rem; color: var(--mlha); }
+.adresy summary { cursor: pointer; }
+.role-sceny { max-width: 34rem; }

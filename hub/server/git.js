@@ -119,10 +119,59 @@ export class Git {
       const duvod = /local changes|would be overwritten/i.test(zprava)
         ? 'Máš neuložené změny ve stejných souborech. Ulož je do GitHubu, pak stáhni.'
         : /Not possible to fast-forward|diverged/i.test(zprava)
-          ? 'Lokální a GitHubová verze se rozešly. Je potřeba je sloučit ručně.'
+          ? 'Lokální a GitHubová verze se rozešly. Použij tlačítko Sloučit.'
           : 'Stažení se nepodařilo. Zkontroluj připojení a přihlášení ke GitHubu.';
       throw Object.assign(new Error(duvod), { status: 409 });
     }
     return this.zkontrolovatVzdaleny();
+  }
+
+  /**
+   * Sloučit rozešlé verze (lokální commity i novinky na GitHubu): neuložené změny se odloží do úschovny,
+   * lokální commity se přeskládají za novinky z GitHubu a odešlou. Při konfliktu se všechno vrátí zpět.
+   * Nic se nemaže: co se nepodaří vrátit do pracovní složky, zůstane v úschovně (`git stash list`).
+   * @returns {Promise<{sloucene:true, push:boolean, uschovna:boolean, uschovnaNevracena:boolean}>}
+   */
+  async sloucit() {
+    await this.zkontrolovatVzdaleny();
+    if (!this.stav.dostupny || !this.stav.upstream) throw Object.assign(new Error('Větev nemá nastavenou vzdálenou větev na GitHubu.'), { status: 409 });
+    if (this.stav.chyba) throw Object.assign(new Error(this.stav.chyba), { status: 409 });
+    if (this.stav.pozadu === 0) throw Object.assign(new Error('Není co sloučit: na GitHubu nejsou žádné novější změny. Použij Stáhnout změny nebo Uložit do GitHubu.'), { status: 409 });
+    if (this.stav.napred === 0) throw Object.assign(new Error('Verze se nerozešly, stačí Stáhnout změny.'), { status: 409 });
+
+    const znacka = `dm-hub-pred-slucovanim-${new Date().toISOString()}`;
+    let uschovna = false;
+    if (this.stav.zmeneno > 0) {
+      const pred = await git(this.koren, ['rev-parse', '-q', '--verify', 'refs/stash']).catch(() => '');
+      await git(this.koren, ['stash', 'push', '--include-untracked', '-m', znacka], { timeout: 60000 });
+      const po = await git(this.koren, ['rev-parse', '-q', '--verify', 'refs/stash']).catch(() => '');
+      uschovna = po !== pred;
+    }
+    try {
+      await git(this.koren, ['pull', '--rebase', '--quiet'], { timeout: 120000 });
+    } catch (e) {
+      const konflikty = (await git(this.koren, ['diff', '--name-only', '--diff-filter=U']).catch(() => '')).split('\n').filter(Boolean);
+      await git(this.koren, ['rebase', '--abort']).catch(() => {});
+      let vraceno = true;
+      if (uschovna) vraceno = await git(this.koren, ['stash', 'pop', '--quiet'], { timeout: 60000 }).then(() => true, () => false);
+      await this.lokalniStav();
+      const duvod = konflikty.length
+        ? `Verze se nedají sloučit samy, mění se stejné soubory: ${konflikty.join(', ')}. Nic se nezměnilo${vraceno ? '' : ' (tvoje neuložené změny jsou v úschovně Gitu)'}. Pošli to Claudovi, vyřešíme to po souborech.`
+        : `Sloučení se nepodařilo, nic se nezměnilo${vraceno ? '' : ' (tvoje neuložené změny jsou v úschovně Gitu)'}. ${String(e.stderr || e.message).trim().split('\n')[0]}`;
+      throw Object.assign(new Error(duvod), { status: 409 });
+    }
+    let uschovnaNevracena = false;
+    if (uschovna) {
+      uschovnaNevracena = !(await git(this.koren, ['stash', 'pop', '--quiet'], { timeout: 60000 }).then(() => true, () => false));
+    }
+    let push = false;
+    try {
+      await git(this.koren, ['push', '--quiet'], { timeout: 60000 });
+      push = true;
+    } catch {
+      push = false;
+    }
+    await this.zkontrolovatVzdaleny();
+    return { sloucene: true, push, uschovna, uschovnaNevracena };
   }
 }

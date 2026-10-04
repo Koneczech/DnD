@@ -175,6 +175,13 @@ function vykresliUpozorneni() {
     return;
   }
   if (!p) return;
+  if (p.server?.restartNutny) {
+    box.append(
+      p.server.restartZPanelu
+        ? zprava(p.server.restartNutny, { tlacitko: { text: 'Restartovat Hub', akce: restartovatHub } })
+        : zprava(`${p.server.restartNutny} Zavři okno DM Hub a spusť ho znovu.`),
+    );
+  }
   if (p.stav?.chyba) box.append(zprava(`Soubor stav.md nejde přečíst: ${p.stav.chyba}. Panel ukazuje poslední platný stav.`, { chyba: true }));
   if (p.stav?.odlozeneZapisy?.length) {
     box.append(zprava(`Čeká na zápis (soubor drží otevřený jiný program): ${p.stav.odlozeneZapisy.join(', ')}. Hub to zkouší znovu každou sekundu.`));
@@ -198,6 +205,40 @@ function vykresliUpozorneni() {
     box.append(zprava('Hub ještě není nastavený. Vyplň heslo k OBS v Nastavení.', { tlacitko: { text: 'Otevřít Nastavení', akce: () => (location.hash = 'nastaveni') } }));
   }
 }
+
+/** Restart z panelu: počká, až naběhne nový server (jiné PID), a načte panel znovu (nový kód). */
+async function restartovatHub() {
+  const staryPid = stav.prehled?.server?.pid;
+  let port = location.port;
+  try {
+    ({ port } = await api('/api/restart', { metoda: 'POST', telo: {} }));
+  } catch (e) {
+    toast(e.message, { chyba: true });
+    return;
+  }
+  toast('Hub se restartuje…');
+  const adresa = `${location.protocol}//${location.hostname}:${port}`;
+  for (let i = 0; i < 60; i++) {
+    await new Promise((r) => setTimeout(r, 1000));
+    try {
+      if (String(port) !== location.port) {
+        // Nový port: jiný původ, stačí, že odpovídá.
+        await fetch(`${adresa}/api/zdravi`, { mode: 'no-cors', signal: AbortSignal.timeout(1000) });
+        location.href = `${adresa}/${location.hash}`;
+        return;
+      }
+      const z = await (await fetch('/api/zdravi', { signal: AbortSignal.timeout(1000) })).json();
+      if (z.pid !== staryPid) {
+        location.reload();
+        return;
+      }
+    } catch {
+      /* server ještě nenaběhl */
+    }
+  }
+  toast('Hub po restartu neodpovídá. Podívej se do okna DM Hub nebo do hub/.stav/hub.log.', { chyba: true });
+}
+$('#tlacitko-restart').addEventListener('click', restartovatHub);
 
 async function sloucitZmeny() {
   try {
@@ -385,8 +426,9 @@ function vykresliNastaveni(n) {
   vykresliVyberSouboje();
   const srv = stav.prehled?.server;
   $('#server-info').textContent = srv
-    ? `Server běží jako node.exe s PID ${srv.pid}. Ve Správci úloh ho najdeš na kartě Podrobnosti; ukončení tohoto procesu otestuje automatický restart.`
+    ? `Server běží jako node.exe s PID ${srv.pid}. Restart načte nový kód a nastavení; výstupy v OBS se samy znovu připojí.`
     : '';
+  $('#tlacitko-restart').hidden = !srv?.restartZPanelu;
 }
 
 /** Role scén: scény z OBS, a pokud OBS neběží, aspoň uložená hodnota. */
@@ -431,8 +473,8 @@ $('#formular-nastaveni').addEventListener('submit', async (e) => {
     $('#pole-pin').value = '';
     vysledek.className = 'ulozeni';
     vysledek.textContent = odpoved.potrebaRestartu
-      ? 'Nastavení uloženo. Změna portu nebo přístupu z domácí sítě se projeví po restartu Hubu.'
-      : `Nastavení uloženo v ${cas()}. Připojuji se k OBS…`;
+      ? 'Nastavení uloženo. Změna portu nebo přístupu z domácí sítě se projeví po restartu Hubu (tlačítko níž).'
+      : `Nastavení uloženo v ${cas()}.`;
     await nactiPrehled();
   } catch (chyba) {
     vysledek.className = 'ulozeni chyba';
@@ -484,6 +526,7 @@ function pripojitUdalosti() {
     'kalendar-dm': aktualizuj('kalendar'),
     obchody: aktualizuj('obchody'),
     mista: aktualizuj('mista'),
+    server: aktualizuj('server'),
     scena: (data) => {
       if (!stav.prehled) return;
       stav.prehled.scena = data;

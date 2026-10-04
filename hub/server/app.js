@@ -97,6 +97,24 @@ export class Hub {
     this.spusteno = new Date().toISOString();
     this.prostredi = { oneDrive: jeVOneDrive(this.c.koren), hook: null };
     this.relace = new Set(); // platné přihlášení PINem z domácí sítě
+    /** Funkce, která Hub restartuje (nastaví ji index.js, když běží pod spouštěčem). */
+    this.restartovat = null;
+    /** Proč je potřeba restart (stažený nový kód, změna portu), nebo null. */
+    this.restartNutny = null;
+  }
+
+  infoServeru() {
+    return { spusteno: this.spusteno, pid: process.pid, restartNutny: this.restartNutny, restartZPanelu: Boolean(this.restartovat) };
+  }
+
+  /** Po Stáhnout nebo Sloučit: změnil se kód Hubu? Pak běží starý server a je potřeba restart (audit S2). */
+  oznacitZmenyKodu(soubory) {
+    const kod = soubory.filter((f) => f.startsWith('hub/') && !f.startsWith('hub/test/'));
+    if (!kod.length) return;
+    this.restartNutny = kod.includes('hub/package-lock.json')
+      ? 'Stáhl jsi novou verzi Hubu včetně knihoven. Restart je doinstaluje a spustí nový kód.'
+      : 'Stáhl jsi novou verzi Hubu. Běží ale pořád ta stará, nová se spustí po restartu.';
+    this.vysilac.vyslat('server', this.infoServeru());
   }
 
   async spustit() {
@@ -251,7 +269,7 @@ export class Hub {
       git: this.git.stav,
       nastaveni: this.nastaveni.verejne(),
       prostredi: this.prostredi,
-      server: { spusteno: this.spusteno, pid: process.pid },
+      server: this.infoServeru(),
     };
   }
 
@@ -343,13 +361,20 @@ export class Hub {
     if (p === '/api/nastaveni' && m === 'GET') return poslatJson(res, 200, this.nastaveni.verejne());
     if (p === '/api/nastaveni' && m === 'PUT') {
       const telo = await nacistJson(req);
-      const puvodniPort = this.nastaveni.port;
+      const pred = { port: this.nastaveni.port, domaciSit: this.nastaveni.domaciSit };
+      const puvodniObs = [this.nastaveni.hodnoty.OBS_URL, this.nastaveni.hodnoty.OBS_HESLO].join('\n');
       await this.nastaveni.ulozit(telo);
-      if (telo.obsUrl !== undefined || telo.obsHeslo || telo.smazatObsHeslo) {
+      if ([this.nastaveni.hodnoty.OBS_URL, this.nastaveni.hodnoty.OBS_HESLO].join('\n') !== puvodniObs) {
         this.obs.nastavit(this.nastaveni.hodnoty.OBS_URL, this.nastaveni.hodnoty.OBS_HESLO);
       }
-      const restart = this.nastaveni.port !== puvodniPort || telo.domaciSit !== undefined;
-      return poslatJson(res, 200, { nastaveni: this.nastaveni.verejne(), potrebaRestartu: restart });
+      // Restart jen při změně toho, co server čte při startu (audit N4). Nový PIN ruší přihlášení.
+      if (telo.pin) this.relace.clear();
+      const restart = this.nastaveni.port !== pred.port || this.nastaveni.domaciSit !== pred.domaciSit;
+      if (restart) {
+        this.restartNutny = 'Změna portu nebo přístupu z domácí sítě se projeví po restartu Hubu.';
+        this.vysilac.vyslat('server', this.infoServeru());
+      }
+      return poslatJson(res, 200, { nastaveni: this.nastaveni.verejne(), potrebaRestartu: restart, port: this.nastaveni.port });
     }
     if (p === '/api/obs/pripojit' && m === 'POST') {
       await nacistJson(req);
@@ -415,6 +440,14 @@ export class Hub {
       const v = await this.apiObchody(req, m, p);
       if (v !== undefined) return poslatJson(res, 200, v);
     }
+    if (p === '/api/restart' && m === 'POST') {
+      await nacistJson(req);
+      if (!this.restartovat) {
+        throw Object.assign(new Error('Hub neběží přes zástupce DM Hub, takže se nemůže restartovat sám. Zavři ho a spusť znovu.'), { status: 409 });
+      }
+      res.once('finish', () => setTimeout(() => this.restartovat(), 100));
+      return poslatJson(res, 200, { ok: true, port: this.nastaveni.port });
+    }
     if (p === '/api/git/ulozit' && m === 'POST') {
       const telo = await nacistJson(req);
       const zprava = String(telo.zprava || '').trim() || `Ruční uložení — ${datumCesky()}`;
@@ -429,7 +462,9 @@ export class Hub {
     }
     if (p === '/api/git/stahnout' && m === 'POST') {
       await nacistJson(req);
+      const pred = await this.git.hlava();
       await this.git.stahnout();
+      this.oznacitZmenyKodu(await this.git.zmenyOd(pred));
       await this.data.nacist();
       await this.kalendar.nacist();
       await this.obchody.nacist();
@@ -439,7 +474,9 @@ export class Hub {
     }
     if (p === '/api/git/sloucit' && m === 'POST') {
       await nacistJson(req);
+      const pred = await this.git.hlava();
       const vysledek = await this.git.sloucit();
+      this.oznacitZmenyKodu(await this.git.zmenyOd(pred));
       await this.data.nacist();
       await this.kalendar.nacist();
       await this.obchody.nacist();

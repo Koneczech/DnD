@@ -405,3 +405,7 @@ label.odkaz { color: var(--mosaz); text-decoration: underline; cursor: pointer; 
 .adresy { margin-top: 1.25rem; color: var(--mlha); }
 .adresy summary { cursor: pointer; }
 .role-sceny { max-width: 34rem; }
+
+/* Restart Hubu v Nastavení */
+.server-blok { margin-top: 1.5rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
+.server-blok .poznamka { margin: 0; }

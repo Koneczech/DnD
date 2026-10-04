@@ -15,6 +15,14 @@ try {
   process.exit(1);
 }
 
+// Restart z panelu: jen když server spustil spouštěč (ten ho po kódu 75 hned spustí znovu).
+if (process.send) {
+  hub.restartovat = async () => {
+    await hub.zastavit().catch(() => {});
+    process.exit(75);
+  };
+}
+
 console.log(`DM Hub běží na ${hub.adresa}`);
 process.send?.({ typ: 'pripraveno', adresa: hub.adresa });
 

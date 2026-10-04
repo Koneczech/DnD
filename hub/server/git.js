@@ -38,6 +38,17 @@ export class Git {
     return this.vylucne(() => this._lokalniStav());
   }
 
+  /** Aktuální commit (nebo null mimo repozitář). */
+  hlava() {
+    return this.vylucne(() => git(this.koren, ['rev-parse', 'HEAD']).catch(() => null));
+  }
+
+  /** Soubory změněné mezi commitem `od` a aktuálním (cesty s lomítky od kořene repa). */
+  zmenyOd(od) {
+    if (!od) return Promise.resolve([]);
+    return this.vylucne(async () => (await git(this.koren, ['diff', '--name-only', od, 'HEAD']).catch(() => '')).split('\n').filter(Boolean));
+  }
+
   zkontrolovatVzdaleny() {
     return this.vylucne(() => this._zkontrolovatVzdaleny());
   }

@@ -270,3 +270,47 @@ test('WebSocket odmítne cizí stránku (Origin) i cizí Host', async () => {
     await zastavit();
   }
 });
+
+test('restart z panelu: bez spouštěče ho Hub odmítne, se spouštěčem ho zavolá', async () => {
+  const { hub, zastavit } = await spustitHub();
+  try {
+    const bez = await pozadavek(hub, '/api/restart', { metoda: 'POST', telo: {} });
+    assert.equal(bez.status, 409);
+    let restartovano = false;
+    hub.restartovat = async () => {
+      restartovano = true;
+    };
+    const s = await pozadavek(hub, '/api/restart', { metoda: 'POST', telo: {} });
+    assert.equal(s.status, 200);
+    await dokud(() => restartovano, 2000);
+  } finally {
+    await zastavit();
+  }
+});
+
+test('Nastavení hlásí nutný restart jen při změně portu nebo domácí sítě (audit N4)', async () => {
+  const { hub, zastavit } = await spustitHub();
+  try {
+    const port = hub.nastaveni.port;
+    const a = await pozadavek(hub, '/api/nastaveni', { metoda: 'PUT', telo: { obsUrl: 'ws://127.0.0.1:4455', port, domaciSit: false } });
+    assert.equal(a.data.potrebaRestartu, false);
+    const b = await pozadavek(hub, '/api/nastaveni', { metoda: 'PUT', telo: { port: port === 7420 ? 7421 : 7420 } });
+    assert.equal(b.data.potrebaRestartu, true);
+    const { data } = await pozadavek(hub, '/api/prehled');
+    assert.match(data.server.restartNutny, /restartu/);
+  } finally {
+    await zastavit();
+  }
+});
+
+test('stažený nový kód Hubu ohlásí nutný restart, data kampaně ne (audit S2)', async () => {
+  const { hub, zastavit } = await spustitHub();
+  try {
+    hub.oznacitZmenyKodu(['kampan/stav.md', 'hub/test/x.test.js']);
+    assert.equal(hub.restartNutny, null);
+    hub.oznacitZmenyKodu(['hub/server/app.js', 'hub/package-lock.json']);
+    assert.match(hub.restartNutny, /knihoven/);
+  } finally {
+    await zastavit();
+  }
+});

@@ -70,7 +70,7 @@ function cas() {
 /* ---------- Navigace ---------- */
 
 // Stará adresa: Odpočet je od Bloku 2b součástí obrazovky U stolu (dlaždice Start).
-// #obchody je od rozhodnutí 51 zase samostatná obrazovka: Obchody – správa.
+// #obchody je od rozhodnutí 51 samostatná obrazovka Obchody (skupina Příprava).
 const PRESMEROVANI = { odpocet: ['sceny', 'start'] };
 
 function ukazObrazovku(jmeno) {
@@ -80,6 +80,7 @@ function ukazObrazovku(jmeno) {
     jmeno = PRESMEROVANI[jmeno][0];
     history.replaceState(null, '', `#${jmeno}`);
   }
+  const kotva = jmeno === 'prehled-github' ? 'prehled-github' : null; // kontrolka Git v liště
   const cil = platne.includes(jmeno) ? jmeno : 'prehled';
   if (cil === 'kalendar') nactiImport();
   if (cil === 'dilna') vykresliDilnu();
@@ -89,19 +90,40 @@ function ukazObrazovku(jmeno) {
     else a.removeAttribute('aria-current');
   }
   vykresliSceny();
+  if (kotva) document.getElementById(kotva)?.scrollIntoView({ block: 'start' });
 }
 window.addEventListener('hashchange', () => ukazObrazovku(location.hash.slice(1)));
 
-/* ---------- Stav kampaně ---------- */
+/* ---------- Stav kampaně (horní lišta, Družina na obrazovce Sezení) ---------- */
+
+/** Jak dlouho sezení běží („1:24“) podle začátku v hlavičce souboru sezení. */
+function delkaSezeni(s) {
+  if (!s?.bezi || !s.zacatek) return null;
+  const ms = Date.now() - new Date(s.zacatek).getTime();
+  if (!Number.isFinite(ms) || ms < 0) return null;
+  const min = Math.floor(ms / 60000);
+  return `${Math.floor(min / 60)}:${String(min % 60).padStart(2, '0')}`;
+}
+
+/** Stav sezení do horní lišty: „sezení 3 běží 1:24“, nebo „po sezení 2“. */
+function textSezeni() {
+  const s = stav.prehled?.sezeni;
+  if (!s || s.cislo == null) return '';
+  if (s.bezi) {
+    const delka = delkaSezeni(s);
+    return `sezení ${s.cislo} běží${delka ? ` ${delka}` : ''}`;
+  }
+  return s.cislo > 0 ? `po sezení ${s.cislo}` : 'před prvním sezením';
+}
+
 
 function vykresliStav(s) {
   const k = s?.stav;
   // Bez spojení se serverem panel nic neví: neříkat „není zadané“, když jen čeká (audit N14).
   $('#lista-datum').textContent = k?.datumText || (s ? 'Datum není zadané' : 'Čekám na server…');
-  vykresliDatumStavu(k);
   $('#lista-misto').textContent = k?.misto || '';
   $('#lista-misto').hidden = !k?.misto;
-  $('#lista-sezeni').textContent = k ? `sezení ${k.sezeni}` : '';
+  $('#lista-sezeni').textContent = textSezeni();
   if (k) {
     for (const [pole, hodnota] of [['misto', k.misto], ['sezeni', k.sezeni]]) {
       const input = $(`#pole-${pole}`);
@@ -110,39 +132,6 @@ function vykresliStav(s) {
   }
   vykresliUpozorneni();
 }
-
-/* Datum ve Stavu kampaně: stejný výběr jako v Kalendáři, ukládá se samo. */
-let vyberStav = null;
-let posledniDatumStavu;
-function vykresliDatumStavu(k) {
-  vyberStav ??= vyberData($('#vyber-stav'));
-  const box = $('#vyber-stav');
-  if (box.contains(document.activeElement) || stav.rozpracovano.has('datum')) return;
-  const klic = JSON.stringify(k?.datum ?? null);
-  if (klic === posledniDatumStavu) return;
-  posledniDatumStavu = klic;
-  vyberStav.set(k?.datum ?? stav.prehled?.kalendar?.zacatek ?? { rok: 1491, mesic: 'Hammer', den: 1 });
-}
-$('#vyber-stav').addEventListener('change', async () => {
-  const datum = vyberStav.get();
-  const zprava = $('#stav-ulozeni');
-  if (!datum) {
-    zprava.textContent = 'Takové datum v Harptosu není (den 1–30, Shieldmeet jen v přestupném roce).';
-    zprava.className = 'ulozeni chyba';
-    return;
-  }
-  stav.rozpracovano.add('datum');
-  try {
-    const { vysledek } = await api('/api/stav', { metoda: 'PUT', telo: { datum } });
-    zprava.textContent = vysledek === 'odlozeno' ? 'Soubor stav.md drží otevřený jiný program. Změna je v OBS a uloží se, jakmile to půjde.' : `Uloženo v ${cas()}`;
-    zprava.className = vysledek === 'odlozeno' ? 'ulozeni varovani' : 'ulozeni';
-  } catch (e) {
-    zprava.textContent = `Neuloženo: ${e.message}`;
-    zprava.className = 'ulozeni chyba';
-  } finally {
-    stav.rozpracovano.delete('datum');
-  }
-});
 
 const casovaceUlozeni = new Map();
 $('#formular-stav').addEventListener('input', (e) => {
@@ -550,6 +539,7 @@ function prekresli() {
   vykresliSceny();
   vykresliKontrolu(stav.prehled?.kontrola);
   vykresliSezeni();
+  vykresliObrazovkuSezeni();
   vykresliOdpocet();
   vykresliGit();
   vykresliVyberSouboje();
@@ -632,6 +622,96 @@ function vykresliSezeni() {
   b.textContent = s?.bezi ? `Ukončit sezení ${s.cislo}` : 'Zahájit sezení';
 }
 
+/* ---------- Obrazovka Sezení: před hrou kontrola, během hry poznámky ---------- */
+
+function polozkaKontroly(uroven, text, akce) {
+  const li = document.createElement('li');
+  li.dataset.uroven = uroven; // ok | varovani | chyba | info
+  li.append(Object.assign(document.createElement('span'), { className: 'stav-ikona', ariaHidden: 'true' }));
+  li.append(Object.assign(document.createElement('span'), { className: 'text', textContent: text }));
+  if (akce) {
+    const prvek = akce.odkaz
+      ? Object.assign(document.createElement('a'), { href: akce.odkaz, textContent: akce.text })
+      : Object.assign(document.createElement('button'), { type: 'button', textContent: akce.text });
+    if (akce.klik) prvek.addEventListener('click', akce.klik);
+    li.append(prvek);
+  }
+  return li;
+}
+
+function vykresliObrazovkuSezeni() {
+  const p = stav.prehled;
+  const s = p?.sezeni;
+  const bezi = Boolean(s?.bezi);
+  $('#sezeni-stav').textContent = !p ? 'Čekám na server…' : bezi ? `Sezení ${s.cislo} běží` : s?.cislo > 0 ? `Mimo sezení · odehráno ${s.cislo}` : 'Mimo sezení';
+  const delka = delkaSezeni(s);
+  $('#sezeni-detail').textContent = bezi
+    ? `${delka ? `Běží ${delka} h. ` : ''}Poznámky padají do ${s.soubor}.`
+    : 'Než hráči dorazí, projdi seznam níže a zahaj sezení. Odpočet do začátku nastavíš při zahájení.';
+  const akce = $('#sezeni-akce');
+  akce.textContent = bezi ? `Ukončit sezení ${s.cislo}` : `Zahájit sezení ${(s?.cislo ?? 0) + 1}`;
+  akce.disabled = !p;
+  const mini = $('#sezeni-mini');
+  mini.hidden = !bezi;
+  mini.textContent = bezi ? (delka ?? 'běží') : '';
+
+  // Před hrou: co musí fungovat, aby sezení proběhlo bez zádrhelu.
+  $('#sezeni-pred').hidden = bezi;
+  if (p && !bezi) {
+    const k = [];
+    const o = p.obs;
+    if (!o?.nastaveno) k.push(polozkaKontroly('chyba', 'OBS není nastavené.', { text: 'Nastavení', odkaz: '#nastaveni' }));
+    else if (!o.pripojeno) k.push(polozkaKontroly('chyba', `OBS není připojené. ${o.chyba ?? ''}`.trim(), { text: 'Připojit teď', klik: () => api('/api/obs/pripojit', { metoda: 'POST', telo: {} }).catch(() => {}) }));
+    else k.push(polozkaKontroly('ok', `OBS je připojené, scéna ${o.aktualniScena}.`));
+    const n = p.nastaveni ?? {};
+    const chybiRole = ROLE_SCEN.filter(([, klic]) => !n[klic]).map(([, , jmeno]) => jmeno);
+    k.push(chybiRole.length
+      ? polozkaKontroly('varovani', `Role scén bez přiřazené scény: ${chybiRole.join(', ')}.`, { text: 'U stolu → Role scén', odkaz: '#sceny' })
+      : polozkaKontroly('ok', 'Role scén jsou přiřazené.'));
+    const g = p.git;
+    if (!g?.dostupny) k.push(polozkaKontroly('varovani', g?.chyba ?? 'Stav Gitu zjišťuji…'));
+    else if (g.pozadu > 0 && g.napred > 0) k.push(polozkaKontroly('chyba', 'Lokální a GitHubová verze se rozešly.', { text: 'Sloučit', klik: sloucitZmeny }));
+    else if (g.pozadu > 0) k.push(polozkaKontroly('varovani', `Na GitHubu jsou novější změny (${g.pozadu}).`, { text: 'Stáhnout změny', klik: stahnoutZmeny }));
+    else if (g.chyba) k.push(polozkaKontroly('varovani', g.chyba));
+    else k.push(polozkaKontroly('ok', 'Data jsou stejná jako na GitHubu.'));
+    const chyby = (p.kontrola?.problemy ?? []).filter((x) => x.uroven === 'chyba').length;
+    k.push(chyby ? polozkaKontroly('chyba', `Kontrola dat našla chyby: ${chyby}.`, { text: 'Kontrola dat', odkaz: '#kontrola' }) : polozkaKontroly('ok', 'Data kampaně jsou bez chyb.'));
+    if (!p.stav?.stav?.datum) k.push(polozkaKontroly('chyba', 'Dnešní datum v Harptosu není zadané.', { text: 'Kalendář', odkaz: '#kalendar' }));
+    const od = p.odpocet?.stav;
+    k.push(od === 'bezi'
+      ? polozkaKontroly('ok', 'Odpočet do začátku běží.')
+      : od === 'pripraveny' || od === 'pauza'
+        ? polozkaKontroly('info', 'Odpočet je nastavený, ale neběží.', { text: 'U stolu → Start', klik: () => { stav.stulVyber = 'start'; location.hash = 'sceny'; } })
+        : polozkaKontroly('info', 'Odpočet není nastavený (volitelné, jde i při zahájení).'));
+    if (p.server?.restartNutny) k.push(polozkaKontroly('varovani', p.server.restartNutny, p.server.restartZPanelu ? { text: 'Restartovat Hub', klik: restartovatHub } : undefined));
+    $('#sezeni-kontrola').replaceChildren(...k);
+  }
+
+  // Poznámky: během sezení z jeho souboru, mimo sezení z přípravy.
+  const poznamky = s?.poznamky ?? [];
+  $('#sezeni-poznamky-nadpis').textContent = bezi ? 'Poznámky ze stolu' : 'Poznámky mimo sezení';
+  $('#sezeni-poznamky-popis').textContent = poznamky.length
+    ? `Zapisuješ je klávesou F2 nebo tlačítkem Poznámka. Ukládají se do ${s?.soubor ?? 'souboru sezení'}.`
+    : 'Zatím žádné. Zapisuješ je klávesou F2 nebo tlačítkem Poznámka v horní liště.';
+  $('#sezeni-poznamky').replaceChildren(
+    ...[...poznamky].reverse().map((x) => {
+      const li = document.createElement('li');
+      li.append(Object.assign(document.createElement('time'), { textContent: x.cas }));
+      if (x.harptos) li.append(Object.assign(document.createElement('small'), { textContent: x.harptos }));
+      li.append(Object.assign(document.createElement('p'), { textContent: x.text }));
+      return li;
+    }),
+  );
+}
+
+$('#sezeni-akce').addEventListener('click', () => (stav.prehled?.sezeni?.bezi ? otevritUkoncit() : otevritZahajit()));
+// Délka sezení v liště a na obrazovce Sezení se posouvá i bez změn ze serveru.
+setInterval(() => {
+  if (!stav.prehled?.sezeni?.bezi) return;
+  $('#lista-sezeni').textContent = textSezeni();
+  vykresliObrazovkuSezeni();
+}, 30000);
+
 function navrhCasu() {
   // Nejbližší čtvrthodina, nejméně 10 minut od teď
   const d = new Date(Date.now() + 10 * 60000);
@@ -708,7 +788,7 @@ $('#formular-ukoncit').addEventListener('submit', async (e) => {
     ukonceneSezeni = r;
     if (volba === 'jen-ukoncit') {
       $('#dialog-ukoncit').close();
-      toast(`Sezení ${r.cislo} ukončeno. Do GitHubu ho ulož ze Stavu kampaně.`);
+      toast(`Sezení ${r.cislo} ukončeno. Do GitHubu ho ulož na obrazovce Sezení.`);
       return;
     }
     vysledek.textContent = 'Ukládám do GitHubu…';
@@ -1325,7 +1405,7 @@ function vykresliObchody() {
     }),
   );
 
-  // Obchody – správa
+  // Obchody (Příprava)
   $('#sprava-sortimenty-prazdno').hidden = o.sortimenty.length > 0;
   $('#tabulka-sprava-sortimentu').hidden = o.sortimenty.length === 0;
   const vadne = $('#sortimenty-vadne');
@@ -1847,7 +1927,7 @@ $('#dilna-ulozit').addEventListener('click', async () => {
     $('#dilna-orez').hidden = true;
     $('#dilna-soubor').value = '';
     if (typ === 'misto') {
-      vysledek.textContent = `Uloženo jako ${r.soubor} (skrytá). Odkryj ji na obrazovce Místa – správa.`;
+      vysledek.textContent = `Uloženo jako ${r.soubor} (skrytá). Odkryj ji na obrazovce Místa.`;
       vybraneMisto = id;
     } else {
       vysledek.textContent = 'Obrázek obchodu uložen. Ukáže se s ceníkem po Ukázat v OBS.';
@@ -1875,13 +1955,7 @@ for (const b of document.querySelectorAll('[data-kopirovat]')) {
   });
 }
 
-const adresaVystupu = `${location.origin}/vystupy/test.html`;
-$('#adresa-vystupu').textContent = adresaVystupu;
-$('#kopirovat-adresu').addEventListener('click', async () => {
-  await navigator.clipboard?.writeText(adresaVystupu).catch(() => {});
-  $('#kopirovat-adresu').textContent = 'Zkopírováno';
-  setTimeout(() => ($('#kopirovat-adresu').textContent = 'Kopírovat adresu'), 1500);
-});
+$('#adresa-vystupu').textContent = `${location.origin}/vystupy/test.html`;
 
 await nactiPrehled();
 ukazObrazovku(stav.prehled?.nastaveni && !stav.prehled.nastaveni.existuje && !location.hash ? 'nastaveni' : location.hash.slice(1));

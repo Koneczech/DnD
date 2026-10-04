@@ -43,6 +43,8 @@ code { font-family: Consolas, "Cascadia Mono", monospace; font-size: 0.9em; colo
   border-bottom: 1px solid var(--linka);
 }
 
+.kampan { color: inherit; text-decoration: none; border-radius: var(--zaobleni); }
+.kampan:hover .kampan-datum { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
 .kampan p { margin: 0; }
 
 .kampan-datum {
@@ -72,7 +74,8 @@ button:disabled { color: var(--mlha); opacity: 0.55; cursor: not-allowed; }
 button.hlavni { justify-self: start; background: var(--mosaz); color: var(--noc); border-color: var(--mosaz); font-weight: 600; }
 
 .kontrolky { display: flex; gap: 1rem; list-style: none; margin: 0; padding: 0; font-size: 0.9rem; color: var(--mlha); }
-.kontrolky li { display: flex; align-items: center; gap: 0.4rem; }
+.kontrolky li a { display: flex; align-items: center; gap: 0.4rem; color: inherit; text-decoration: none; padding: 0.2rem 0.3rem; border-radius: var(--zaobleni); }
+.kontrolky li a:hover { color: var(--kost); background: var(--deska-svetla); }
 
 .svetlo { width: 0.7rem; height: 0.7rem; border-radius: 50%; background: var(--linka); }
 .svetlo[data-stav="ok"] { background: var(--zelena); }
@@ -89,19 +92,23 @@ button.hlavni { justify-self: start; background: var(--mosaz); color: var(--noc)
   gap: 0.15rem;
   border-right: 1px solid var(--linka);
 }
-.moduly a, .moduly .pripravuje {
+.moduly a {
   padding: 0.45rem 0.75rem;
   border-radius: var(--zaobleni);
   color: var(--kost);
   text-decoration: none;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 0.6rem;
 }
+.moduly a .nazev { flex: 1; }
+.moduly .ikona { width: 1.15rem; height: 1.15rem; flex: none; fill: none; stroke: var(--mlha); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.moduly a[aria-current="page"] .ikona { stroke: var(--mosaz); }
+.moduly .skupina { margin: 1rem 0.75rem 0.3rem; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mlha); }
+.moduly .skupina:first-child { margin-top: 0.25rem; }
 .moduly a:hover { background: var(--deska); }
 .moduly a[aria-current="page"] { background: var(--deska-svetla); box-shadow: inset 3px 0 0 var(--mosaz); }
-.moduly .pripravuje { color: #8a92a3; font-style: italic; cursor: default; }
-.moduly hr { border: 0; border-top: 1px solid var(--linka); width: 100%; margin: 0.75rem 0; }
+
 .pocet { background: var(--rez); color: var(--noc); border-radius: 999px; padding: 0 0.5rem; font-size: 0.8rem; font-weight: 700; }
 
 main { padding: 1.5rem 2rem 3rem; overflow-y: auto; max-width: 64rem; }
@@ -170,7 +177,7 @@ input:focus { border-color: var(--mosaz); outline: none; }
   .lista { grid-template-columns: 1fr; gap: 0.75rem; }
   .rozvrzeni { grid-template-columns: 1fr; }
   .moduly { flex-direction: row; flex-wrap: wrap; border-right: 0; border-bottom: 1px solid var(--linka); }
-  .moduly hr, .moduly .pripravuje { display: none; }
+  .moduly .skupina { display: none; }
   /* V zalomené navigaci se ukazatel nesmí slepit s názvem („Kalendář19. Eleint“). */
   .moduly .odpocet-mini { margin-left: 0.4rem; }
   main { padding: 1rem; }
@@ -436,3 +443,26 @@ button[aria-busy="true"] { cursor: progress; opacity: 0.7; }
 .stul-zalozky button.v-obs small { color: var(--zelena); }
 .stul-zalozky button[aria-selected="true"] { background: var(--deska); border-color: var(--linka); color: var(--mosaz); }
 .stul-zalozky + .stul-panel, .stul-zalozky ~ .stul-panel { margin-top: 0; border-top: 0; }
+
+/* Obrazovka Sezení */
+.sezeni-hlavicka { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; margin: 1rem 0 0.5rem; padding: 1.25rem 1.5rem; background: var(--deska); border: 1px solid var(--linka); border-radius: var(--zaobleni); }
+.sezeni-stav { margin: 0; font-family: var(--pismo-svet); font-size: 1.6rem; color: var(--mosaz); }
+.sezeni-hlavicka .ulozeni { margin: 0.25rem 0 0; }
+button.velke { font-size: 1.1rem; padding: 0.75rem 1.5rem; }
+.kontrolni-stav { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+.kontrolni-stav li { display: flex; align-items: center; gap: 0.75rem; padding: 0.55rem 0.75rem; background: var(--deska); border-radius: var(--zaobleni); }
+.kontrolni-stav .text { flex: 1; }
+.kontrolni-stav button, .kontrolni-stav a { font-size: 0.9rem; }
+.stav-ikona { width: 0.75rem; height: 0.75rem; flex: none; border-radius: 50%; }
+li[data-uroven="ok"] .stav-ikona { background: var(--zelena); }
+li[data-uroven="varovani"] .stav-ikona { background: var(--jantar); border-radius: 2px; transform: rotate(45deg) scale(0.85); }
+li[data-uroven="chyba"] .stav-ikona { box-shadow: inset 0 0 0 2px var(--rez); }
+li[data-uroven="info"] .stav-ikona { box-shadow: inset 0 0 0 2px var(--mlha); }
+.poznamky { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
+.poznamky li { display: grid; grid-template-columns: 3.5rem 1fr; column-gap: 0.75rem; padding: 0.4rem 0.75rem; border-left: 2px solid var(--linka); }
+.poznamky time { color: var(--mosaz); font-variant-numeric: tabular-nums; }
+.poznamky small { grid-column: 2; color: var(--mlha); }
+.poznamky p { grid-column: 2; margin: 0; white-space: pre-wrap; }
+.poznamky li > time + p { grid-row: 1; }
+details.oprava { margin-top: 0.5rem; }
+details.oprava summary { cursor: pointer; color: var(--mlha); font-size: 0.9rem; }

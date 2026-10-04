@@ -106,3 +106,15 @@ test('Zahájit odmítne přepsat existující soubor sezení', async () => {
     await smazat();
   }
 });
+
+test('poznámky ze stolu se dají přečíst zpět i s víceřádkovými (obrazovka Sezení)', async () => {
+  const { rozebratPoznamky, radekPoznamky } = await import('../server/sezeni.js');
+  const prvni = radekPoznamky('Lupiči ustupují', new Date(2026, 9, 4, 18, 5), { rok: 1491, mesic: 'Eleint', den: 19 });
+  const druha = radekPoznamky('Martin\nzískal meč', new Date(2026, 9, 4, 18, 20));
+  const p = rozebratPoznamky(`# Sezení 3\n\n${prvni}${druha}`);
+  assert.equal(p.length, 2);
+  assert.equal(p[0].cas, '18:05');
+  assert.ok(p[0].harptos);
+  assert.equal(p[0].text, 'Lupiči ustupují');
+  assert.equal(p[1].text, 'Martin\nzískal meč');
+});

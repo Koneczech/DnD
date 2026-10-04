@@ -44,6 +44,20 @@ export function radekPoznamky(text, d = new Date(), harptos = null) {
   return `- ${casHodiny(d)}${den} — ${radky[0]}${radky.slice(1).map((r) => `\n  ${r}`).join('')}\n`;
 }
 
+/**
+ * Poznámky ze stolu z textu souboru sezení (řádky „- 18:05 (19. Eleint) — text“, pokračování odsazené).
+ * @returns {Array<{cas: string, harptos: string|null, text: string}>}
+ */
+export function rozebratPoznamky(text) {
+  const poznamky = [];
+  for (const radek of String(text).split(/\r?\n/)) {
+    const m = /^- (\d{1,2}:\d{2})(?: \(([^)]*)\))? — (.*)$/.exec(radek);
+    if (m) poznamky.push({ cas: m[1], harptos: m[2] ?? null, text: m[3] });
+    else if (poznamky.length && /^ {2}\S/.test(radek)) poznamky[poznamky.length - 1].text += `\n${radek.slice(2)}`;
+  }
+  return poznamky;
+}
+
 export class Sezeni {
   constructor({ cesty, data, zapisovac }) {
     this.c = cesty;
@@ -188,13 +202,27 @@ export class Sezeni {
     return path.relative(this.c.koren, soubor).split(path.sep).join('/');
   }
 
-  /** Co panel potřebuje vědět o sezení. */
+  /** Co panel potřebuje vědět o sezení: i začátek a poznámky ze stolu (obrazovka Sezení). */
   async verejne() {
     const s = this.data.stav;
+    let zacatek = null;
+    let poznamky = [];
+    if (s) {
+      try {
+        const text = await this.precist(this.aktualniSoubor());
+        const hlavicka = rozebrat(text).data ?? {};
+        if (s.sezeniBezi && typeof hlavicka.zacatek === 'string') zacatek = hlavicka.zacatek;
+        poznamky = rozebratPoznamky(text).slice(-30);
+      } catch {
+        /* soubor zatím není */
+      }
+    }
     return {
       bezi: Boolean(s?.sezeniBezi),
       cislo: s?.sezeni ?? null,
       soubor: s ? this.relativni(this.aktualniSoubor()) : null,
+      zacatek,
+      poznamky,
       hraci: await this.hraci(),
     };
   }

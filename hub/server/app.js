@@ -454,7 +454,10 @@ export class Hub {
     }
     if (p === '/api/poznamka' && m === 'POST') {
       const { text } = await nacistJson(req);
-      return poslatJson(res, 200, await this.sezeni.poznamka(text));
+      const vysledek = await this.sezeni.poznamka(text);
+      // Obrazovka Sezení ukazuje poznámky: pošli je hned, ne až s další změnou stavu.
+      this.sezeni.verejne().then((s) => this.vysilac.vyslat('sezeni', s)).catch(() => {});
+      return poslatJson(res, 200, vysledek);
     }
     if (p.startsWith('/api/odpocet/') && m === 'POST') {
       const akce = p.slice('/api/odpocet/'.length);

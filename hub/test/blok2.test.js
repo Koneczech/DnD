@@ -227,3 +227,10 @@ test('API dílna: prompt z místa, import uloží skrytou ilustraci s promptem; 
     await h.zastavit();
   }
 });
+
+test('výstup místa: obraz má vlastní kontext skládání a tónování nepoužívá CSS filtr', async () => {
+  const html = await fs.readFile(new URL('../vystupy/misto.html', import.meta.url), 'utf8');
+  // Bez izolace by z-index prolínaných vrstev obrazu přebil počasí, mlhu i ztmavení (Blok 2, oprava).
+  assert.match(html, /#obraz\s*\{[^}]*isolation:\s*isolate/);
+  assert.doesNotMatch(html, /style\.filter|filtr:/);
+});

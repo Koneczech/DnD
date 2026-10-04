@@ -409,3 +409,10 @@ label.odkaz { color: var(--mosaz); text-decoration: underline; cursor: pointer; 
 /* Restart Hubu v Nastavení */
 .server-blok { margin-top: 1.5rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
 .server-blok .poznamka { margin: 0; }
+
+/* Tlačítko, jehož požadavek právě běží (dvojklik se ignoruje) */
+button[aria-busy="true"] { cursor: progress; opacity: 0.7; }
+
+/* Místo, které by v OBS dalo černo (žádná odkrytá ilustrace pro denní dobu) */
+.karta-mista.bez-ilustrace { border-style: dashed; }
+.karta-mista.bez-ilustrace small { color: var(--jantar); }

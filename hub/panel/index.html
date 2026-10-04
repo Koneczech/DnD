@@ -115,6 +115,9 @@
         <div class="stul-panel" id="stul-misto" hidden>
           <h2>Místo</h2>
           <p class="uvod">Do OBS jdou jen odkryté ilustrace; co tady změníš, se v OBS prolne do sekundy.</p>
+          <!-- Výběr místa je první krok, proto stojí nad náhledem (audit, UI U stolu). -->
+          <h3>Místa</h3>
+          <div class="stul-mista" id="stul-mista"></div>
           <div class="stul-misto">
             <div class="stul-nahled" id="stul-nahled" aria-label="Náhled výstupu místa">
               <iframe id="stul-nahled-ramec" title="Náhled výstupu místa" tabindex="-1"></iframe>
@@ -143,8 +146,6 @@
               </div>
             </div>
           </div>
-          <h3>Místa</h3>
-          <div class="stul-mista" id="stul-mista"></div>
           <h3>Ilustrace v OBS</h3>
           <p class="ulozeni" id="stul-ilustrace-popis"></p>
           <div class="ilustrace ilustrace-zive" id="stul-ilustrace"></div>
@@ -158,7 +159,7 @@
         <div class="stul-panel" id="stul-obchod" hidden>
           <h2>Obchod</h2>
           <p class="uvod">Sortiment vylosuj v generátoru a ulož do Hubu. U stolu klikni na <em>Ukázat v OBS</em>: ceník převezme obchod a OBS přepne na scénu obchodu.</p>
-          <div class="tlacitka"><a class="tlacitko hlavni" href="/nastroje/generator.html" target="_blank" rel="noopener">Otevřít generátor obchodů</a></div>
+          <div class="tlacitka"><a class="tlacitko" href="/nastroje/generator.html" target="_blank" rel="noopener">Otevřít generátor obchodů</a></div>
           <h3>V OBS teď</h3>
           <div class="aktivni-obchod">
             <p id="obchod-aktivni">Ceník je skrytý.</p>

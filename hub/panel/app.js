@@ -16,6 +16,29 @@ const stav = {
  */
 async function api(cesta, { metoda = 'GET', telo, limitMs } = {}) {
   const limit = limitMs ?? (cesta.startsWith('/api/git/') || cesta.startsWith('/api/dilna/') ? 180000 : 20000);
+  // Tlačítko, které změnu spustilo, je do odpovědi zamčené: dvojklik tak nic neprovede dvakrát (audit S3).
+  const tlacitko = metoda !== 'GET' && document.activeElement instanceof HTMLButtonElement ? document.activeElement : null;
+  tlacitko?.setAttribute('aria-busy', 'true');
+  try {
+    return await poslat(cesta, metoda, telo, limit);
+  } finally {
+    tlacitko?.removeAttribute('aria-busy');
+  }
+}
+
+// Klik na tlačítko, jehož požadavek ještě běží, se zahodí dřív, než ho dostane obsluha.
+document.addEventListener(
+  'click',
+  (e) => {
+    const b = e.target instanceof Element ? e.target.closest('button[aria-busy="true"]') : null;
+    if (!b) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+  },
+  true,
+);
+
+async function poslat(cesta, metoda, telo, limit) {
   let odpoved;
   try {
     odpoved = await fetch(cesta, {
@@ -65,7 +88,8 @@ window.addEventListener('hashchange', () => ukazObrazovku(location.hash.slice(1)
 
 function vykresliStav(s) {
   const k = s?.stav;
-  $('#lista-datum').textContent = k?.datumText || 'Datum není zadané';
+  // Bez spojení se serverem panel nic neví: neříkat „není zadané“, když jen čeká (audit N14).
+  $('#lista-datum').textContent = k?.datumText || (s ? 'Datum není zadané' : 'Čekám na server…');
   vykresliDatumStavu(k);
   $('#lista-misto').textContent = k?.misto || '';
   $('#lista-misto').hidden = !k?.misto;
@@ -313,7 +337,9 @@ function vykresliSceny() {
   if (!role && !pripojeno) role = 'start';
   if (!PANELY.includes(role)) role = null;
 
-  if (!o?.nastaveno) {
+  if (!stav.prehled) {
+    popis.textContent = 'Čekám na server Hubu…';
+  } else if (!o?.nastaveno) {
     popis.textContent = 'OBS ještě není nastavené. Zadej heslo k WebSocket serveru v Nastavení. Ovládání níže funguje i bez OBS, jen nepřepíná scény.';
   } else if (!pripojeno) {
     popis.textContent = `${o.chyba || 'OBS není připojené.'} Hub to zkouší znovu každých 5 sekund.`;
@@ -679,14 +705,16 @@ function otevritPoznamku() {
     ? `Zapíše se do sezení ${s.cislo} s aktuálním časem.`
     : 'Sezení neběží, poznámka se zapíše do kampan/sezeni/priprava.md.';
   $('#poznamka-chyba').textContent = '';
-  for (const dlg of document.querySelectorAll('dialog[open]')) dlg.close();
+  // Otevřený dialog (třeba připomínky Dalšího dne) zůstane pod poznámkou, nezavře se (audit S7).
   d.showModal();
   $('#pole-poznamka').focus();
 }
 
+let zapisujePoznamku = false;
 async function zapsatPoznamku() {
   const pole = $('#pole-poznamka');
-  if (!pole.value.trim()) return;
+  if (!pole.value.trim() || zapisujePoznamku) return;
+  zapisujePoznamku = true;
   try {
     const r = await api('/api/poznamka', { metoda: 'POST', telo: { text: pole.value } });
     pole.value = '';
@@ -694,6 +722,8 @@ async function zapsatPoznamku() {
     toast(r.vysledek === 'odlozeno' ? 'Poznámka čeká na zápis (soubor je otevřený jinde).' : `Poznámka zapsána v ${r.cas}.`);
   } catch (chyba) {
     $('#poznamka-chyba').textContent = chyba.message;
+  } finally {
+    zapisujePoznamku = false;
   }
 }
 
@@ -1022,7 +1052,9 @@ async function nactiImport() {
   }
   const box = $('#kalendar-import');
   const imp = k.import;
-  box.hidden = !imp?.dostupny && k.existuje;
+  // Import je jednorázový převod ze starého kalendáře. Jakmile události v repu jsou, box se
+  // neukazuje: opakovaný import by jedním klikem přepsal události i dnešní datum (audit V2).
+  box.hidden = k.existuje;
   if (box.hidden) return;
   $('#import-pocet-zdroj').textContent = imp.pocet;
   seznamImportu($('#import-zdroj'), imp.seznam);
@@ -1159,6 +1191,7 @@ async function otevritDalsiDen() {
   $('#den-chyba').textContent = '';
   $('#den-krok1').hidden = false;
   $('#den-krok2').hidden = true;
+  stav.denOdeslan = false;
   for (const dlg of document.querySelectorAll('dialog[open]')) dlg.close();
   $('#dialog-den').showModal();
 }
@@ -1167,6 +1200,9 @@ $('#formular-den').addEventListener('submit', async (e) => {
   const volba = e.submitter?.value;
   if (volba !== 'ano' && volba !== 'ne') return;
   e.preventDefault();
+  // Jeden dialog = nejvýš jeden posun kalendáře, i při dvojkliku (audit S3).
+  if (stav.denOdeslan) return;
+  stav.denOdeslan = true;
   try {
     const r = await api('/api/den/dalsi', { metoda: 'POST', telo: { dukladny: volba === 'ano' } });
     $('#den-datum').textContent = r.dnesText;
@@ -1186,6 +1222,7 @@ $('#formular-den').addEventListener('submit', async (e) => {
     $('#den-krok1').hidden = true;
     $('#den-krok2').hidden = false;
   } catch (chyba) {
+    stav.denOdeslan = false;
     $('#den-chyba').textContent = chyba.message;
   }
 });
@@ -1268,6 +1305,20 @@ function vykresliObchody() {
 
 let vybraneMisto = null; // místo zobrazené v panelu (nemusí být to, co je v OBS)
 
+/** Ilustrace, které by OBS ukázalo pro danou denní dobu a stav (stejné pravidlo jako server, scena.js). */
+function viditelneIlustrace(m, { varianta, stav: stavMista }) {
+  return (m?.ilustrace ?? []).filter(
+    (il) => il.ucel === 'scena' && !il.skryta && (!il.varianta || il.varianta === varianta) && (!il.stav || il.stav === stavMista),
+  );
+}
+
+/** Před akcí, po které by v OBS zůstalo černo, se zeptat (audit S6). */
+function potvrditCerno(m, volby) {
+  if (viditelneIlustrace(m, volby).length) return true;
+  const kdy = [volby.varianta === 'noc' ? 'noc' : 'den', volby.stav ? `stav ${volby.stav}` : null].filter(Boolean).join(', ');
+  return confirm(`${m.nazev} nemá pro ${kdy} žádnou odkrytou ilustraci, takže v OBS bude černo. Přesto přepnout?`);
+}
+
 function textIlustrace(il) {
   return [il.varianta, il.stav].filter(Boolean).join(' · ') || 'vždy';
 }
@@ -1280,7 +1331,7 @@ function vykresliScenu() {
     ? s.ilustrace
       ? `${s.ilustrace.soubor} (${s.poradi}/${s.pocet})${s.stridani.zapnuto && s.pocet > 1 ? `, střídá se po ${s.stridani.sekund} s` : ''}`
       : 'Pro tuhle denní dobu a stav nemá místo žádnou odkrytou ilustraci; OBS je černé.'
-    : 'Vyber místo níže a dej Ukázat v OBS.';
+    : 'Klikni na místo a ukáže se v OBS.';
   const mini = $('#mista-mini');
   mini.hidden = !s.misto;
   mini.textContent = s.misto?.nazev ?? '';
@@ -1317,10 +1368,21 @@ for (const seg of document.querySelectorAll('.prepinace .segment')) {
     const b = e.target.closest('button');
     if (!b) return;
     const pole = seg.dataset.pole;
+    const s = stav.prehled?.scena;
+    const m = stav.prehled?.mista?.mista?.find((x) => x.id === s?.misto?.id);
+    if (pole === 'varianta' && m && b.dataset.v !== s.varianta && !potvrditCerno(m, { varianta: b.dataset.v, stav: s.stav })) return;
     scenaApi('/api/scena', 'PUT', { [pole]: pole === 'intenzita' ? Number(b.dataset.v) : b.dataset.v });
   });
 }
-$('#sc-stav').addEventListener('change', (e) => scenaApi('/api/scena', 'PUT', { stav: e.target.value || null }));
+$('#sc-stav').addEventListener('change', (e) => {
+  const s = stav.prehled?.scena;
+  const m = stav.prehled?.mista?.mista?.find((x) => x.id === s?.misto?.id);
+  if (m && !potvrditCerno(m, { varianta: s.varianta, stav: e.target.value || null })) {
+    e.target.value = s.stav ?? '';
+    return;
+  }
+  scenaApi('/api/scena', 'PUT', { stav: e.target.value || null });
+});
 $('#scena-predchozi').addEventListener('click', () => scenaApi('/api/scena/dalsi', 'POST', { smer: -1 }));
 $('#scena-dalsi').addEventListener('click', () => scenaApi('/api/scena/dalsi', 'POST', { smer: 1 }));
 $('#scena-stridani').addEventListener('change', (e) => scenaApi('/api/scena', 'PUT', { stridani: { zapnuto: e.target.checked } }));
@@ -1342,7 +1404,16 @@ function vykresliMista() {
       const nahled = (m.ilustrace.find((il) => !il.skryta && il.ucel === 'scena') ?? m.ilustrace[0]);
       if (nahled) b.style.backgroundImage = `url("${nahled.url}")`;
       b.append(Object.assign(document.createElement('span'), { textContent: m.nazev }));
+      // Místo, které by teď v OBS dalo černo, je označené už na dlaždici (audit S6).
+      const volby = { varianta: s?.varianta ?? 'den', stav: null };
+      if (!viditelneIlustrace(m, volby).length) {
+        b.classList.add('bez-ilustrace');
+        const jindy = viditelneIlustrace(m, { varianta: volby.varianta === 'noc' ? 'den' : 'noc', stav: null }).length;
+        const text = jindy ? `bez ilustrace na ${volby.varianta === 'noc' ? 'noc' : 'den'}` : 'bez odkryté ilustrace';
+        b.append(Object.assign(document.createElement('small'), { textContent: text }));
+      }
       b.addEventListener('click', async () => {
+        if (m.id !== zive?.id && !potvrditCerno(m, volby)) return;
         const r = await scenaApi('/api/scena/zobrazit', 'POST', { misto: m.id, prepnout: true });
         if (r && !r.chybaObs) toast(`V OBS: ${r.misto?.nazev ?? m.nazev}${r.scenaObs ? ` (scéna ${r.scenaObs})` : ''}`);
       });
@@ -1371,6 +1442,10 @@ function vykresliMista() {
       pocet.textContent = `${odkryte.length} odkrytých, ${m.ilustrace.length - odkryte.length} skrytých`;
       b.append(popis, pocet);
       b.addEventListener('click', () => {
+        if (m.id !== vybraneMisto && stav.rozpracovano.has(`popis:${vybraneMisto}`)) {
+          if (!confirm('Popis vzhledu není uložený. Přejít jinam a rozepsaný text zahodit?')) return;
+          stav.rozpracovano.delete(`popis:${vybraneMisto}`);
+        }
         vybraneMisto = m.id;
         vykresliMista();
       });
@@ -1386,7 +1461,8 @@ function vykresliMista() {
   $('#misto-souhrn').textContent = m.ilustrace.length
     ? `Klikni na odkrytou ilustraci a ukáže se v OBS. Skryté (šedé) do OBS nejdou, dokud je neodkryješ.`
     : 'Místo zatím nemá žádnou ilustraci. Vytvoř ji v Ilustrační dílně.';
-  if (document.activeElement !== $('#misto-popis')) $('#misto-popis').value = m.popisObrazu;
+  // Rozepsaný popis nepřepíše žádná živá změna (střídání ilustrací, změna jinde), dokud ho DM neuloží (audit S7).
+  if (document.activeElement !== $('#misto-popis') && !stav.rozpracovano.has(`popis:${m.id}`)) $('#misto-popis').value = m.popisObrazu;
   const mrizka = $('#misto-ilustrace');
   // Nepřekresluj pod rukama, když DM právě píše stav nebo vybírá variantu (tlačítka nevadí).
   const aktivni = document.activeElement;
@@ -1462,12 +1538,17 @@ async function upravIlustraci(misto, soubor, zmeny) {
 }
 
 $('#misto-ukazat').addEventListener('click', async () => {
+  const s = stav.prehled?.scena;
+  const m = stav.prehled?.mista?.mista?.find((x) => x.id === vybraneMisto);
+  if (m && s?.misto?.id !== m.id && !potvrditCerno(m, { varianta: s?.varianta ?? 'den', stav: null })) return;
   const r = await scenaApi('/api/scena/zobrazit', 'POST', { misto: vybraneMisto, prepnout: true });
   if (r && !r.chybaObs) toast(`V OBS: ${r.misto?.nazev ?? ''}${r.scenaObs ? ` (scéna ${r.scenaObs})` : ''}`);
 });
+$('#misto-popis').addEventListener('input', () => stav.rozpracovano.add(`popis:${vybraneMisto}`));
 $('#misto-popis-ulozit').addEventListener('click', async () => {
   try {
     await api(`/api/mista/${vybraneMisto}/popis`, { metoda: 'PUT', telo: { popis: $('#misto-popis').value } });
+    stav.rozpracovano.delete(`popis:${vybraneMisto}`);
     toast('Popis uložen.');
   } catch (chyba) {
     toast(chyba.message, { chyba: true });

@@ -116,7 +116,8 @@ export class Nastaveni {
       nove.HUB_PORT = String(p);
     }
     if (z.pin) {
-      if (!/^\d{4,8}$/.test(String(z.pin))) throw Object.assign(new Error('PIN musí mít 4–8 číslic'), { status: 400 });
+      // Nový PIN aspoň 6 číslic: 4 číslice jdou v domácí síti uhodnout i s omezením pokusů (audit S5).
+      if (!/^\d{6,8}$/.test(String(z.pin))) throw Object.assign(new Error('PIN musí mít 6–8 číslic'), { status: 400 });
       nove.PIN = String(z.pin);
     }
     if (z.domaciSit !== undefined) {

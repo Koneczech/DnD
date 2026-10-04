@@ -43,7 +43,9 @@ export function jeZakazanySoubor(cesta) {
  */
 export function najdiProblemy(soubory, tajneHodnoty = []) {
   const problemy = [];
-  const hodnoty = tajneHodnoty.filter((h) => h && String(h).length >= 4);
+  // Krátký číselný PIN by se pletl s letopočty a čísly sezení (1491, 2026) a blokoval běžné commity
+  // (audit N3). Takovou hodnotu hlídá jen vzor přiřazení PIN=… níž.
+  const hodnoty = tajneHodnoty.filter((h) => h && String(h).length >= 4 && !/^\d{1,7}$/.test(String(h)));
   for (const { cesta, obsah } of soubory) {
     if (jeZakazanySoubor(cesta)) {
       problemy.push({ cesta, duvod: 'soubor .env s tajnými hodnotami nesmí do Gitu' });

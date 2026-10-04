@@ -314,3 +314,59 @@ test('stažený nový kód Hubu ohlásí nutný restart, data kampaně ne (audit
     await zastavit();
   }
 });
+
+async function hubSDomaciSiti() {
+  const repo = await docasneRepo();
+  // Zjevně falešný PIN generovaný za běhu (CLAUDE.md: žádné tajné hodnoty v testech).
+  const pin = String(100000 + Math.floor(Math.random() * 899999));
+  await fs.writeFile(repo.c.env, `DOMACI_SIT="1"\nPIN="${pin}"\n`);
+  const hub = new Hub({ cesty: repo.c, obsKlient: new FalesnyObs({ heslo: HESLO }), gitSit: false, port: 0 });
+  await hub.spustit();
+  return { hub, pin, zastavit: async () => { await hub.zastavit(); await repo.smazat(); } };
+}
+
+/** Požadavek s vlastní hlavičkou Host (fetch ji přepsat nedovolí). */
+function surovy(hub, cesta, hlavicky = {}) {
+  return new Promise((resolve, reject) => {
+    const req = http.get(hub.adresa + cesta, { headers: hlavicky }, (res) => {
+      res.resume();
+      resolve({ status: res.statusCode, hlavicky: res.headers });
+    });
+    req.on('error', reject);
+  });
+}
+
+test('domácí síť: cizí Host z tohoto počítače neprojde ani se zapnutou sítí (DNS rebinding, audit S5)', async () => {
+  const { hub, zastavit } = await hubSDomaciSiti();
+  try {
+    assert.equal((await surovy(hub, '/api/prehled', { Host: 'utocnik.example:7420' })).status, 302);
+    assert.equal((await surovy(hub, '/api/zdravi', { Host: `127.0.0.1:${new URL(hub.adresa).port}` })).status, 200);
+  } finally {
+    await zastavit();
+  }
+});
+
+test('domácí síť: po 5 chybných PINech se další pokusy odmítají (audit S5)', async () => {
+  const { hub, pin, zastavit } = await hubSDomaciSiti();
+  try {
+    const spatny = pin === '999999' ? '888888' : '999999';
+    for (let i = 0; i < 5; i++) assert.equal((await pozadavek(hub, '/prihlaseni', { metoda: 'POST', telo: { pin: spatny } })).status, 401);
+    const zamceno = await pozadavek(hub, '/prihlaseni', { metoda: 'POST', telo: { pin } });
+    assert.equal(zamceno.status, 429, 'ani správný PIN během zámku');
+    assert.match(zamceno.data.chyba, /Zkus to znovu/);
+  } finally {
+    await zastavit();
+  }
+});
+
+test('odpovědi mají bezpečnostní hlavičky a poškozená adresa vrátí 400 (audit N5, N6)', async () => {
+  const { hub, zastavit } = await spustitHub();
+  try {
+    const r = await surovy(hub, '/');
+    assert.equal(r.hlavicky['x-frame-options'], 'SAMEORIGIN');
+    assert.match(r.hlavicky['content-security-policy'], /frame-ancestors 'self'/);
+    assert.equal((await surovy(hub, '//')).status, 400);
+  } finally {
+    await zastavit();
+  }
+});

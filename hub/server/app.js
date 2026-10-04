@@ -42,10 +42,27 @@ const TYPY_SOUBORU = {
 const OBRAZKY_KAMPANE = new Set(['.png', '.jpg', '.jpeg', '.webp']);
 
 const LOOPBACK = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+const JMENA_LOOPBACKU = new Set(['127.0.0.1', 'localhost', '::1']);
+
+/** Přihlášení PINem z domácí sítě platí 30 dní (nový PIN ho zruší hned). */
+const PLATNOST_RELACE_MS = 30 * 24 * 3600 * 1000;
+/** Po 5 chybných PINech z jedné adresy se další pokusy odmítají, nejdřív 60 s, pak déle (audit S5). */
+const POKUSU_PINU = 5;
+
+/**
+ * Bezpečnostní hlavičky pro každou odpověď: panel nejde vložit do cizí stránky (audit N6).
+ * Výstupy a náhled místa v panelu jsou ze stejného původu, takže je to neomezuje.
+ */
+const HLAVICKY_BEZPECNOSTI = {
+  'X-Frame-Options': 'SAMEORIGIN',
+  'Content-Security-Policy': "frame-ancestors 'self'",
+  'Referrer-Policy': 'no-referrer',
+  'X-Content-Type-Options': 'nosniff',
+};
 
 function poslatJson(res, status, data) {
   const telo = JSON.stringify(data);
-  res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+  res.writeHead(status, { ...HLAVICKY_BEZPECNOSTI, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
   res.end(telo);
 }
 
@@ -96,7 +113,8 @@ export class Hub {
     this.server = null;
     this.spusteno = new Date().toISOString();
     this.prostredi = { oneDrive: jeVOneDrive(this.c.koren), hook: null };
-    this.relace = new Set(); // platné přihlášení PINem z domácí sítě
+    this.relace = new Map(); // token přihlášení PINem z domácí sítě -> čas přihlášení
+    this.pokusyPinu = new Map(); // adresa -> { chyb, zamcenoDo }
     /** Funkce, která Hub restartuje (nastaví ji index.js, když běží pod spouštěčem). */
     this.restartovat = null;
     /** Proč je potřeba restart (stažený nový kód, změna portu), nebo null. */
@@ -277,10 +295,18 @@ export class Hub {
   povoleno(req) {
     const vzdaleny = !LOOPBACK.has(req.socket.remoteAddress);
     const host = String(req.headers.host || '').replace(/:\d+$/, '').replace(/^\[|\]$/g, '');
-    if (!vzdaleny) return ['127.0.0.1', 'localhost', '::1'].includes(host) || this.nastaveni.domaciSit;
+    // Z tohoto počítače vždy jen s hlavičkou Host localhostu, i se zapnutou domácí sítí:
+    // cizí stránka přes DNS rebinding má v Host svou doménu (audit S5).
+    if (!vzdaleny) return JMENA_LOOPBACKU.has(host);
     if (!this.nastaveni.domaciSit) return false;
     const cookie = String(req.headers.cookie || '').match(/(?:^|;\s*)dmhub=([a-f0-9]+)/);
-    return Boolean(cookie && this.relace.has(cookie[1]));
+    const prihlasen = cookie ? this.relace.get(cookie[1]) : undefined;
+    if (prihlasen === undefined) return false;
+    if (Date.now() - prihlasen > PLATNOST_RELACE_MS) {
+      this.relace.delete(cookie[1]);
+      return false;
+    }
+    return true;
   }
 
   /** WebSocket pro živé změny (/api/zive): stejná pravidla přístupu jako HTTP a navíc stejný původ. */
@@ -311,12 +337,20 @@ export class Hub {
   }
 
   async obsluha(req, res) {
-    const url = new URL(req.url, 'http://localhost');
     try {
+      // Rozbor adresy uvnitř ošetření chyb: poškozená adresa vrátí 400, ne pád spojení (audit N5).
+      let url;
+      try {
+        url = new URL(req.url, 'http://localhost');
+      } catch {
+        throw Object.assign(new Error('Neplatná adresa'), { status: 400 });
+      }
       if (url.pathname === '/prihlaseni' && this.nastaveni.domaciSit) return await this.prihlaseni(req, res, url);
+      // Přihlašovací stránka z jiného zařízení potřebuje styly ještě před přihlášením.
+      if (url.pathname === '/panel/styly.css' && this.nastaveni.domaciSit && req.method === 'GET') return await this.staticky(req, res, url);
       if (!this.povoleno(req)) {
         if (this.nastaveni.domaciSit && req.method === 'GET') {
-          res.writeHead(302, { Location: '/prihlaseni' });
+          res.writeHead(302, { ...HLAVICKY_BEZPECNOSTI, Location: '/prihlaseni' });
           return res.end();
         }
         return poslatJson(res, 403, { chyba: 'Přístup jen z tohoto počítače.' });
@@ -332,14 +366,27 @@ export class Hub {
 
   async prihlaseni(req, res, url) {
     if (req.method === 'POST') {
+      const adresa = req.socket.remoteAddress;
+      const pokusy = this.pokusyPinu.get(adresa) ?? { chyb: 0, zamcenoDo: 0 };
+      const zbyva = pokusy.zamcenoDo - Date.now();
+      if (zbyva > 0) {
+        return poslatJson(res, 429, { chyba: `Příliš mnoho chybných pokusů. Zkus to znovu za ${Math.ceil(zbyva / 1000)} s.` });
+      }
       const telo = await nacistJson(req);
       const ocekavany = Buffer.from(String(this.nastaveni.hodnoty.PIN));
       const zadany = Buffer.from(String(telo.pin ?? ''));
       if (ocekavany.length !== zadany.length || !crypto.timingSafeEqual(ocekavany, zadany)) {
+        pokusy.chyb++;
+        if (pokusy.chyb >= POKUSU_PINU) {
+          // 60 s, 120 s, 240 s … nejvýš 15 minut.
+          pokusy.zamcenoDo = Date.now() + Math.min(60000 * 2 ** (pokusy.chyb - POKUSU_PINU), 15 * 60000);
+        }
+        this.pokusyPinu.set(adresa, pokusy);
         return poslatJson(res, 401, { chyba: 'Nesprávný PIN' });
       }
+      this.pokusyPinu.delete(adresa);
       const token = crypto.randomBytes(24).toString('hex');
-      this.relace.add(token);
+      this.relace.set(token, Date.now());
       res.setHeader('Set-Cookie', `dmhub=${token}; HttpOnly; SameSite=Strict; Path=/`);
       return poslatJson(res, 200, { ok: true });
     }
@@ -621,7 +668,7 @@ export class Hub {
     if (req.method !== 'GET' && req.method !== 'HEAD') throw Object.assign(new Error('Metoda není povolena'), { status: 405 });
     if (url.pathname === '/nastroje/generator.html') {
       const html = await this.obchody.generator();
-      res.writeHead(200, { 'Content-Type': TYPY_SOUBORU['.html'], 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff' });
+      res.writeHead(200, { ...HLAVICKY_BEZPECNOSTI, 'Content-Type': TYPY_SOUBORU['.html'], 'Cache-Control': 'no-cache' });
       return res.end(req.method === 'HEAD' ? undefined : html);
     }
     let soubor;
@@ -653,9 +700,9 @@ export class Hub {
     // ETag: obrázky ve výstupech se při každém prolnutí jen ověří (304), nestahují se znovu.
     const etag = `"${info.size.toString(36)}-${Math.floor(info.mtimeMs).toString(36)}"`;
     const hlavicky = {
+      ...HLAVICKY_BEZPECNOSTI,
       'Content-Type': TYPY_SOUBORU[path.extname(soubor).toLowerCase()] || 'application/octet-stream',
       'Cache-Control': 'no-cache',
-      'X-Content-Type-Options': 'nosniff',
       ETag: etag,
     };
     if (req.headers['if-none-match'] === etag) {

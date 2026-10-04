@@ -109,3 +109,8 @@ test('hook odmítne soubor se značkami konfliktu, ale ne obyčejný text s rovn
   assert.equal(najdiProblemy([{ cesta: 'kampan/stav.md', obsah: znacky }]).length, 1);
   assert.deepEqual(najdiProblemy([{ cesta: 'kampan/x.md', obsah: 'Nadpis\n=======\n' }]), []);
 });
+
+test('krátký číselný PIN nezablokuje commit s letopočtem, přiřazení PIN=… ano (audit N3)', () => {
+  assert.deepEqual(najdiProblemy([{ cesta: 'kampan/stav.md', obsah: 'datum: {rok: 1491}\n' }], ['1491']), []);
+  assert.equal(najdiProblemy([{ cesta: 'poznamky.txt', obsah: 'PIN=1491\n' }], ['1491']).length, 1);
+});

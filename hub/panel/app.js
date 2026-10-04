@@ -448,7 +448,7 @@ function vykresliNastaveni(n) {
   $('#pole-obs-heslo').placeholder = n.obsHesloNastaveno ? 'Heslo je uložené. Vyplň jen při změně.' : 'Heslo z OBS';
   $('#pole-port').value = n.port;
   $('#pole-domaci-sit').checked = n.domaciSit;
-  $('#pole-pin').placeholder = n.pinNastaven ? 'PIN je uložený. Vyplň jen při změně.' : '4–8 číslic';
+  $('#pole-pin').placeholder = n.pinNastaven ? 'PIN je uložený. Vyplň jen při změně.' : '6–8 číslic';
   vykresliVyberSouboje();
   const srv = stav.prehled?.server;
   $('#server-info').textContent = srv

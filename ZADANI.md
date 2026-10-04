@@ -95,7 +95,7 @@ flowchart LR
     obsidian["Obsidian / editor"]
 
     panel -- ovládání --> server
-    server -- "živě (SSE)" --> vystupy
+    server -- "živě (WebSocket)" --> vystupy
     server -- WebSocket --> obs
     vystupy -- Browser Source --> obs
     obs --> tv
@@ -114,7 +114,7 @@ Improved Initiative do schématu nevstupuje: jeho carousel je v OBS samostatná 
 | Lokální server | Datová vrstva, logika modulů, živé posílání změn | Node.js, jeden proces, pevný port v `hub/.env` |
 | Ovládací panel | Jediné rozhraní DM, běží v prohlížeči na localhost | Globální lišta: stav kampaně, Zahájit/Ukončit sezení, Další den, Poznámka (F2), Hledat |
 | Výstupy pro OBS | Jedna stránka na modul (kalendář, ceník, odpočet, scéna), v OBS jako Browser Source | Umístění a velikost řeší OBS, ne HTML; při výpadku serveru drží poslední stav |
-| Živá synchronizace | Server posílá změny výstupům a panelu přes Server-Sent Events | Výstupy se po výpadku samy znovu připojí |
+| Živá synchronizace | Server posílá změny výstupům a panelu přes WebSocket (`/api/zive`); každý výstup odebírá jen svoje události. Původně SSE, viz otevřený bod 45 | Výstupy se po výpadku samy znovu připojí |
 | Hlídání souborů | Změna souboru z Obsidianu nebo editoru se promítne do panelu i výstupů | Soubor na disku má vždy přednost |
 | OBS WebSocket | Přepínání scén z panelu | Vestavěné v OBS 28+; numpad funguje dál paralelně |
 | Ilustrační dílna | Prompt z entity, import a úprava obrázku do složky entity | Blok 2; zpracování obrázků lokálně |
@@ -526,14 +526,14 @@ Nic z této sekce zatím neplatí. Každý bod se rozhodne nejpozději na začá
 | 9 | ⚠ Pole `stav.md` | `datum` (text, zatím prázdné; DM doplní po zápisu ze sezení 2), `misto` (text), `sezeni` (číslo posledního odehraného sezení, nyní 2), `sezeni_bezi`. Formát data doladí bod 2 | Blok 1a |
 | 13 | ⚠ Hráči v `kampan.yaml` | Pole `hraci` (jméno hráče a postava) pro seznam přítomných při Zahájit sezení: Martin – Tusker, Zaky – Koudur, Adriana – Alba, Anna – Leta | Akceptace Bloku 1a |
 | 14 | ⚠ Soubor sezení | `sezeni/sNN/sNN.md`, hlavička `cislo`, `datum_realne`, `zacatek`, `konec`, `pritomni`, `verejne: false`; poznámky jako odrážky `- 18:05 — text` pod nadpisem Poznámky ze stolu | Akceptace Bloku 1a |
-| 15 | ⚠ Tlačítko Souboj | V horní liště panelu; scéna se vybírá v Nastavení a ukládá do `hub/.env` (`OBS_SCENA_SOUBOJ`), protože jde o nastavení OBS na tomto PC | Akceptace Bloku 1a |
+| 15 | ⚠ Tlačítko Souboj | V horní liště panelu; scéna se vybírá na U stolu v tabulce Role scén (rozhodnutí 44) a ukládá do `hub/.env` (`OBS_SCENA_SOUBOJ`), protože jde o nastavení OBS na tomto PC | Akceptace Bloku 1a |
 | 16 | ⚠ Odpočet | Nastaví se časem začátku hry (HH:MM) nebo počtem minut; Zahájit sezení navrhne nejbližší čtvrthodinu za 10 minut. Stav v `hub/.stav/odpocet.json`, Ukončit sezení odpočet zruší. Vzhled ve výstupu je dočasný (barva kost → jantar → rez), převezme se z `odpocet.html` | Akceptace Bloku 1a |
 | 17 | ⚠ Kontrolní seznam při Ukončit sezení | Poznámky zapsané; datum a místo odpovídají konci sezení; uložit do GitHubu. Seznam je jen připomínka, nic nevynucuje | Akceptace Bloku 1a |
 | 18 | ⚠ Uložit do GitHubu commituje jen `kampan/` | Kód Hubu a jiné soubory tlačítko nikdy necommituje. Bez internetu zůstane commit lokálně a panel to řekne | Akceptace Bloku 1a |
 | 19 | `odpocet.html` nebyl nalezen | V `C:\Users\Matej\Documents\DnD` chybí. Pokud je jinde, přidat ho a převzít barevný přechod; jinak zůstane vzhled výstupu z Bloku 1a | Akceptace Bloku 1a |
-| 21 | ⚠ Po doběhnutí odpočtu přepnout na první scénu sezení | Na obrazovce Odpočet i v Nastavení „Scéna po odpočtu“ (`OBS_SCENA_PO_ODPOCTU` v `hub/.env`). Server po doběhnutí přepne jednou; po restartu Hubu nebo výpadku OBS jen do 10 minut od konce, jinak to jen napíše na obrazovce Odpočet | Akceptace Bloku 1b |
+| 21 | ⚠ Po doběhnutí odpočtu přepnout na první scénu sezení | Role „Po doběhnutí odpočtu“ v tabulce Role scén na U stolu (`OBS_SCENA_PO_ODPOCTU` v `hub/.env`). Server po doběhnutí přepne jednou; po restartu Hubu nebo výpadku OBS jen do 10 minut od konce, jinak to jen napíše pod dlaždicí Start | Akceptace Bloku 1b |
 | 22 | ⚠ Rekapitulace kalendáře během odpočtu | Výstup `vystupy/rekapitulace.html`: orloj jede plynule od začátku kampaně po dnešek (nejvýš posledních 120 dní), zpomalí a zastaví se jen u dne s veřejnou událostí a na dnešku, pak se plynule vrátí na začátek (rychleji, nejvýš 3,5 s) a začne znovu. Tempo je pevné (`?krok` ms na den jízdy, `?udalost`, `?dnes` ms zastávky), ne podle zbývajícího času, aby smyčka běžela i v pauze | Akceptace Bloku 1b |
-| 25 | ⚠ Sortimenty a aktivní obchod | Sortiment v `kampan/obchody/sortimenty/<obchod-mesto>.yaml`, obsah stejný jako `sortiment.json` z generátoru. V OBS je jedna scéna Obchod (rozhodnutí DM): tlačítko Ukázat v OBS na obrazovce Obchody vymění ceník a přepne na scénu obchodu (`OBS_SCENA_OBCHOD`). Co právě visí v OBS, je nastavení tohoto PC (`hub/.stav/obchod.json`, mimo Git). Sloty 1–3 z původního generátoru v Hubu odpadly. Obrázek obchodu do Bloku 2 ručně jako Image source (`reference/obs-sceny.md`) | Akceptace Bloku 1b |
+| 25 | ⚠ Sortimenty a aktivní obchod | Sortiment v `kampan/obchody/sortimenty/<obchod-mesto>.yaml`, obsah stejný jako `sortiment.json` z generátoru. V OBS je jedna scéna Obchod (rozhodnutí DM): tlačítko Ukázat v OBS na U stolu (dlaždice Obchod) vymění ceník a přepne na scénu obchodu (`OBS_SCENA_OBCHOD`). Co právě visí v OBS, je nastavení tohoto PC (`hub/.stav/obchod.json`, mimo Git). Sloty 1–3 z původního generátoru v Hubu odpadly. Obrázek obchodu do Bloku 2 ručně jako Image source (`reference/obs-sceny.md`) | Akceptace Bloku 1b |
 | 26 | ⚠ Další den v panelu | Před otázkou na důkladný odpočinek ukáže, co nový den čeká (události i skryté, svátek, lhůty); datum se posune až po odpovědi. Poznámka „Nový den: 20. Eleint 1491 DR (po důkladném odpočinku)“. Tlačítka ±1 den v Kalendáři posunou datum bez poznámky a připomínek | Akceptace Bloku 1b |
 | 27 | Banner kalendáře | Odloženo na pokyn DM; vrátí se k němu později | Později |
 | 28 | ⚠ Datum ve Stavu kampaně | Datum jde měnit ve Stavu kampaně i v Kalendáři, v obou místech stejným výběrem (den, měsíc nebo svátek, rok), aby šlo uložit jen platné datum Harptosu | Akceptace Bloku 1b |
@@ -553,3 +553,10 @@ Nic z této sekce zatím neplatí. Každý bod se rozhodne nejpozději na začá
 | 42 | ⚠ Tlačítko Sloučit | Když se lokální a GitHubová verze rozejdou, Hub odloží neuložené změny do úschovny Gitu, přiskládá lokální commity za novinky z GitHubu, vrátí změny a odešle. Při konfliktu vrátí vše zpět a napíše, který soubor to je. Co se nepodaří vrátit, zůstane v úschovně (`git stash list`) | Akceptace Bloku 2b |
 | 43 | ⚠ Živý náhled místa | Na U stolu je v panelu Místo zmenšený výstup `misto.html` (iframe), jen dokud je panel vidět. Ukazuje to, co teď vidí OBS | Akceptace Bloku 2b |
 | 44 | ⚠ Odkrývání stop u stolu | Odkrýt a Skrýt jsou i na U stolu u ilustrací místa, které je v OBS. Varianta, stav, zahodit a popis zůstávají jen v Místa – správa | Akceptace Bloku 2b |
+| 45 | ⚠ Živé změny přes WebSocket místo SSE | OBS pouští všechny Browser Sources v jednom prohlížeči, který drží na jeden server nejvýš 6 běžných spojení. Šest trvalých spojení SSE (kolekce DnD 2) nenechalo místo pro obrázky (audit K1). Panel i výstupy teď odebírají změny přes WebSocket `/api/zive`, výstupy jen svoje události. SSE `/api/udalosti` zůstává kvůli zpětné kompatibilitě. Knihovna `ws` je přímá závislost | Zkouška doma s OBS (audit, Ověření doma) |
+| 46 | ⚠ Sloučit při kolizi rozdělané změny | Když rozdělaný (neuložený) soubor zároveň změnil GitHub, platí po sloučení verze z GitHubu a rozdělaná verze zůstane celá v úschovně Gitu; panel soubory jmenuje. Uložit odmítne soubor se značkami konfliktu, hlídá je i hook | Akceptace oprav auditu |
+| 47 | ⚠ Import ze samostatného kalendáře | Box importu se ukazuje jen do prvního importu. Opakovaný import (přepsání) z panelu nejde, protože by smazal události z Hubu i dnešní datum | Akceptace oprav auditu |
+| 48 | ⚠ Restart a knihovny | Tlačítko Restartovat Hub (Nastavení a upozornění po stažení nového kódu). Spouštěč před každým spuštěním serveru ověří knihovny proti `package-lock.json` a případně spustí `npm ci`. Pět pádů po sobě otevře stránku s chybou | Akceptace oprav auditu |
+| 49 | ⚠ Domácí síť | Nový PIN 6–8 číslic (dosavadní kratší dál platí), po 5 chybných pokusech zámek 60 s a déle, přihlášení platí 30 dní a nový PIN ho zruší. Hook nehlídá krátký číselný PIN jako hodnotu (pletl se s letopočty), jen zápis `PIN=…` | Akceptace oprav auditu |
+| 50 | ⚠ Černo v OBS | Dlaždice místa bez odkryté ilustrace pro aktuální denní dobu je na U stolu označená. Před přepnutím na takové místo, denní dobu nebo stav se panel zeptá | Akceptace oprav auditu |
+| 51 | Smazat sortiment na U stolu | Odchylka od rozhodnutí 44 (mazání jen ve správě): obchody zatím obrazovku správy nemají. Rozhodnout, jestli vznikne „Obchody – správa“, nebo mazání zůstane na U stolu | Rozhodnutí DM |

@@ -662,8 +662,12 @@ function otevritUkoncit() {
   $('#ukoncit-vysledek').textContent = '';
   $('#ukoncit-vysledek').className = 'ulozeni';
   for (const i of document.querySelectorAll('#dialog-ukoncit input')) i.checked = false;
+  ukonceneSezeni = null;
   $('#dialog-ukoncit').showModal();
 }
+
+// Sezení ukončené v tomto dialogu: když pak selže uložení do GitHubu, další klik zkusí jen uložení (audit N13).
+let ukonceneSezeni = null;
 
 $('#formular-ukoncit').addEventListener('submit', async (e) => {
   const volba = e.submitter?.value;
@@ -671,7 +675,8 @@ $('#formular-ukoncit').addEventListener('submit', async (e) => {
   e.preventDefault();
   const vysledek = $('#ukoncit-vysledek');
   try {
-    const r = await api('/api/sezeni/ukoncit', { metoda: 'POST', telo: {} });
+    const r = ukonceneSezeni ?? (await api('/api/sezeni/ukoncit', { metoda: 'POST', telo: {} }));
+    ukonceneSezeni = r;
     if (volba === 'jen-ukoncit') {
       $('#dialog-ukoncit').close();
       toast(`Sezení ${r.cislo} ukončeno. Do GitHubu ho ulož ze Stavu kampaně.`);
@@ -683,7 +688,9 @@ $('#formular-ukoncit').addEventListener('submit', async (e) => {
     toast(g.chybaPush ? g.chybaPush : `Sezení ${r.cislo} ukončeno a uloženo do GitHubu.`, { chyba: Boolean(g.chybaPush) });
   } catch (chyba) {
     vysledek.className = 'ulozeni chyba';
-    vysledek.textContent = chyba.message;
+    vysledek.textContent = ukonceneSezeni
+      ? `Sezení ${ukonceneSezeni.cislo} je ukončené, ale uložení do GitHubu se nepodařilo: ${chyba.message} Zkus to znovu stejným tlačítkem.`
+      : chyba.message;
   }
 });
 

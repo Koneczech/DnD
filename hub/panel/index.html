@@ -9,63 +9,79 @@
 </head>
 <body>
   <header class="lista">
-    <div class="kampan" aria-live="polite">
+    <a class="kampan" href="#kalendar" title="Otevřít Kalendář" aria-live="polite">
       <p class="kampan-datum" id="lista-datum">…</p>
       <p class="kampan-detail"><span id="lista-misto"></span><span id="lista-sezeni"></span></p>
-    </div>
+    </a>
 
     <nav class="akce" aria-label="Akce sezení">
       <button type="button" id="tlacitko-sezeni">Zahájit sezení</button>
       <button type="button" id="tlacitko-souboj" title="Přepne OBS na scénu s iniciativou">Souboj</button>
       <button type="button" id="tlacitko-poznamka" title="Klávesa F2">Poznámka <kbd>F2</kbd></button>
       <button type="button" id="tlacitko-dalsi-den" title="Posune kalendář o den a ukáže připomínky">Další den</button>
-      <button type="button" disabled title="Přijde v Bloku 3">Hledat</button>
     </nav>
 
     <ul class="kontrolky" aria-label="Stav systému">
-      <li><span class="svetlo" id="svetlo-server" data-stav="ceka"></span>Server</li>
-      <li><span class="svetlo" id="svetlo-obs" data-stav="ceka"></span>OBS</li>
-      <li><span class="svetlo" id="svetlo-git" data-stav="ceka"></span>Git</li>
+      <li><a href="#nastaveni"><span class="svetlo" id="svetlo-server" data-stav="ceka"></span>Server</a></li>
+      <li><a href="#nastaveni"><span class="svetlo" id="svetlo-obs" data-stav="ceka"></span>OBS</a></li>
+      <li><a href="#prehled-github"><span class="svetlo" id="svetlo-git" data-stav="ceka"></span>Git</a></li>
     </ul>
   </header>
 
   <div class="rozvrzeni">
     <nav class="moduly" aria-label="Moduly">
-      <a href="#prehled" data-obrazovka="prehled">Stav kampaně</a>
-      <a href="#sceny" data-obrazovka="sceny">U stolu <span class="odpocet-mini" id="odpocet-mini" hidden></span></a>
-      <a href="#kalendar" data-obrazovka="kalendar">Kalendář <span class="odpocet-mini" id="kalendar-mini" hidden></span></a>
-      <a href="#mista" data-obrazovka="mista">Místa – správa <span class="odpocet-mini" id="mista-mini" hidden></span></a>
-      <a href="#obchody" data-obrazovka="obchody">Obchody – správa</a>
-      <a href="#dilna" data-obrazovka="dilna">Ilustrační dílna</a>
-      <a href="#kontrola" data-obrazovka="kontrola">Kontrola dat <span class="pocet" id="pocet-problemu" hidden></span></a>
-      <a href="#nastaveni" data-obrazovka="nastaveni">Nastavení</a>
-      <hr>
-      <span class="pripravuje" title="Blok 3">Kánon</span>
+      <p class="skupina">Hra</p>
+      <a href="#prehled" data-obrazovka="prehled"><svg class="ikona" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><circle cx="12" cy="12" r="5"/></svg><span class="nazev">Sezení</span> <span class="odpocet-mini" id="sezeni-mini" hidden></span></a>
+      <a href="#sceny" data-obrazovka="sceny"><svg class="ikona" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1.5"/><path d="M8 21h8M12 17v4"/></svg><span class="nazev">U stolu</span> <span class="odpocet-mini" id="odpocet-mini" hidden></span></a>
+      <p class="skupina">Příprava</p>
+      <a href="#kalendar" data-obrazovka="kalendar"><svg class="ikona" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="1.5"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="nazev">Kalendář</span> <span class="odpocet-mini" id="kalendar-mini" hidden></span></a>
+      <a href="#mista" data-obrazovka="mista"><svg class="ikona" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.5-6-11a6 6 0 0 1 12 0c0 5.5-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg><span class="nazev">Místa</span> <span class="odpocet-mini" id="mista-mini" hidden></span></a>
+      <a href="#obchody" data-obrazovka="obchody"><svg class="ikona" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span class="nazev">Obchody</span></a>
+      <a href="#dilna" data-obrazovka="dilna"><svg class="ikona" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20c3 0 5-2 5-4.5S7 12 5.5 13.5 4 17 4 20z"/><path d="M8.5 13 19 3l2 2-10.5 10.5"/></svg><span class="nazev">Ilustrační dílna</span></a>
+      <p class="skupina">Systém</p>
+      <a href="#kontrola" data-obrazovka="kontrola"><svg class="ikona" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.5 8-8 9-4.5-1-8-4.5-8-9V6l8-3z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg><span class="nazev">Kontrola dat</span> <span class="pocet" id="pocet-problemu" hidden></span></a>
+      <a href="#nastaveni" data-obrazovka="nastaveni"><svg class="ikona" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg><span class="nazev">Nastavení</span></a>
     </nav>
 
     <main>
       <div id="upozorneni" class="upozorneni" aria-live="polite"></div>
 
       <section id="obrazovka-prehled" class="obrazovka">
-        <h1>Stav kampaně</h1>
-        <p class="uvod">Co tady změníš, se samo uloží do <code>kampan/stav.md</code> a hned se ukáže v OBS.</p>
-        <form id="formular-stav" class="formular" autocomplete="off">
-          <div class="pole-datum">
-            <span>Datum v Harptosu</span>
-            <div class="vyber-data" id="vyber-stav"></div>
-            <small>Ukládá se samo. Posun o den a události jsou v <a href="#kalendar">Kalendáři</a>.</small>
+        <h1>Sezení</h1>
+        <div class="sezeni-hlavicka">
+          <div>
+            <p class="sezeni-stav" id="sezeni-stav">…</p>
+            <p class="ulozeni" id="sezeni-detail"></p>
           </div>
+          <button type="button" class="hlavni velke" id="sezeni-akce">Zahájit sezení</button>
+        </div>
+
+        <div id="sezeni-pred">
+          <h2>Před hrou</h2>
+          <ul class="kontrolni-stav" id="sezeni-kontrola"></ul>
+        </div>
+
+        <h2 id="sezeni-poznamky-nadpis">Poznámky ze stolu</h2>
+        <p class="uvod" id="sezeni-poznamky-popis">Zapisuješ je klávesou F2 nebo tlačítkem Poznámka v horní liště, ukládají se s časem do souboru sezení.</p>
+        <ol class="poznamky" id="sezeni-poznamky"></ol>
+
+        <h2>Družina</h2>
+        <form id="formular-stav" class="formular" autocomplete="off">
           <label>Kde je družina
             <input name="misto" id="pole-misto" placeholder="např. Longsaddle">
+            <small>Ukazuje se v horní liště a ukládá se samo. Datum měníš v <a href="#kalendar">Kalendáři</a>.</small>
           </label>
-          <label>Poslední odehrané sezení
-            <input name="sezeni" id="pole-sezeni" class="cislo" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
-            <small>Zahájit sezení samo přičte 1. Ruční změna jen při opravě.</small>
-          </label>
+          <details class="oprava">
+            <summary>Opravit číslo posledního sezení</summary>
+            <label>Poslední odehrané sezení
+              <input name="sezeni" id="pole-sezeni" class="cislo" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+              <small>Zahájit sezení samo přičte 1. Měň jen při opravě.</small>
+            </label>
+          </details>
         </form>
         <p class="ulozeni" id="stav-ulozeni" aria-live="polite"></p>
 
-        <h2>Uložení do GitHubu</h2>
+        <h2 id="prehled-github">GitHub</h2>
         <p id="git-popis" class="uvod"></p>
         <div class="tlacitka">
           <button type="button" id="git-ulozit">Uložit do GitHubu</button>
@@ -73,11 +89,6 @@
           <button type="button" id="git-stahnout" hidden>Stáhnout změny</button>
         </div>
         <p class="ulozeni" id="git-vysledek" aria-live="polite"></p>
-
-        <h2>Testovací výstup pro OBS</h2>
-        <p>Přidej v OBS zdroj <em>Browser</em> s touto adresou. Ukazuje stav kampaně a ověří, že živé změny dorazí do OBS.</p>
-        <p class="adresa"><code id="adresa-vystupu"></code> <button type="button" id="kopirovat-adresu">Kopírovat adresu</button></p>
-        <p class="poznamka">Ve vlastnostech zdroje nech vypnuté <em>Shutdown source when not visible</em> i <em>Refresh browser when scene becomes active</em>. Jen tak výstup přežije výpadek Hubu.</p>
       </section>
 
       <section id="obrazovka-sceny" class="obrazovka" hidden>
@@ -110,10 +121,6 @@
             <button type="button" id="odpocet-zrusit">Zrušit</button>
           </div>
           <p class="ulozeni" id="odpocet-prepnuti" aria-live="polite"></p>
-          <details class="adresy">
-            <summary>Adresa výstupu pro OBS</summary>
-            <p class="adresa"><code id="adresa-odpoctu"></code> <button type="button" data-kopirovat="adresa-odpoctu">Kopírovat adresu</button></p>
-          </details>
         </div>
 
         <div class="stul-panel" id="stul-misto" role="tabpanel" aria-labelledby="zalozka-misto" hidden>
@@ -157,23 +164,18 @@
               </div>
             </div>
           </div>
-          <details class="adresy">
-            <summary>Adresa výstupu pro OBS</summary>
-            <p class="adresa"><code id="adresa-misto">…</code> <button type="button" data-kopirovat="adresa-misto">Kopírovat adresu</button></p>
-            <p class="poznamka">Browser Source 1920 × 1080 přes celé plátno, medailon kalendáře nad ním.</p>
-          </details>
         </div>
 
         <div class="stul-panel" id="stul-obchod" role="tabpanel" aria-labelledby="zalozka-obchod" hidden>
           <h2>Obchod</h2>
-          <p class="uvod"><em>Ukázat v OBS</em> vymění ceník i obrázek obchodu a přepne OBS na scénu obchodu. Nové sortimenty, obrázky a mazání jsou v <a href="#obchody">Obchody – správa</a>.</p>
+          <p class="uvod"><em>Ukázat v OBS</em> vymění ceník i obrázek obchodu a přepne OBS na scénu obchodu. Nové sortimenty, obrázky a mazání jsou v <a href="#obchody">Obchody</a> (Příprava).</p>
           <h3>V OBS teď</h3>
           <div class="aktivni-obchod">
             <p id="obchod-aktivni">Ceník je skrytý.</p>
             <button type="button" id="obchod-skryt" hidden>Skrýt ceník</button>
           </div>
           <h3>Sortimenty</h3>
-          <p class="uvod" id="sortimenty-prazdno">Zatím žádné. Připrav je v <a href="#obchody">Obchody – správa</a>.</p>
+          <p class="uvod" id="sortimenty-prazdno">Zatím žádné. Připrav je v <a href="#obchody">Obchody</a> (Příprava).</p>
           <table class="udalosti" id="tabulka-sortimentu" hidden>
             <thead><tr><th scope="col">Obchod</th><th scope="col">Typ</th><th scope="col">Položek</th><th scope="col"><span class="vizualne-skryte">Akce</span></th></tr></thead>
             <tbody></tbody>
@@ -250,24 +252,10 @@
           </table>
         </details>
 
-        <h2>Výstupy pro OBS</h2>
-        <dl class="vystupy">
-          <dt>Velký orloj</dt>
-          <dd><p class="adresa"><code id="adresa-orloj-velky"></code> <button type="button" data-kopirovat="adresa-orloj-velky">Kopírovat adresu</button></p>
-            <small>Celý rok s cestou družiny a dnešními událostmi. <code>?pozadi=1</code> přidá tmavé pozadí.</small></dd>
-          <dt>Malý medailon</dt>
-          <dd><p class="adresa"><code id="adresa-orloj-maly"></code> <button type="button" data-kopirovat="adresa-orloj-maly">Kopírovat adresu</button></p>
-            <small>Do rohu obrazu; lhůty se ukazují vlevo od orloje. <code>?zrcadlo=1</code> je dá doprava.</small></dd>
-          <dt>Rekapitulace (během odpočtu)</dt>
-          <dd><p class="adresa"><code id="adresa-rekapitulace"></code> <button type="button" data-kopirovat="adresa-rekapitulace">Kopírovat adresu</button></p>
-            <small>Protočí dny od začátku kampaně po dnešek a ukáže veřejné události. Dej ji do scény s odpočtem.</small></dd>
-          <dt>Banner</dt>
-          <dd><small>Zatím nenavržený. Napiš, jak má vypadat a kde bude v obraze.</small></dd>
-        </dl>
       </section>
 
       <section id="obrazovka-mista" class="obrazovka" hidden>
-        <h1>Místa – správa</h1>
+        <h1>Místa</h1>
         <p class="uvod">Příprava míst: ilustrace, odkrytí a skrytí, popis vzhledu pro prompty, nová ilustrace z dílny. Živé ovládání (místo, počasí, intenzita) je na obrazovce <a href="#sceny">U stolu</a>.</p>
 
         <h2>Místa</h2>
@@ -289,7 +277,7 @@
       </section>
 
       <section id="obrazovka-obchody" class="obrazovka" hidden>
-        <h1>Obchody – správa</h1>
+        <h1>Obchody</h1>
         <p class="uvod">Příprava obchodů: sortiment vylosuj v generátoru a ulož do Hubu, obrázek interiéru vytvoř v Ilustrační dílně. U stolu pak sortiment jen ukazuješ v OBS (U stolu → Obchod).</p>
         <div class="tlacitka"><a class="tlacitko hlavni" href="/nastroje/generator.html" target="_blank" rel="noopener">Otevřít generátor obchodů</a></div>
         <h2>Uložené sortimenty</h2>
@@ -299,16 +287,11 @@
           <thead><tr><th scope="col">Obchod</th><th scope="col">Typ</th><th scope="col">Položek</th><th scope="col">Uloženo</th><th scope="col">Obrázek</th><th scope="col"><span class="vizualne-skryte">Akce</span></th></tr></thead>
           <tbody></tbody>
         </table>
-        <details class="adresy">
-          <summary>Adresa výstupu pro OBS</summary>
-          <p class="adresa"><code id="adresa-cenik">…</code> <button type="button" data-kopirovat="adresa-cenik">Kopírovat adresu</button></p>
-          <p class="poznamka">Scéna Obchod ukazuje obrázek interiéru a ceník v pravé třetině obrazu. Velikost a umístění panelu nastav v OBS, písmo se přizpůsobí výšce zdroje.</p>
-        </details>
       </section>
 
       <section id="obrazovka-dilna" class="obrazovka" hidden>
         <h1>Ilustrační dílna</h1>
-        <p class="uvod">Tři kroky od nápadu k obrázku v OBS: prompt pro ChatGPT, import s ořezem na 16:9 a zvětšením na 1920 × 1080, pak odkrytí na obrazovce Místa – správa. Bez Affinity a bez práce v OBS.</p>
+        <p class="uvod">Tři kroky od nápadu k obrázku v OBS: prompt pro ChatGPT, import s ořezem na 16:9 a zvětšením na 1920 × 1080, pak odkrytí na obrazovce Místa. Bez Affinity a bez práce v OBS.</p>
 
         <h2>1. Prompt</h2>
         <form id="dilna-formular" class="formular radek" autocomplete="off">
@@ -402,6 +385,33 @@
           <button type="submit" class="hlavni">Uložit nastavení</button>
           <p class="ulozeni" id="nastaveni-vysledek" aria-live="polite"></p>
         </form>
+        <h2>Výstupy pro OBS</h2>
+        <p class="uvod">Adresy pro zdroje <em>Browser</em> v OBS. U každého zdroje nech vypnuté <em>Shutdown source when not visible</em> i <em>Refresh browser when scene becomes active</em>, jinak výstup nepřežije výpadek Hubu.</p>
+        <dl class="vystupy">
+          <dt>Místo</dt>
+          <dd><p class="adresa"><code id="adresa-misto">…</code> <button type="button" data-kopirovat="adresa-misto">Kopírovat adresu</button></p>
+            <small>Scéna Místo: 1920 × 1080 přes celé plátno, medailon kalendáře nad ním.</small></dd>
+          <dt>Obchod</dt>
+          <dd><p class="adresa"><code id="adresa-cenik">…</code> <button type="button" data-kopirovat="adresa-cenik">Kopírovat adresu</button></p>
+            <small>Scéna Obchod: obrázek interiéru a ceník v pravé třetině, 1920 × 1080.</small></dd>
+          <dt>Odpočet</dt>
+          <dd><p class="adresa"><code id="adresa-odpoctu">…</code> <button type="button" data-kopirovat="adresa-odpoctu">Kopírovat adresu</button></p>
+            <small>Scéna Start: odpočet do začátku hry.</small></dd>
+          <dt>Rekapitulace</dt>
+          <dd><p class="adresa"><code id="adresa-rekapitulace">…</code> <button type="button" data-kopirovat="adresa-rekapitulace">Kopírovat adresu</button></p>
+            <small>Scéna Start pod odpočtem: protočí dny od začátku kampaně po dnešek a ukáže veřejné události.</small></dd>
+          <dt>Malý medailon</dt>
+          <dd><p class="adresa"><code id="adresa-orloj-maly">…</code> <button type="button" data-kopirovat="adresa-orloj-maly">Kopírovat adresu</button></p>
+            <small>Do rohu obrazu, 1000 × 270; lhůty se ukazují vlevo. <code>?zrcadlo=1</code> je dá doprava.</small></dd>
+          <dt>Velký orloj</dt>
+          <dd><p class="adresa"><code id="adresa-orloj-velky">…</code> <button type="button" data-kopirovat="adresa-orloj-velky">Kopírovat adresu</button></p>
+            <small>Celý rok s cestou družiny, 1080 × 1080. <code>?pozadi=1</code> přidá tmavé pozadí.</small></dd>
+          <dt>Testovací výstup</dt>
+          <dd><p class="adresa"><code id="adresa-vystupu">…</code> <button type="button" data-kopirovat="adresa-vystupu">Kopírovat adresu</button></p>
+            <small>Jen pro zkoušku: ukáže datum, místo a sezení a ověří, že živé změny dorazí do OBS.</small></dd>
+        </dl>
+
+        <h2>Hub</h2>
         <div class="server-blok">
           <p class="poznamka" id="server-info"></p>
           <button type="button" id="tlacitko-restart">Restartovat Hub</button>

@@ -69,11 +69,12 @@ function cas() {
 
 /* ---------- Navigace ---------- */
 
-// Staré adresy: Odpočet a Obchody jsou od Bloku 2b součástí obrazovky U stolu.
-const PRESMEROVANI = { odpocet: ['sceny', 'start'], obchody: ['sceny', 'obchod'] };
+// Stará adresa: Odpočet je od Bloku 2b součástí obrazovky U stolu (dlaždice Start).
+// #obchody je od rozhodnutí 51 zase samostatná obrazovka: Obchody – správa.
+const PRESMEROVANI = { odpocet: ['sceny', 'start'] };
 
 function ukazObrazovku(jmeno) {
-  const platne = ['prehled', 'sceny', 'kalendar', 'mista', 'dilna', 'kontrola', 'nastaveni'];
+  const platne = ['prehled', 'sceny', 'kalendar', 'mista', 'obchody', 'dilna', 'kontrola', 'nastaveni'];
   if (PRESMEROVANI[jmeno]) {
     stav.stulVyber = PRESMEROVANI[jmeno][1];
     jmeno = PRESMEROVANI[jmeno][0];
@@ -1269,36 +1270,63 @@ async function ukazatObchod(id, nazev) {
 }
 $('#obchod-skryt').addEventListener('click', () => ukazatObchod(null));
 
+function nazevObchodu(s) {
+  return `${s.nazev}${s.mesto ? `, ${s.mesto}` : ''}`;
+}
+
+/** Obchody: U stolu jen ukázat v OBS, správa (příprava, obrázek, mazání) na vlastní obrazovce (rozhodnutí 51). */
 function vykresliObchody() {
   const o = stav.prehled?.obchody;
   if (!o) return;
   const aktivni = o.sortimenty.find((s) => s.id === o.aktivni);
-  $('#obchod-aktivni').textContent = aktivni ? `Ceník ukazuje: ${aktivni.nazev}${aktivni.mesto ? `, ${aktivni.mesto}` : ''}` : 'Ceník je skrytý.';
+  $('#obchod-aktivni').textContent = aktivni ? `Ceník ukazuje: ${nazevObchodu(aktivni)}` : 'Ceník je skrytý.';
   $('#obchod-skryt').hidden = !aktivni;
+  const td = (text) => Object.assign(document.createElement('td'), { textContent: text });
+  const typ = (s) => `${TYPY_OBCHODU[s.typ] ?? s.typ} (${LOKALITY[s.lokalita] ?? s.lokalita})`;
+
+  // U stolu
   $('#sortimenty-prazdno').hidden = o.sortimenty.length > 0;
   $('#tabulka-sortimentu').hidden = o.sortimenty.length === 0;
-  const vadne = $('#sortimenty-vadne');
-  vadne.hidden = !o.vadne.length;
-  vadne.textContent = o.vadne.map((v) => `${v.soubor}: ${v.chyba}`).join(' · ');
   $('#tabulka-sortimentu tbody').replaceChildren(
     ...o.sortimenty.map((s) => {
       const tr = document.createElement('tr');
-      const td = (text) => Object.assign(document.createElement('td'), { textContent: text });
       const jeAktivni = s.id === o.aktivni;
       if (jeAktivni) tr.dataset.dnes = 'true';
-      const nazev = td(`${s.nazev}${s.mesto ? `, ${s.mesto}` : ''}`);
+      const nazev = td(nazevObchodu(s));
       if (jeAktivni) nazev.append(Object.assign(document.createElement('small'), { textContent: ' · v OBS' }));
-      if (s.obrazek) nazev.append(Object.assign(document.createElement('small'), { textContent: ' · má obrázek' }));
       const akce = document.createElement('td');
       akce.className = 'akce-radku';
       const ukazat = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Ukázat v OBS', className: 'hlavni' });
       ukazat.addEventListener('click', () => ukazatObchod(s.id, s.nazev));
       akce.append(ukazat);
+      tr.append(nazev, td(typ(s)), td(String(s.pocet)), akce);
+      return tr;
+    }),
+  );
+
+  // Obchody – správa
+  $('#sprava-sortimenty-prazdno').hidden = o.sortimenty.length > 0;
+  $('#tabulka-sprava-sortimentu').hidden = o.sortimenty.length === 0;
+  const vadne = $('#sortimenty-vadne');
+  vadne.hidden = !o.vadne.length;
+  vadne.textContent = o.vadne.map((v) => `${v.soubor}: ${v.chyba}`).join(' · ');
+  $('#tabulka-sprava-sortimentu tbody').replaceChildren(
+    ...o.sortimenty.map((s) => {
+      const tr = document.createElement('tr');
+      const jeAktivni = s.id === o.aktivni;
+      const nazev = td(nazevObchodu(s));
+      if (jeAktivni) nazev.append(Object.assign(document.createElement('small'), { textContent: ' · v OBS' }));
+      const obrazek = td(s.obrazek ? 'vlastní' : 'výchozí');
+      const doDilny = Object.assign(document.createElement('a'), { href: '#dilna', textContent: s.obrazek ? 'Vyměnit v dílně' : 'Vytvořit v dílně' });
+      doDilny.addEventListener('click', () => (dilna.cil = `obchod:${s.id}`));
+      obrazek.append(document.createElement('br'), doDilny);
+      const akce = document.createElement('td');
+      akce.className = 'akce-radku';
       const smazat = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Smazat' });
       smazat.addEventListener('click', async () => {
         if (smazat.dataset.potvrd !== 'true') {
           smazat.dataset.potvrd = 'true';
-          smazat.textContent = 'Opravdu smazat?';
+          smazat.textContent = jeAktivni ? 'Je v OBS. Opravdu smazat?' : 'Opravdu smazat?';
           setTimeout(() => {
             smazat.dataset.potvrd = '';
             smazat.textContent = 'Smazat';
@@ -1314,7 +1342,7 @@ function vykresliObchody() {
       });
       akce.append(smazat);
       const kdy = s.vygenerovano ? new Date(s.vygenerovano).toLocaleDateString('cs-CZ') : '';
-      tr.append(nazev, td(`${TYPY_OBCHODU[s.typ] ?? s.typ} (${LOKALITY[s.lokalita] ?? s.lokalita})`), td(String(s.pocet)), td(kdy), akce);
+      tr.append(nazev, td(typ(s)), td(String(s.pocet)), td(kdy), obrazek, akce);
       return tr;
     }),
   );

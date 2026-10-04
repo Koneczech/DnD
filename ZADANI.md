@@ -77,6 +77,13 @@ Rozhodnutí 1–12 potvrdil DM 2. 10. 2026. Rozhodnutí 13–24 vzešla z první
 | 42 | Ilustrace zatím vznikají ručně přes ChatGPT | Dílna připraví prompt a zpracuje obrázek; přímé generování přes API je cíl do budoucna (otevřený bod 1) |
 | 43 | Obrazovka **U stolu** nahrazuje Scény OBS, Odpočet a Obchody | Dlaždice scén s ovládáním podle role scény: Start (odpočet), Místo, Obchod, Souboj. Místa zůstávají jako **Místa – správa** (příprava, ne živé ovládání) |
 | 44 | Role scén v OBS jsou na jednom místě | Tabulka Role scén dole na U stolu: Start, Místo, Obchod, Souboj a „po doběhnutí odpočtu“. Zmizela tři roztroušená nastavení (Odpočet, Obchody, Místa) i dvě v Nastavení |
+| 45 | Živé změny přes WebSocket | Panel i výstupy odebírají změny přes `/api/zive` (knihovna `ws`), výstupy jen svoje události. Důvod: OBS drží na jeden server nejvýš 6 běžných spojení a trvalá SSE je vyčerpala (audit K1). SSE `/api/udalosti` zůstává kvůli zpětné kompatibilitě |
+| 46 | Sloučit při kolizi rozdělané změny | Platí verze z GitHubu, rozdělaná verze zůstane celá v úschovně Gitu a panel soubory jmenuje. Uložit i hook odmítnou značky konfliktu |
+| 47 | Import ze samostatného kalendáře jen jednou | Box importu se ukazuje jen do prvního importu; přepsání z panelu nejde |
+| 48 | Restart a knihovny | Restartovat Hub z panelu; spouštěč před startem ověří knihovny proti `package-lock.json` a spustí `npm ci`; po pěti pádech otevře stránku s chybou |
+| 49 | Domácí síť | Nový PIN 6–8 číslic, po 5 chybných pokusech zámek 60 s a déle, přihlášení 30 dní, nový PIN ho zruší. Hook hlídá PIN jen jako zápis `PIN=…` |
+| 50 | Dotaz před černem v OBS | Místo bez odkryté ilustrace pro aktuální denní dobu je na U stolu označené; před přepnutím na něj (i Den/Noc a stav) se panel zeptá |
+| 51 | Obchody mají přípravu a hru odděleně | **Obchody – správa**: generátor, uložené sortimenty, obrázek přes dílnu, mazání. **U stolu → Obchod**: jen Ukázat v OBS a Skrýt ceník (jako Místa, rozhodnutí 43 a 44) |
 
 ## Architektura
 
@@ -114,7 +121,7 @@ Improved Initiative do schématu nevstupuje: jeho carousel je v OBS samostatná 
 | Lokální server | Datová vrstva, logika modulů, živé posílání změn | Node.js, jeden proces, pevný port v `hub/.env` |
 | Ovládací panel | Jediné rozhraní DM, běží v prohlížeči na localhost | Globální lišta: stav kampaně, Zahájit/Ukončit sezení, Další den, Poznámka (F2), Hledat |
 | Výstupy pro OBS | Jedna stránka na modul (kalendář, ceník, odpočet, scéna), v OBS jako Browser Source | Umístění a velikost řeší OBS, ne HTML; při výpadku serveru drží poslední stav |
-| Živá synchronizace | Server posílá změny výstupům a panelu přes WebSocket (`/api/zive`); každý výstup odebírá jen svoje události. Původně SSE, viz otevřený bod 45 | Výstupy se po výpadku samy znovu připojí |
+| Živá synchronizace | Server posílá změny výstupům a panelu přes WebSocket (`/api/zive`); každý výstup odebírá jen svoje události. Původně SSE, viz rozhodnutí 45 | Výstupy se po výpadku samy znovu připojí |
 | Hlídání souborů | Změna souboru z Obsidianu nebo editoru se promítne do panelu i výstupů | Soubor na disku má vždy přednost |
 | OBS WebSocket | Přepínání scén z panelu | Vestavěné v OBS 28+; numpad funguje dál paralelně |
 | Ilustrační dílna | Prompt z entity, import a úprava obrázku do složky entity | Blok 2; zpracování obrázků lokálně |
@@ -553,10 +560,3 @@ Nic z této sekce zatím neplatí. Každý bod se rozhodne nejpozději na začá
 | 42 | ⚠ Tlačítko Sloučit | Když se lokální a GitHubová verze rozejdou, Hub odloží neuložené změny do úschovny Gitu, přiskládá lokální commity za novinky z GitHubu, vrátí změny a odešle. Při konfliktu vrátí vše zpět a napíše, který soubor to je. Co se nepodaří vrátit, zůstane v úschovně (`git stash list`) | Akceptace Bloku 2b |
 | 43 | ⚠ Živý náhled místa | Na U stolu je v panelu Místo zmenšený výstup `misto.html` (iframe), jen dokud je panel vidět. Ukazuje to, co teď vidí OBS | Akceptace Bloku 2b |
 | 44 | ⚠ Odkrývání stop u stolu | Odkrýt a Skrýt jsou i na U stolu u ilustrací místa, které je v OBS. Varianta, stav, zahodit a popis zůstávají jen v Místa – správa | Akceptace Bloku 2b |
-| 45 | ⚠ Živé změny přes WebSocket místo SSE | OBS pouští všechny Browser Sources v jednom prohlížeči, který drží na jeden server nejvýš 6 běžných spojení. Šest trvalých spojení SSE (kolekce DnD 2) nenechalo místo pro obrázky (audit K1). Panel i výstupy teď odebírají změny přes WebSocket `/api/zive`, výstupy jen svoje události. SSE `/api/udalosti` zůstává kvůli zpětné kompatibilitě. Knihovna `ws` je přímá závislost | Zkouška doma s OBS (audit, Ověření doma) |
-| 46 | ⚠ Sloučit při kolizi rozdělané změny | Když rozdělaný (neuložený) soubor zároveň změnil GitHub, platí po sloučení verze z GitHubu a rozdělaná verze zůstane celá v úschovně Gitu; panel soubory jmenuje. Uložit odmítne soubor se značkami konfliktu, hlídá je i hook | Akceptace oprav auditu |
-| 47 | ⚠ Import ze samostatného kalendáře | Box importu se ukazuje jen do prvního importu. Opakovaný import (přepsání) z panelu nejde, protože by smazal události z Hubu i dnešní datum | Akceptace oprav auditu |
-| 48 | ⚠ Restart a knihovny | Tlačítko Restartovat Hub (Nastavení a upozornění po stažení nového kódu). Spouštěč před každým spuštěním serveru ověří knihovny proti `package-lock.json` a případně spustí `npm ci`. Pět pádů po sobě otevře stránku s chybou | Akceptace oprav auditu |
-| 49 | ⚠ Domácí síť | Nový PIN 6–8 číslic (dosavadní kratší dál platí), po 5 chybných pokusech zámek 60 s a déle, přihlášení platí 30 dní a nový PIN ho zruší. Hook nehlídá krátký číselný PIN jako hodnotu (pletl se s letopočty), jen zápis `PIN=…` | Akceptace oprav auditu |
-| 50 | ⚠ Černo v OBS | Dlaždice místa bez odkryté ilustrace pro aktuální denní dobu je na U stolu označená. Před přepnutím na takové místo, denní dobu nebo stav se panel zeptá | Akceptace oprav auditu |
-| 51 | Smazat sortiment na U stolu | Odchylka od rozhodnutí 44 (mazání jen ve správě): obchody zatím obrazovku správy nemají. Rozhodnout, jestli vznikne „Obchody – správa“, nebo mazání zůstane na U stolu | Rozhodnutí DM |

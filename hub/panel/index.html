@@ -35,6 +35,7 @@
       <a href="#sceny" data-obrazovka="sceny">U stolu <span class="odpocet-mini" id="odpocet-mini" hidden></span></a>
       <a href="#kalendar" data-obrazovka="kalendar">Kalendář <span class="odpocet-mini" id="kalendar-mini" hidden></span></a>
       <a href="#mista" data-obrazovka="mista">Místa – správa <span class="odpocet-mini" id="mista-mini" hidden></span></a>
+      <a href="#obchody" data-obrazovka="obchody">Obchody – správa</a>
       <a href="#dilna" data-obrazovka="dilna">Ilustrační dílna</a>
       <a href="#kontrola" data-obrazovka="kontrola">Kontrola dat <span class="pocet" id="pocet-problemu" hidden></span></a>
       <a href="#nastaveni" data-obrazovka="nastaveni">Nastavení</a>
@@ -158,25 +159,18 @@
 
         <div class="stul-panel" id="stul-obchod" hidden>
           <h2>Obchod</h2>
-          <p class="uvod">Sortiment vylosuj v generátoru a ulož do Hubu. U stolu klikni na <em>Ukázat v OBS</em>: ceník převezme obchod a OBS přepne na scénu obchodu.</p>
-          <div class="tlacitka"><a class="tlacitko" href="/nastroje/generator.html" target="_blank" rel="noopener">Otevřít generátor obchodů</a></div>
+          <p class="uvod"><em>Ukázat v OBS</em> vymění ceník i obrázek obchodu a přepne OBS na scénu obchodu. Nové sortimenty, obrázky a mazání jsou v <a href="#obchody">Obchody – správa</a>.</p>
           <h3>V OBS teď</h3>
           <div class="aktivni-obchod">
             <p id="obchod-aktivni">Ceník je skrytý.</p>
             <button type="button" id="obchod-skryt" hidden>Skrýt ceník</button>
           </div>
-          <h3>Uložené sortimenty</h3>
-          <p class="uvod" id="sortimenty-prazdno">Zatím žádné. Ulož první z generátoru.</p>
-          <p class="ulozeni chyba" id="sortimenty-vadne" hidden></p>
+          <h3>Sortimenty</h3>
+          <p class="uvod" id="sortimenty-prazdno">Zatím žádné. Připrav je v <a href="#obchody">Obchody – správa</a>.</p>
           <table class="udalosti" id="tabulka-sortimentu" hidden>
-            <thead><tr><th scope="col">Obchod</th><th scope="col">Typ</th><th scope="col">Položek</th><th scope="col">Uloženo</th><th scope="col"><span class="vizualne-skryte">Akce</span></th></tr></thead>
+            <thead><tr><th scope="col">Obchod</th><th scope="col">Typ</th><th scope="col">Položek</th><th scope="col"><span class="vizualne-skryte">Akce</span></th></tr></thead>
             <tbody></tbody>
           </table>
-          <details class="adresy">
-            <summary>Adresa výstupu pro OBS</summary>
-            <p class="adresa"><code id="adresa-cenik">…</code> <button type="button" data-kopirovat="adresa-cenik">Kopírovat adresu</button></p>
-            <p class="poznamka">Scéna Obchod ukazuje obrázek interiéru a ceník v pravé třetině obrazu. Velikost a umístění panelu nastav v OBS, písmo se přizpůsobí výšce zdroje.</p>
-          </details>
         </div>
 
         <div class="stul-panel" id="stul-souboj" hidden>
@@ -288,6 +282,24 @@
             <div class="tlacitka"><button type="button" id="misto-popis-ulozit">Uložit popis</button> <a href="#dilna" id="misto-do-dilny">Nová ilustrace v dílně →</a></div>
           </details>
         </div>
+      </section>
+
+      <section id="obrazovka-obchody" class="obrazovka" hidden>
+        <h1>Obchody – správa</h1>
+        <p class="uvod">Příprava obchodů: sortiment vylosuj v generátoru a ulož do Hubu, obrázek interiéru vytvoř v Ilustrační dílně. U stolu pak sortiment jen ukazuješ v OBS (U stolu → Obchod).</p>
+        <div class="tlacitka"><a class="tlacitko hlavni" href="/nastroje/generator.html" target="_blank" rel="noopener">Otevřít generátor obchodů</a></div>
+        <h2>Uložené sortimenty</h2>
+        <p class="uvod" id="sprava-sortimenty-prazdno">Zatím žádné. Ulož první z generátoru.</p>
+        <p class="ulozeni chyba" id="sortimenty-vadne" hidden></p>
+        <table class="udalosti" id="tabulka-sprava-sortimentu" hidden>
+          <thead><tr><th scope="col">Obchod</th><th scope="col">Typ</th><th scope="col">Položek</th><th scope="col">Uloženo</th><th scope="col">Obrázek</th><th scope="col"><span class="vizualne-skryte">Akce</span></th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <details class="adresy">
+          <summary>Adresa výstupu pro OBS</summary>
+          <p class="adresa"><code id="adresa-cenik">…</code> <button type="button" data-kopirovat="adresa-cenik">Kopírovat adresu</button></p>
+          <p class="poznamka">Scéna Obchod ukazuje obrázek interiéru a ceník v pravé třetině obrazu. Velikost a umístění panelu nastav v OBS, písmo se přizpůsobí výšce zdroje.</p>
+        </details>
       </section>
 
       <section id="obrazovka-dilna" class="obrazovka" hidden>

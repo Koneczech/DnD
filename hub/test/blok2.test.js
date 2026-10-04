@@ -234,3 +234,10 @@ test('výstup místa: obraz má vlastní kontext skládání a tónování nepou
   assert.match(html, /#obraz\s*\{[^}]*isolation:\s*isolate/);
   assert.doesNotMatch(html, /style\.filter|filtr:/);
 });
+
+test('výstup obchodu: ceník leží nad obrázkem (obraz má vlastní kontext skládání)', async () => {
+  const html = await fs.readFile(new URL('../vystupy/obchod.html', import.meta.url), 'utf8');
+  // Prolínač dává vrstvám z-index 1 a 2; bez izolace obrazu by ceník zůstal pod obrázkem.
+  assert.match(html, /#obraz\s*\{[^}]*isolation:\s*isolate/);
+  assert.match(html, /iframe\s*\{[^}]*z-index:\s*1/);
+});

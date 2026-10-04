@@ -9,9 +9,12 @@
        obchod bez vlastního obrázku má výchozí pozadí kampan/obs/obchod.png. */
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
     #obraz, .vrstva { position: absolute; inset: 0; }
+    /* Obraz má vlastní kontext skládání: z-index jeho dvou prolínaných vrstev by jinak
+       přebil ceník a ten by zůstal schovaný pod obrázkem (stejná chyba jako u místa v PR #8). */
+    #obraz { z-index: 0; isolation: isolate; }
     .vrstva { background-size: cover; background-position: center; opacity: 0; }
     iframe {
-      position: absolute; top: 0; right: 0;
+      position: absolute; top: 0; right: 0; z-index: 1;
       width: 33.334vw; height: 100vh; border: 0; background: transparent;
     }
   </style>

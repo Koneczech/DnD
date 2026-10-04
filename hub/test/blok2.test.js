@@ -164,7 +164,8 @@ test('API: scéna místa, skryté ilustrace se do OBS nedostanou, odkrytí se ul
     await fs.writeFile(path.join(h.slozka, 'testov.md'), text.replace('nazev: Testov', 'nazev: Testov upravený'));
     await dokud(async () => (await pozadavek(hub, '/api/mista')).data.mista[0].nazev === 'Testov upravený', 1500);
 
-    // Stav scény přežije restart (hub/.stav/scena.json).
+    // Stav scény přežije restart (hub/.stav/scena.json). Ukládá se na pozadí, proto počkat na zápis.
+    await h.hub.scena.ukladani;
     const ulozeny = JSON.parse(await fs.readFile(path.join(h.repo.c.lokalniStav, 'scena.json'), 'utf8'));
     assert.equal(ulozeny.misto, 'testov');
     assert.equal(ulozeny.intenzita, 3);

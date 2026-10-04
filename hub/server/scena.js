@@ -63,9 +63,19 @@ export class Scena extends EventEmitter {
     this.oznam(false);
   }
 
-  async ulozit() {
-    await fs.mkdir(path.dirname(this.soubor), { recursive: true });
-    await zapsatAtomicky(this.soubor, JSON.stringify(this.stav, null, 2));
+  /**
+   * Uložení stavu scény. Zápisy jdou za sebou a každý bere stav až v okamžiku zápisu: rychlé
+   * změny (intenzita, počasí) se tak nemůžou zapsat v opačném pořadí a po restartu by se
+   * nevrátil starší stav.
+   */
+  ulozit() {
+    this.ukladani = (this.ukladani ?? Promise.resolve())
+      .catch(() => {})
+      .then(async () => {
+        await fs.mkdir(path.dirname(this.soubor), { recursive: true });
+        await zapsatAtomicky(this.soubor, JSON.stringify(this.stav, null, 2));
+      });
+    return this.ukladani;
   }
 
   aktualniMisto() {

@@ -56,8 +56,14 @@ export class Odpocet extends EventEmitter {
 
   async ulozit(novy) {
     this.stav = { ...Odpocet.prazdny(), ...novy };
-    await fs.mkdir(path.dirname(this.soubor), { recursive: true });
-    await zapsatAtomicky(this.soubor, JSON.stringify(this.stav, null, 2));
+    // Zápisy za sebou a vždy s aktuálním stavem: dvě rychlé akce se nezapíšou v opačném pořadí.
+    this.ukladani = (this.ukladani ?? Promise.resolve())
+      .catch(() => {})
+      .then(async () => {
+        await fs.mkdir(path.dirname(this.soubor), { recursive: true });
+        await zapsatAtomicky(this.soubor, JSON.stringify(this.stav, null, 2));
+      });
+    await this.ukladani;
     const v = this.verejny();
     this.emit('stav', v);
     return v;

@@ -45,4 +45,14 @@ jobs:
         run: npm ci
 
       - name: Testy
-        run: npm test
+        shell: bash
+        run: npm test 2>&1 | tee vystup-testu.txt; exit ${PIPESTATUS[0]}
+
+      # Selhané testy jako anotace: jsou vidět přímo v PR i přes API, bez stahování logu.
+      - name: Selhané testy jako anotace
+        if: failure()
+        shell: bash
+        run: |
+          grep -n -A 30 '^not ok' vystup-testu.txt | grep -E 'not ok|error:|message|expected|actual|Error|at .*test\.js' | head -60 | while IFS= read -r radek; do
+            echo "::error title=Test (${{ runner.os }})::${radek//%/%25}"
+          done

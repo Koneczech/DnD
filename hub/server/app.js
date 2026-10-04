@@ -22,6 +22,30 @@ import { Mista } from './mista.js';
 import { Scena } from './scena.js';
 import { nacistStyl, sestavPrompt, ZABERY } from './dilna.js';
 
+/**
+ * Otisk kódu panelu a výstupů (obsah souborů v panel/, vystupy/ a sdilene/). Posílá se klientům
+ * jako událost „verze“: když se po restartu Hubu změní, stránka se sama obnoví. OBS si jinak drží
+ * starou verzi výstupu z mezipaměti a nové funkce (třeba kombinované počasí) v něm nefungují.
+ */
+export async function otiskKodu(slozky) {
+  const hash = crypto.createHash('sha1');
+  async function projit(slozka) {
+    let polozky = [];
+    try {
+      polozky = await fs.readdir(slozka, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const p of polozky.sort((a, b) => a.name.localeCompare(b.name))) {
+      const cesta = path.join(slozka, p.name);
+      if (p.isDirectory()) await projit(cesta);
+      else if (/\.(html|js|css)$/.test(p.name)) hash.update(p.name).update(await fs.readFile(cesta));
+    }
+  }
+  for (const s of slozky) await projit(s);
+  return hash.digest('hex').slice(0, 12);
+}
+
 /** Po kolika ms od konce odpočtu se scéna po restartu Hubu ještě přepne (otevřený bod 21). */
 export const PREPNUTI_PO_RESTARTU_MS = 10 * 60 * 1000;
 
@@ -175,6 +199,7 @@ export class Hub {
     await this.scena.nacist();
     await this.odpocet.nacist();
     this.vysilac.vyslat('odpocet', this.odpocet.verejny());
+    this.vysilac.vyslat('verze', await otiskKodu([this.c.panel, this.c.vystupy, path.join(HUB_DIR, 'sdilene')]));
     await this.hlidac.spustit();
 
     this.server = http.createServer((req, res) => this.obsluha(req, res));
@@ -723,7 +748,8 @@ export class Hub {
     const hlavicky = {
       ...HLAVICKY_BEZPECNOSTI,
       'Content-Type': TYPY_SOUBORU[path.extname(soubor).toLowerCase()] || 'application/octet-stream',
-      'Cache-Control': 'no-cache',
+      // Kód stránek (html, js, css) se nesmí brát z mezipaměti OBS, obrázky se jen ověří (ETag).
+      'Cache-Control': /\.(html|js|css)$/i.test(soubor) ? 'no-store' : 'no-cache',
       ETag: etag,
     };
     if (req.headers['if-none-match'] === etag) {

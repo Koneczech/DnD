@@ -85,12 +85,27 @@
     function nova(d, W, H, kdekoli) {
       const z = Math.random();
       if (d === 'dest') return { x: Math.random() * W * 1.2, y: kdekoli ? Math.random() * H : -40, v: 1100 + z * 900, d: 14 + z * 22 };
-      return { x: Math.random() * W, y: kdekoli ? Math.random() * H : -10, v: 40 + z * 70, r: 1 + z * 2.6, f: Math.random() * Math.PI * 2 };
+      // Sníh: rychlost a tvar se počítají až při kreslení podle aktuální intenzity (z = hloubka vločky).
+      return { x: Math.random() * W * 1.3, y: kdekoli ? Math.random() * H : -20, z, f: Math.random() * Math.PI * 2 };
     }
+
+    /**
+     * Sníh podle intenzity (přání DM):
+     * 0–1 vločky padají klidně, 2 hustěji a rychleji, 3 vánice: skoro rychlostí deště, šikmo
+     * a místo vloček krátké tučné čárky.
+     */
+    let silaSnehu = 1;
+    const SNIH = [
+      { v: [35, 65], kyv: 18, vitr: 0, carky: false },
+      { v: [45, 85], kyv: 18, vitr: 0, carky: false },
+      { v: [110, 210], kyv: 26, vitr: 0.12, carky: false },
+      { v: [750, 1150], kyv: 0, vitr: 0.45, carky: true },
+    ];
 
     function kresliDest(sys, dt, W, H) {
       ctx.strokeStyle = 'rgba(200,210,225,0.55)';
       ctx.lineWidth = 1.2;
+      ctx.lineCap = 'butt';
       ctx.beginPath();
       const vitr = 0.22;
       for (const c of sys.castice) {
@@ -103,17 +118,36 @@
       ctx.stroke();
     }
     function kresliSnih(sys, dt, W, H) {
-      ctx.fillStyle = 'rgba(240,244,250,0.8)';
-      ctx.beginPath();
-      for (const c of sys.castice) {
-        c.y += c.v * dt;
-        c.f += dt * 0.8;
-        c.x += Math.sin(c.f) * 18 * dt;
-        if (c.y > H + 10) Object.assign(c, nova('snih', W, H, false));
-        ctx.moveTo(c.x + c.r, c.y);
-        ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+      const p = SNIH[Math.max(0, Math.min(3, silaSnehu))];
+      if (p.carky) {
+        ctx.strokeStyle = 'rgba(240,244,250,0.75)';
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+      } else {
+        ctx.fillStyle = 'rgba(240,244,250,0.8)';
+        ctx.beginPath();
       }
-      ctx.fill();
+      for (const c of sys.castice) {
+        const v = p.v[0] + c.z * (p.v[1] - p.v[0]);
+        c.y += v * dt;
+        c.f += dt * 0.8;
+        c.x += Math.sin(c.f) * p.kyv * dt - v * p.vitr * dt;
+        if (c.y > H + 20 || c.x < -40) Object.assign(c, nova('snih', W, H, false));
+        if (p.carky) {
+          // Tučnější a kratší čárka než u deště, ve směru pádu.
+          const delka = 5 + c.z * 7;
+          ctx.moveTo(c.x, c.y);
+          ctx.lineTo(c.x + delka * p.vitr, c.y - delka);
+        } else {
+          const r = 1 + c.z * 2.6;
+          ctx.moveTo(c.x + r, c.y);
+          ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
+        }
+      }
+      if (p.carky) {
+        ctx.lineWidth = 2.6;
+        ctx.stroke();
+      } else ctx.fill();
     }
 
     function krok(t) {
@@ -147,6 +181,7 @@
     /** pocasi = seznam efektů ['dest','snih','mlha'] (starší Hub posílal jeden řetězec). */
     function nastavPocasi(pocasi, s) {
       const zap = new Set(Array.isArray(pocasi) ? pocasi : pocasi && pocasi !== 'zadne' ? [pocasi] : []);
+      silaSnehu = Number(s) || 0;
       document.querySelectorAll('.mlha').forEach((m) => {
         m.style.opacity = zap.has('mlha') ? String(0.55 + s * 0.15) : '0';
         // Vypnutá mlha se nehýbe: v OBS by jinak zbytečně zatěžovala vykreslování (audit N8).

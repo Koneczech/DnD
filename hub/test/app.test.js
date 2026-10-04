@@ -252,7 +252,8 @@ test('živé změny přes WebSocket: výstup dostane jen události, o které si 
     await pozadavek(hub, '/api/stav', { metoda: 'PUT', telo: { misto: 'Mirabar' } });
     await pozadavek(hub, '/api/odpocet/pripravit', { metoda: 'POST', telo: { minut: 5 } });
     await dokud(() => zpravy.filter((z) => z.u === 'odpocet').length >= 2, 2000);
-    assert.deepEqual([...new Set(zpravy.map((z) => z.u))], ['odpocet'], 'žádný stav kampaně ani skrytý kalendář');
+    // Kromě odpočtu jen „verze“ (otisk kódu, kvůli obnovení stránky po aktualizaci Hubu).
+    assert.deepEqual([...new Set(zpravy.map((z) => z.u))].sort(), ['odpocet', 'verze'], 'žádný stav kampaně ani skrytý kalendář');
   } finally {
     ws.terminate();
     await zastavit();
@@ -424,5 +425,20 @@ test('obrázky z kořene repa: zakódované lomítko omezení neobejde, poškoze
     assert.equal((await surovy(hub, '/%E0%A4%A.png')).status, 400);
   } finally {
     await zastavit();
+  }
+});
+
+test('otisk kódu se změní se změnou výstupu (obnovení stránek po aktualizaci Hubu)', async () => {
+  const { otiskKodu } = await import('../server/app.js');
+  const os = await import('node:os');
+  const slozka = await fs.mkdtemp(path.join(os.tmpdir(), 'dmhub-otisk-'));
+  try {
+    await fs.writeFile(path.join(slozka, 'misto.html'), 'stará verze');
+    const a = await otiskKodu([slozka]);
+    assert.equal(await otiskKodu([slozka]), a, 'stejný kód = stejný otisk');
+    await fs.writeFile(path.join(slozka, 'misto.html'), 'nová verze');
+    assert.notEqual(await otiskKodu([slozka]), a);
+  } finally {
+    await fs.rm(slozka, { recursive: true, force: true });
   }
 });

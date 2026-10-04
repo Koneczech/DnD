@@ -75,6 +75,8 @@ Rozhodnutí 1–12 potvrdil DM 2. 10. 2026. Rozhodnutí 13–24 vzešla z první
 | 40 | Poznámky a sezení nesou datum v Harptosu | Poznámka `- 18:05 (19. Eleint) — text`; hlavička sezení `harptos_zacatek` a `harptos_konec` |
 | 41 | Ilustrace míst a OBS pozadí patří do repa | Z `src/` se přesunou s Blokem 2; v repu jsou veřejné včetně skrytých ilustrací (rozhodnutí 2) |
 | 42 | Ilustrace zatím vznikají ručně přes ChatGPT | Dílna připraví prompt a zpracuje obrázek; přímé generování přes API je cíl do budoucna (otevřený bod 1) |
+| 43 | Obrazovka **U stolu** nahrazuje Scény OBS, Odpočet a Obchody | Dlaždice scén s ovládáním podle role scény: Start (odpočet), Místo, Obchod, Souboj. Místa zůstávají jako **Místa – správa** (příprava, ne živé ovládání) |
+| 44 | Role scén v OBS jsou na jednom místě | Tabulka Role scén dole na U stolu: Start, Místo, Obchod, Souboj a „po doběhnutí odpočtu“. Zmizela tři roztroušená nastavení (Odpočet, Obchody, Místa) i dvě v Nastavení |
 
 ## Architektura
 
@@ -547,3 +549,7 @@ Nic z této sekce zatím neplatí. Každý bod se rozhodne nejpozději na začá
 | 38 | ⚠ Pozadí OBS v repu | Start, Pauza, Obchod a Mapa v `kampan/obs/`; Image source v OBS čte soubory z klonu repa (funguje i bez Hubu) | Akceptace Bloku 2 |
 | 39 | ⚠ Kolekce scén DnD 2 | Start, Místo (výstup `misto.html` + medailon), Mapa, Obchod (výstup `obchod.html`), Pauza, Boj, TEST. Scény Mirabar, Longsaddle, Lurkwood a Cesta nahradila scéna Místo; Ukázat v OBS na ni přepne (`OBS_SCENA_MISTO`). Popis v `reference/obs-sceny.md` | Akceptace Bloku 2 |
 | 40 | `pripravit_ilustraci.py` | V lokální složce nebyl nalezen. Ořez scén převzala dílna; portréty počkají na verzi 2 | Verze 2 |
+| 41 | ⚠ Scéna Start | Role Start (`OBS_SCENA_START`) jen určuje, jaké ovládání se ukáže pod dlaždicí (odpočet). Hub na ni sám nepřepíná, ani při Spustit odpočet. Možnost do budoucna: přepnout na Start při spuštění odpočtu | Akceptace Bloku 2b |
+| 42 | ⚠ Tlačítko Sloučit | Když se lokální a GitHubová verze rozejdou, Hub odloží neuložené změny do úschovny Gitu, přiskládá lokální commity za novinky z GitHubu, vrátí změny a odešle. Při konfliktu vrátí vše zpět a napíše, který soubor to je. Co se nepodaří vrátit, zůstane v úschovně (`git stash list`) | Akceptace Bloku 2b |
+| 43 | ⚠ Živý náhled místa | Na U stolu je v panelu Místo zmenšený výstup `misto.html` (iframe), jen dokud je panel vidět. Ukazuje to, co teď vidí OBS | Akceptace Bloku 2b |
+| 44 | ⚠ Odkrývání stop u stolu | Odkrýt a Skrýt jsou i na U stolu u ilustrací místa, které je v OBS. Varianta, stav, zahodit a popis zůstávají jen v Místa – správa | Akceptace Bloku 2b |

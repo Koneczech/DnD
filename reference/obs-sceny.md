@@ -16,6 +16,20 @@ Od Bloku 2 platí kolekce **DnD 2** (`Documents\DnD\OBS\DnD-2-sceny.json`, impor
 
 Scény Mirabar, Longsaddle, Lurkwood a Cesta nahradila scéna **Místo**: místo, ilustraci, den/noc, počasí a intenzitu přepínáš v Hubu na obrazovce Místa. V Hubu nastav scénu místa na *Místo* a scénu obchodu na *Obchod*.
 
+### Role scén a obrazovka U stolu
+
+Hub neví, jak se scény jmenují, dokud mu to neřekneš. Na obrazovce **U stolu** dole je tabulka **Role scén**:
+
+| Role | Co dělá | Doporučená scéna |
+| --- | --- | --- |
+| Start | Pod dlaždicí se ukáže odpočet | Start |
+| Místo | Pod dlaždicí místo, den/noc, počasí, intenzita, ilustrace; na ni přepne Ukázat v OBS | Místo |
+| Obchod | Pod dlaždicí sortimenty; na ni přepne Ukázat v OBS | Obchod |
+| Souboj | Na ni přepne tlačítko Souboj | Boj |
+| Po doběhnutí odpočtu | Hub na ni přepne jednou, hned jak odpočet doběhne | Místo |
+
+Dlaždice scén jsou přímo scény z OBS. Klik přepne OBS a pod dlaždicí se ukáže ovládání té role. Scény bez role (Mapa, Pauza, TEST) se jen přepnou.
+
 Níže je původní revize z Bloku 1b.
 
 

@@ -32,12 +32,10 @@
   <div class="rozvrzeni">
     <nav class="moduly" aria-label="Moduly">
       <a href="#prehled" data-obrazovka="prehled">Stav kampaně</a>
-      <a href="#odpocet" data-obrazovka="odpocet">Odpočet <span class="odpocet-mini" id="odpocet-mini" hidden></span></a>
-      <a href="#sceny" data-obrazovka="sceny">Scény OBS</a>
+      <a href="#sceny" data-obrazovka="sceny">U stolu <span class="odpocet-mini" id="odpocet-mini" hidden></span></a>
       <a href="#kalendar" data-obrazovka="kalendar">Kalendář <span class="odpocet-mini" id="kalendar-mini" hidden></span></a>
-      <a href="#mista" data-obrazovka="mista">Místa <span class="odpocet-mini" id="mista-mini" hidden></span></a>
+      <a href="#mista" data-obrazovka="mista">Místa – správa <span class="odpocet-mini" id="mista-mini" hidden></span></a>
       <a href="#dilna" data-obrazovka="dilna">Ilustrační dílna</a>
-      <a href="#obchody" data-obrazovka="obchody">Obchody</a>
       <a href="#kontrola" data-obrazovka="kontrola">Kontrola dat <span class="pocet" id="pocet-problemu" hidden></span></a>
       <a href="#nastaveni" data-obrazovka="nastaveni">Nastavení</a>
       <hr>
@@ -81,41 +79,124 @@
         <p class="poznamka">Ve vlastnostech zdroje nech vypnuté <em>Shutdown source when not visible</em> i <em>Refresh browser when scene becomes active</em>. Jen tak výstup přežije výpadek Hubu.</p>
       </section>
 
-      <section id="obrazovka-odpocet" class="obrazovka" hidden>
-        <h1>Odpočet do začátku sezení</h1>
-        <p class="uvod">Nastav, kdy hra začne. Odpočet se v OBS ukáže až po spuštění a běží dál, i když Hub na chvíli vypadne.</p>
-        <p class="odpocet-cas" id="odpocet-cas" aria-live="off">--:--</p>
-        <p class="ulozeni" id="odpocet-popis" aria-live="polite"></p>
-        <form id="formular-odpocet" class="formular radek" autocomplete="off">
-          <label class="kratke">Začátek hry v
-            <input name="cas" id="pole-odpocet-cas" placeholder="19:30" inputmode="numeric">
-          </label>
-          <span class="nebo">nebo</span>
-          <label class="kratke">Za kolik minut
-            <input name="minut" id="pole-odpocet-minut" type="number" min="1" max="1440">
-          </label>
-          <button type="submit">Nastavit</button>
-        </form>
-        <div class="tlacitka">
-          <button type="button" class="hlavni" id="odpocet-spustit">Spustit</button>
-          <button type="button" id="odpocet-pauza">Pauza</button>
-          <button type="button" id="odpocet-zrusit">Zrušit</button>
-        </div>
-        <div class="formular odpocet-scena">
-          <label>Po doběhnutí přepnout OBS na scénu
-            <select id="odpocet-scena"></select>
-            <small>Hub přepne jednou, hned jak odpočet doběhne. Stejné nastavení je i v Nastavení.</small>
-          </label>
-        </div>
-        <p class="ulozeni" id="odpocet-prepnuti" aria-live="polite"></p>
-        <h2>Výstup pro OBS</h2>
-        <p class="adresa"><code id="adresa-odpoctu"></code> <button type="button" data-kopirovat="adresa-odpoctu">Kopírovat adresu</button></p>
-      </section>
-
       <section id="obrazovka-sceny" class="obrazovka" hidden>
-        <h1>Scény OBS</h1>
+        <h1>U stolu</h1>
         <p class="uvod" id="obs-popis"></p>
+        <p class="stul-stav" id="stul-stav" aria-live="polite"></p>
         <div class="sceny" id="seznam-scen"></div>
+
+        <div class="stul-panel" id="stul-start" hidden>
+          <h2>Start: odpočet do začátku sezení</h2>
+          <p class="uvod">Nastav, kdy hra začne. Odpočet se v OBS ukáže až po spuštění a běží dál, i když Hub na chvíli vypadne.</p>
+          <p class="odpocet-cas" id="odpocet-cas" aria-live="off">--:--</p>
+          <p class="ulozeni" id="odpocet-popis" aria-live="polite"></p>
+          <form id="formular-odpocet" class="formular radek" autocomplete="off">
+            <label class="kratke">Začátek hry v
+              <input name="cas" id="pole-odpocet-cas" placeholder="19:30" inputmode="numeric">
+            </label>
+            <span class="nebo">nebo</span>
+            <label class="kratke">Za kolik minut
+              <input name="minut" id="pole-odpocet-minut" type="number" min="1" max="1440">
+            </label>
+            <button type="submit">Nastavit</button>
+          </form>
+          <div class="tlacitka">
+            <button type="button" class="hlavni" id="odpocet-spustit">Spustit</button>
+            <button type="button" id="odpocet-pauza">Pauza</button>
+            <button type="button" id="odpocet-zrusit">Zrušit</button>
+          </div>
+          <p class="ulozeni" id="odpocet-prepnuti" aria-live="polite"></p>
+          <details class="adresy">
+            <summary>Adresa výstupu pro OBS</summary>
+            <p class="adresa"><code id="adresa-odpoctu"></code> <button type="button" data-kopirovat="adresa-odpoctu">Kopírovat adresu</button></p>
+          </details>
+        </div>
+
+        <div class="stul-panel" id="stul-misto" hidden>
+          <h2>Místo</h2>
+          <p class="uvod">Do OBS jdou jen odkryté ilustrace; co tady změníš, se v OBS prolne do sekundy.</p>
+          <div class="stul-misto">
+            <div class="stul-nahled" id="stul-nahled" aria-label="Náhled výstupu místa">
+              <iframe id="stul-nahled-ramec" title="Náhled výstupu místa" tabindex="-1"></iframe>
+            </div>
+            <div>
+              <div class="scena-ovladani">
+                <div class="scena-stav">
+                  <p class="scena-nazev" id="scena-nazev">V OBS není žádné místo.</p>
+                  <p class="ulozeni" id="scena-detail"></p>
+                </div>
+                <div class="tlacitka">
+                  <button type="button" id="scena-predchozi" title="Předchozí ilustrace">◀</button>
+                  <button type="button" id="scena-dalsi" title="Další ilustrace">▶</button>
+                  <label class="zaskrtavaci"><input type="checkbox" id="scena-stridani"> Střídat po</label>
+                  <input type="number" id="scena-sekund" min="5" max="3600" class="cislo kratke-cislo"> <span>s</span>
+                </div>
+              </div>
+              <div class="prepinace">
+                <div class="prepinac"><span>Denní doba</span><div class="segment" id="sc-varianta" data-pole="varianta">
+                  <button type="button" data-v="den">Den</button><button type="button" data-v="noc">Noc</button></div></div>
+                <div class="prepinac"><span>Počasí</span><div class="segment" id="sc-pocasi" data-pole="pocasi">
+                  <button type="button" data-v="zadne">Žádné</button><button type="button" data-v="dest">Déšť</button><button type="button" data-v="snih">Sníh</button><button type="button" data-v="mlha">Mlha</button></div></div>
+                <div class="prepinac"><span>Intenzita</span><div class="segment" id="sc-intenzita" data-pole="intenzita">
+                  <button type="button" data-v="0">0</button><button type="button" data-v="1">1</button><button type="button" data-v="2">2</button><button type="button" data-v="3">3</button></div></div>
+                <div class="prepinac"><span>Stav místa</span><select id="sc-stav"></select></div>
+              </div>
+            </div>
+          </div>
+          <h3>Místa</h3>
+          <div class="stul-mista" id="stul-mista"></div>
+          <h3>Ilustrace v OBS</h3>
+          <p class="ulozeni" id="stul-ilustrace-popis"></p>
+          <div class="ilustrace ilustrace-zive" id="stul-ilustrace"></div>
+          <details class="adresy">
+            <summary>Adresa výstupu pro OBS</summary>
+            <p class="adresa"><code id="adresa-misto">…</code> <button type="button" data-kopirovat="adresa-misto">Kopírovat adresu</button></p>
+            <p class="poznamka">Browser Source 1920 × 1080 přes celé plátno, medailon kalendáře nad ním.</p>
+          </details>
+        </div>
+
+        <div class="stul-panel" id="stul-obchod" hidden>
+          <h2>Obchod</h2>
+          <p class="uvod">Sortiment vylosuj v generátoru a ulož do Hubu. U stolu klikni na <em>Ukázat v OBS</em>: ceník převezme obchod a OBS přepne na scénu obchodu.</p>
+          <div class="tlacitka"><a class="tlacitko hlavni" href="/nastroje/generator.html" target="_blank" rel="noopener">Otevřít generátor obchodů</a></div>
+          <h3>V OBS teď</h3>
+          <div class="aktivni-obchod">
+            <p id="obchod-aktivni">Ceník je skrytý.</p>
+            <button type="button" id="obchod-skryt" hidden>Skrýt ceník</button>
+          </div>
+          <h3>Uložené sortimenty</h3>
+          <p class="uvod" id="sortimenty-prazdno">Zatím žádné. Ulož první z generátoru.</p>
+          <p class="ulozeni chyba" id="sortimenty-vadne" hidden></p>
+          <table class="udalosti" id="tabulka-sortimentu" hidden>
+            <thead><tr><th scope="col">Obchod</th><th scope="col">Typ</th><th scope="col">Položek</th><th scope="col">Uloženo</th><th scope="col"><span class="vizualne-skryte">Akce</span></th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <details class="adresy">
+            <summary>Adresa výstupu pro OBS</summary>
+            <p class="adresa"><code id="adresa-cenik">…</code> <button type="button" data-kopirovat="adresa-cenik">Kopírovat adresu</button></p>
+            <p class="poznamka">Scéna Obchod ukazuje obrázek interiéru a ceník v pravé třetině obrazu. Velikost a umístění panelu nastav v OBS, písmo se přizpůsobí výšce zdroje.</p>
+          </details>
+        </div>
+
+        <div class="stul-panel" id="stul-souboj" hidden>
+          <h2>Souboj</h2>
+          <p class="uvod">Scéna s iniciativou z Improved Initiative. Tlačítko <strong>Souboj</strong> v horní liště přepne OBS sem odkudkoli.</p>
+        </div>
+
+        <div class="stul-panel" id="stul-bez" hidden>
+          <p class="uvod">Tahle scéna nemá v Hubu žádné ovládání. Role scén (Start, Místo, Obchod, Souboj) přiřadíš níže.</p>
+        </div>
+
+        <h2>Role scén v OBS</h2>
+        <p class="uvod">Řekni Hubu, která scéna v OBS co dělá. Podle toho se pod dlaždicí ukáže ovládání a na ni OBS přepnou tlačítka Ukázat v OBS a Souboj.</p>
+        <div class="formular role-sceny">
+          <label>Start (odpočet a rekapitulace)<select id="role-start" data-klic="scenaStart"></select></label>
+          <label>Místo<select id="role-misto" data-klic="scenaMisto"></select></label>
+          <label>Obchod<select id="role-obchod" data-klic="scenaObchod"></select></label>
+          <label>Souboj<select id="role-souboj" data-klic="scenaSouboj"></select></label>
+          <label>Po doběhnutí odpočtu přepnout na<select id="role-po-odpoctu" data-klic="scenaPoOdpoctu"></select></label>
+        </div>
+        <p class="poznamka">Prázdná role = Hub nic nepřepíná, jen vymění obsah. „Po odpočtu“ Hub přepne jednou, hned jak odpočet doběhne.</p>
       </section>
 
       <section id="obrazovka-kalendar" class="obrazovka" hidden>
@@ -187,31 +268,8 @@
       </section>
 
       <section id="obrazovka-mista" class="obrazovka" hidden>
-        <h1>Místa</h1>
-        <p class="uvod">Scéna místa v OBS. Do OBS jdou jen odkryté ilustrace; co tady změníš, se v OBS prolne do sekundy.</p>
-
-        <div class="scena-ovladani">
-          <div class="scena-stav">
-            <p class="scena-nazev" id="scena-nazev">V OBS není žádné místo.</p>
-            <p class="ulozeni" id="scena-detail"></p>
-          </div>
-          <div class="tlacitka">
-            <button type="button" id="scena-predchozi" title="Předchozí ilustrace">◀</button>
-            <button type="button" id="scena-dalsi" title="Další ilustrace">▶</button>
-            <label class="zaskrtavaci"><input type="checkbox" id="scena-stridani"> Střídat po</label>
-            <input type="number" id="scena-sekund" min="5" max="3600" class="cislo kratke-cislo"> <span>s</span>
-          </div>
-        </div>
-
-        <div class="prepinace">
-          <div class="prepinac"><span>Denní doba</span><div class="segment" id="sc-varianta" data-pole="varianta">
-            <button type="button" data-v="den">Den</button><button type="button" data-v="noc">Noc</button></div></div>
-          <div class="prepinac"><span>Počasí</span><div class="segment" id="sc-pocasi" data-pole="pocasi">
-            <button type="button" data-v="zadne">Žádné</button><button type="button" data-v="dest">Déšť</button><button type="button" data-v="snih">Sníh</button><button type="button" data-v="mlha">Mlha</button></div></div>
-          <div class="prepinac"><span>Intenzita</span><div class="segment" id="sc-intenzita" data-pole="intenzita">
-            <button type="button" data-v="0">0</button><button type="button" data-v="1">1</button><button type="button" data-v="2">2</button><button type="button" data-v="3">3</button></div></div>
-          <div class="prepinac"><span>Stav místa</span><select id="sc-stav"></select></div>
-        </div>
+        <h1>Místa – správa</h1>
+        <p class="uvod">Příprava míst: ilustrace, odkrytí a skrytí, popis vzhledu pro prompty, nová ilustrace z dílny. Živé ovládání (místo, počasí, intenzita) je na obrazovce <a href="#sceny">U stolu</a>.</p>
 
         <h2>Místa</h2>
         <div class="seznam-mist" id="seznam-mist"></div>
@@ -229,16 +287,6 @@
             <div class="tlacitka"><button type="button" id="misto-popis-ulozit">Uložit popis</button> <a href="#dilna" id="misto-do-dilny">Nová ilustrace v dílně →</a></div>
           </details>
         </div>
-
-        <h2>Nastavení OBS</h2>
-        <div class="formular">
-          <label>Scéna místa v OBS
-            <select id="misto-scena"></select>
-            <small>Na ni OBS přepne tlačítko Ukázat v OBS. Prázdné = nepřepínat, jen vyměnit místo.</small>
-          </label>
-        </div>
-        <p class="adresa"><code id="adresa-misto">…</code> <button type="button" data-kopirovat="adresa-misto">Kopírovat adresu</button></p>
-        <p class="poznamka">Browser Source 1920 × 1080 přes celé plátno, medailon kalendáře nad ním. Scéna místa nahrazuje scény Mirabar, Longsaddle, Lurkwood a Cesta.</p>
       </section>
 
       <section id="obrazovka-dilna" class="obrazovka" hidden>
@@ -296,36 +344,6 @@
         <p class="uvod">Nová ilustrace je vždy skrytá. Na obrazovce <a href="#mista">Místa</a> ji odkryješ, nastavíš variantu a stav, nebo zahodíš.</p>
       </section>
 
-      <section id="obrazovka-obchody" class="obrazovka" hidden>
-        <h1>Obchody</h1>
-        <p class="uvod">Sortiment vylosuj v generátoru a ulož do Hubu. U stolu klikni na <em>Ukázat v OBS</em>: ceník převezme obchod a OBS přepne na scénu obchodu.</p>
-        <div class="tlacitka"><a class="tlacitko hlavni" href="/nastroje/generator.html" target="_blank" rel="noopener">Otevřít generátor obchodů</a></div>
-
-        <h2>V OBS teď</h2>
-        <div class="aktivni-obchod">
-          <p id="obchod-aktivni">Ceník je skrytý.</p>
-          <button type="button" id="obchod-skryt" hidden>Skrýt ceník</button>
-        </div>
-        <div class="formular">
-          <label>Scéna obchodu v OBS
-            <select id="obchod-scena"></select>
-            <small>Na ni OBS přepne tlačítko Ukázat v OBS. Prázdné = nepřepínat, jen vyměnit ceník.</small>
-          </label>
-        </div>
-
-        <h2>Uložené sortimenty</h2>
-        <p class="uvod" id="sortimenty-prazdno">Zatím žádné. Ulož první z generátoru.</p>
-        <p class="ulozeni chyba" id="sortimenty-vadne" hidden></p>
-        <table class="udalosti" id="tabulka-sortimentu" hidden>
-          <thead><tr><th scope="col">Obchod</th><th scope="col">Typ</th><th scope="col">Položek</th><th scope="col">Uloženo</th><th scope="col"><span class="vizualne-skryte">Akce</span></th></tr></thead>
-          <tbody></tbody>
-        </table>
-
-        <h2>Výstupy pro OBS</h2>
-        <p class="adresa"><code id="adresa-cenik">…</code> <button type="button" data-kopirovat="adresa-cenik">Kopírovat adresu</button></p>
-        <p class="poznamka">Dej ho do scény obchodu přes pravou třetinu obrazu, pod něj obrázek interiéru (Image source). Velikost a umístění panelu nastav v OBS, písmo se přizpůsobí výšce zdroje.</p>
-      </section>
-
       <section id="obrazovka-kontrola" class="obrazovka" hidden>
         <h1>Kontrola dat</h1>
         <p class="uvod" id="kontrola-souhrn"></p>
@@ -345,18 +363,11 @@
             <label>Adresa WebSocket serveru
               <input name="obsUrl" id="pole-obs-url" placeholder="ws://127.0.0.1:4455">
             </label>
-            <label>Scéna pro tlačítko Souboj
-              <select name="scenaSouboj" id="pole-scena-souboj"></select>
-              <small>Scéna s carouselem iniciativy z Improved Initiative.</small>
-            </label>
-            <label>Scéna po odpočtu
-              <select name="scenaPoOdpoctu" id="pole-scena-po-odpoctu"></select>
-              <small>Když odpočet doběhne, Hub na ni OBS jednou přepne. Prázdné = nepřepínat.</small>
-            </label>
             <label>Heslo WebSocket serveru
               <input name="obsHeslo" id="pole-obs-heslo" type="password" autocomplete="new-password">
               <small id="napoveda-heslo">Najdeš ho v OBS: Tools → WebSocket Server Settings → Show Connect Info.</small>
             </label>
+            <p class="poznamka">Které scény OBS jsou Start, Místo, Obchod, Souboj a „po odpočtu“, nastavíš na obrazovce <a href="#sceny">U stolu</a> dole.</p>
           </fieldset>
           <fieldset>
             <legend>Hub</legend>

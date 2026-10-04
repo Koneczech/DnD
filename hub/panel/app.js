@@ -26,8 +26,16 @@ function cas() {
 
 /* ---------- Navigace ---------- */
 
+// Staré adresy: Odpočet a Obchody jsou od Bloku 2b součástí obrazovky U stolu.
+const PRESMEROVANI = { odpocet: ['sceny', 'start'], obchody: ['sceny', 'obchod'] };
+
 function ukazObrazovku(jmeno) {
-  const platne = ['prehled', 'odpocet', 'sceny', 'kalendar', 'mista', 'dilna', 'obchody', 'kontrola', 'nastaveni'];
+  const platne = ['prehled', 'sceny', 'kalendar', 'mista', 'dilna', 'kontrola', 'nastaveni'];
+  if (PRESMEROVANI[jmeno]) {
+    stav.stulVyber = PRESMEROVANI[jmeno][1];
+    jmeno = PRESMEROVANI[jmeno][0];
+    history.replaceState(null, '', `#${jmeno}`);
+  }
   const cil = platne.includes(jmeno) ? jmeno : 'prehled';
   if (cil === 'kalendar') nactiImport();
   if (cil === 'dilna') vykresliDilnu();
@@ -36,6 +44,7 @@ function ukazObrazovku(jmeno) {
     if (a.dataset.obrazovka === cil) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   }
+  vykresliSceny();
 }
 window.addEventListener('hashchange', () => ukazObrazovku(location.hash.slice(1)));
 
@@ -164,7 +173,9 @@ function vykresliUpozorneni() {
     box.append(zprava('V .git/hooks je jiný pre-commit hook, Hub ho nepřepsal. Ochrana proti commitu tajných hodnot proto neběží.'));
   }
   const g = p.git;
-  if (g?.pozadu > 0) {
+  if (g?.pozadu > 0 && g?.napred > 0) {
+    box.append(zprava(`Lokální a GitHubová verze se rozešly: na GitHubu je ${g.pozadu} nových commitů a u tebe ${g.napred} neodeslaných. Sloučení nic nemaže; tvoje změny se přiskládají za novinky a odešlou.`, { tlacitko: { text: 'Sloučit', akce: sloucitZmeny } }));
+  } else if (g?.pozadu > 0) {
     box.append(zprava(`Na GitHubu jsou novější změny (${g.pozadu}).`, { tlacitko: { text: 'Stáhnout změny', akce: stahnoutZmeny } }));
   }
   for (const v of p.obs?.varovaniZdroju ?? []) {
@@ -175,6 +186,17 @@ function vykresliUpozorneni() {
   }
 }
 
+async function sloucitZmeny() {
+  try {
+    const r = await api('/api/git/sloucit', { metoda: 'POST', telo: {} });
+    let text = r.push ? 'Sloučeno a odesláno na GitHub.' : 'Sloučeno, ale odeslání na GitHub se nepodařilo. Zkus Uložit do GitHubu později.';
+    if (r.uschovnaNevracena) text += ' Tvoje neuložené změny zůstaly v úschovně Gitu, protože se nedaly vrátit; pošli to Claudovi.';
+    toast(text, { chyba: r.uschovnaNevracena });
+    await nactiPrehled();
+  } catch (e) {
+    $('#upozorneni').prepend(zprava(e.message, { chyba: true }));
+  }
+}
 async function stahnoutZmeny() {
   try {
     await api('/api/git/stahnout', { metoda: 'POST', telo: {} });
@@ -204,43 +226,104 @@ function vykresliKontrolky() {
     : `Větev ${g.vetev}, neuložených souborů ${g.zmeneno}${g.pozadu ? `, na GitHubu je ${g.pozadu} novějších změn` : ''}${g.chyba ? `. ${g.chyba}` : ''}`;
 }
 
-/* ---------- Scény OBS ---------- */
+/* ---------- U stolu: dlaždice scén a ovládání podle role ---------- */
+
+// Role scén v OBS. Dlaždice ukazuje ovládání té role, kterou má přiřazenou v tabulce Role scén.
+const ROLE_SCEN = [['start', 'scenaStart', 'Start'], ['misto', 'scenaMisto', 'Místo'], ['obchod', 'scenaObchod', 'Obchod'], ['souboj', 'scenaSouboj', 'Souboj']];
+const PANELY = ['start', 'misto', 'obchod', 'souboj', 'bez'];
+const POCASI_TEXT = { dest: 'déšť', snih: 'sníh', mlha: 'mlha' };
+
+stav.stulVyber = null; // role vybraná kliknutím na dlaždici; null = podle scény, která je právě v OBS
+
+function roleScenyOBS(nazev) {
+  const n = stav.prehled?.nastaveni;
+  if (!nazev || !n) return null;
+  return ROLE_SCEN.find(([, klic]) => n[klic] === nazev)?.[0] ?? null;
+}
 
 function vykresliSceny() {
   const o = stav.prehled?.obs;
   const popis = $('#obs-popis');
   const seznam = $('#seznam-scen');
+  const stavEl = $('#stul-stav');
   seznam.replaceChildren();
+  const pripojeno = Boolean(o?.pripojeno);
+  let pripojitTlacitko = null;
+
+  let role = stav.stulVyber;
+  if (!role && pripojeno && o.aktualniScena) role = roleScenyOBS(o.aktualniScena) ?? 'bez';
+  if (!role && !pripojeno) role = 'start';
+  if (!PANELY.includes(role)) role = null;
+
   if (!o?.nastaveno) {
-    popis.textContent = 'OBS ještě není nastavené. Zadej heslo k WebSocket serveru v Nastavení.';
-    return;
-  }
-  if (!o.pripojeno) {
+    popis.textContent = 'OBS ještě není nastavené. Zadej heslo k WebSocket serveru v Nastavení. Ovládání níže funguje i bez OBS, jen nepřepíná scény.';
+  } else if (!pripojeno) {
     popis.textContent = `${o.chyba || 'OBS není připojené.'} Hub to zkouší znovu každých 5 sekund.`;
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.textContent = 'Připojit teď';
-    b.addEventListener('click', () => api('/api/obs/pripojit', { metoda: 'POST', telo: {} }).catch(() => {}));
-    seznam.append(b);
-    return;
+    pripojitTlacitko = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Připojit teď' });
+    pripojitTlacitko.addEventListener('click', () => api('/api/obs/pripojit', { metoda: 'POST', telo: {} }).catch(() => {}));
+  } else {
+    popis.textContent = 'Klikni na dlaždici: OBS přepne na scénu a pod ní se ukáže její ovládání. Numpad v OBS funguje dál.';
   }
-  popis.textContent = 'Klikni na scénu a OBS ji přepne. Numpad v OBS funguje dál.';
-  for (const nazev of o.sceny) {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.textContent = nazev;
-    b.setAttribute('aria-pressed', String(nazev === o.aktualniScena));
-    if (nazev === stav.prehled?.nastaveni?.scenaSouboj) b.title = 'Scéna pro Souboj';
-    b.addEventListener('click', async () => {
-      try {
-        await api('/api/obs/scena', { metoda: 'POST', telo: { nazev } });
-      } catch (e) {
-        popis.textContent = e.message;
-      }
-    });
-    seznam.append(b);
+
+  if (pripojeno) {
+    for (const nazev of o.sceny) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      const r = roleScenyOBS(nazev);
+      b.textContent = nazev;
+      b.setAttribute('aria-pressed', String(nazev === o.aktualniScena));
+      if (r) b.title = `Role: ${ROLE_SCEN.find(([id]) => id === r)[2]}`;
+      b.addEventListener('click', async () => {
+        stav.stulVyber = r ?? 'bez';
+        vykresliSceny();
+        try {
+          await api('/api/obs/scena', { metoda: 'POST', telo: { nazev } });
+        } catch (e) {
+          popis.textContent = e.message;
+        }
+      });
+      seznam.append(b);
+    }
+  } else {
+    // Bez OBS jsou dlaždicemi role: jen vybírají ovládání, nic nepřepínají.
+    for (const [id, klic, jmeno] of ROLE_SCEN) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = jmeno;
+      b.title = stav.prehled?.nastaveni?.[klic] ? `Scéna v OBS: ${stav.prehled.nastaveni[klic]}` : 'Scéna zatím není přiřazená';
+      b.setAttribute('aria-pressed', String(id === role));
+      b.addEventListener('click', () => {
+        stav.stulVyber = id;
+        vykresliSceny();
+      });
+      seznam.append(b);
+    }
   }
+
+  // Stav „co je teď v OBS“.
+  const sc = stav.prehled?.scena;
+  let text = pripojeno ? `V OBS teď: ${o.aktualniScena || 'neznámá scéna'}` : 'OBS není připojené.';
+  if (pripojeno && roleScenyOBS(o.aktualniScena) === 'misto' && sc?.misto) {
+    text += ` · ${sc.misto.nazev}${sc.ilustrace ? ` · ${sc.ilustrace.soubor}` : ''}`;
+    if (sc.pocasi !== 'zadne') text += ` · ${POCASI_TEXT[sc.pocasi] ?? sc.pocasi} ${sc.intenzita}`;
+  }
+  stavEl.textContent = text;
+  if (pripojitTlacitko) stavEl.append(' ', pripojitTlacitko);
+
+  for (const id of PANELY) $(`#stul-${id}`).hidden = id !== role;
+  nahledMista(role === 'misto' && !$('#obrazovka-sceny').hidden);
 }
+
+/** Živý náhled výstupu místa: iframe 1920 × 1080 zmenšený na šířku rámečku, jen dokud je panel vidět. */
+function nahledMista(zobrazit) {
+  const ramec = $('#stul-nahled-ramec');
+  const cil = zobrazit ? '/vystupy/misto.html' : 'about:blank';
+  if (ramec.getAttribute('src') !== cil) ramec.setAttribute('src', cil);
+}
+new ResizeObserver(([zaznam]) => {
+  const sirka = zaznam.contentRect.width;
+  if (sirka) $('#stul-nahled').style.setProperty('--meritko', String(sirka / 1920));
+}).observe($('#stul-nahled'));
 
 /* ---------- Kontrola dat ---------- */
 
@@ -289,22 +372,29 @@ function vykresliNastaveni(n) {
     : '';
 }
 
-/** Výběr scén (Souboj, po odpočtu): scény z OBS, a pokud OBS neběží, aspoň uložená hodnota. */
+/** Role scén: scény z OBS, a pokud OBS neběží, aspoň uložená hodnota. */
 function vykresliVyberSouboje() {
-  for (const [id, klic, prazdna] of [
-    ['#pole-scena-souboj', 'scenaSouboj', '— vyber scénu —'],
-    ['#pole-scena-po-odpoctu', 'scenaPoOdpoctu', '— nepřepínat —'],
-    ['#odpocet-scena', 'scenaPoOdpoctu', '— nepřepínat —'],
-    ['#obchod-scena', 'scenaObchod', '— nepřepínat —'],
-    ['#misto-scena', 'scenaMisto', '— nepřepínat —'],
-  ]) {
-    const select = $(id);
+  for (const select of document.querySelectorAll('.role-sceny select')) {
     if (document.activeElement === select) continue;
-    const ulozena = stav.prehled?.nastaveni?.[klic] || '';
+    const ulozena = stav.prehled?.nastaveni?.[select.dataset.klic] || '';
     const sceny = [...new Set([...(stav.prehled?.obs?.sceny ?? []), ...(ulozena ? [ulozena] : [])])];
-    select.replaceChildren(new Option(prazdna, ''), ...sceny.map((n) => new Option(n, n)));
+    select.replaceChildren(new Option('— nepřepínat —', ''), ...sceny.map((n) => new Option(n, n)));
     select.value = ulozena;
   }
+}
+
+for (const select of document.querySelectorAll('.role-sceny select')) {
+  select.addEventListener('change', async () => {
+    try {
+      const odpoved = await api('/api/nastaveni', { metoda: 'PUT', telo: { [select.dataset.klic]: select.value } });
+      stav.prehled.nastaveni = odpoved.nastaveni;
+      vykresliSceny();
+      vykresliOdpocet();
+      toast(select.value ? `Role přiřazena: ${select.value}` : 'Role bez scény: Hub nic nepřepne.');
+    } catch (chyba) {
+      toast(chyba.message, { chyba: true });
+    }
+  });
 }
 
 $('#formular-nastaveni').addEventListener('submit', async (e) => {
@@ -314,8 +404,6 @@ $('#formular-nastaveni').addEventListener('submit', async (e) => {
     obsUrl: f.get('obsUrl').trim(),
     port: Number(f.get('port')),
     domaciSit: f.get('domaciSit') === 'on',
-    scenaSouboj: f.get('scenaSouboj') ?? '',
-    scenaPoOdpoctu: f.get('scenaPoOdpoctu') ?? '',
   };
   if (f.get('obsHeslo')) telo.obsHeslo = f.get('obsHeslo');
   if (f.get('pin')) telo.pin = f.get('pin');
@@ -514,7 +602,7 @@ $('#tlacitko-souboj').addEventListener('click', async () => {
     await api('/api/obs/souboj', { metoda: 'POST', telo: {} });
   } catch (chyba) {
     toast(chyba.message, { chyba: true });
-    if (/není nastavená/.test(chyba.message)) location.hash = 'nastaveni';
+    if (/není nastavená/.test(chyba.message)) location.hash = 'sceny';
   }
 });
 
@@ -632,17 +720,6 @@ for (const [id, akce] of [['#odpocet-spustit', 'spustit'], ['#odpocet-pauza', 'p
   $(id).addEventListener('click', () => api(`/api/odpocet/${akce}`, { metoda: 'POST', telo: {} }).catch((chyba) => toast(chyba.message, { chyba: true })));
 }
 
-$('#odpocet-scena').addEventListener('change', async (e) => {
-  try {
-    const odpoved = await api('/api/nastaveni', { metoda: 'PUT', telo: { scenaPoOdpoctu: e.target.value } });
-    stav.prehled.nastaveni = odpoved.nastaveni;
-    vykresliVyberSouboje();
-    vykresliOdpocet();
-    toast(e.target.value ? `Po odpočtu se přepne na „${e.target.value}“.` : 'Po odpočtu se scéna nepřepne.');
-  } catch (chyba) {
-    toast(chyba.message, { chyba: true });
-  }
-});
 
 /* ---------- Uložení do GitHubu ---------- */
 
@@ -1072,15 +1149,6 @@ async function ukazatObchod(id, nazev) {
   }
 }
 $('#obchod-skryt').addEventListener('click', () => ukazatObchod(null));
-$('#obchod-scena').addEventListener('change', async (e) => {
-  try {
-    const odpoved = await api('/api/nastaveni', { metoda: 'PUT', telo: { scenaObchod: e.target.value } });
-    stav.prehled.nastaveni = odpoved.nastaveni;
-    toast(e.target.value ? `Scéna obchodu: ${e.target.value}` : 'Ukázat v OBS nebude přepínat scénu.');
-  } catch (chyba) {
-    toast(chyba.message, { chyba: true });
-  }
-});
 
 function vykresliObchody() {
   const o = stav.prehled?.obchody;
@@ -1166,6 +1234,7 @@ function vykresliScenu() {
   if (document.activeElement !== $('#scena-sekund')) $('#scena-sekund').value = s.stridani.sekund;
   $('#scena-stridani').checked = s.stridani.zapnuto;
   for (const id of ['#scena-predchozi', '#scena-dalsi']) $(id).disabled = !(s.pocet > 1);
+  vykresliSceny();
   vykresliMista();
 }
 
@@ -1198,6 +1267,32 @@ function vykresliMista() {
   const seznam = stav.prehled?.mista?.mista ?? [];
   const s = stav.prehled?.scena;
   if (!vybraneMisto || !seznam.some((m) => m.id === vybraneMisto)) vybraneMisto = s?.misto?.id ?? null;
+
+  // U stolu: místa jako rychlé dlaždice (klik = ukázat v OBS) a ilustrace místa, které v OBS právě je.
+  const zive = seznam.find((x) => x.id === s?.misto?.id) ?? null;
+  $('#stul-mista').replaceChildren(
+    ...seznam.map((m) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'karta-mista mala';
+      b.setAttribute('aria-pressed', String(m.id === zive?.id));
+      const nahled = (m.ilustrace.find((il) => !il.skryta && il.ucel === 'scena') ?? m.ilustrace[0]);
+      if (nahled) b.style.backgroundImage = `url("${nahled.url}")`;
+      b.append(Object.assign(document.createElement('span'), { textContent: m.nazev }));
+      b.addEventListener('click', async () => {
+        const r = await scenaApi('/api/scena/zobrazit', 'POST', { misto: m.id, prepnout: true });
+        if (r && !r.chybaObs) toast(`V OBS: ${r.misto?.nazev ?? m.nazev}${r.scenaObs ? ` (scéna ${r.scenaObs})` : ''}`);
+      });
+      return b;
+    }),
+  );
+  $('#stul-ilustrace-popis').textContent = !zive
+    ? 'V OBS není žádné místo. Vyber ho výše.'
+    : zive.ilustrace.length
+      ? 'Klikni na ilustraci a ukáže se v OBS. Odkrýt a Skrýt rozhoduje, co se do OBS vůbec dostane.'
+      : 'Místo zatím nemá žádnou ilustraci. Vytvoř ji v Ilustrační dílně.';
+  $('#stul-ilustrace').replaceChildren(...(zive?.ilustrace ?? []).map((il) => kartaIlustrace(zive, il, s, true, false)));
+
   $('#seznam-mist').replaceChildren(
     ...seznam.map((m) => {
       const b = document.createElement('button');
@@ -1233,61 +1328,66 @@ function vykresliMista() {
   // Nepřekresluj pod rukama, když DM právě píše stav nebo vybírá variantu (tlačítka nevadí).
   const aktivni = document.activeElement;
   if (mrizka.contains(aktivni) && ['INPUT', 'SELECT'].includes(aktivni.tagName)) return;
-  mrizka.replaceChildren(
-    ...m.ilustrace.map((il) => {
-      const karta = document.createElement('div');
-      karta.className = 'karta-ilustrace';
-      karta.dataset.skryta = String(il.skryta);
-      if (vObs && s.ilustrace?.soubor === il.soubor) karta.dataset.aktualni = 'true';
-      const obr = document.createElement('button');
-      obr.type = 'button';
-      obr.className = 'obrazek';
-      obr.style.backgroundImage = `url("${il.url}")`;
-      obr.title = il.skryta ? 'Skrytá: nejdřív ji odkryj' : 'Ukázat v OBS';
-      obr.disabled = il.skryta || il.ucel !== 'scena';
-      obr.addEventListener('click', () => scenaApi('/api/scena/zobrazit', 'POST', { misto: m.id, ilustrace: il.soubor, prepnout: !vObs }));
-      const jmeno = document.createElement('p');
-      jmeno.className = 'jmeno';
-      jmeno.textContent = il.soubor;
-      const stitky = document.createElement('p');
-      stitky.className = 'stitky';
-      stitky.textContent = `${il.skryta ? 'skrytá · ' : ''}${textIlustrace(il)}${il.prompt ? ' · má prompt' : ''}`;
-      const ovl = document.createElement('div');
-      ovl.className = 'ovladani-ilustrace';
-      const odkryt = Object.assign(document.createElement('button'), { type: 'button', textContent: il.skryta ? 'Odkrýt' : 'Skrýt' });
-      if (il.skryta) odkryt.className = 'hlavni';
-      odkryt.addEventListener('click', () => upravIlustraci(m.id, il.soubor, { skryta: !il.skryta }));
-      const varianta = document.createElement('select');
-      varianta.title = 'Denní doba';
-      varianta.append(new Option('vždy', ''), new Option('den', 'den'), new Option('noc', 'noc'));
-      varianta.value = il.varianta ?? '';
-      varianta.addEventListener('change', () => upravIlustraci(m.id, il.soubor, { varianta: varianta.value || null }));
-      const stavPole = Object.assign(document.createElement('input'), { value: il.stav ?? '', placeholder: 'stav', title: 'Stav místa (např. po-pozaru); prázdné = výchozí' });
-      stavPole.className = 'stav-ilustrace';
-      stavPole.addEventListener('change', () => upravIlustraci(m.id, il.soubor, { stav: stavPole.value.trim() || null }));
-      const zahodit = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Zahodit' });
-      zahodit.addEventListener('click', async () => {
-        if (zahodit.dataset.potvrd !== 'true') {
-          zahodit.dataset.potvrd = 'true';
-          zahodit.textContent = 'Opravdu?';
-          setTimeout(() => {
-            zahodit.dataset.potvrd = '';
-            zahodit.textContent = 'Zahodit';
-          }, 4000);
-          return;
-        }
-        try {
-          await api(`/api/mista/${m.id}/ilustrace/${encodeURIComponent(il.soubor)}`, { metoda: 'DELETE' });
-          toast(`Zahozeno: ${il.soubor}`);
-        } catch (chyba) {
-          toast(chyba.message, { chyba: true });
-        }
-      });
-      ovl.append(odkryt, varianta, stavPole, zahodit);
-      karta.append(obr, jmeno, stitky, ovl);
-      return karta;
-    }),
-  );
+  mrizka.replaceChildren(...m.ilustrace.map((il) => kartaIlustrace(m, il, s, vObs, true)));
+}
+
+/**
+ * Karta jedné ilustrace. `sprava` = plná sada (varianta, stav, zahodit); jinak jen to, co se hodí u stolu:
+ * ukázat v OBS a odkrýt/skrýt.
+ */
+function kartaIlustrace(m, il, s, vObs, sprava) {
+  const karta = document.createElement('div');
+  karta.className = 'karta-ilustrace';
+  karta.dataset.skryta = String(il.skryta);
+  if (vObs && s.ilustrace?.soubor === il.soubor) karta.dataset.aktualni = 'true';
+  const obr = document.createElement('button');
+  obr.type = 'button';
+  obr.className = 'obrazek';
+  obr.style.backgroundImage = `url("${il.url}")`;
+  obr.title = il.skryta ? 'Skrytá: nejdřív ji odkryj' : 'Ukázat v OBS';
+  obr.disabled = il.skryta || il.ucel !== 'scena';
+  obr.addEventListener('click', () => scenaApi('/api/scena/zobrazit', 'POST', { misto: m.id, ilustrace: il.soubor, prepnout: !vObs }));
+  const jmeno = document.createElement('p');
+  jmeno.className = 'jmeno';
+  jmeno.textContent = il.soubor;
+  const stitky = document.createElement('p');
+  stitky.className = 'stitky';
+  stitky.textContent = `${il.skryta ? 'skrytá · ' : ''}${textIlustrace(il)}${il.prompt ? ' · má prompt' : ''}`;
+  const ovl = document.createElement('div');
+  ovl.className = 'ovladani-ilustrace';
+  const odkryt = Object.assign(document.createElement('button'), { type: 'button', textContent: il.skryta ? 'Odkrýt' : 'Skrýt' });
+  if (il.skryta) odkryt.className = 'hlavni';
+  odkryt.addEventListener('click', () => upravIlustraci(m.id, il.soubor, { skryta: !il.skryta }));
+  const varianta = document.createElement('select');
+  varianta.title = 'Denní doba';
+  varianta.append(new Option('vždy', ''), new Option('den', 'den'), new Option('noc', 'noc'));
+  varianta.value = il.varianta ?? '';
+  varianta.addEventListener('change', () => upravIlustraci(m.id, il.soubor, { varianta: varianta.value || null }));
+  const stavPole = Object.assign(document.createElement('input'), { value: il.stav ?? '', placeholder: 'stav', title: 'Stav místa (např. po-pozaru); prázdné = výchozí' });
+  stavPole.className = 'stav-ilustrace';
+  stavPole.addEventListener('change', () => upravIlustraci(m.id, il.soubor, { stav: stavPole.value.trim() || null }));
+  const zahodit = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Zahodit' });
+  zahodit.addEventListener('click', async () => {
+    if (zahodit.dataset.potvrd !== 'true') {
+      zahodit.dataset.potvrd = 'true';
+      zahodit.textContent = 'Opravdu?';
+      setTimeout(() => {
+        zahodit.dataset.potvrd = '';
+        zahodit.textContent = 'Zahodit';
+      }, 4000);
+      return;
+    }
+    try {
+      await api(`/api/mista/${m.id}/ilustrace/${encodeURIComponent(il.soubor)}`, { metoda: 'DELETE' });
+      toast(`Zahozeno: ${il.soubor}`);
+    } catch (chyba) {
+      toast(chyba.message, { chyba: true });
+    }
+  });
+  ovl.append(odkryt);
+  if (sprava) ovl.append(varianta, stavPole, zahodit);
+  karta.append(obr, jmeno, stitky, ovl);
+  return karta;
 }
 
 async function upravIlustraci(misto, soubor, zmeny) {
@@ -1311,15 +1411,6 @@ $('#misto-popis-ulozit').addEventListener('click', async () => {
   }
 });
 $('#misto-do-dilny').addEventListener('click', () => (dilna.cil = `misto:${vybraneMisto}`));
-$('#misto-scena').addEventListener('change', async (e) => {
-  try {
-    const odpoved = await api('/api/nastaveni', { metoda: 'PUT', telo: { scenaMisto: e.target.value } });
-    stav.prehled.nastaveni = odpoved.nastaveni;
-    toast(e.target.value ? `Scéna místa: ${e.target.value}` : 'Ukázat v OBS nebude přepínat scénu.');
-  } catch (chyba) {
-    toast(chyba.message, { chyba: true });
-  }
-});
 
 /* ---------- Ilustrační dílna ---------- */
 

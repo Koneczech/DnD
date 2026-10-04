@@ -111,6 +111,8 @@ test('Zapisovač: zamčený soubor skončí odloženým zápisem a dokončí se 
 
     zamceno = false;
     await dokud(async () => (await fs.readFile(soubor, 'utf8')) === 'druhý', 2000);
+    // „dokonceno“ přijde až po smazání žurnálu, chvíli po přejmenování souboru.
+    await dokud(() => udalosti.length === 2, 2000);
     assert.deepEqual(udalosti, ['odlozeno', 'dokonceno']);
     assert.equal(z.cekajici(soubor), undefined);
     assert.equal((await fs.readdir(zurnal)).length, 0, 'žurnál je po dokončení prázdný');
@@ -255,6 +257,22 @@ test('Zapisovač.upravit: zamčený soubor čte odložený obsah, takže druhá 
   } finally {
     await z.dokoncit().catch(() => {});
     mock.restoreAll();
+    await smazat();
+  }
+});
+
+test('Zapisovač: opožděná ozvěna staršího vlastního zápisu se nepovažuje za cizí změnu', async () => {
+  const { koren, smazat } = await docasneRepo();
+  const z = new Zapisovac();
+  try {
+    const soubor = path.join(koren, 'kampan', 'stav.md');
+    await z.zapsat(soubor, 'A');
+    await z.zapsat(soubor, 'B');
+    // Hlídání souborů přečetlo soubor ještě s A a ohlásí ho až teď.
+    assert.ok(z.jeVlastniZapis(soubor, 'A'));
+    assert.ok(z.jeVlastniZapis(soubor, 'B'));
+    assert.ok(!z.jeVlastniZapis(soubor, 'cizí změna'));
+  } finally {
     await smazat();
   }
 });

@@ -48,6 +48,7 @@ export class Prolinac {
       return v;
     });
     this.horni = 0;
+    this.priChybe = null;
     this.url = null;
     this.cislo = 0;
   }
@@ -58,16 +59,31 @@ export class Prolinac {
     this.url = url;
     if (url) {
       const img = await predNacist(url);
-      if (cislo !== this.cislo || !img) return;
+      if (cislo !== this.cislo) return;
+      if (!img) {
+        // Obrázek se nenačetl: zapomeň adresu, ať další zpráva zkusí načtení znovu.
+        this.url = null;
+        if (this.priChybe) this.priChybe(url);
+        return;
+      }
     }
     const nova = this.vrstvy[1 - this.horni];
     const stara = this.vrstvy[this.horni];
+    const prvni = this.vrstvy.every((v) => !v.style.backgroundImage || v.style.backgroundImage === 'none');
     nova.style.backgroundImage = url ? `url("${url}")` : 'none';
     nova.style.zIndex = '2';
     stara.style.zIndex = '1';
-    nova.style.opacity = '0';
-    void nova.offsetWidth;
-    nova.style.opacity = '1';
+    if (prvni) {
+      // Úplně první obrázek ukaž hned, bez přechodu: nic pod ním není, takže se nemá z čeho prolínat.
+      nova.style.transition = 'none';
+      nova.style.opacity = '1';
+      void nova.offsetWidth;
+      nova.style.transition = `opacity ${this.trvaniMs}ms ease-in-out`;
+    } else {
+      nova.style.opacity = '0';
+      void nova.offsetWidth;
+      nova.style.opacity = '1';
+    }
     this.horni = 1 - this.horni;
     // Po prolnutí starou vrstvu schovej, ať při dalším přechodu nezůstane vidět pod průhlednou novou.
     setTimeout(() => {

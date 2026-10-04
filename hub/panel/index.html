@@ -119,6 +119,13 @@
           <!-- Výběr místa je první krok, proto stojí nad náhledem (audit, UI U stolu). -->
           <h3>Místa</h3>
           <div class="stul-mista" id="stul-mista"></div>
+          <h3 id="stul-ilustrace-nadpis">Ilustrace v OBS</h3>
+          <div class="stul-vyber">
+            <p class="ulozeni" id="stul-ilustrace-popis"></p>
+            <button type="button" id="stul-misto-ukazat" hidden>Ukázat místo v OBS</button>
+          </div>
+          <div class="ilustrace ilustrace-zive" id="stul-ilustrace"></div>
+          <h3>V OBS teď</h3>
           <div class="stul-misto">
             <div class="stul-nahled" id="stul-nahled" aria-label="Náhled výstupu místa">
               <iframe id="stul-nahled-ramec" title="Náhled výstupu místa" tabindex="-1"></iframe>
@@ -147,9 +154,6 @@
               </div>
             </div>
           </div>
-          <h3>Ilustrace v OBS</h3>
-          <p class="ulozeni" id="stul-ilustrace-popis"></p>
-          <div class="ilustrace ilustrace-zive" id="stul-ilustrace"></div>
           <details class="adresy">
             <summary>Adresa výstupu pro OBS</summary>
             <p class="adresa"><code id="adresa-misto">…</code> <button type="button" data-kopirovat="adresa-misto">Kopírovat adresu</button></p>

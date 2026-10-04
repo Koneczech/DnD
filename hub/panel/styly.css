@@ -418,3 +418,8 @@ button[aria-busy="true"] { cursor: progress; opacity: 0.7; }
 /* Místo, které by v OBS dalo černo (žádná odkrytá ilustrace pro denní dobu) */
 .karta-mista.bez-ilustrace { border-style: dashed; }
 .karta-mista.bez-ilustrace small { color: var(--jantar); }
+
+/* U stolu: vybrané místo (rámeček) a místo, které je v OBS (štítek) */
+.karta-mista.mala.v-obs small:first-of-type { color: var(--zelena); }
+.stul-vyber { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
+.stul-vyber .ulozeni { margin: 0; }

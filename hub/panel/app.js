@@ -328,6 +328,7 @@ const ROLE_SCEN = [['start', 'scenaStart', 'Start'], ['misto', 'scenaMisto', 'M�
 const PANELY = ['start', 'misto', 'obchod', 'souboj', 'bez'];
 const POCASI_TEXT = { dest: 'déšť', snih: 'sníh', mlha: 'mlha' };
 
+stav.stulMisto = null; // místo vybrané na U stolu, dokud ho DM nepošle do OBS (null = to, co je v OBS)
 stav.stulVyber = null; // role vybraná kliknutím na dlaždici; null = podle scény, která je právě v OBS
 
 function roleScenyOBS(nazev) {
@@ -1442,37 +1443,50 @@ function vykresliMista() {
 
   // U stolu: místa jako rychlé dlaždice (klik = ukázat v OBS) a ilustrace místa, které v OBS právě je.
   const zive = seznam.find((x) => x.id === s?.misto?.id) ?? null;
+  // Klik na místo ho jen vybere v panelu; do OBS jde až zvolená ilustrace (nebo Ukázat místo v OBS).
+  // Hráči tak nevidí probliknout výchozí ilustraci, než DM vybere tu správnou.
+  if (stav.stulMisto && !seznam.some((m) => m.id === stav.stulMisto)) stav.stulMisto = null;
+  if (stav.stulMisto === zive?.id) stav.stulMisto = null;
+  const vybrane = seznam.find((x) => x.id === stav.stulMisto) ?? zive;
+  const volby = { varianta: s?.varianta ?? 'den', stav: null };
   $('#stul-mista').replaceChildren(
     ...seznam.map((m) => {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'karta-mista mala';
-      b.setAttribute('aria-pressed', String(m.id === zive?.id));
+      b.setAttribute('aria-pressed', String(m.id === vybrane?.id));
+      if (m.id === zive?.id) b.classList.add('v-obs');
       const nahled = (m.ilustrace.find((il) => !il.skryta && il.ucel === 'scena') ?? m.ilustrace[0]);
       if (nahled) b.style.backgroundImage = `url("${nahled.url}")`;
       b.append(Object.assign(document.createElement('span'), { textContent: m.nazev }));
+      if (m.id === zive?.id) b.append(Object.assign(document.createElement('small'), { textContent: 'v OBS' }));
       // Místo, které by teď v OBS dalo černo, je označené už na dlaždici (audit S6).
-      const volby = { varianta: s?.varianta ?? 'den', stav: null };
       if (!viditelneIlustrace(m, volby).length) {
         b.classList.add('bez-ilustrace');
         const jindy = viditelneIlustrace(m, { varianta: volby.varianta === 'noc' ? 'den' : 'noc', stav: null }).length;
         const text = jindy ? `bez ilustrace na ${volby.varianta === 'noc' ? 'noc' : 'den'}` : 'bez odkryté ilustrace';
         b.append(Object.assign(document.createElement('small'), { textContent: text }));
       }
-      b.addEventListener('click', async () => {
-        if (m.id !== zive?.id && !potvrditCerno(m, volby)) return;
-        const r = await scenaApi('/api/scena/zobrazit', 'POST', { misto: m.id, prepnout: true });
-        if (r && !r.chybaObs) toast(`V OBS: ${r.misto?.nazev ?? m.nazev}${r.scenaObs ? ` (scéna ${r.scenaObs})` : ''}`);
+      b.addEventListener('click', () => {
+        stav.stulMisto = m.id === zive?.id ? null : m.id;
+        vykresliMista();
       });
       return b;
     }),
   );
-  $('#stul-ilustrace-popis').textContent = !zive
+  const jeZive = vybrane && vybrane.id === zive?.id;
+  $('#stul-ilustrace-nadpis').textContent = !vybrane ? 'Ilustrace' : jeZive ? `Ilustrace: ${vybrane.nazev} (v OBS)` : `Ilustrace: ${vybrane.nazev}`;
+  $('#stul-ilustrace-popis').textContent = !vybrane
     ? 'V OBS není žádné místo. Vyber ho výše.'
-    : zive.ilustrace.length
-      ? 'Klikni na ilustraci a ukáže se v OBS. Odkrýt a Skrýt rozhoduje, co se do OBS vůbec dostane.'
-      : 'Místo zatím nemá žádnou ilustraci. Vytvoř ji v Ilustrační dílně.';
-  $('#stul-ilustrace').replaceChildren(...(zive?.ilustrace ?? []).map((il) => kartaIlustrace(zive, il, s, true, false)));
+    : !vybrane.ilustrace.length
+      ? 'Místo zatím nemá žádnou ilustraci. Vytvoř ji v Ilustrační dílně.'
+      : jeZive
+        ? 'Klikni na ilustraci a ukáže se v OBS. Odkrýt a Skrýt rozhoduje, co se do OBS vůbec dostane.'
+        : `V OBS je pořád ${zive ? zive.nazev : 'jiná scéna'}. Klikni na ilustraci a OBS přepne rovnou na ni.`;
+  const ukazatMisto = $('#stul-misto-ukazat');
+  ukazatMisto.hidden = !vybrane || jeZive;
+  ukazatMisto.textContent = vybrane ? `Ukázat ${vybrane.nazev} v OBS (výchozí ilustrace)` : '';
+  $('#stul-ilustrace').replaceChildren(...(vybrane?.ilustrace ?? []).map((il) => kartaIlustrace(vybrane, il, s, jeZive, false)));
 
   $('#seznam-mist').replaceChildren(
     ...seznam.map((m) => {
@@ -1532,7 +1546,10 @@ function kartaIlustrace(m, il, s, vObs, sprava) {
   obr.style.backgroundImage = `url("${il.url}")`;
   obr.title = il.skryta ? 'Skrytá: nejdřív ji odkryj' : 'Ukázat v OBS';
   obr.disabled = il.skryta || il.ucel !== 'scena';
-  obr.addEventListener('click', () => scenaApi('/api/scena/zobrazit', 'POST', { misto: m.id, ilustrace: il.soubor, prepnout: !vObs }));
+  obr.addEventListener('click', async () => {
+    const r = await scenaApi('/api/scena/zobrazit', 'POST', { misto: m.id, ilustrace: il.soubor, prepnout: !vObs });
+    if (r && !vObs) stav.stulMisto = null; // vybrané místo je teď v OBS
+  });
   const jmeno = document.createElement('p');
   jmeno.className = 'jmeno';
   jmeno.textContent = il.soubor;
@@ -1590,6 +1607,13 @@ $('#misto-ukazat').addEventListener('click', async () => {
   if (m && s?.misto?.id !== m.id && !potvrditCerno(m, { varianta: s?.varianta ?? 'den', stav: null })) return;
   const r = await scenaApi('/api/scena/zobrazit', 'POST', { misto: vybraneMisto, prepnout: true });
   if (r && !r.chybaObs) toast(`V OBS: ${r.misto?.nazev ?? ''}${r.scenaObs ? ` (scéna ${r.scenaObs})` : ''}`);
+});
+$('#stul-misto-ukazat').addEventListener('click', async () => {
+  const s = stav.prehled?.scena;
+  const m = stav.prehled?.mista?.mista?.find((x) => x.id === stav.stulMisto);
+  if (!m || !potvrditCerno(m, { varianta: s?.varianta ?? 'den', stav: null })) return;
+  const r = await scenaApi('/api/scena/zobrazit', 'POST', { misto: m.id, prepnout: true });
+  if (r && !r.chybaObs) toast(`V OBS: ${r.misto?.nazev ?? m.nazev}${r.scenaObs ? ` (scéna ${r.scenaObs})` : ''}`);
 });
 $('#misto-popis').addEventListener('input', () => stav.rozpracovano.add(`popis:${vybraneMisto}`));
 $('#misto-popis-ulozit').addEventListener('click', async () => {

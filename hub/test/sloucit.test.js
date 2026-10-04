@@ -14,6 +14,11 @@ Object.assign(process.env, {
   GIT_COMMITTER_EMAIL: 'test@example.invalid',
 });
 
+/** Na Windows může Git při checkoutu vyměnit konce řádků (autocrlf), proto se čte s normalizací. */
+async function precist(koren, relativni) {
+  return (await fs.readFile(path.join(koren, ...relativni.split('/')), 'utf8')).replace(/\r\n/g, '\n');
+}
+
 async function zapsat(koren, relativni, text) {
   const cil = path.join(koren, ...relativni.split('/'));
   await fs.mkdir(path.dirname(cil), { recursive: true });
@@ -62,11 +67,11 @@ test('sloučení čistě rozešlých verzí: lokální commit se přiskládá za
     assert.equal(r.uschovna, false);
     assert.equal(hub.stav.pozadu, 0);
     assert.equal(hub.stav.napred, 0);
-    assert.equal(await fs.readFile(path.join(k.b, 'hub', 'novy.js'), 'utf8'), 'z GitHubu\n');
-    assert.equal(await fs.readFile(path.join(k.b, 'kampan', 'poznamka.md'), 'utf8'), 'moje\n');
+    assert.equal(await precist(k.b, 'hub/novy.js'), 'z GitHubu\n');
+    assert.equal(await precist(k.b, 'kampan/poznamka.md'), 'moje\n');
     // Druhá strana vidí obojí.
     await git(k.a, ['pull', '-q', '--ff-only']);
-    assert.equal(await fs.readFile(path.join(k.a, 'kampan', 'poznamka.md'), 'utf8'), 'moje\n');
+    assert.equal(await precist(k.a, 'kampan/poznamka.md'), 'moje\n');
   } finally {
     await k.smazat();
   }
@@ -85,10 +90,10 @@ test('sloučení s rozdělanou prací: nic se neztratí, ani když soubor existu
     const r = await hub.sloucit();
     assert.equal(r.sloucene, true);
     assert.equal(r.uschovna, true);
-    assert.equal(await fs.readFile(path.join(k.b, 'hub', 'novy.js'), 'utf8'), 'z GitHubu\n', 'platí verze z GitHubu');
+    assert.equal(await precist(k.b, 'hub/novy.js'), 'z GitHubu\n', 'platí verze z GitHubu');
 
     const uschovna = await git(k.b, ['stash', 'list']);
-    const rozdelanaPrace = await fs.readFile(path.join(k.b, 'kampan', 'stav.md'), 'utf8').catch(() => '');
+    const rozdelanaPrace = await precist(k.b, 'kampan/stav.md').catch(() => '');
     // Buď se rozdělaná data vrátila do složky, nebo zůstala v úschovně. Ztratit se nesmí ani jedno.
     assert.ok(rozdelanaPrace === 'datum: 2\n' || /dm-hub-pred-slucovanim/.test(uschovna), 'rozdělaná data nesmí zmizet');
     if (r.uschovnaNevracena) assert.match(uschovna, /dm-hub-pred-slucovanim/);
@@ -111,8 +116,8 @@ test('sloučení s konfliktem: vrátí vše zpět a řekne, který soubor to je'
     assert.equal(await git(k.b, ['rev-parse', 'HEAD']), hlava, 'místní commit zůstal na místě');
     await assert.rejects(fs.access(path.join(k.b, '.git', 'rebase-merge')), 'rebase nezůstal rozdělaný');
     await assert.rejects(fs.access(path.join(k.b, '.git', 'rebase-apply')), 'rebase nezůstal rozdělaný');
-    assert.equal(await fs.readFile(path.join(k.b, 'kampan', 'stav.md'), 'utf8'), 'datum: u mě\n');
-    assert.equal(await fs.readFile(path.join(k.b, 'kampan', 'rozdelane.md'), 'utf8'), 'rozdělané\n', 'rozdělaná práce se vrátila');
+    assert.equal(await precist(k.b, 'kampan/stav.md'), 'datum: u mě\n');
+    assert.equal(await precist(k.b, 'kampan/rozdelane.md'), 'rozdělané\n', 'rozdělaná práce se vrátila');
     assert.equal(await git(k.b, ['stash', 'list']), '', 'úschovna je prázdná, protože se vše vrátilo');
   } finally {
     await k.smazat();

@@ -45,4 +45,15 @@ jobs:
         run: npm ci
 
       - name: Testy
-        run: npm test
+        shell: bash
+        run: npm test 2>&1 | tee vystup-testu.txt; exit ${PIPESTATUS[0]}
+
+      # Selhané testy jako anotace: jsou vidět přímo v PR i přes API, bez stahování logu.
+      - name: Selhané testy jako anotace
+        if: failure()
+        shell: bash
+        run: |
+          set +e +o pipefail
+          { grep -E -A 25 '^\s*not ok' vystup-testu.txt | head -80 || true; echo '--- konec výstupu ---'; tail -n 25 vystup-testu.txt; } > anotace.txt
+          zprava=$(sed 's/%/%25/g' anotace.txt | awk '{printf "%s%%0A", $0}')
+          echo "::error title=Testy (${{ runner.os }})::${zprava}"

@@ -101,7 +101,12 @@ export class Zapisovac extends EventEmitter {
     this.zurnal = zurnal;
     /** @type {Map<string, string>} soubor -> obsah čekající na zápis */
     this.odlozene = new Map();
-    /** @type {Map<string, string>} soubor -> hash posledního obsahu, který zapsal Hub */
+    /**
+     * soubor -> otisky posledních obsahů, které zapsal Hub (nejnovější poslední). Pamatuje si jich
+     * víc: hlídání souborů může ohlásit starší vlastní zápis až po novějším a ten by jinak
+     * vypadal jako cizí změna a vrátil by Hub do staršího stavu.
+     * @type {Map<string, Array<{hash: string, cas: number}>>}
+     */
     this.posledniZapsane = new Map();
     /** @type {Map<string, Promise<unknown>>} soubor -> konec fronty operací nad ním */
     this.fronty = new Map();
@@ -127,7 +132,16 @@ export class Zapisovac extends EventEmitter {
 
   /** Zapsal tento obsah Hub sám? Hlídání souborů tak pozná vlastní ozvěnu. */
   jeVlastniZapis(soubor, obsah) {
-    return this.posledniZapsane.get(path.resolve(soubor)) === Zapisovac.hash(obsah);
+    const hash = Zapisovac.hash(obsah);
+    return (this.posledniZapsane.get(path.resolve(soubor)) ?? []).some((z) => z.hash === hash);
+  }
+
+  /** Zapamatuje si vlastní zápis: posledních 5 a nejvýš 10 s staré (nejnovější vždy). */
+  zapamatovat(klic, obsah) {
+    const ted = Date.now();
+    const seznam = (this.posledniZapsane.get(klic) ?? []).filter((z) => ted - z.cas < 10000).slice(-4);
+    seznam.push({ hash: Zapisovac.hash(obsah), cas: ted });
+    this.posledniZapsane.set(klic, seznam);
   }
 
   /** Obsah, který čeká na zápis (nebo undefined). */
@@ -165,7 +179,7 @@ export class Zapisovac extends EventEmitter {
   }
 
   async zapsatTed(klic, obsah) {
-    this.posledniZapsane.set(klic, Zapisovac.hash(obsah));
+    this.zapamatovat(klic, obsah);
     try {
       await zapsatAtomicky(klic, obsah, this.volbyZapisu);
       const bylOdlozeny = this.odlozene.delete(klic);
@@ -244,7 +258,7 @@ export class Zapisovac extends EventEmitter {
           continue;
         }
         this.odlozene.set(path.resolve(soubor), obsah);
-        this.posledniZapsane.set(path.resolve(soubor), Zapisovac.hash(obsah));
+        this.zapamatovat(path.resolve(soubor), obsah);
         vysledek.obnoveno.push(soubor);
       } catch (e) {
         this.emit('chyba', { soubor: cesta, chyba: e });

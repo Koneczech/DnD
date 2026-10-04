@@ -16,3 +16,6 @@ hub/.stav/
 # Obsidian: osobní nastavení pracovního prostoru
 .obsidian/workspace*.json
 .obsidian/cache
+
+# Výstup testů v CI
+hub/vystup-testu.txt

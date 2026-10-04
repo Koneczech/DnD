@@ -63,3 +63,8 @@ test('odpočet na čas začátku hry míří na ten čas i při pozdějším spu
     await smazat();
   }
 });
+
+test('čas odpočtu jde zadat i s tečkou (19.30), jak se píše česky (audit N16)', () => {
+  const ted = new Date(2026, 9, 4, 12, 0, 0);
+  assert.equal(casNaDatum('19.30', ted).getTime(), casNaDatum('19:30', ted).getTime());
+});

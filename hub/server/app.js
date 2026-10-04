@@ -470,7 +470,7 @@ export class Hub {
     if (p === '/api/obs/souboj' && m === 'POST') {
       await nacistJson(req);
       const scena = this.nastaveni.hodnoty.OBS_SCENA_SOUBOJ;
-      if (!scena) throw Object.assign(new Error('Scéna pro souboj není nastavená. Vyber ji v Nastavení.'), { status: 409 });
+      if (!scena) throw Object.assign(new Error('Scéna pro souboj není nastavená. Přiřaď ji na obrazovce U stolu v tabulce Role scén.'), { status: 409 });
       const zacatek = Date.now();
       await this.obs.prepnoutScenu(scena);
       return poslatJson(res, 200, { ok: true, scena, ms: Date.now() - zacatek });
@@ -572,7 +572,7 @@ export class Hub {
       await this.obs.prepnoutScenu(scena);
       return { scenaObs: scena, chybaObs: null };
     } catch (e) {
-      return { scenaObs: scena, chybaObs: `OBS scénu nepřeplo: ${e.message}` };
+      return { scenaObs: scena, chybaObs: `OBS scénu nepřepnul: ${e.message}` };
     }
   }
 
@@ -650,12 +650,12 @@ export class Hub {
       let chybaObs = null;
       if (id && prepnout) {
         scena = this.nastaveni.hodnoty.OBS_SCENA_OBCHOD || null;
-        if (!scena) chybaObs = 'Scéna obchodu není nastavená, OBS se nepřeplo. Vyber ji na obrazovce Obchody.';
+        if (!scena) chybaObs = 'Scéna obchodu není nastavená, OBS nepřepnul. Přiřaď ji na obrazovce U stolu v tabulce Role scén.';
         else {
           try {
             await this.obs.prepnoutScenu(scena);
           } catch (e) {
-            chybaObs = `OBS scénu nepřeplo: ${e.message}`;
+            chybaObs = `OBS scénu nepřepnul: ${e.message}`;
           }
         }
       }
@@ -686,6 +686,13 @@ export class Hub {
       // Moduly sdílené serverem i výstupy (motor Harptos, orloj).
       koren = path.join(HUB_DIR, 'sdilene');
       soubor = path.join(koren, decodeURIComponent(url.pathname.slice(9)));
+    } else if (
+      OBRAZKY_KAMPANE.has(path.extname(url.pathname).toLowerCase()) &&
+      (url.pathname.startsWith('/monsters/') || !url.pathname.slice(1).includes('/'))
+    ) {
+      // Ilustrace s cestou od kořene repa (/monsters/…, portréty /Alba.png): jen obrázky (audit N2).
+      koren = this.c.koren;
+      soubor = path.join(koren, decodeURIComponent(url.pathname.slice(1)));
     } else throw Object.assign(new Error('Stránka neexistuje'), { status: 404 });
     const rel = path.relative(koren, soubor);
     if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) throw Object.assign(new Error('Stránka neexistuje'), { status: 404 });

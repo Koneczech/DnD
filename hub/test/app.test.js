@@ -220,7 +220,7 @@ test('Blok 1a: Souboj bez nastavené scény hlásí chybu, s nastavenou přepne 
     await dokud(() => hub.obs.pripojeno, 2000);
     const bez = await pozadavek(hub, '/api/obs/souboj', { metoda: 'POST', telo: {} });
     assert.equal(bez.status, 409);
-    assert.match(bez.data.chyba, /Nastavení/);
+    assert.match(bez.data.chyba, /Role scén/);
     await pozadavek(hub, '/api/nastaveni', { metoda: 'PUT', telo: { scenaSouboj: 'Souboj' } });
     const zacatek = Date.now();
     const s = await pozadavek(hub, '/api/obs/souboj', { metoda: 'POST', telo: {} });
@@ -366,6 +366,22 @@ test('odpovědi mají bezpečnostní hlavičky a poškozená adresa vrátí 400 
     assert.equal(r.hlavicky['x-frame-options'], 'SAMEORIGIN');
     assert.match(r.hlavicky['content-security-policy'], /frame-ancestors 'self'/);
     assert.equal((await surovy(hub, '//')).status, 400);
+  } finally {
+    await zastavit();
+  }
+});
+
+test('obrázky s cestou od kořene repa se servírují, jiné soubory z kořene ne (audit N2)', async () => {
+  const { hub, repo, zastavit } = await spustitHub();
+  try {
+    await fs.mkdir(path.join(repo.c.koren, 'monsters'), { recursive: true });
+    await fs.writeFile(path.join(repo.c.koren, 'monsters', 'vlk.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    await fs.writeFile(path.join(repo.c.koren, 'Portret.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    assert.equal((await surovy(hub, '/monsters/vlk.png')).status, 200);
+    assert.equal((await surovy(hub, '/Portret.png')).status, 200);
+    assert.equal((await surovy(hub, '/ZADANI.md')).status, 404);
+    assert.equal((await surovy(hub, '/hub/.env')).status, 404);
+    assert.equal((await surovy(hub, '/monsters/%2E%2E/hub/.env')).status, 404);
   } finally {
     await zastavit();
   }

@@ -145,7 +145,11 @@
 
     function nastavPocasi(d, s) {
       const token = ++zmenaPocasi;
-      document.querySelectorAll('.mlha').forEach((m) => (m.style.opacity = d === 'mlha' ? String(0.55 + s * 0.15) : '0'));
+      document.querySelectorAll('.mlha').forEach((m) => {
+        m.style.opacity = d === 'mlha' ? String(0.55 + s * 0.15) : '0';
+        // Vypnutá mlha se nehýbe: v OBS by jinak zbytečně zatěžovala vykreslování (audit N8).
+        m.style.animationPlayState = d === 'mlha' ? 'running' : 'paused';
+      });
       const canvasove = d === 'dest' || d === 'snih';
       if (!canvasove) {
         platno.style.opacity = '0';
@@ -161,14 +165,18 @@
         return;
       }
       if (animace && druh !== 'zadne') {
-        // Déšť ↔ sníh: nejdřív staré počasí rozplyň, pak nastup s novým.
+        // Déšť ↔ sníh: staré počasí rychle rozplyň a nastup s novým, celkem asi 1 s (zadání 0,5–1,5 s, audit N8).
+        platno.style.transition = 'opacity 0.45s ease-in-out';
         platno.style.opacity = '0';
         setTimeout(() => {
           if (token !== zmenaPocasi) return;
           druh = d;
           vytvor(d, s);
           platno.style.opacity = '1';
-        }, 1250);
+          setTimeout(() => {
+            if (token === zmenaPocasi) platno.style.transition = '';
+          }, 500);
+        }, 480);
         return;
       }
       druh = d;

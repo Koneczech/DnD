@@ -306,6 +306,11 @@ function vykresliKontrolky() {
   $('#svetlo-git').parentElement.title = !g?.dostupny
     ? g?.chyba || 'Zjišťuji'
     : `Větev ${g.vetev}, neuložených souborů ${g.zmeneno}${g.pozadu ? `, na GitHubu je ${g.pozadu} novějších změn` : ''}${g.chyba ? `. ${g.chyba}` : ''}`;
+  // Stav i slovy, nejen barvou (čtečka obrazovky, audit N12).
+  for (const k of ['server', 'obs', 'git']) {
+    const li = $(`#svetlo-${k}`).parentElement;
+    li.setAttribute('aria-label', `${li.textContent.trim()}: ${li.title}`);
+  }
 }
 
 /* ---------- U stolu: dlaždice scén a ovládání podle role ---------- */
@@ -1756,7 +1761,7 @@ $('#dilna-ulozit').addEventListener('click', async () => {
     $('#dilna-orez').hidden = true;
     $('#dilna-soubor').value = '';
     if (typ === 'misto') {
-      vysledek.textContent = `Uloženo jako ${r.soubor} (skrytá). Odkryj ji na obrazovce Místa.`;
+      vysledek.textContent = `Uloženo jako ${r.soubor} (skrytá). Odkryj ji na obrazovce Místa – správa.`;
       vybraneMisto = id;
     } else {
       vysledek.textContent = 'Obrázek obchodu uložen. Ukáže se s ceníkem po Ukázat v OBS.';

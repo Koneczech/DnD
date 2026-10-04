@@ -92,7 +92,7 @@
           <p class="ulozeni" id="odpocet-popis" aria-live="polite"></p>
           <form id="formular-odpocet" class="formular radek" autocomplete="off">
             <label class="kratke">Začátek hry v
-              <input name="cas" id="pole-odpocet-cas" placeholder="19:30" inputmode="numeric">
+              <input name="cas" id="pole-odpocet-cas" placeholder="např. 19:30" inputmode="numeric">
             </label>
             <span class="nebo">nebo</span>
             <label class="kratke">Za kolik minut
@@ -132,7 +132,7 @@
                   <button type="button" id="scena-predchozi" title="Předchozí ilustrace">◀</button>
                   <button type="button" id="scena-dalsi" title="Další ilustrace">▶</button>
                   <label class="zaskrtavaci"><input type="checkbox" id="scena-stridani"> Střídat po</label>
-                  <input type="number" id="scena-sekund" min="5" max="3600" class="cislo kratke-cislo"> <span>s</span>
+                  <input type="number" id="scena-sekund" min="5" max="3600" class="cislo kratke-cislo" aria-label="Sekund mezi ilustracemi"> <span>s</span>
                 </div>
               </div>
               <div class="prepinace">
@@ -142,7 +142,7 @@
                   <button type="button" data-v="zadne">Žádné</button><button type="button" data-v="dest">Déšť</button><button type="button" data-v="snih">Sníh</button><button type="button" data-v="mlha">Mlha</button></div></div>
                 <div class="prepinac"><span>Intenzita</span><div class="segment" id="sc-intenzita" data-pole="intenzita">
                   <button type="button" data-v="0">0</button><button type="button" data-v="1">1</button><button type="button" data-v="2">2</button><button type="button" data-v="3">3</button></div></div>
-                <div class="prepinac"><span>Stav místa</span><select id="sc-stav"></select></div>
+                <div class="prepinac"><span id="sc-stav-popis">Stav místa</span><select id="sc-stav" aria-labelledby="sc-stav-popis"></select></div>
               </div>
             </div>
           </div>
@@ -292,7 +292,7 @@
 
       <section id="obrazovka-dilna" class="obrazovka" hidden>
         <h1>Ilustrační dílna</h1>
-        <p class="uvod">Tři kroky od nápadu k obrázku v OBS: prompt pro ChatGPT, import s ořezem na 16:9 a zvětšením na 1920 × 1080, pak odkrytí na obrazovce Místa. Bez Affinity a bez práce v OBS.</p>
+        <p class="uvod">Tři kroky od nápadu k obrázku v OBS: prompt pro ChatGPT, import s ořezem na 16:9 a zvětšením na 1920 × 1080, pak odkrytí na obrazovce Místa – správa. Bez Affinity a bez práce v OBS.</p>
 
         <h2>1. Prompt</h2>
         <form id="dilna-formular" class="formular radek" autocomplete="off">
@@ -319,7 +319,7 @@
         </form>
         <p class="poznamka jen-misto" id="dilna-predloha-info" hidden>Ke zprávě v ChatGPT přilož předlohu: <a id="dilna-predloha-odkaz" download>stáhnout obrázek</a>. Prompt žádá stejnou kompozici, jen jinou denní dobu nebo stav.</p>
         <p class="poznamka jen-obchod" hidden>Prompt pro interiér obchodu sestaví generátor (tlačítko Zkopírovat prompt pro obrázek). Tady jen naimportuješ hotový obrázek.</p>
-        <textarea id="dilna-prompt" rows="9" class="jen-misto"></textarea>
+        <textarea id="dilna-prompt" rows="9" class="jen-misto" aria-label="Prompt pro ChatGPT"></textarea>
         <div class="tlacitka jen-misto">
           <button type="button" id="dilna-sestavit">Sestavit znovu</button>
           <button type="button" class="hlavni" id="dilna-kopirovat">Kopírovat prompt</button>
@@ -402,7 +402,7 @@
         <div id="zahajit-hraci" class="hraci"></div>
       </fieldset>
       <label class="kratke">Začátek hry v (odpočet)
-        <input name="cas" id="zahajit-cas" placeholder="19:30" inputmode="numeric">
+        <input name="cas" id="zahajit-cas" placeholder="např. 19:30" inputmode="numeric">
       </label>
       <p class="ulozeni varovani" id="zahajit-varovani" hidden></p>
       <p class="ulozeni chyba" id="zahajit-chyba" aria-live="polite"></p>

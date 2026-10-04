@@ -8,6 +8,19 @@ import { zapsatAtomicky } from './zapis.js';
 import { VARIANTY } from './mista.js';
 
 export const POCASI = Object.freeze(['zadne', 'dest', 'snih', 'mlha']);
+/** Efekty počasí, které jdou zapnout současně (déšť, sníh i mlha naráz). */
+export const EFEKTY_POCASI = Object.freeze(['dest', 'snih', 'mlha']);
+
+/**
+ * Počasí jako seznam zapnutých efektů v pevném pořadí. Přijme i starý tvar jednoho řetězce
+ * („dest“, „zadne“), aby fungoval dřívější scena.json i starší panel.
+ * @returns {string[]|null} null = neplatné
+ */
+export function normalizujPocasi(vstup) {
+  const seznam = Array.isArray(vstup) ? vstup : vstup === 'zadne' || vstup == null || vstup === '' ? [] : [vstup];
+  if (!seznam.every((x) => EFEKTY_POCASI.includes(x))) return null;
+  return EFEKTY_POCASI.filter((x) => seznam.includes(x));
+}
 export const INTENZITY = Object.freeze([0, 1, 2, 3]);
 const MIN_STRIDANI = 5;
 const MAX_STRIDANI = 3600;
@@ -20,7 +33,7 @@ export function vychoziStav() {
     ilustrace: null, // jméno souboru aktuální ilustrace
     varianta: 'den',
     stav: null, // null = výchozí stav místa
-    pocasi: 'zadne',
+    pocasi: [],
     intenzita: 0,
     stridani: { zapnuto: true, sekund: 50 },
   };
@@ -57,6 +70,7 @@ export class Scena extends EventEmitter {
     try {
       const d = JSON.parse(await fs.readFile(this.soubor, 'utf8'));
       this.stav = { ...vychoziStav(), ...d, stridani: { ...vychoziStav().stridani, ...(d?.stridani ?? {}) } };
+      this.stav.pocasi = normalizujPocasi(this.stav.pocasi) ?? [];
     } catch {
       this.stav = vychoziStav();
     }
@@ -164,8 +178,9 @@ export class Scena extends EventEmitter {
       this.stav.stav = s;
     }
     if ('pocasi' in z) {
-      if (!POCASI.includes(z.pocasi)) throw chyba('Počasí musí být žádné, déšť, sníh nebo mlha.');
-      this.stav.pocasi = z.pocasi;
+      const pocasi = normalizujPocasi(z.pocasi);
+      if (!pocasi) throw chyba('Počasí je kombinace deště, sněhu a mlhy (nebo žádné).');
+      this.stav.pocasi = pocasi;
     }
     if ('intenzita' in z) {
       const n = Number(z.intenzita);

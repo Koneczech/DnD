@@ -316,6 +316,10 @@ function vykresliKontrolky() {
 const ROLE_SCEN = [['start', 'scenaStart', 'Start'], ['misto', 'scenaMisto', 'Místo'], ['obchod', 'scenaObchod', 'Obchod'], ['souboj', 'scenaSouboj', 'Souboj']];
 const PANELY = ['start', 'misto', 'obchod', 'souboj'];
 const POCASI_TEXT = { dest: 'déšť', snih: 'sníh', mlha: 'mlha' };
+/** Počasí scény jako seznam efektů (starší server posílal jeden řetězec). */
+function pocasiSeznam(p) {
+  return Array.isArray(p) ? p : p && p !== 'zadne' ? [p] : [];
+}
 
 stav.stulMisto = null; // místo vybrané na U stolu, dokud ho DM nepošle do OBS (null = to, co je v OBS)
 stav.stulVyber = null; // otevřená záložka nastavení scény; null = při prvním vykreslení podle scény v OBS
@@ -402,7 +406,8 @@ function vykresliSceny() {
   let text = pripojeno ? `V OBS teď: ${o.aktualniScena || 'neznámá scéna'}` : 'OBS není připojené.';
   if (pripojeno && roleVObs === 'misto' && sc?.misto) {
     text += ` · ${sc.misto.nazev}${sc.ilustrace ? ` · ${sc.ilustrace.soubor}` : ''}`;
-    if (sc.pocasi !== 'zadne') text += ` · ${POCASI_TEXT[sc.pocasi] ?? sc.pocasi} ${sc.intenzita}`;
+    const pocasi = pocasiSeznam(sc.pocasi);
+    if (pocasi.length) text += ` · ${pocasi.map((x) => POCASI_TEXT[x] ?? x).join(' + ')} ${sc.intenzita}`;
   }
   stavEl.textContent = text;
   if (pripojitTlacitko) stavEl.append(' ', pripojitTlacitko);
@@ -1485,6 +1490,12 @@ function vykresliScenu() {
   mini.hidden = !s.misto;
   mini.textContent = s.misto?.nazev ?? '';
   for (const seg of document.querySelectorAll('.prepinace .segment')) {
+    if (seg.dataset.pole === 'pocasi') {
+      // Počasí jsou přepínače: déšť, sníh a mlha jdou zapnout i naráz, Žádné je vypne všechny.
+      const zap = pocasiSeznam(s.pocasi);
+      for (const b of seg.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.v === 'zadne' ? zap.length === 0 : zap.includes(b.dataset.v)));
+      continue;
+    }
     const hodnota = String(s[seg.dataset.pole]);
     for (const b of seg.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.v === hodnota));
   }
@@ -1518,6 +1529,12 @@ for (const seg of document.querySelectorAll('.prepinace .segment')) {
     if (!b) return;
     const pole = seg.dataset.pole;
     const s = stav.prehled?.scena;
+    if (pole === 'pocasi') {
+      const zap = pocasiSeznam(s?.pocasi);
+      const nove = b.dataset.v === 'zadne' ? [] : zap.includes(b.dataset.v) ? zap.filter((x) => x !== b.dataset.v) : [...zap, b.dataset.v];
+      scenaApi('/api/scena', 'PUT', { pocasi: nove });
+      return;
+    }
     const m = stav.prehled?.mista?.mista?.find((x) => x.id === s?.misto?.id);
     if (pole === 'varianta' && m && b.dataset.v !== s.varianta && !potvrditCerno(m, { varianta: b.dataset.v, stav: s.stav })) return;
     scenaApi('/api/scena', 'PUT', { [pole]: pole === 'intenzita' ? Number(b.dataset.v) : b.dataset.v });

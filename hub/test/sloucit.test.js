@@ -135,3 +135,93 @@ test('sloučení odmítne případy, kdy se verze nerozešly', async () => {
     await k.smazat();
   }
 });
+
+test('sloučení: neuložená změna souboru, který se změnil i na GitHubu, nenechá značky konfliktu (audit V1)', async () => {
+  const k = await dvaKlony();
+  try {
+    await ulozit(k.a, 'kampan/stav.md', 'datum: z GitHubu\n', 'změna na GitHubu', { push: true });
+    await ulozit(k.b, 'kampan/poznamka.md', 'moje\n', 'data', {});
+    await zapsat(k.b, 'kampan/stav.md', 'datum: rozdělané u mě\n');
+
+    const hub = new Git(k.b);
+    const r = await hub.sloucit();
+    assert.equal(r.sloucene, true);
+    assert.equal(r.uschovnaNevracena, true);
+    assert.deepEqual(r.vracenoZGitHubu, ['kampan/stav.md']);
+    assert.equal(await precist(k.b, 'kampan/stav.md'), 'datum: z GitHubu\n', 'platí sloučená verze, bez značek');
+    assert.equal(await git(k.b, ['diff', '--name-only', '--diff-filter=U']), '', 'nic nezůstalo nesloučené');
+    assert.match(await git(k.b, ['stash', 'list']), /dm-hub-pred-slucovanim/, 'rozdělaná verze je v úschovně');
+  } finally {
+    await k.smazat();
+  }
+});
+
+test('Uložit odmítne soubor se značkami konfliktu (audit V1)', async () => {
+  const k = await dvaKlony();
+  try {
+    const znacky = `${'<'.repeat(7)} Updated upstream\ndatum: 1\n${'='.repeat(7)}\ndatum: 2\n${'>'.repeat(7)} Stashed changes\n`;
+    await zapsat(k.b, 'kampan/stav.md', znacky);
+    const hub = new Git(k.b);
+    await assert.rejects(hub.ulozit('test'), (e) => e.status === 409 && /značky konfliktu/.test(e.message));
+    assert.equal(await git(k.b, ['diff', '--cached', '--name-only']), '', 'nic nezůstalo připravené ke commitu');
+  } finally {
+    await k.smazat();
+  }
+});
+
+test('Uložit pozná, že GitHub je napřed, a nabídne Sloučit (audit S4)', async () => {
+  const k = await dvaKlony();
+  try {
+    await ulozit(k.a, 'hub/novy.js', 'x\n', 'novinka', { push: true });
+    await zapsat(k.b, 'kampan/poznamka.md', 'moje\n');
+    const hub = new Git(k.b);
+    const r = await hub.ulozit('data');
+    assert.equal(r.commit, true);
+    assert.equal(r.push, false);
+    assert.match(r.chybaPush, /Sloučit/);
+    assert.equal(hub.stav.pozadu, 1);
+    assert.equal(hub.stav.napred, 1);
+  } finally {
+    await k.smazat();
+  }
+});
+
+test('operace Gitu běží za sebou: dvojí Sloučit se nesrazí o zámek (audit S4)', async () => {
+  const k = await dvaKlony();
+  try {
+    await ulozit(k.a, 'hub/novy.js', 'x\n', 'novinka', { push: true });
+    await ulozit(k.b, 'kampan/poznamka.md', 'moje\n', 'data', {});
+    const hub = new Git(k.b);
+    const [prvni, druhe] = await Promise.allSettled([hub.sloucit(), hub.sloucit()]);
+    assert.equal(prvni.status, 'fulfilled');
+    assert.equal(druhe.status, 'rejected');
+    assert.match(druhe.reason.message, /Není co sloučit|nerozešly/);
+  } finally {
+    await k.smazat();
+  }
+});
+
+test('sloučení: rozdělaný soubor, který GitHub smazal, nezablokuje obnovu ostatních (revize oprav)', async () => {
+  const k = await dvaKlony();
+  try {
+    await ulozit(k.a, 'kampan/x.md', 'x\n', 'přidat x', { push: true });
+    await git(k.b, ['pull', '-q', '--ff-only']);
+    await zapsat(k.a, 'kampan/stav.md', 'datum: z GitHubu\n');
+    await fs.rm(path.join(k.a, 'kampan', 'x.md'));
+    await git(k.a, ['add', '-A']);
+    await git(k.a, ['commit', '-q', '-m', 'změna stavu, smazat x']);
+    await git(k.a, ['push', '-q']);
+    await ulozit(k.b, 'kampan/poznamka.md', 'moje\n', 'data', {});
+    await zapsat(k.b, 'kampan/stav.md', 'datum: rozdělané\n');
+    await zapsat(k.b, 'kampan/x.md', 'x rozdělané\n');
+
+    const r = await new Git(k.b).sloucit();
+    assert.equal(r.sloucene, true);
+    assert.equal(await precist(k.b, 'kampan/stav.md'), 'datum: z GitHubu\n', 'bez značek konfliktu');
+    await assert.rejects(fs.access(path.join(k.b, 'kampan', 'x.md')), 'smazaný soubor platí jako smazaný');
+    assert.equal(await git(k.b, ['diff', '--name-only', '--diff-filter=U']), '');
+    assert.match(await git(k.b, ['stash', 'list']), /dm-hub-pred-slucovanim/);
+  } finally {
+    await k.smazat();
+  }
+});

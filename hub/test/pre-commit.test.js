@@ -103,3 +103,14 @@ test('hook: cizí pre-commit hook se nepřepíše', { skip: !maGit() && 'git nen
     await fs.rm(koren, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
   }
 });
+
+test('hook odmítne soubor se značkami konfliktu, ale ne obyčejný text s rovnítky', () => {
+  const znacky = `${'<'.repeat(7)} HEAD\na\n${'='.repeat(7)}\nb\n${'>'.repeat(7)} main\n`;
+  assert.equal(najdiProblemy([{ cesta: 'kampan/stav.md', obsah: znacky }]).length, 1);
+  assert.deepEqual(najdiProblemy([{ cesta: 'kampan/x.md', obsah: 'Nadpis\n=======\n' }]), []);
+});
+
+test('krátký číselný PIN nezablokuje commit s letopočtem, přiřazení PIN=… ano (audit N3)', () => {
+  assert.deepEqual(najdiProblemy([{ cesta: 'kampan/stav.md', obsah: 'datum: {rok: 1491}\n' }], ['1491']), []);
+  assert.equal(najdiProblemy([{ cesta: 'poznamky.txt', obsah: 'PIN=1491\n' }], ['1491']).length, 1);
+});

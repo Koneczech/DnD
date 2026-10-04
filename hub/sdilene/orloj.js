@@ -1,6 +1,7 @@
 // Kreslení orloje kalendáře (SVG). Převzato z Apps/Calendar/kalendar.html beze změny vzhledu;
 // data přicházejí jako { dnes, zacatek, udalosti } z Hubu místo z kalendar-data.js.
 import { Harptos, RIMSKE, udalostiDne, aktivniLhuty, indexZacatku } from './harptos.js';
+import { odebirat } from './zive.js';
 
 /* ---------- Kreslení ---------- */
 const NS = "http://www.w3.org/2000/svg";
@@ -161,10 +162,10 @@ export function velkyOrloj(kontejner) {
   };
 }
 
-/* Malý orloj: medailon uprostřed, vpravo události dne, vlevo odpočty (zrcadlo = strany prohozené) */
+/* Malý orloj: medailon uprostřed, vpravo události dne, vlevo lhůty (zrcadlo = strany prohozené) */
 export function malyOrloj(kontejner, zrcadlo) {
   const W = 1000, mx = 500, cy = 135;
-  const svg = el("svg", { viewBox: "0 0 " + W + " 270", role: "img", "aria-label": "Dnešní datum, události a odpočty" }, kontejner);
+  const svg = el("svg", { viewBox: "0 0 " + W + " 270", role: "img", "aria-label": "Dnešní datum, události a lhůty" }, kontejner);
   const stranaUdalosti = zrcadlo ? -1 : 1, stranaOdpoctu = -stranaUdalosti;
   function stitek(strana) {
     const x = strana > 0 ? mx - 15 : 8, w = strana > 0 ? (W - 8) - (mx - 15) : (mx + 15) - 8;
@@ -186,7 +187,7 @@ export function malyOrloj(kontejner, zrcadlo) {
   const svatek = text(svg, mx, 140, 16, "o-text");
   const svatekPo = text(svg, mx, 160, 11, "o-text-zlaty");
 
-  // Vykreslí jeden štítek. Položka: { text, pocet? }. pocet = { typ: "odpocet", n } nebo { typ: "rozsah", den, celkem };
+  // Vykreslí jeden štítek. Položka: { text, pocet? }. pocet = { typ: "lhuta", n } nebo { typ: "rozsah", den, celkem };
   // stojí u vnějšího okraje. Odpočet má dutý kosočtverec, událost dne plný.
   // Šířka štítku se řídí nejdelším řádkem, aby u krátkých textů nezůstávala prázdná plocha.
   function sirkaTextu(t, nahradni) { try { return t.getComputedTextLength() || nahradni; } catch (e) { return nahradni; } }
@@ -201,15 +202,15 @@ export function malyOrloj(kontejner, zrcadlo) {
     const maxObsah = (s > 0 ? W - 26 : 26) * s - vnitrni * s;   // nejvíc místa pro text a počet dní
     const MEZERA = 16, MIN_OBSAH = 110, OKRAJ = 20;
     const radky = polozky.map((p, i) => {
-      const b = horni + 11 + 46 * i, odpocet = !!(p.pocet && p.pocet.typ === "odpocet");
+      const b = horni + 11 + 46 * i, lhuta = !!(p.pocet && p.pocet.typ === "lhuta");
       el("rect", { x: jx - 4, y: b + 17, width: 8, height: 8, transform: "rotate(45 " + jx + " " + (b + 21) + ")",
-        class: odpocet ? "o-klenot-duty" : "o-klenot", "stroke-width": 1.25 }, g);
+        class: lhuta ? "o-klenot-duty" : "o-klenot", "stroke-width": 1.25 }, g);
       let pocet = null, sirkaPoctu = 0;
       if (p.pocet) {
         pocet = el("text", { x: vnitrni, y: b + 30, "text-anchor": s > 0 ? "end" : "start", class: "o-text-zlaty" }, g);
         const kus = (t, px) => { const e = el("tspan", {}, pocet); e.style.fontSize = px + "px"; e.textContent = t; };
-        if (p.pocet.typ === "odpocet" && p.pocet.n === 1) kus("zítra", 19);
-        else if (p.pocet.typ === "odpocet") { kus("za ", 14); kus(p.pocet.n, 24); kus(p.pocet.n <= 4 ? " dny" : " dní", 14); }
+        if (p.pocet.typ === "lhuta" && p.pocet.n === 1) kus("zítra", 19);
+        else if (p.pocet.typ === "lhuta") { kus("za ", 14); kus(p.pocet.n, 24); kus(p.pocet.n <= 4 ? " dny" : " dní", 14); }
         else { kus("den ", 14); kus(p.pocet.den, 24); kus("/" + p.pocet.celkem, 14); }
         sirkaPoctu = sirkaTextu(pocet, 80);
       }
@@ -244,7 +245,7 @@ export function malyOrloj(kontejner, zrcadlo) {
         svatek.textContent = ""; svatekPo.textContent = "";
       }
       vykresli(stUd, udalostiDne(d, data.udalosti).slice(0, 3).map(x => ({ text: x.u.text, pocet: x.celkem > 1 ? { typ: "rozsah", den: x.den, celkem: x.celkem } : null })));
-      vykresli(stOd, aktivniLhuty(d, data.udalosti).slice(0, 3).map(x => ({ text: x.u.text, pocet: { typ: "odpocet", n: x.zbyva } })));
+      vykresli(stOd, aktivniLhuty(d, data.udalosti).slice(0, 3).map(x => ({ text: x.u.text, pocet: { typ: "lhuta", n: x.zbyva } })));
     }
   };
 }
@@ -276,16 +277,9 @@ svg text { font-family: var(--pismo); font-variant-numeric: lining-nums; }
 
 /**
  * Připojení výstupu ke kalendáři v Hubu: první data přes /api/kalendar/verejne, pak živé změny
- * přes SSE. Při výpadku Hubu drží poslední stav a sám se znovu připojí.
+ * přes WebSocket (jen veřejný kalendář). Při výpadku Hubu drží poslední stav a sám se znovu připojí.
  */
 export function sledovatKalendar(priZmene) {
   fetch('/api/kalendar/verejne').then((r) => r.json()).then((d) => priZmene(d, false)).catch(() => {});
-  function pripojit() {
-    const zdroj = new EventSource('/api/udalosti');
-    zdroj.addEventListener('kalendar', (e) => priZmene(JSON.parse(e.data), true));
-    zdroj.addEventListener('error', () => {
-      if (zdroj.readyState === EventSource.CLOSED) setTimeout(pripojit, 1000);
-    });
-  }
-  pripojit();
+  odebirat(['kalendar'], (_, data) => priZmene(data, true));
 }

@@ -76,8 +76,8 @@ button.hlavni { justify-self: start; background: var(--mosaz); color: var(--noc)
 
 .svetlo { width: 0.7rem; height: 0.7rem; border-radius: 50%; background: var(--linka); }
 .svetlo[data-stav="ok"] { background: var(--zelena); }
-.svetlo[data-stav="varovani"] { background: var(--jantar); }
-.svetlo[data-stav="chyba"] { background: var(--rez); }
+.svetlo[data-stav="varovani"] { background: var(--jantar); border-radius: 2px; transform: rotate(45deg) scale(0.85); }
+.svetlo[data-stav="chyba"] { background: transparent; box-shadow: inset 0 0 0 2px var(--rez); }
 
 /* Rozvržení */
 .rozvrzeni { display: grid; grid-template-columns: 14rem 1fr; min-height: 0; }
@@ -100,7 +100,7 @@ button.hlavni { justify-self: start; background: var(--mosaz); color: var(--noc)
 }
 .moduly a:hover { background: var(--deska); }
 .moduly a[aria-current="page"] { background: var(--deska-svetla); box-shadow: inset 3px 0 0 var(--mosaz); }
-.moduly .pripravuje { color: var(--mlha); opacity: 0.6; cursor: default; }
+.moduly .pripravuje { color: #8a92a3; font-style: italic; cursor: default; }
 .moduly hr { border: 0; border-top: 1px solid var(--linka); width: 100%; margin: 0.75rem 0; }
 .pocet { background: var(--rez); color: var(--noc); border-radius: 999px; padding: 0 0.5rem; font-size: 0.8rem; font-weight: 700; }
 
@@ -171,6 +171,8 @@ input:focus { border-color: var(--mosaz); outline: none; }
   .rozvrzeni { grid-template-columns: 1fr; }
   .moduly { flex-direction: row; flex-wrap: wrap; border-right: 0; border-bottom: 1px solid var(--linka); }
   .moduly hr, .moduly .pripravuje { display: none; }
+  /* V zalomené navigaci se ukazatel nesmí slepit s názvem („Kalendář19. Eleint“). */
+  .moduly .odpocet-mini { margin-left: 0.4rem; }
   main { padding: 1rem; }
 }
 
@@ -405,3 +407,14 @@ label.odkaz { color: var(--mosaz); text-decoration: underline; cursor: pointer; 
 .adresy { margin-top: 1.25rem; color: var(--mlha); }
 .adresy summary { cursor: pointer; }
 .role-sceny { max-width: 34rem; }
+
+/* Restart Hubu v Nastavení */
+.server-blok { margin-top: 1.5rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
+.server-blok .poznamka { margin: 0; }
+
+/* Tlačítko, jehož požadavek právě běží (dvojklik se ignoruje) */
+button[aria-busy="true"] { cursor: progress; opacity: 0.7; }
+
+/* Místo, které by v OBS dalo černo (žádná odkrytá ilustrace pro denní dobu) */
+.karta-mista.bez-ilustrace { border-style: dashed; }
+.karta-mista.bez-ilustrace small { color: var(--jantar); }

@@ -9,9 +9,9 @@ import { zapsatAtomicky } from './zapis.js';
 export const STAVY = Object.freeze(['zadny', 'pripraveny', 'bezi', 'pauza']);
 const MAX_MS = 24 * 60 * 60 * 1000;
 
-/** Z „19:30“ spočítá nejbližší budoucí okamžik (dnes, nebo zítra). */
+/** Z „19:30“ (i „19.30“) spočítá nejbližší budoucí okamžik (dnes, nebo zítra). */
 export function casNaDatum(hhmm, ted = new Date()) {
-  const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm).trim());
+  const m = /^(\d{1,2})[:.](\d{2})$/.exec(String(hhmm).trim());
   if (!m || Number(m[1]) > 23 || Number(m[2]) > 59) {
     throw Object.assign(new Error('Čas zadej jako HH:MM, např. 19:30.'), { status: 400 });
   }

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import http from 'node:http';
 import path from 'node:path';
+import { WebSocket } from 'ws';
 import { Hub } from '../server/app.js';
 import { rozebrat } from '../server/frontmatter.js';
 import { docasneRepo, dokud, FalesnyObs } from './pomoc.js';
@@ -219,13 +220,208 @@ test('Blok 1a: Souboj bez nastavené scény hlásí chybu, s nastavenou přepne 
     await dokud(() => hub.obs.pripojeno, 2000);
     const bez = await pozadavek(hub, '/api/obs/souboj', { metoda: 'POST', telo: {} });
     assert.equal(bez.status, 409);
-    assert.match(bez.data.chyba, /Nastavení/);
+    assert.match(bez.data.chyba, /Role scén/);
     await pozadavek(hub, '/api/nastaveni', { metoda: 'PUT', telo: { scenaSouboj: 'Souboj' } });
     const zacatek = Date.now();
     const s = await pozadavek(hub, '/api/obs/souboj', { metoda: 'POST', telo: {} });
     assert.equal(s.status, 200);
     assert.ok(Date.now() - zacatek < 500);
     assert.equal(obs.scena, 'Souboj');
+  } finally {
+    await zastavit();
+  }
+});
+
+/** Připojí WebSocket k /api/zive a sbírá zprávy. */
+function zive(hub, dotaz = '', hlavicky = {}) {
+  return new Promise((resolve, reject) => {
+    const ws = new WebSocket(`${hub.adresa.replace('http', 'ws')}/api/zive${dotaz}`, { headers: hlavicky });
+    const zpravy = [];
+    ws.on('message', (d) => zpravy.push(JSON.parse(String(d))));
+    ws.on('open', () => resolve({ ws, zpravy }));
+    ws.on('unexpected-response', (_, res) => reject(Object.assign(new Error('odmítnuto'), { status: res.statusCode })));
+    ws.on('error', reject);
+  });
+}
+
+test('živé změny přes WebSocket: výstup dostane jen události, o které si řekl (audit K1, N9)', async () => {
+  const { hub, zastavit } = await spustitHub();
+  const { ws, zpravy } = await zive(hub, '?udalosti=odpocet');
+  try {
+    await dokud(() => zpravy.some((z) => z.u === 'odpocet'), 2000);
+    await pozadavek(hub, '/api/stav', { metoda: 'PUT', telo: { misto: 'Mirabar' } });
+    await pozadavek(hub, '/api/odpocet/pripravit', { metoda: 'POST', telo: { minut: 5 } });
+    await dokud(() => zpravy.filter((z) => z.u === 'odpocet').length >= 2, 2000);
+    assert.deepEqual([...new Set(zpravy.map((z) => z.u))], ['odpocet'], 'žádný stav kampaně ani skrytý kalendář');
+  } finally {
+    ws.terminate();
+    await zastavit();
+  }
+});
+
+test('WebSocket odmítne cizí stránku (Origin) i cizí Host', async () => {
+  const { hub, zastavit } = await spustitHub();
+  try {
+    await assert.rejects(zive(hub, '', { Origin: 'http://zla-stranka.example' }), (e) => e.status === 403);
+    await assert.rejects(zive(hub, '', { Host: 'zla-stranka.example' }), (e) => e.status === 403);
+    const { ws } = await zive(hub, '', { Origin: hub.adresa });
+    ws.terminate();
+  } finally {
+    await zastavit();
+  }
+});
+
+test('restart z panelu: bez spouštěče ho Hub odmítne, se spouštěčem ho zavolá', async () => {
+  const { hub, zastavit } = await spustitHub();
+  try {
+    const bez = await pozadavek(hub, '/api/restart', { metoda: 'POST', telo: {} });
+    assert.equal(bez.status, 409);
+    let restartovano = false;
+    hub.restartovat = async () => {
+      restartovano = true;
+    };
+    const s = await pozadavek(hub, '/api/restart', { metoda: 'POST', telo: {} });
+    assert.equal(s.status, 200);
+    await dokud(() => restartovano, 2000);
+  } finally {
+    await zastavit();
+  }
+});
+
+test('Nastavení hlásí nutný restart jen při změně portu nebo domácí sítě (audit N4)', async () => {
+  const { hub, zastavit } = await spustitHub();
+  try {
+    const port = hub.nastaveni.port;
+    const a = await pozadavek(hub, '/api/nastaveni', { metoda: 'PUT', telo: { obsUrl: 'ws://127.0.0.1:4455', port, domaciSit: false } });
+    assert.equal(a.data.potrebaRestartu, false);
+    const b = await pozadavek(hub, '/api/nastaveni', { metoda: 'PUT', telo: { port: port === 7420 ? 7421 : 7420 } });
+    assert.equal(b.data.potrebaRestartu, true);
+    const { data } = await pozadavek(hub, '/api/prehled');
+    assert.match(data.server.restartNutny, /restartu/);
+  } finally {
+    await zastavit();
+  }
+});
+
+test('stažený nový kód Hubu ohlásí nutný restart, data kampaně ne (audit S2)', async () => {
+  const { hub, zastavit } = await spustitHub();
+  try {
+    hub.oznacitZmenyKodu(['kampan/stav.md', 'hub/test/x.test.js']);
+    assert.equal(hub.restartNutny, null);
+    hub.oznacitZmenyKodu(['hub/server/app.js', 'hub/package-lock.json']);
+    assert.match(hub.restartNutny, /knihoven/);
+  } finally {
+    await zastavit();
+  }
+});
+
+async function hubSDomaciSiti() {
+  const repo = await docasneRepo();
+  // Zjevně falešný PIN generovaný za běhu (CLAUDE.md: žádné tajné hodnoty v testech).
+  const pin = String(100000 + Math.floor(Math.random() * 899999));
+  await fs.writeFile(repo.c.env, `DOMACI_SIT="1"\nPIN="${pin}"\n`);
+  const hub = new Hub({ cesty: repo.c, obsKlient: new FalesnyObs({ heslo: HESLO }), gitSit: false, port: 0 });
+  await hub.spustit();
+  return { hub, pin, zastavit: async () => { await hub.zastavit(); await repo.smazat(); } };
+}
+
+/** Požadavek s vlastní hlavičkou Host (fetch ji přepsat nedovolí). */
+function surovy(hub, cesta, hlavicky = {}) {
+  return new Promise((resolve, reject) => {
+    const req = http.get(hub.adresa + cesta, { headers: hlavicky }, (res) => {
+      res.resume();
+      resolve({ status: res.statusCode, hlavicky: res.headers });
+    });
+    req.on('error', reject);
+  });
+}
+
+test('domácí síť: cizí Host z tohoto počítače neprojde ani se zapnutou sítí (DNS rebinding, audit S5)', async () => {
+  const { hub, zastavit } = await hubSDomaciSiti();
+  try {
+    assert.equal((await surovy(hub, '/api/prehled', { Host: 'utocnik.example:7420' })).status, 302);
+    assert.equal((await surovy(hub, '/api/zdravi', { Host: `127.0.0.1:${new URL(hub.adresa).port}` })).status, 200);
+  } finally {
+    await zastavit();
+  }
+});
+
+test('domácí síť: po 5 chybných PINech se další pokusy odmítají (audit S5)', async () => {
+  const { hub, pin, zastavit } = await hubSDomaciSiti();
+  try {
+    const spatny = pin === '999999' ? '888888' : '999999';
+    for (let i = 0; i < 5; i++) assert.equal((await pozadavek(hub, '/prihlaseni', { metoda: 'POST', telo: { pin: spatny } })).status, 401);
+    const zamceno = await pozadavek(hub, '/prihlaseni', { metoda: 'POST', telo: { pin } });
+    assert.equal(zamceno.status, 429, 'ani správný PIN během zámku');
+    assert.match(zamceno.data.chyba, /Zkus to znovu/);
+  } finally {
+    await zastavit();
+  }
+});
+
+test('odpovědi mají bezpečnostní hlavičky a poškozená adresa vrátí 400 (audit N5, N6)', async () => {
+  const { hub, zastavit } = await spustitHub();
+  try {
+    const r = await surovy(hub, '/');
+    assert.equal(r.hlavicky['x-frame-options'], 'SAMEORIGIN');
+    assert.match(r.hlavicky['content-security-policy'], /frame-ancestors 'self'/);
+    assert.equal((await surovy(hub, '//')).status, 400);
+  } finally {
+    await zastavit();
+  }
+});
+
+test('obrázky s cestou od kořene repa se servírují, jiné soubory z kořene ne (audit N2)', async () => {
+  const { hub, repo, zastavit } = await spustitHub();
+  try {
+    await fs.mkdir(path.join(repo.c.koren, 'monsters'), { recursive: true });
+    await fs.writeFile(path.join(repo.c.koren, 'monsters', 'vlk.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    await fs.writeFile(path.join(repo.c.koren, 'Portret.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    assert.equal((await surovy(hub, '/monsters/vlk.png')).status, 200);
+    assert.equal((await surovy(hub, '/Portret.png')).status, 200);
+    assert.equal((await surovy(hub, '/ZADANI.md')).status, 404);
+    assert.equal((await surovy(hub, '/hub/.env')).status, 404);
+    assert.equal((await surovy(hub, '/monsters/%2E%2E/hub/.env')).status, 404);
+  } finally {
+    await zastavit();
+  }
+});
+
+test('omezení PINu neobejdou souběžné požadavky s pomalu posílaným tělem (revize oprav)', async () => {
+  const { hub, pin, zastavit } = await hubSDomaciSiti();
+  try {
+    const spatny = pin === '999999' ? '888888' : '999999';
+    const { port } = new URL(hub.adresa);
+    // 8 požadavků pošle hlavičky hned, těla až potom.
+    const odpovedi = await new Promise((resolve) => {
+      const vysledky = [];
+      const pozadavky = Array.from({ length: 8 }, () => {
+        const telo = JSON.stringify({ pin: spatny });
+        const req = http.request({ host: '127.0.0.1', port, path: '/prihlaseni', method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(telo) } }, (res) => {
+          res.resume();
+          vysledky.push(res.statusCode);
+          if (vysledky.length === 8) resolve(vysledky);
+        });
+        req.flushHeaders();
+        return { req, telo };
+      });
+      setTimeout(() => pozadavky.forEach(({ req, telo }) => req.end(telo)), 100);
+    });
+    assert.ok(odpovedi.filter((s) => s === 401).length <= 5, `chybných pokusů prošlo ${odpovedi.filter((s) => s === 401).length}`);
+    assert.equal((await pozadavek(hub, '/prihlaseni', { metoda: 'POST', telo: { pin } })).status, 429);
+  } finally {
+    await zastavit();
+  }
+});
+
+test('obrázky z kořene repa: zakódované lomítko omezení neobejde, poškozená adresa vrátí 400 (revize oprav)', async () => {
+  const { hub, repo, zastavit } = await spustitHub();
+  try {
+    await fs.mkdir(path.join(repo.c.koren, 'hub', '.stav'), { recursive: true });
+    await fs.writeFile(path.join(repo.c.koren, 'hub', '.stav', 'tajne.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    assert.equal((await surovy(hub, '/hub%2F.stav%2Ftajne.png')).status, 404);
+    assert.equal((await surovy(hub, '/monsters%2F..%2Fhub%2F.stav%2Ftajne.png')).status, 404);
+    assert.equal((await surovy(hub, '/%E0%A4%A.png')).status, 400);
   } finally {
     await zastavit();
   }

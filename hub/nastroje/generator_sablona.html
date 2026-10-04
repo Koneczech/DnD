@@ -522,7 +522,7 @@ async function zapisDoSlozky(out){
 /* --- režim Hubu ---
    Hub servíruje generátor na /nastroje/generator.html a před data vloží window.DMHUB.
    Uložit pak pošle sortiment do Hubu (kampan/obchody/sortimenty/); do OBS ho pošle
-   tlačítko Ukázat v OBS na obrazovce Obchody. Složka projektu, sloty a zápis souborů
+   tlačítko Ukázat v OBS na obrazovce U stolu (dlaždice Obchod). Složka projektu, sloty a zápis souborů
    se nepoužívají. Opakované uložení přepíše tentýž sortiment, dokud se nevylosuje nový. */
 const HUB = typeof window.DMHUB === 'object' && window.DMHUB !== null;
 let hubId = null;
@@ -532,7 +532,7 @@ async function ulozDoHubu(out){
   const d=await r.json().catch(()=>({}));
   if(!r.ok) throw new Error(d.chyba||('HTTP '+r.status));
   hubId=d.id;
-  zprava('Uloženo do Hubu ('+d.id+'). Do OBS ho pošleš v panelu: Obchody → Ukázat v OBS.');
+  zprava('Uloženo do Hubu ('+d.id+'). Do OBS ho pošleš v panelu: U stolu → Obchod → Ukázat v OBS.');
 }
 el('uloz').addEventListener('click',async()=>{
   if(!stav.polozky.length){zprava('Není co ukládat.',true);return;}

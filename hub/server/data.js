@@ -263,12 +263,10 @@ export class DataKampane extends EventEmitter {
       e.status = 400;
       throw e;
     }
-    const zaklad = this.zapisovac.cekajici(this.c.stav) ?? (await fs.readFile(this.c.stav, 'utf8'));
-    const prevod = {};
-    for (const [k, v] of Object.entries(povolene)) prevod[k] = v;
-    const novyText = upravitHlavicku(zaklad, prevod);
-    const { vysledek } = await this.zapisovac.zapsat(this.c.stav, novyText);
-    await this.nacistStav(novyText);
+    // Čtení posledního obsahu (i odloženého) a zápis běží ve frontě souboru: dvě změny stavu
+    // těsně po sobě se nepřepíšou (audit N1).
+    const { vysledek, obsah } = await this.zapisovac.upravit(this.c.stav, (zaklad) => upravitHlavicku(zaklad, { ...povolene }));
+    await this.nacistStav(obsah);
     return { vysledek };
   }
 

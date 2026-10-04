@@ -1,5 +1,6 @@
 // Ovládací panel DM Hubu. Bez build kroku, čistý JavaScript.
 import { Harptos, MESICE, SVATKY, dnyText, zbyvaText } from '/sdilene/harptos.js';
+import { odebirat } from '/sdilene/zive.js';
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -9,12 +10,54 @@ const stav = {
   rozpracovano: new Set(), // pole, která DM právě píše a ještě se neodeslala
 };
 
-async function api(cesta, { metoda = 'GET', telo } = {}) {
-  const odpoved = await fetch(cesta, {
-    method: metoda,
-    headers: telo !== undefined ? { 'Content-Type': 'application/json' } : {},
-    body: telo !== undefined ? JSON.stringify(telo) : undefined,
-  });
+/**
+ * Požadavek na Hub. Bez odpovědi do limitu skončí chybou, aby panel tiše nevisel (audit N13).
+ * Operace Gitu a nahrání obrázku z dílny mají delší limit.
+ */
+async function api(cesta, { metoda = 'GET', telo, limitMs } = {}) {
+  const limit = limitMs ?? (cesta.startsWith('/api/git/') || cesta.startsWith('/api/dilna/') ? 180000 : 20000);
+  // Tlačítko, které změnu spustilo, je do odpovědi zamčené: dvojklik tak nic neprovede dvakrát (audit S3).
+  // Safari na iPadu tlačítko po kliknutí nefokusuje, proto i naposledy kliknuté tlačítko.
+  const naposledy = performance.now() - posledniKlik.cas < 1000 ? posledniKlik.tlacitko : null;
+  const tlacitko = metoda === 'GET' ? null : document.activeElement instanceof HTMLButtonElement ? document.activeElement : naposledy;
+  tlacitko?.setAttribute('aria-busy', 'true');
+  try {
+    return await poslat(cesta, metoda, telo, limit);
+  } finally {
+    tlacitko?.removeAttribute('aria-busy');
+  }
+}
+
+// Klik na tlačítko, jehož požadavek ještě běží, se zahodí dřív, než ho dostane obsluha.
+let posledniKlik = { tlacitko: null, cas: 0 };
+document.addEventListener(
+  'click',
+  (e) => {
+    const b = e.target instanceof Element ? e.target.closest('button') : null;
+    if (!b) return;
+    if (b.getAttribute('aria-busy') === 'true') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return;
+    }
+    posledniKlik = { tlacitko: b, cas: performance.now() };
+  },
+  true,
+);
+
+async function poslat(cesta, metoda, telo, limit) {
+  let odpoved;
+  try {
+    odpoved = await fetch(cesta, {
+      method: metoda,
+      headers: telo !== undefined ? { 'Content-Type': 'application/json' } : {},
+      body: telo !== undefined ? JSON.stringify(telo) : undefined,
+      signal: AbortSignal.timeout(limit),
+    });
+  } catch (e) {
+    if (e.name === 'TimeoutError') throw new Error(`Hub neodpověděl do ${Math.round(limit / 1000)} s. Zkontroluj kontrolku Server vpravo nahoře.`);
+    throw new Error('Hub není dostupný. Běží? (kontrolka Server vpravo nahoře)');
+  }
   const data = await odpoved.json().catch(() => ({}));
   if (!odpoved.ok) throw Object.assign(new Error(data.chyba || `Server vrátil ${odpoved.status}`), { kod: data.kod });
   return data;
@@ -52,7 +95,8 @@ window.addEventListener('hashchange', () => ukazObrazovku(location.hash.slice(1)
 
 function vykresliStav(s) {
   const k = s?.stav;
-  $('#lista-datum').textContent = k?.datumText || 'Datum není zadané';
+  // Bez spojení se serverem panel nic neví: neříkat „není zadané“, když jen čeká (audit N14).
+  $('#lista-datum').textContent = k?.datumText || (s ? 'Datum není zadané' : 'Čekám na server…');
   vykresliDatumStavu(k);
   $('#lista-misto').textContent = k?.misto || '';
   $('#lista-misto').hidden = !k?.misto;
@@ -162,6 +206,13 @@ function vykresliUpozorneni() {
     return;
   }
   if (!p) return;
+  if (p.server?.restartNutny) {
+    box.append(
+      p.server.restartZPanelu
+        ? zprava(p.server.restartNutny, { tlacitko: { text: 'Restartovat Hub', akce: restartovatHub } })
+        : zprava(`${p.server.restartNutny} Zavři okno DM Hub a spusť ho znovu.`),
+    );
+  }
   if (p.stav?.chyba) box.append(zprava(`Soubor stav.md nejde přečíst: ${p.stav.chyba}. Panel ukazuje poslední platný stav.`, { chyba: true }));
   if (p.stav?.odlozeneZapisy?.length) {
     box.append(zprava(`Čeká na zápis (soubor drží otevřený jiný program): ${p.stav.odlozeneZapisy.join(', ')}. Hub to zkouší znovu každou sekundu.`));
@@ -186,11 +237,49 @@ function vykresliUpozorneni() {
   }
 }
 
+/** Restart z panelu: počká, až naběhne nový server (jiné PID), a načte panel znovu (nový kód). */
+async function restartovatHub() {
+  const staryPid = stav.prehled?.server?.pid;
+  let port = location.port;
+  try {
+    ({ port } = await api('/api/restart', { metoda: 'POST', telo: {} }));
+  } catch (e) {
+    toast(e.message, { chyba: true });
+    return;
+  }
+  toast('Hub se restartuje…');
+  const adresa = `${location.protocol}//${location.hostname}:${port}`;
+  for (let i = 0; i < 60; i++) {
+    await new Promise((r) => setTimeout(r, 1000));
+    try {
+      if (String(port) !== location.port) {
+        // Nový port: jiný původ, stačí, že odpovídá.
+        await fetch(`${adresa}/api/zdravi`, { mode: 'no-cors', signal: AbortSignal.timeout(1000) });
+        location.href = `${adresa}/${location.hash}`;
+        return;
+      }
+      const z = await (await fetch('/api/zdravi', { signal: AbortSignal.timeout(1000) })).json();
+      if (z.pid !== staryPid) {
+        location.reload();
+        return;
+      }
+    } catch {
+      /* server ještě nenaběhl */
+    }
+  }
+  toast('Hub po restartu neodpovídá. Podívej se do okna DM Hub nebo do hub/.stav/hub.log.', { chyba: true });
+}
+$('#tlacitko-restart').addEventListener('click', restartovatHub);
+
 async function sloucitZmeny() {
   try {
     const r = await api('/api/git/sloucit', { metoda: 'POST', telo: {} });
     let text = r.push ? 'Sloučeno a odesláno na GitHub.' : 'Sloučeno, ale odeslání na GitHub se nepodařilo. Zkus Uložit do GitHubu později.';
-    if (r.uschovnaNevracena) text += ' Tvoje neuložené změny zůstaly v úschovně Gitu, protože se nedaly vrátit; pošli to Claudovi.';
+    if (r.vracenoZGitHubu?.length) {
+      text += ` Soubory ${r.vracenoZGitHubu.join(', ')} jsi měl rozdělané a zároveň se změnily na GitHubu: platí verze z GitHubu, tvoje verze je v úschovně Gitu. Pošli to Claudovi.`;
+    } else if (r.uschovnaNevracena) {
+      text += ' Tvoje neuložené změny zůstaly v úschovně Gitu, protože se nedaly vrátit; pošli to Claudovi.';
+    }
     toast(text, { chyba: r.uschovnaNevracena });
     await nactiPrehled();
   } catch (e) {
@@ -224,6 +313,11 @@ function vykresliKontrolky() {
   $('#svetlo-git').parentElement.title = !g?.dostupny
     ? g?.chyba || 'Zjišťuji'
     : `Větev ${g.vetev}, neuložených souborů ${g.zmeneno}${g.pozadu ? `, na GitHubu je ${g.pozadu} novějších změn` : ''}${g.chyba ? `. ${g.chyba}` : ''}`;
+  // Stav i slovy, nejen barvou (čtečka obrazovky, audit N12).
+  for (const k of ['server', 'obs', 'git']) {
+    const li = $(`#svetlo-${k}`).parentElement;
+    li.setAttribute('aria-label', `${li.textContent.trim()}: ${li.title}`);
+  }
 }
 
 /* ---------- U stolu: dlaždice scén a ovládání podle role ---------- */
@@ -255,7 +349,9 @@ function vykresliSceny() {
   if (!role && !pripojeno) role = 'start';
   if (!PANELY.includes(role)) role = null;
 
-  if (!o?.nastaveno) {
+  if (!stav.prehled) {
+    popis.textContent = 'Čekám na server Hubu…';
+  } else if (!o?.nastaveno) {
     popis.textContent = 'OBS ještě není nastavené. Zadej heslo k WebSocket serveru v Nastavení. Ovládání níže funguje i bez OBS, jen nepřepíná scény.';
   } else if (!pripojeno) {
     popis.textContent = `${o.chyba || 'OBS není připojené.'} Hub to zkouší znovu každých 5 sekund.`;
@@ -364,12 +460,13 @@ function vykresliNastaveni(n) {
   $('#pole-obs-heslo').placeholder = n.obsHesloNastaveno ? 'Heslo je uložené. Vyplň jen při změně.' : 'Heslo z OBS';
   $('#pole-port').value = n.port;
   $('#pole-domaci-sit').checked = n.domaciSit;
-  $('#pole-pin').placeholder = n.pinNastaven ? 'PIN je uložený. Vyplň jen při změně.' : '4–8 číslic';
+  $('#pole-pin').placeholder = n.pinNastaven ? 'PIN je uložený. Vyplň jen při změně.' : '6–8 číslic';
   vykresliVyberSouboje();
   const srv = stav.prehled?.server;
   $('#server-info').textContent = srv
-    ? `Server běží jako node.exe s PID ${srv.pid}. Ve Správci úloh ho najdeš na kartě Podrobnosti; ukončení tohoto procesu otestuje automatický restart.`
+    ? `Server běží jako node.exe s PID ${srv.pid}. Restart načte nový kód a nastavení; výstupy v OBS se samy znovu připojí.`
     : '';
+  $('#tlacitko-restart').hidden = !srv?.restartZPanelu;
 }
 
 /** Role scén: scény z OBS, a pokud OBS neběží, aspoň uložená hodnota. */
@@ -414,8 +511,8 @@ $('#formular-nastaveni').addEventListener('submit', async (e) => {
     $('#pole-pin').value = '';
     vysledek.className = 'ulozeni';
     vysledek.textContent = odpoved.potrebaRestartu
-      ? 'Nastavení uloženo. Změna portu nebo přístupu z domácí sítě se projeví po restartu Hubu.'
-      : `Nastavení uloženo v ${cas()}. Připojuji se k OBS…`;
+      ? 'Nastavení uloženo. Změna portu nebo přístupu z domácí sítě se projeví po restartu Hubu (tlačítko níž).'
+      : `Nastavení uloženo v ${cas()}.`;
     await nactiPrehled();
   } catch (chyba) {
     vysledek.className = 'ulozeni chyba';
@@ -452,39 +549,43 @@ async function nactiPrehled() {
 }
 
 function pripojitUdalosti() {
-  const zdroj = new EventSource('/api/udalosti');
-  zdroj.addEventListener('open', () => {
-    if (!stav.serverOk) nactiPrehled();
-  });
-  zdroj.addEventListener('error', () => {
-    stav.serverOk = false;
-    prekresli();
-    if (zdroj.readyState === EventSource.CLOSED) setTimeout(pripojitUdalosti, 1000);
-  });
-  const aktualizuj = (klic) => (e) => {
+  const aktualizuj = (klic) => (data) => {
     if (!stav.prehled) return;
-    stav.prehled[klic] = JSON.parse(e.data);
+    stav.prehled[klic] = data;
     stav.serverOk = true;
     prekresli();
   };
-  zdroj.addEventListener('stav', aktualizuj('stav'));
-  zdroj.addEventListener('obs', aktualizuj('obs'));
-  zdroj.addEventListener('git', aktualizuj('git'));
-  zdroj.addEventListener('kontrola', aktualizuj('kontrola'));
-  zdroj.addEventListener('sezeni', aktualizuj('sezeni'));
-  zdroj.addEventListener('kalendar-dm', aktualizuj('kalendar'));
-  zdroj.addEventListener('obchody', aktualizuj('obchody'));
-  zdroj.addEventListener('mista', aktualizuj('mista'));
-  zdroj.addEventListener('scena', (e) => {
-    if (!stav.prehled) return;
-    stav.prehled.scena = JSON.parse(e.data);
-    vykresliScenu();
-  });
-  zdroj.addEventListener('odpocet', (e) => {
-    if (!stav.prehled) return;
-    stav.prehled.odpocet = JSON.parse(e.data);
-    stav.odchylkaHodin = Date.parse(stav.prehled.odpocet.serverCas) - Date.now();
-    vykresliOdpocet();
+  const obsluha = {
+    stav: aktualizuj('stav'),
+    obs: aktualizuj('obs'),
+    git: aktualizuj('git'),
+    kontrola: aktualizuj('kontrola'),
+    sezeni: aktualizuj('sezeni'),
+    'kalendar-dm': aktualizuj('kalendar'),
+    obchody: aktualizuj('obchody'),
+    mista: aktualizuj('mista'),
+    server: aktualizuj('server'),
+    scena: (data) => {
+      if (!stav.prehled) return;
+      stav.prehled.scena = data;
+      vykresliScenu();
+    },
+    odpocet: (data) => {
+      if (!stav.prehled) return;
+      stav.prehled.odpocet = data;
+      stav.odchylkaHodin = Date.parse(data.serverCas) - Date.now();
+      vykresliOdpocet();
+    },
+  };
+  odebirat(Object.keys(obsluha), (udalost, data) => obsluha[udalost]?.(data), {
+    priStavu: (pripojeno) => {
+      if (pripojeno) {
+        if (!stav.serverOk) nactiPrehled();
+      } else {
+        stav.serverOk = false;
+        prekresli();
+      }
+    },
   });
 }
 
@@ -568,8 +669,12 @@ function otevritUkoncit() {
   $('#ukoncit-vysledek').textContent = '';
   $('#ukoncit-vysledek').className = 'ulozeni';
   for (const i of document.querySelectorAll('#dialog-ukoncit input')) i.checked = false;
+  ukonceneSezeni = null;
   $('#dialog-ukoncit').showModal();
 }
+
+// Sezení ukončené v tomto dialogu: když pak selže uložení do GitHubu, další klik zkusí jen uložení (audit N13).
+let ukonceneSezeni = null;
 
 $('#formular-ukoncit').addEventListener('submit', async (e) => {
   const volba = e.submitter?.value;
@@ -577,7 +682,8 @@ $('#formular-ukoncit').addEventListener('submit', async (e) => {
   e.preventDefault();
   const vysledek = $('#ukoncit-vysledek');
   try {
-    const r = await api('/api/sezeni/ukoncit', { metoda: 'POST', telo: {} });
+    const r = ukonceneSezeni ?? (await api('/api/sezeni/ukoncit', { metoda: 'POST', telo: {} }));
+    ukonceneSezeni = r;
     if (volba === 'jen-ukoncit') {
       $('#dialog-ukoncit').close();
       toast(`Sezení ${r.cislo} ukončeno. Do GitHubu ho ulož ze Stavu kampaně.`);
@@ -589,7 +695,9 @@ $('#formular-ukoncit').addEventListener('submit', async (e) => {
     toast(g.chybaPush ? g.chybaPush : `Sezení ${r.cislo} ukončeno a uloženo do GitHubu.`, { chyba: Boolean(g.chybaPush) });
   } catch (chyba) {
     vysledek.className = 'ulozeni chyba';
-    vysledek.textContent = chyba.message;
+    vysledek.textContent = ukonceneSezeni
+      ? `Sezení ${ukonceneSezeni.cislo} je ukončené, ale uložení do GitHubu se nepodařilo: ${chyba.message} Zkus to znovu stejným tlačítkem.`
+      : chyba.message;
   }
 });
 
@@ -616,14 +724,16 @@ function otevritPoznamku() {
     ? `Zapíše se do sezení ${s.cislo} s aktuálním časem.`
     : 'Sezení neběží, poznámka se zapíše do kampan/sezeni/priprava.md.';
   $('#poznamka-chyba').textContent = '';
-  for (const dlg of document.querySelectorAll('dialog[open]')) dlg.close();
+  // Otevřený dialog (třeba připomínky Dalšího dne) zůstane pod poznámkou, nezavře se (audit S7).
   d.showModal();
   $('#pole-poznamka').focus();
 }
 
+let zapisujePoznamku = false;
 async function zapsatPoznamku() {
   const pole = $('#pole-poznamka');
-  if (!pole.value.trim()) return;
+  if (!pole.value.trim() || zapisujePoznamku) return;
+  zapisujePoznamku = true;
   try {
     const r = await api('/api/poznamka', { metoda: 'POST', telo: { text: pole.value } });
     pole.value = '';
@@ -631,6 +741,8 @@ async function zapsatPoznamku() {
     toast(r.vysledek === 'odlozeno' ? 'Poznámka čeká na zápis (soubor je otevřený jinde).' : `Poznámka zapsána v ${r.cas}.`);
   } catch (chyba) {
     $('#poznamka-chyba').textContent = chyba.message;
+  } finally {
+    zapisujePoznamku = false;
   }
 }
 
@@ -959,7 +1071,9 @@ async function nactiImport() {
   }
   const box = $('#kalendar-import');
   const imp = k.import;
-  box.hidden = !imp?.dostupny && k.existuje;
+  // Import je jednorázový převod ze starého kalendáře. Jakmile události v repu jsou, box se
+  // neukazuje: opakovaný import by jedním klikem přepsal události i dnešní datum (audit V2).
+  box.hidden = k.existuje;
   if (box.hidden) return;
   $('#import-pocet-zdroj').textContent = imp.pocet;
   seznamImportu($('#import-zdroj'), imp.seznam);
@@ -1096,6 +1210,7 @@ async function otevritDalsiDen() {
   $('#den-chyba').textContent = '';
   $('#den-krok1').hidden = false;
   $('#den-krok2').hidden = true;
+  stav.denOdeslan = false;
   for (const dlg of document.querySelectorAll('dialog[open]')) dlg.close();
   $('#dialog-den').showModal();
 }
@@ -1104,6 +1219,9 @@ $('#formular-den').addEventListener('submit', async (e) => {
   const volba = e.submitter?.value;
   if (volba !== 'ano' && volba !== 'ne') return;
   e.preventDefault();
+  // Jeden dialog = nejvýš jeden posun kalendáře, i při dvojkliku (audit S3).
+  if (stav.denOdeslan) return;
+  stav.denOdeslan = true;
   try {
     const r = await api('/api/den/dalsi', { metoda: 'POST', telo: { dukladny: volba === 'ano' } });
     $('#den-datum').textContent = r.dnesText;
@@ -1123,6 +1241,7 @@ $('#formular-den').addEventListener('submit', async (e) => {
     $('#den-krok1').hidden = true;
     $('#den-krok2').hidden = false;
   } catch (chyba) {
+    stav.denOdeslan = false;
     $('#den-chyba').textContent = chyba.message;
   }
 });
@@ -1205,6 +1324,20 @@ function vykresliObchody() {
 
 let vybraneMisto = null; // místo zobrazené v panelu (nemusí být to, co je v OBS)
 
+/** Ilustrace, které by OBS ukázalo pro danou denní dobu a stav (stejné pravidlo jako server, scena.js). */
+function viditelneIlustrace(m, { varianta, stav: stavMista }) {
+  return (m?.ilustrace ?? []).filter(
+    (il) => il.ucel === 'scena' && !il.skryta && (!il.varianta || il.varianta === varianta) && (!il.stav || il.stav === stavMista),
+  );
+}
+
+/** Před akcí, po které by v OBS zůstalo černo, se zeptat (audit S6). */
+function potvrditCerno(m, volby) {
+  if (viditelneIlustrace(m, volby).length) return true;
+  const kdy = [volby.varianta === 'noc' ? 'noc' : 'den', volby.stav ? `stav ${volby.stav}` : null].filter(Boolean).join(', ');
+  return confirm(`${m.nazev} nemá pro ${kdy} žádnou odkrytou ilustraci, takže v OBS bude černo. Přesto přepnout?`);
+}
+
 function textIlustrace(il) {
   return [il.varianta, il.stav].filter(Boolean).join(' · ') || 'vždy';
 }
@@ -1217,7 +1350,7 @@ function vykresliScenu() {
     ? s.ilustrace
       ? `${s.ilustrace.soubor} (${s.poradi}/${s.pocet})${s.stridani.zapnuto && s.pocet > 1 ? `, střídá se po ${s.stridani.sekund} s` : ''}`
       : 'Pro tuhle denní dobu a stav nemá místo žádnou odkrytou ilustraci; OBS je černé.'
-    : 'Vyber místo níže a dej Ukázat v OBS.';
+    : 'Klikni na místo a ukáže se v OBS.';
   const mini = $('#mista-mini');
   mini.hidden = !s.misto;
   mini.textContent = s.misto?.nazev ?? '';
@@ -1254,10 +1387,21 @@ for (const seg of document.querySelectorAll('.prepinace .segment')) {
     const b = e.target.closest('button');
     if (!b) return;
     const pole = seg.dataset.pole;
+    const s = stav.prehled?.scena;
+    const m = stav.prehled?.mista?.mista?.find((x) => x.id === s?.misto?.id);
+    if (pole === 'varianta' && m && b.dataset.v !== s.varianta && !potvrditCerno(m, { varianta: b.dataset.v, stav: s.stav })) return;
     scenaApi('/api/scena', 'PUT', { [pole]: pole === 'intenzita' ? Number(b.dataset.v) : b.dataset.v });
   });
 }
-$('#sc-stav').addEventListener('change', (e) => scenaApi('/api/scena', 'PUT', { stav: e.target.value || null }));
+$('#sc-stav').addEventListener('change', (e) => {
+  const s = stav.prehled?.scena;
+  const m = stav.prehled?.mista?.mista?.find((x) => x.id === s?.misto?.id);
+  if (m && !potvrditCerno(m, { varianta: s.varianta, stav: e.target.value || null })) {
+    e.target.value = s.stav ?? '';
+    return;
+  }
+  scenaApi('/api/scena', 'PUT', { stav: e.target.value || null });
+});
 $('#scena-predchozi').addEventListener('click', () => scenaApi('/api/scena/dalsi', 'POST', { smer: -1 }));
 $('#scena-dalsi').addEventListener('click', () => scenaApi('/api/scena/dalsi', 'POST', { smer: 1 }));
 $('#scena-stridani').addEventListener('change', (e) => scenaApi('/api/scena', 'PUT', { stridani: { zapnuto: e.target.checked } }));
@@ -1279,7 +1423,16 @@ function vykresliMista() {
       const nahled = (m.ilustrace.find((il) => !il.skryta && il.ucel === 'scena') ?? m.ilustrace[0]);
       if (nahled) b.style.backgroundImage = `url("${nahled.url}")`;
       b.append(Object.assign(document.createElement('span'), { textContent: m.nazev }));
+      // Místo, které by teď v OBS dalo černo, je označené už na dlaždici (audit S6).
+      const volby = { varianta: s?.varianta ?? 'den', stav: null };
+      if (!viditelneIlustrace(m, volby).length) {
+        b.classList.add('bez-ilustrace');
+        const jindy = viditelneIlustrace(m, { varianta: volby.varianta === 'noc' ? 'den' : 'noc', stav: null }).length;
+        const text = jindy ? `bez ilustrace na ${volby.varianta === 'noc' ? 'noc' : 'den'}` : 'bez odkryté ilustrace';
+        b.append(Object.assign(document.createElement('small'), { textContent: text }));
+      }
       b.addEventListener('click', async () => {
+        if (m.id !== zive?.id && !potvrditCerno(m, volby)) return;
         const r = await scenaApi('/api/scena/zobrazit', 'POST', { misto: m.id, prepnout: true });
         if (r && !r.chybaObs) toast(`V OBS: ${r.misto?.nazev ?? m.nazev}${r.scenaObs ? ` (scéna ${r.scenaObs})` : ''}`);
       });
@@ -1308,6 +1461,10 @@ function vykresliMista() {
       pocet.textContent = `${odkryte.length} odkrytých, ${m.ilustrace.length - odkryte.length} skrytých`;
       b.append(popis, pocet);
       b.addEventListener('click', () => {
+        if (m.id !== vybraneMisto && stav.rozpracovano.has(`popis:${vybraneMisto}`)) {
+          if (!confirm('Popis vzhledu není uložený. Přejít jinam a rozepsaný text zahodit?')) return;
+          stav.rozpracovano.delete(`popis:${vybraneMisto}`);
+        }
         vybraneMisto = m.id;
         vykresliMista();
       });
@@ -1323,7 +1480,8 @@ function vykresliMista() {
   $('#misto-souhrn').textContent = m.ilustrace.length
     ? `Klikni na odkrytou ilustraci a ukáže se v OBS. Skryté (šedé) do OBS nejdou, dokud je neodkryješ.`
     : 'Místo zatím nemá žádnou ilustraci. Vytvoř ji v Ilustrační dílně.';
-  if (document.activeElement !== $('#misto-popis')) $('#misto-popis').value = m.popisObrazu;
+  // Rozepsaný popis nepřepíše žádná živá změna (střídání ilustrací, změna jinde), dokud ho DM neuloží (audit S7).
+  if (document.activeElement !== $('#misto-popis') && !stav.rozpracovano.has(`popis:${m.id}`)) $('#misto-popis').value = m.popisObrazu;
   const mrizka = $('#misto-ilustrace');
   // Nepřekresluj pod rukama, když DM právě píše stav nebo vybírá variantu (tlačítka nevadí).
   const aktivni = document.activeElement;
@@ -1399,12 +1557,17 @@ async function upravIlustraci(misto, soubor, zmeny) {
 }
 
 $('#misto-ukazat').addEventListener('click', async () => {
+  const s = stav.prehled?.scena;
+  const m = stav.prehled?.mista?.mista?.find((x) => x.id === vybraneMisto);
+  if (m && s?.misto?.id !== m.id && !potvrditCerno(m, { varianta: s?.varianta ?? 'den', stav: null })) return;
   const r = await scenaApi('/api/scena/zobrazit', 'POST', { misto: vybraneMisto, prepnout: true });
   if (r && !r.chybaObs) toast(`V OBS: ${r.misto?.nazev ?? ''}${r.scenaObs ? ` (scéna ${r.scenaObs})` : ''}`);
 });
+$('#misto-popis').addEventListener('input', () => stav.rozpracovano.add(`popis:${vybraneMisto}`));
 $('#misto-popis-ulozit').addEventListener('click', async () => {
   try {
     await api(`/api/mista/${vybraneMisto}/popis`, { metoda: 'PUT', telo: { popis: $('#misto-popis').value } });
+    stav.rozpracovano.delete(`popis:${vybraneMisto}`);
     toast('Popis uložen.');
   } catch (chyba) {
     toast(chyba.message, { chyba: true });
@@ -1612,7 +1775,7 @@ $('#dilna-ulozit').addEventListener('click', async () => {
     $('#dilna-orez').hidden = true;
     $('#dilna-soubor').value = '';
     if (typ === 'misto') {
-      vysledek.textContent = `Uloženo jako ${r.soubor} (skrytá). Odkryj ji na obrazovce Místa.`;
+      vysledek.textContent = `Uloženo jako ${r.soubor} (skrytá). Odkryj ji na obrazovce Místa – správa.`;
       vybraneMisto = id;
     } else {
       vysledek.textContent = 'Obrázek obchodu uložen. Ukáže se s ceníkem po Ukázat v OBS.';

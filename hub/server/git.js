@@ -1,6 +1,9 @@
 // Git: stav lokálního klonu, kontrola novějších změn na GitHubu a Stáhnout změny.
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { maZnackyKonfliktu } from '../hooks/pre-commit.js';
 
 const spust = promisify(execFile);
 
@@ -18,10 +21,52 @@ export class Git {
   constructor(koren) {
     this.koren = koren;
     this.stav = { dostupny: null, vetev: null, zmeneno: 0, pozadu: 0, napred: 0, upstream: null, chyba: null, kontrolovano: null };
+    this.fronta = Promise.resolve();
+  }
+
+  /**
+   * Operace Gitu běží jedna po druhé: dvě současné (Uložit a kontrola GitHubu, dvojklik na Sloučit)
+   * by se srazily o zámek .git/index.lock (audit S4).
+   */
+  vylucne(operace) {
+    const vysledek = this.fronta.catch(() => {}).then(operace);
+    this.fronta = vysledek.catch(() => {});
+    return vysledek;
+  }
+
+  lokalniStav() {
+    return this.vylucne(() => this._lokalniStav());
+  }
+
+  /** Aktuální commit (nebo null mimo repozitář). */
+  hlava() {
+    return this.vylucne(() => git(this.koren, ['rev-parse', 'HEAD']).catch(() => null));
+  }
+
+  /** Soubory změněné mezi commitem `od` a aktuálním (cesty s lomítky od kořene repa). */
+  zmenyOd(od) {
+    if (!od) return Promise.resolve([]);
+    return this.vylucne(async () => (await git(this.koren, ['diff', '--name-only', od, 'HEAD']).catch(() => '')).split('\n').filter(Boolean));
+  }
+
+  zkontrolovatVzdaleny() {
+    return this.vylucne(() => this._zkontrolovatVzdaleny());
+  }
+
+  ulozit(zprava, cesty) {
+    return this.vylucne(() => this._ulozit(zprava, cesty));
+  }
+
+  stahnout() {
+    return this.vylucne(() => this._stahnout());
+  }
+
+  sloucit() {
+    return this.vylucne(() => this._sloucit());
   }
 
   /** Lokální stav bez sítě. */
-  async lokalniStav() {
+  async _lokalniStav() {
     try {
       await git(this.koren, ['rev-parse', '--git-dir']);
       let vetev;
@@ -54,8 +99,8 @@ export class Git {
   }
 
   /** Stáhne informace z GitHubu (git fetch) a spočítá, o kolik commitů je klon pozadu. */
-  async zkontrolovatVzdaleny() {
-    await this.lokalniStav();
+  async _zkontrolovatVzdaleny() {
+    await this._lokalniStav();
     if (!this.stav.dostupny || !this.stav.upstream) return this.stav;
     try {
       await git(this.koren, ['fetch', '--quiet']);
@@ -72,11 +117,25 @@ export class Git {
    * Kód Hubu ani nic jiného se tímto tlačítkem necommituje.
    * @returns {Promise<{commit:boolean, push:boolean, zprava:string}>}
    */
-  async ulozit(zprava, cesty = ['kampan']) {
-    await this.lokalniStav();
+  async _ulozit(zprava, cesty = ['kampan']) {
+    await this._lokalniStav();
     if (!this.stav.dostupny) throw Object.assign(new Error(this.stav.chyba || 'Git není dostupný.'), { status: 409 });
+    const nesloucene = (await git(this.koren, ['diff', '--name-only', '--diff-filter=U'])).split('\n').filter(Boolean);
+    if (nesloucene.length) {
+      throw Object.assign(new Error(`Nejde uložit: Git má nedořešené sloučení v souborech ${nesloucene.join(', ')}. Pošli to Claudovi.`), { status: 409 });
+    }
     await git(this.koren, ['add', '--', ...cesty]);
     const zmeny = await git(this.koren, ['diff', '--cached', '--name-only', '--', ...cesty]);
+    // Značky konfliktu (<<<<<<< … >>>>>>>) by na GitHub odešly rozbité soubory (audit V1).
+    const seZnackami = [];
+    for (const soubor of zmeny.split('\n').filter(Boolean)) {
+      const text = await fs.readFile(path.join(this.koren, ...soubor.split('/')), 'utf8').catch(() => '');
+      if (maZnackyKonfliktu(text)) seZnackami.push(soubor);
+    }
+    if (seZnackami.length) {
+      await git(this.koren, ['reset', '-q', '--', ...cesty]).catch(() => {});
+      throw Object.assign(new Error(`Nejde uložit: v ${seZnackami.join(', ')} zůstaly značky konfliktu (<<<<<<<). Pošli to Claudovi.`), { status: 409 });
+    }
     let commit = false;
     if (zmeny) {
       try {
@@ -98,19 +157,24 @@ export class Git {
       try {
         await git(this.koren, ['push', '--quiet'], { timeout: 60000 });
         push = true;
-      } catch {
-        chybaPush = 'Uloženo jen lokálně, odeslání na GitHub se nepodařilo (internet nebo přihlášení). Zkus Uložit znovu později.';
+      } catch (e) {
+        const vystup = String(e.stderr || e.message);
+        chybaPush = /\[rejected\]/.test(vystup) && /fetch first|non-fast-forward/i.test(vystup)
+          ? 'Uloženo lokálně. Na GitHubu je mezitím novější verze, proto se neodeslalo. Použij Sloučit.'
+          : 'Uloženo jen lokálně, odeslání na GitHub se nepodařilo (internet nebo přihlášení). Zkus Uložit znovu později.';
       }
+      // Přepočítat i GitHub: po odmítnutém odeslání se tak hned nabídne Sloučit.
+      await this._zkontrolovatVzdaleny();
     } else {
       chybaPush = 'Větev nemá vzdálenou větev na GitHubu; uloženo jen lokálně.';
+      await this._lokalniStav();
     }
-    await this.lokalniStav();
     return { commit, push, chybaPush, zmeneno: zmeny ? zmeny.split('\n').length : 0 };
   }
 
   /** Stáhnout změny: jen fast-forward, aby se nikdy nic nepřepsalo. */
-  async stahnout() {
-    await this.lokalniStav();
+  async _stahnout() {
+    await this._lokalniStav();
     if (!this.stav.upstream) throw Object.assign(new Error('Větev nemá nastavenou vzdálenou větev na GitHubu.'), { status: 409 });
     try {
       await git(this.koren, ['pull', '--ff-only', '--quiet']);
@@ -123,7 +187,7 @@ export class Git {
           : 'Stažení se nepodařilo. Zkontroluj připojení a přihlášení ke GitHubu.';
       throw Object.assign(new Error(duvod), { status: 409 });
     }
-    return this.zkontrolovatVzdaleny();
+    return this._zkontrolovatVzdaleny();
   }
 
   /**
@@ -132,8 +196,8 @@ export class Git {
    * Nic se nemaže: co se nepodaří vrátit do pracovní složky, zůstane v úschovně (`git stash list`).
    * @returns {Promise<{sloucene:true, push:boolean, uschovna:boolean, uschovnaNevracena:boolean}>}
    */
-  async sloucit() {
-    await this.zkontrolovatVzdaleny();
+  async _sloucit() {
+    await this._zkontrolovatVzdaleny();
     if (!this.stav.dostupny || !this.stav.upstream) throw Object.assign(new Error('Větev nemá nastavenou vzdálenou větev na GitHubu.'), { status: 409 });
     if (this.stav.chyba) throw Object.assign(new Error(this.stav.chyba), { status: 409 });
     if (this.stav.pozadu === 0) throw Object.assign(new Error('Není co sloučit: na GitHubu nejsou žádné novější změny. Použij Stáhnout změny nebo Uložit do GitHubu.'), { status: 409 });
@@ -154,15 +218,32 @@ export class Git {
       await git(this.koren, ['rebase', '--abort']).catch(() => {});
       let vraceno = true;
       if (uschovna) vraceno = await git(this.koren, ['stash', 'pop', '--quiet'], { timeout: 60000 }).then(() => true, () => false);
-      await this.lokalniStav();
+      await this._lokalniStav();
       const duvod = konflikty.length
         ? `Verze se nedají sloučit samy, mění se stejné soubory: ${konflikty.join(', ')}. Nic se nezměnilo${vraceno ? '' : ' (tvoje neuložené změny jsou v úschovně Gitu)'}. Pošli to Claudovi, vyřešíme to po souborech.`
         : `Sloučení se nepodařilo, nic se nezměnilo${vraceno ? '' : ' (tvoje neuložené změny jsou v úschovně Gitu)'}. ${String(e.stderr || e.message).trim().split('\n')[0]}`;
       throw Object.assign(new Error(duvod), { status: 409 });
     }
     let uschovnaNevracena = false;
+    let vracenoZGitHubu = [];
     if (uschovna) {
       uschovnaNevracena = !(await git(this.koren, ['stash', 'pop', '--quiet'], { timeout: 60000 }).then(() => true, () => false));
+      if (uschovnaNevracena) {
+        // Neuložená změna narazila na novinku z GitHubu. Git by nechal v souboru značky konfliktu
+        // (audit V1): soubor vrátíme na sloučenou verzi, tvoje verze zůstane celá v úschovně.
+        vracenoZGitHubu = (await git(this.koren, ['-c', 'core.quotePath=false', 'diff', '--name-only', '--diff-filter=U']).catch(() => ''))
+          .split('\n')
+          .filter(Boolean);
+        // Po jednom: soubor, který GitHub smazal, v HEAD není a hromadný checkout by selhal pro všechny.
+        for (const soubor of vracenoZGitHubu) {
+          const obnoveno = await git(this.koren, ['checkout', 'HEAD', '--', soubor]).then(() => true, () => false);
+          if (!obnoveno) {
+            await git(this.koren, ['rm', '-q', '--cached', '--ignore-unmatch', '--', soubor]).catch(() => {});
+            await fs.rm(path.join(this.koren, ...soubor.split('/')), { force: true }).catch(() => {});
+          }
+        }
+        await git(this.koren, ['reset', '-q']).catch(() => {});
+      }
     }
     let push = false;
     try {
@@ -171,7 +252,7 @@ export class Git {
     } catch {
       push = false;
     }
-    await this.zkontrolovatVzdaleny();
-    return { sloucene: true, push, uschovna, uschovnaNevracena };
+    await this._zkontrolovatVzdaleny();
+    return { sloucene: true, push, uschovna, uschovnaNevracena, vracenoZGitHubu };
   }
 }

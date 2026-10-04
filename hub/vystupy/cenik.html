@@ -127,11 +127,11 @@ window.addEventListener('resize',dopasuj);
 
 function prevzit(d){ vykresli(d&&d.sortiment?d.sortiment:null); }
 fetch('/api/obchody/ceniky').then(r=>r.json()).then(prevzit).catch(()=>{});
-(function pripojit(){
-  const zdroj=new EventSource('/api/udalosti');
-  zdroj.addEventListener('ceniky',e=>prevzit(JSON.parse(e.data)));
-  zdroj.addEventListener('error',()=>{ if(zdroj.readyState===EventSource.CLOSED) setTimeout(pripojit,1000); });
-})();
+</script>
+<script type="module">
+  // Živé změny přes WebSocket (do limitu 6 spojení prohlížeče se nepočítá, audit K1).
+  import { odebirat } from '/sdilene/zive.js';
+  odebirat(['ceniky'], (_, d) => prevzit(d));
 </script>
 </body>
 </html>

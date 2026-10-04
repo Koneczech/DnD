@@ -14,7 +14,7 @@ Od Bloku 2 platí kolekce **DnD 2** (`Documents\DnD\OBS\DnD-2-sceny.json`, impor
 | Boj | Improved Initiative |
 | TEST | do akceptace |
 
-Scény Mirabar, Longsaddle, Lurkwood a Cesta nahradila scéna **Místo**: místo, ilustraci, den/noc, počasí a intenzitu přepínáš v Hubu na obrazovce Místa. V Hubu nastav scénu místa na *Místo* a scénu obchodu na *Obchod*.
+Scény Mirabar, Longsaddle, Lurkwood a Cesta nahradila scéna **Místo**: místo, ilustraci, den/noc, počasí a intenzitu přepínáš v Hubu na obrazovce U stolu. Role scén (Místo → *Místo*, Obchod → *Obchod*) nastavíš tamtéž v tabulce Role scén.
 
 ### Role scén a obrazovka U stolu
 
@@ -60,7 +60,7 @@ Problémy:
 3. Zdroje mají obecná jména (Prohlížeč 2–6, Obrázek 2 a 3), takže není poznat, co je co.
 4. Ambient_cesta omylem sdílí prezentaci s Longsaddle.
 5. Scény Start a Cesta jsou skoro totožné.
-6. V kolekci nejsou žádné klávesové zkratky scén. Numpad DM zatím nepoužíval; scény se přepínají v Hubu (Scény OBS, Souboj, Ukázat v OBS) a nouzově klikem přímo v OBS.
+6. V kolekci nejsou žádné klávesové zkratky scén. Numpad DM zatím nepoužíval; scény se přepínají v Hubu (U stolu, Souboj, Ukázat v OBS) a nouzově klikem přímo v OBS.
 
 ## Cílová sestava do Bloku 2
 
@@ -146,10 +146,7 @@ Počítej s 20–30 minutami. Hub musí běžet. Před začátkem si kolekci zá
 9. **Pauza:** scénu přejmenuj na *Pauza*, text změň na „Za chvíli pokračujeme…“ a obrázek přejmenuj na `Obrázek – pauza`.
 10. **Mapa:** *Obrázek* přejmenuj na `Obrázek – mapa`.
 11. **Pořadí scén:** Start, Mirabar, Longsaddle, Lurkwood, Cesta, Mapa, Obchod, Pauza, Boj, TEST.
-12. **Hub:**
-    - Nastavení → Souboj: *Boj*.
-    - Odpočet → scéna po odpočtu: první scéna sezení.
-    - Obchody → scéna obchodu: *Obchod*.
-13. **Kontrola:** v Hubu klikni na + 1 den. Medailon se musí změnit ve všech místech a v Mapě, rekapitulace ve Startu se rozjede znovu. Ve Scénách OBS v Hubu by mělo být 10 scén.
+12. **Hub:** na obrazovce U stolu v tabulce Role scén přiřaď Souboj → *Boj*, Po doběhnutí odpočtu → první scénu sezení a Obchod → *Obchod*.
+13. **Kontrola:** v Hubu klikni na + 1 den. Medailon se musí změnit ve všech místech a v Mapě, rekapitulace ve Startu se rozjede znovu. Na obrazovce U stolu by mělo být 10 dlaždic scén.
 
 Scénu TEST smaž po akceptaci Bloku 1b.

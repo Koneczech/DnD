@@ -25,7 +25,7 @@
   <div id="sezeni"></div>
   <script>
     // Výstup drží poslední zobrazený stav. Při výpadku serveru nic nemaže
-    // a EventSource se sám znovu připojí (server posílá retry: 1000).
+    // a živé spojení se samo znovu připojí.
     function vykresli(data) {
       const s = data && data.stav;
       if (!s) return;
@@ -34,15 +34,10 @@
       document.getElementById('sezeni').textContent = Number.isInteger(s.sezeni) ? 'Sezení ' + s.sezeni : '';
     }
     fetch('/api/stav').then((r) => r.json()).then(vykresli).catch(() => {});
-    function pripojit() {
-      const zdroj = new EventSource('/api/udalosti');
-      zdroj.addEventListener('stav', (e) => vykresli(JSON.parse(e.data)));
-      // Prohlížeč se po výpadku připojuje sám. Kdyby to vzdal (stav CLOSED), zkus to znovu.
-      zdroj.addEventListener('error', () => {
-        if (zdroj.readyState === EventSource.CLOSED) setTimeout(pripojit, 1000);
-      });
-    }
-    pripojit();
+  </script>
+  <script type="module">
+    import { odebirat } from '/sdilene/zive.js';
+    odebirat(['stav'], (_, data) => vykresli(data));
   </script>
 </body>
 </html>

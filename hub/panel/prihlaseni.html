@@ -27,7 +27,7 @@
         body: JSON.stringify({ pin: document.querySelector('#pin').value }),
       });
       if (odpoved.ok) location.href = '/';
-      else document.querySelector('#chyba').textContent = 'Nesprávný PIN.';
+      else document.querySelector('#chyba').textContent = (await odpoved.json().catch(() => ({}))).chyba || 'Nesprávný PIN.';
     });
   </script>
 </body>

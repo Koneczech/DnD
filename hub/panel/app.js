@@ -894,7 +894,8 @@ function vykresliOdpocet() {
   const zbyva = zbyvajiciMs(o);
   casEl.dataset.stav = o?.stav ?? 'zadny';
   casEl.textContent = zbyva == null ? '--:--' : formatCasu(zbyva);
-  mini.hidden = !(o && (o.stav === 'bezi' || o.stav === 'pauza'));
+  // Doběhlý odpočet (0:00) v navigaci nesvítí, jen ten, který ještě běží nebo stojí.
+  mini.hidden = !(o && (o.stav === 'bezi' || o.stav === 'pauza')) || zbyva === 0;
   mini.textContent = zbyva == null ? '' : formatCasu(zbyva);
   const texty = {
     zadny: 'Odpočet není nastavený.',

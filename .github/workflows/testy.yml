@@ -53,6 +53,7 @@ jobs:
         if: failure()
         shell: bash
         run: |
-          { grep -E -A 25 '^\s*not ok' vystup-testu.txt | head -80; echo '--- konec výstupu ---'; tail -n 25 vystup-testu.txt; } > anotace.txt
+          set +e +o pipefail
+          { grep -E -A 25 '^\s*not ok' vystup-testu.txt | head -80 || true; echo '--- konec výstupu ---'; tail -n 25 vystup-testu.txt; } > anotace.txt
           zprava=$(sed 's/%/%25/g' anotace.txt | awk '{printf "%s%%0A", $0}')
           echo "::error title=Testy (${{ runner.os }})::${zprava}"

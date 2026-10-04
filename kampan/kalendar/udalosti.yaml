@@ -29,3 +29,11 @@ udalosti:
     datum: { rok: 1491, mesic: Eleint, den: 18 }
     text: Longsaddle
     verejna: true
+  - id: umutn742q4xjx
+    datum: { rok: 1491, mesic: Eleint, den: 18 }
+    text: Setkání s Malkem
+    verejna: true
+  - id: umutnd8lfm2t8
+    datum: { rok: 1491, mesic: Eleint, den: 18 }
+    text: "Koudur: První koncert mimo Mirabar - úspěch"
+    verejna: true

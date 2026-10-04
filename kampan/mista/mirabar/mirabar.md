@@ -30,7 +30,7 @@ ilustrace:
   - soubor: ulicka-noc.png
     ucel: scena
     varianta: noc
-    skryta: true
+    skryta: false
     puvod: Places/Mirabar/fight.png (místo souboje, temná večerní ulička)
 ---
 # Mirabar

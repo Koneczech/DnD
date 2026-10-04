@@ -200,3 +200,28 @@ test('operace Gitu běží za sebou: dvojí Sloučit se nesrazí o zámek (audit
     await k.smazat();
   }
 });
+
+test('sloučení: rozdělaný soubor, který GitHub smazal, nezablokuje obnovu ostatních (revize oprav)', async () => {
+  const k = await dvaKlony();
+  try {
+    await ulozit(k.a, 'kampan/x.md', 'x\n', 'přidat x', { push: true });
+    await git(k.b, ['pull', '-q', '--ff-only']);
+    await zapsat(k.a, 'kampan/stav.md', 'datum: z GitHubu\n');
+    await fs.rm(path.join(k.a, 'kampan', 'x.md'));
+    await git(k.a, ['add', '-A']);
+    await git(k.a, ['commit', '-q', '-m', 'změna stavu, smazat x']);
+    await git(k.a, ['push', '-q']);
+    await ulozit(k.b, 'kampan/poznamka.md', 'moje\n', 'data', {});
+    await zapsat(k.b, 'kampan/stav.md', 'datum: rozdělané\n');
+    await zapsat(k.b, 'kampan/x.md', 'x rozdělané\n');
+
+    const r = await new Git(k.b).sloucit();
+    assert.equal(r.sloucene, true);
+    assert.equal(await precist(k.b, 'kampan/stav.md'), 'datum: z GitHubu\n', 'bez značek konfliktu');
+    await assert.rejects(fs.access(path.join(k.b, 'kampan', 'x.md')), 'smazaný soubor platí jako smazaný');
+    assert.equal(await git(k.b, ['diff', '--name-only', '--diff-filter=U']), '');
+    assert.match(await git(k.b, ['stash', 'list']), /dm-hub-pred-slucovanim/);
+  } finally {
+    await k.smazat();
+  }
+});

@@ -17,7 +17,9 @@ const stav = {
 async function api(cesta, { metoda = 'GET', telo, limitMs } = {}) {
   const limit = limitMs ?? (cesta.startsWith('/api/git/') || cesta.startsWith('/api/dilna/') ? 180000 : 20000);
   // Tlačítko, které změnu spustilo, je do odpovědi zamčené: dvojklik tak nic neprovede dvakrát (audit S3).
-  const tlacitko = metoda !== 'GET' && document.activeElement instanceof HTMLButtonElement ? document.activeElement : null;
+  // Safari na iPadu tlačítko po kliknutí nefokusuje, proto i naposledy kliknuté tlačítko.
+  const naposledy = performance.now() - posledniKlik.cas < 1000 ? posledniKlik.tlacitko : null;
+  const tlacitko = metoda === 'GET' ? null : document.activeElement instanceof HTMLButtonElement ? document.activeElement : naposledy;
   tlacitko?.setAttribute('aria-busy', 'true');
   try {
     return await poslat(cesta, metoda, telo, limit);
@@ -27,13 +29,18 @@ async function api(cesta, { metoda = 'GET', telo, limitMs } = {}) {
 }
 
 // Klik na tlačítko, jehož požadavek ještě běží, se zahodí dřív, než ho dostane obsluha.
+let posledniKlik = { tlacitko: null, cas: 0 };
 document.addEventListener(
   'click',
   (e) => {
-    const b = e.target instanceof Element ? e.target.closest('button[aria-busy="true"]') : null;
+    const b = e.target instanceof Element ? e.target.closest('button') : null;
     if (!b) return;
-    e.preventDefault();
-    e.stopImmediatePropagation();
+    if (b.getAttribute('aria-busy') === 'true') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return;
+    }
+    posledniKlik = { tlacitko: b, cas: performance.now() };
   },
   true,
 );

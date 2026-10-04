@@ -366,13 +366,15 @@ export class Hub {
 
   async prihlaseni(req, res, url) {
     if (req.method === 'POST') {
+      // Nejdřív tělo, pak bez dalšího čekání kontrola zámku, porovnání a počítadlo: souběžné
+      // požadavky s pomalu posílaným tělem tak zámek neobejdou (revize oprav).
+      const telo = await nacistJson(req);
       const adresa = req.socket.remoteAddress;
       const pokusy = this.pokusyPinu.get(adresa) ?? { chyb: 0, zamcenoDo: 0 };
       const zbyva = pokusy.zamcenoDo - Date.now();
       if (zbyva > 0) {
         return poslatJson(res, 429, { chyba: `Příliš mnoho chybných pokusů. Zkus to znovu za ${Math.ceil(zbyva / 1000)} s.` });
       }
-      const telo = await nacistJson(req);
       const ocekavany = Buffer.from(String(this.nastaveni.hodnoty.PIN));
       const zadany = Buffer.from(String(telo.pin ?? ''));
       if (ocekavany.length !== zadany.length || !crypto.timingSafeEqual(ocekavany, zadany)) {
@@ -673,26 +675,35 @@ export class Hub {
     }
     let soubor;
     let koren = this.c.panel;
+    const dekodovat = (x) => {
+      try {
+        return decodeURIComponent(x);
+      } catch {
+        throw Object.assign(new Error('Neplatná adresa'), { status: 400 });
+      }
+    };
     if (url.pathname === '/' || url.pathname === '/panel' || url.pathname === '/panel/') soubor = path.join(this.c.panel, 'index.html');
-    else if (url.pathname.startsWith('/panel/')) soubor = path.join(this.c.panel, decodeURIComponent(url.pathname.slice(7)));
+    else if (url.pathname.startsWith('/panel/')) soubor = path.join(this.c.panel, dekodovat(url.pathname.slice(7)));
     else if (url.pathname.startsWith('/vystupy/')) {
       koren = this.c.vystupy;
-      soubor = path.join(koren, decodeURIComponent(url.pathname.slice(9)));
+      soubor = path.join(koren, dekodovat(url.pathname.slice(9)));
     } else if (url.pathname.startsWith('/kampan/')) {
       koren = this.c.kampan;
-      soubor = path.join(koren, decodeURIComponent(url.pathname.slice(8)));
+      soubor = path.join(koren, dekodovat(url.pathname.slice(8)));
       if (!OBRAZKY_KAMPANE.has(path.extname(soubor).toLowerCase())) throw Object.assign(new Error('Stránka neexistuje'), { status: 404 });
     } else if (url.pathname.startsWith('/sdilene/')) {
       // Moduly sdílené serverem i výstupy (motor Harptos, orloj).
       koren = path.join(HUB_DIR, 'sdilene');
-      soubor = path.join(koren, decodeURIComponent(url.pathname.slice(9)));
-    } else if (
-      OBRAZKY_KAMPANE.has(path.extname(url.pathname).toLowerCase()) &&
-      (url.pathname.startsWith('/monsters/') || !url.pathname.slice(1).includes('/'))
-    ) {
-      // Ilustrace s cestou od kořene repa (/monsters/…, portréty /Alba.png): jen obrázky (audit N2).
+      soubor = path.join(koren, dekodovat(url.pathname.slice(9)));
+    } else if (OBRAZKY_KAMPANE.has(path.extname(url.pathname).toLowerCase())) {
+      // Ilustrace s cestou od kořene repa (/monsters/…, portréty /Alba.png): jen obrázky, jen z kořene
+      // a z monsters/ (audit N2). Kontroluje se dekódovaná cesta, ať %2F ani %5C nic neobejdou.
       koren = this.c.koren;
-      soubor = path.join(koren, decodeURIComponent(url.pathname.slice(1)));
+      soubor = path.join(koren, dekodovat(url.pathname.slice(1)));
+      const relativni = path.relative(koren, soubor);
+      const vKoreni = !relativni.includes(path.sep) && !relativni.includes('/') && !relativni.includes('\\');
+      const vMonsters = relativni.startsWith(`monsters${path.sep}`);
+      if (!vKoreni && !vMonsters) throw Object.assign(new Error('Stránka neexistuje'), { status: 404 });
     } else throw Object.assign(new Error('Stránka neexistuje'), { status: 404 });
     const rel = path.relative(koren, soubor);
     if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) throw Object.assign(new Error('Stránka neexistuje'), { status: 404 });

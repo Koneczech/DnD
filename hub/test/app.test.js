@@ -386,3 +386,43 @@ test('obrázky s cestou od kořene repa se servírují, jiné soubory z kořene 
     await zastavit();
   }
 });
+
+test('omezení PINu neobejdou souběžné požadavky s pomalu posílaným tělem (revize oprav)', async () => {
+  const { hub, pin, zastavit } = await hubSDomaciSiti();
+  try {
+    const spatny = pin === '999999' ? '888888' : '999999';
+    const { port } = new URL(hub.adresa);
+    // 8 požadavků pošle hlavičky hned, těla až potom.
+    const odpovedi = await new Promise((resolve) => {
+      const vysledky = [];
+      const pozadavky = Array.from({ length: 8 }, () => {
+        const telo = JSON.stringify({ pin: spatny });
+        const req = http.request({ host: '127.0.0.1', port, path: '/prihlaseni', method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(telo) } }, (res) => {
+          res.resume();
+          vysledky.push(res.statusCode);
+          if (vysledky.length === 8) resolve(vysledky);
+        });
+        req.flushHeaders();
+        return { req, telo };
+      });
+      setTimeout(() => pozadavky.forEach(({ req, telo }) => req.end(telo)), 100);
+    });
+    assert.ok(odpovedi.filter((s) => s === 401).length <= 5, `chybných pokusů prošlo ${odpovedi.filter((s) => s === 401).length}`);
+    assert.equal((await pozadavek(hub, '/prihlaseni', { metoda: 'POST', telo: { pin } })).status, 429);
+  } finally {
+    await zastavit();
+  }
+});
+
+test('obrázky z kořene repa: zakódované lomítko omezení neobejde, poškozená adresa vrátí 400 (revize oprav)', async () => {
+  const { hub, repo, zastavit } = await spustitHub();
+  try {
+    await fs.mkdir(path.join(repo.c.koren, 'hub', '.stav'), { recursive: true });
+    await fs.writeFile(path.join(repo.c.koren, 'hub', '.stav', 'tajne.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    assert.equal((await surovy(hub, '/hub%2F.stav%2Ftajne.png')).status, 404);
+    assert.equal((await surovy(hub, '/monsters%2F..%2Fhub%2F.stav%2Ftajne.png')).status, 404);
+    assert.equal((await surovy(hub, '/%E0%A4%A.png')).status, 400);
+  } finally {
+    await zastavit();
+  }
+});

@@ -159,7 +159,7 @@ export class Git {
         push = true;
       } catch (e) {
         const vystup = String(e.stderr || e.message);
-        chybaPush = /rejected|non-fast-forward|fetch first|stale info/i.test(vystup)
+        chybaPush = /\[rejected\]/.test(vystup) && /fetch first|non-fast-forward/i.test(vystup)
           ? 'Uloženo lokálně. Na GitHubu je mezitím novější verze, proto se neodeslalo. Použij Sloučit.'
           : 'Uloženo jen lokálně, odeslání na GitHub se nepodařilo (internet nebo přihlášení). Zkus Uložit znovu později.';
       }
@@ -231,8 +231,17 @@ export class Git {
       if (uschovnaNevracena) {
         // Neuložená změna narazila na novinku z GitHubu. Git by nechal v souboru značky konfliktu
         // (audit V1): soubor vrátíme na sloučenou verzi, tvoje verze zůstane celá v úschovně.
-        vracenoZGitHubu = (await git(this.koren, ['diff', '--name-only', '--diff-filter=U']).catch(() => '')).split('\n').filter(Boolean);
-        if (vracenoZGitHubu.length) await git(this.koren, ['checkout', 'HEAD', '--', ...vracenoZGitHubu]).catch(() => {});
+        vracenoZGitHubu = (await git(this.koren, ['-c', 'core.quotePath=false', 'diff', '--name-only', '--diff-filter=U']).catch(() => ''))
+          .split('\n')
+          .filter(Boolean);
+        // Po jednom: soubor, který GitHub smazal, v HEAD není a hromadný checkout by selhal pro všechny.
+        for (const soubor of vracenoZGitHubu) {
+          const obnoveno = await git(this.koren, ['checkout', 'HEAD', '--', soubor]).then(() => true, () => false);
+          if (!obnoveno) {
+            await git(this.koren, ['rm', '-q', '--cached', '--ignore-unmatch', '--', soubor]).catch(() => {});
+            await fs.rm(path.join(this.koren, ...soubor.split('/')), { force: true }).catch(() => {});
+          }
+        }
         await git(this.koren, ['reset', '-q']).catch(() => {});
       }
     }

@@ -29,7 +29,7 @@ Verze 1 převede do repa kánon, kalendář, obchody, postavy a ilustrace míst.
 
 ## Potvrzená rozhodnutí
 
-Rozhodnutí 1–12 potvrdil DM 2. 10. 2026. Rozhodnutí 13–24 vzešla z první oponentury zadání, 25–32 z oponentury postupu výroby; DM je přijal týž den. Rozhodnutí 39–42 potvrdil DM 3. 10. 2026 (akceptace Bloku 1b a start Bloku 2). Rozhodnutí 33–38 potvrdil DM 2. 10. 2026 při kontrole ⚠ návrhů Bloku 0. Nepotvrzené návrhy jsou výslovně označené a shrnuté v Otevřených bodech.
+Rozhodnutí 1–12 potvrdil DM 2. 10. 2026. Rozhodnutí 13–24 vzešla z první oponentury zadání, 25–32 z oponentury postupu výroby; DM je přijal týž den. Rozhodnutí 39–42 potvrdil DM 3. 10. 2026 (akceptace Bloku 1b a start Bloku 2). Rozhodnutí 33–38 potvrdil DM 2. 10. 2026 při kontrole ⚠ návrhů Bloku 0. Rozhodnutí 55–64 (světla a zvuk) potvrdil DM 10. 10. 2026; podobu přepínače Řídit světla (59) a zvukových výstupů s BT reproduktorem (62) navrhl Claude a ověří ji akceptace Bloků 4 a 5. Nepotvrzené návrhy jsou výslovně označené a shrnuté v Otevřených bodech.
 
 | # | Rozhodnutí | Důsledek |
 | --- | --- | --- |
@@ -37,14 +37,14 @@ Rozhodnutí 1–12 potvrdil DM 2. 10. 2026. Rozhodnutí 13–24 vzešla z první
 | 2 | Jedno veřejné repo `Koneczech/DnD`, nic se neskrývá | Příznak veřejné/skryté řídí jen zobrazení, ne zabezpečení. Platí i pro dotazníky hráčů |
 | 3 | Lokální Hub u stolu + statická verze na GitHub Pages pro čtení | Lokální server je páteř; Pages je jen čtecí výstup |
 | 4 | Hub je jen ovládací panel DM; hráči vidí vše přes OBS | Každý výstup pro hráče = Browser Source servírovaný Hubem |
-| 5 | Verze 1 = živý panel pro sezení, verze 2 = příprava | Pořadí bloků 0, 1a, 1b, 2, 3, pak příprava |
+| 5 | Verze 1 = živý panel pro sezení, verze 2 = příprava | Pořadí bloků 0, 1a, 1b, 2, 4 (světla), 5 (zvuk), 3, pak příprava (změna 10. 10. 2026) |
 | 6 | Improved Initiative zůstává trackerem i knihovnou nestvůr | Vlastní modul iniciativy se nedělá |
 | 7 | Vlastní bytosti, NPC a postavy žijí v repu, Hub je exportuje do IIO | Export patří do verze 2 (příprava); import do IIO zůstává ruční |
 | 8 | Hráčská stránka na GitHub Pages až ve výhledu | Datový model s ní počítá od začátku (příznak veřejné/skryté u všech entit). Čtecí verze pro DM i hráčská stránka jsou veřejné, hráčská stránka je filtr, ne ochrana |
 | 9 | Odpočet slouží výhradně k začátku sezení | Žádné dílky ani časovač na rozhodování |
 | 10 | Skryté/odkryté = celé ilustrace, ne vrstvy | Ilustrace se stopou k zápletce se ve slideshow nezobrazí, dokud ji DM neodkryje |
 | 11 | Další den nic nesleduje, jen připomíná | Žádné sledování pozic kouzel, podob ani BV |
-| 12 | Pocket Bard = inspirace přepínači (stavy, intenzita) | Hub nepřehrává zvuk ani hudbu |
+| 12 | Scéna má tři složky: obraz, světla a zvuk (změna 10. 10. 2026) | Hub ovládá světla (Hue, WiZ) a pouští hudbu na TV a ambient se zvukovými efekty u stolu. Pocket Bard zůstává inspirací pro přepínače (stavy, intenzita). Dřívější „Hub nepřehrává zvuk ani hudbu“ neplatí |
 | 13 | Tajné hodnoty (heslo OBS WebSocketu, případný API klíč) žijí jen v `hub/.env` mimo Git | Zadávají se v panelu na obrazovce Nastavení; v repu je jen vzor `hub/.env.example` |
 | 14 | Entita = složka `<typ>/<id>/` s hlavním souborem `<id>.md` a vlastními obrázky | Jedna konvence pro všechny typy; funguje v Hubu, Obsidianu i na GitHubu |
 | 15 | Vazby se zapisují jako odkazy Obsidianu `[[id]]` | Proklikávání a graf v Obsidianu i v Hubu bez převodu |
@@ -87,6 +87,16 @@ Rozhodnutí 1–12 potvrdil DM 2. 10. 2026. Rozhodnutí 13–24 vzešla z první
 | 52 | Panel ve třech skupinách, úvodní obrazovka Sezení | Navigace: **Hra** (Sezení, U stolu), **Příprava** (Kalendář, Místa, Obchody, Ilustrační dílna), **Systém** (Kontrola dat, Nastavení), každá položka s ikonou. **Sezení** nahrazuje Stav kampaně: před hrou kontrolní seznam (OBS, role scén, GitHub, Kontrola dat, datum, odpočet) a Zahájit, během hry délka sezení a poznámky ze stolu, k tomu Družina (kde je družina, oprava čísla sezení) a GitHub (Uložit, Zkontrolovat, Stáhnout). Datum se mění jen v Kalendáři. Adresy všech výstupů pro OBS jsou v Nastavení → Výstupy pro OBS. Role scén zůstávají na U stolu (rozhodnutí 44). Horní lišta: datum vede do Kalendáře, kontrolky Server a OBS do Nastavení, Git na GitHub v Sezení; tlačítko Hledat se vrátí s Blokem 3 |
 | 53 | Počasí jde kombinovat | Déšť, sníh a mlha jsou přepínače a jdou zapnout i všechny naráz; Žádné je vypne. Intenzita platí pro všechny. Každý efekt se objeví a zmizí zvlášť do ~0,8 s. Ve stavu scény je počasí seznam (`["dest","snih"]`), starý tvar jednoho řetězce se převede. Sníh podle intenzity: 1 padá, 2 hustěji a rychleji, 3 vánice skoro rychlostí deště, šikmo, místo vloček krátké tučné čárky |
 | 54 | Výstupy a panel se po aktualizaci obnoví samy | Hub posílá otisk kódu panelu a výstupů (událost `verze`); když se po restartu změní, stránka se načte znovu. Kód stránek se neukládá do mezipaměti (`no-store`), takže OBS už nepotřebuje Refresh cache po každé aktualizaci |
+| 55 | Světla a zvuk ovládá stávající Hub v Node.js | Žádný druhý server. Ovladače `hub/server/zarizeni/hue.js` (CLIP API v2 přes HTTPS, certifikát bridge ověřený otiskem z párování) a `wiz.js` (UDP 38899 přes `node:dgram`) za jednotným rozhraním vedle `obs.js`. Kdyby přibyl Home Assistant, vymění se jen ovladače |
+| 56 | Nastavení zařízení v `hub/.env` | Hue aplikační klíč je tajná hodnota (rozhodnutí 13, hlídá ho hook). Adresy zařízení a přiřazení rolí jsou nastavení tohoto PC, zadávají se v Nastavení → Světla a zvuk |
+| 57 | Scéna se skládá po vrstvách | Místo + denní doba → počasí → intenzita → režim → pojistky. Ručně se nedefinují kombinace, jen vrstvy (pravidla v Datovém modelu) |
+| 58 | Světla znají jen role | `hlavni` (Hue v herně, nízká sytost kvůli čtení), `pozadi` (Hue ve vedlejší místnosti, dění mimo záběr), `lampa` (WiZ u stolu, sytá barva). Role bere seznam zařízení, druhá lampa se jen dopíše |
+| 59 | Přepínač Řídit světla a výchozí stav světel | Na U stolu přepínač **Řídit světla**: vypnutý = Hub na světla nesahá (ani blesky), zapnutý = světla sledují scénu. Výchozí stav světel (zachycený v Nastavení) platí, když místo světla nemá, pro Světla normál a při vypnutí přepínače se světla na něj vrátí. Výchozí stav i přepínač jsou nastavení tohoto PC (`hub/.stav/svetla.json`) |
+| 60 | Souboj je režim se zásobníkem | Souboj přepne OBS na scénu Souboj, bojová světla a bojovou hudbu, ambient počasí nechá. Konec souboje vrátí přesně předchozí stav, i po restartu Hubu. Tlačítko Souboj v liště se změní na přepínač Souboj / Konec souboje |
+| 61 | Bouřka je čtvrtý efekt počasí | Kombinuje se s ostatními (rozhodnutí 53). Vzdálenost daleko / blízko / nad námi řídí, které role blikají a za jak dlouho přijde hrom |
+| 62 | Zvuk: hudba na TV, ambient a efekty na BT reproduktoru u stolu | Obojí hrají stránky Hubu přes Web Audio (bezešvé smyčky, prolínání, víc vrstev naráz). **Hudba**: výstup `vystupy/hudba.html` jako Browser Source v OBS, zvuk jde s obrazem na TV. **Ambient a efekty**: stránka `zvuk-u-stolu.html`, kterou otevře spouštěč v okně prohlížeče; Windows posílá zvuk prohlížeče do Bluetooth reproduktoru (nastavení „výstup podle aplikace“). Google Home Mini a Cast odpadají: bez síťového portu, bez latence 1–2 s, bez omezení na jeden stream |
+| 63 | Zvukové soubory nejsou ve veřejném repu | Licence hudby a ambientu zveřejnění nepovolují a soubory jsou velké. Složka `audio/` leží vedle repa (cesta v `hub/.env`, výchozí `Documents\DnD\audio`), Hub ji servíruje jen na localhostu. Data scén odkazují jménem souboru, Kontrola dat ohlásí chybějící soubor |
+| 64 | Bezpečnost světel | Blesky nejvýš 3 záblesky za sekundu (hranice fotosenzitivity) a vypínač Blesky v Nastavení. Hlavní světlo má podlahu jasu a strop sytosti. Světla normál vrátí výchozí stav |
 
 ## Architektura
 
@@ -119,6 +129,8 @@ flowchart LR
 
 Improved Initiative do schématu nevstupuje: jeho carousel je v OBS samostatná scéna a ilustrace čte z GitHubu jako dnes.
 
+Od Bloku 4 přibudou k lokálnímu serveru **Hue bridge** (HTTPS v domácí síti, role `hlavni` a `pozadi`) a **WiZ lampa** (UDP, role `lampa`). Od Bloku 5 **hudba** jako Browser Source v OBS (TV) a **zvuk u stolu** jako okno prohlížeče, jehož zvuk Windows posílá do Bluetooth reproduktoru.
+
 | Komponenta | Role | Poznámka |
 | --- | --- | --- |
 | Lokální server | Datová vrstva, logika modulů, živé posílání změn | Node.js, jeden proces, pevný port v `hub/.env` |
@@ -128,7 +140,9 @@ Improved Initiative do schématu nevstupuje: jeho carousel je v OBS samostatná 
 | Hlídání souborů | Změna souboru z Obsidianu nebo editoru se promítne do panelu i výstupů | Soubor na disku má vždy přednost |
 | OBS WebSocket | Přepínání scén z panelu | Vestavěné v OBS 28+; numpad funguje dál paralelně |
 | Ilustrační dílna | Prompt z entity, import a úprava obrázku do složky entity | Blok 2; zpracování obrázků lokálně |
-| Konfigurace `hub/.env` | Heslo OBS, port, PIN, případný API klíč | Mimo Git; vyplňuje se v panelu |
+| Ovladače světel | Hue (CLIP API v2) a WiZ (UDP) za jednotným rozhraním, role místo značek | Blok 4. Nedostupné zařízení se přeskočí, scéna se přepne zbytkem; kontrolka Světla v liště |
+| Zvukové výstupy | `hudba.html` (Browser Source, TV) a `zvuk-u-stolu.html` (okno prohlížeče, BT reproduktor), přehrávání přes Web Audio | Blok 5. Soubory ze složky `audio/` mimo repo; kontrolka Zvuk v liště |
+| Konfigurace `hub/.env` | Heslo OBS, port, PIN, případný API klíč, Hue klíč, adresy světel, složka zvuku | Mimo Git; vyplňuje se v panelu |
 | Git | Kontrola a stažení změn při startu, commit a push při Ukončit sezení | Git nainstalovaný na PC s přihlášením k GitHubu |
 | Lokální klon repa | Jediný zdroj dat i obrázků | Browser Source čte obrázky přes lokální server, odpadá omezení OBS Image source na vzdálené URL. Mimo OneDrive |
 | GitHub Koneczech/DnD | Historie změn, zdroj URL ilustrací pro IIO | Veřejné repo |
@@ -463,6 +477,136 @@ Akceptační kritéria
 - Pilotní místo má kompletní sadu: celek den, celek noc, detail a jednu skrytou stopu (rozhodnutí 37: tábor lupičů u Longsaddle)
 - `Places/Mirabar/fight.png` je v `kampan/mista/mirabar/` a OBS ho zobrazuje přes Hub
 
+## Blok 4 — Světla
+
+Výsledek: přepnutí místa, denní doby, počasí nebo souboje v Hubu do sekundy změní i světla v herně, ve vedlejší místnosti a lampu u stolu. DM to může jedním přepínačem vypnout.
+
+**Data**
+
+Vrstva místo + doba žije v hlavičce místa vedle ilustrací:
+
+```yaml
+# kampan/mista/lurkwood/lurkwood.md (výřez hlavičky)
+svetla:
+  den:
+    hlavni: { barva: [255, 214, 170], jas: 55 }
+    pozadi: { barva: [120, 160, 90], jas: 25 }
+    lampa:  { barva: [255, 170, 80], jas: 40 }
+  noc:
+    hlavni: { barva: [120, 140, 255], jas: 18 }
+    pozadi: { vypnuto: true }
+    lampa:  { wiz_scena: candlelight, rychlost: 40, jas: 35 }
+```
+
+Vrstvy počasí a režimu jsou v repu, jeden soubor na efekt nebo režim: `kampan/sceny/pocasi/<efekt>.yaml` (`dest`, `snih`, `mlha`, `bourka`) a `kampan/sceny/rezim/souboj.yaml`.
+
+```yaml
+# kampan/sceny/pocasi/dest.yaml
+svetla:
+  vsechny: { jas_nasobek: 0.8, teplota_posun: -800 }
+# kampan/sceny/rezim/souboj.yaml
+svetla:
+  hlavni: { barva: [255, 90, 60], jas: 45 }
+  lampa:  { wiz_scena: fireplace, rychlost: 80 }
+obs_role: souboj
+```
+
+Stav tohoto PC (`hub/.stav/`, mimo Git): `scena.json` se rozšíří o `rezim` (`pruzkum` | `souboj`), `zasobnik` (stav před soubojem) a `bourka` (vzdálenost); `svetla.json` drží přepínač Řídit světla a výchozí stav světel.
+
+**Pravidla skládání**
+
+1. Základ dá místo pro aktuální denní dobu. Když místo světla nemá, platí výchozí stav světel. Chybí-li noc, použije se den se sníženým jasem.
+2. Každý zapnutý efekt počasí světla upraví (násobky jasu, posun teploty, u bouřky blesky). Víc efektů naráz se násobí.
+3. Intenzita 0–3 přidá ztmavení stejně jako u obrazu.
+4. Režim souboj přepíše světla podle `rezim/souboj.yaml`.
+5. Nakonec pojistky: podlaha jasu a strop sytosti hlavního světla, limit blesků.
+
+**Panel**
+
+| Kde | Co přibude |
+| --- | --- |
+| U stolu, nad záložkami | Přepínač **Řídit světla** (rozhodnutí 59) |
+| U stolu → Místo | Efekt **Bouřka** mezi přepínači počasí, posuvník daleko · blízko · nad námi, tlačítko **Blesk** |
+| Horní lišta | **Souboj / Konec souboje**, kontrolka **Světla** (rozkliknutí ukáže jednotlivá zařízení) |
+| Místa (Příprava) | Sekce **Světla** u místa (den, noc), tlačítko **Zachytit světla**: uloží aktuální stav světel z aplikací Hue a WiZ do hlavičky místa |
+| Nastavení → Světla a zvuk | Spárování Hue (stisk tlačítka na bridgi), adresa WiZ lampy, přiřazení rolí, test každé role, **Zachytit jako výchozí**, Blesky zapnout/vypnout, **Světla normál** |
+| Sezení → Před hrou | Body kontroly: Hue odpovídá, WiZ odpovídá, Řídit světla je zapnuté |
+
+**Blesky podle vzdálenosti bouřky**
+
+| Vzdálenost | Bliká | Hrom (Blok 5) za |
+| --- | --- | --- |
+| daleko | jen `pozadi`, slabě | 4–8 s |
+| blízko | `pozadi` + `hlavni` | 1–3 s |
+| nad námi | všechny role, posun ~60 ms mezi nimi | 0–1 s |
+
+**Technické podmínky**
+
+- Hue: aplikační klíč vznikne stiskem tlačítka na bridgi. Nejvýš ~10 příkazů/s na světlo a ~1/s na skupinu, blesky jdou na jednotlivá světla. Nativní efekty (candle, fire …) jen u podporovaných žárovek, jinak dynamická paleta.
+- WiZ: v aplikaci WiZ zapnout *Allow local communication*, lampě pevnou IP (rezervace v routeru). UDP nemá potvrzení: Hub stav po příkazu ověří a případně zopakuje. Pomalé prolnutí dělá Hub po krocích. Vlastní scény z aplikace WiZ lokálně nejdou, vestavěné ano (`sceneId` + rychlost).
+
+Akceptační kritéria
+
+- Přepnutí místa nebo doby změní světla všech rolí do 1 s od kliknutí
+- S vypnutým Řídit světla Hub na světla nesahá: žádná změna scény, počasí ani blesk je nezmění; vypnutí vrátí výchozí stav
+- Konec souboje vrátí OBS scénu i světla přesně do stavu před soubojem, i po restartu Hubu uprostřed souboje
+- Zachytit světla uloží stav všech rolí do hlavičky místa bez ztráty komentářů a ostatních polí; po přepnutí jinam a zpět se stav obnoví
+- Když Hue nebo WiZ neodpovídá, scéna se přepne zbytkem do 1 s a kontrolka to ukáže; po návratu zařízení do 10 s dostane aktuální stav
+- Blesky nikdy nepřekročí 3 záblesky za sekundu; s vypnutými Blesky neblikne nic
+- Hlavní světlo nikdy neklesne pod podlahu jasu, ani v noci se soubojem a bouřkou
+- Testy ovladačů běží v CI proti falešnému Hue bridgi (HTTPS) a falešné WiZ lampě (UDP) na Ubuntu i Windows
+
+## Blok 5 — Zvuk
+
+Výsledek: scéna má hudbu na TV a ambient se zvukovými efekty u stolu. Souboj, počasí, bouřka a Ticho se přepínají stejně jako obraz a světla.
+
+**Data**
+
+Hudba a ambient místa jsou v hlavičce místa, ambient počasí a hudba souboje ve vrstvách z Bloku 4. Soubory leží ve složce `audio/` mimo repo (rozhodnutí 63), data je odkazují jménem.
+
+```yaml
+# kampan/mista/lurkwood/lurkwood.md
+zvuk:
+  den: { hudba: lurkwood-den.mp3, ambient: les-den.mp3 }
+  noc: { hudba: lurkwood-noc.mp3, ambient: les-noc.mp3 }
+# kampan/sceny/pocasi/dest.yaml
+zvuk: { ambient: dest.mp3, hlasitost_podle_intenzity: true }
+# kampan/sceny/rezim/souboj.yaml
+zvuk: { hudba: souboj.mp3 }
+```
+
+**Pravidla**
+
+- Hudba: z místa, v souboji z režimu. Počasí hudbu nemění.
+- Ambient: ambient místa a ambienty zapnutých efektů počasí hrají **současně** jako vrstvy (Web Audio je smíchá), intenzita zesílí počasí. Souboj ambient počasí nechá a ambient místa ztlumí.
+- Efekty (hrom, ruční zvuky) se přehrají přes ambient, nic nepřeruší.
+- Přepnutí scény prolne hudbu i ambient (výchozí 2 s).
+
+**Panel**
+
+| Kde | Co přibude |
+| --- | --- |
+| Horní lišta | Tlačítko **Ticho** (ztlumí hudbu i ambient, druhé stisknutí vrátí), kontrolka **Zvuk** (obě stránky připojené a hrají) |
+| U stolu → Místo | Hlasitost hudby a ambientu |
+| Místa (Příprava) | Sekce **Zvuk** u místa: výběr hudby a ambientu ze složky `audio/`, Přehrát ukázku |
+| Nastavení → Světla a zvuk | Složka zvuku, Otevřít Zvuk u stolu, Zkušební zvuk (ověří, že hraje BT reproduktor) |
+| Sezení → Před hrou | Body kontroly: Hudba v OBS připojená, Zvuk u stolu otevřený, soubory scén ve složce `audio/` |
+
+**Nastavení doma (jednou)**
+
+- V OBS Browser Source `Hub – hudba` (`/vystupy/hudba.html`) s *Control audio via OBS*; zvuk na TV jde stejnou cestou jako dnes obraz.
+- BT reproduktor spárovaný s PC; ve Windows *Nastavení → Systém → Zvuk → Směšovač hlasitosti* poslat výstup prohlížeče, ve kterém běží Zvuk u stolu, do BT reproduktoru. Postup v `reference/zvuk.md` (s doporučením k přípravě smyček a hlasitosti).
+
+Akceptační kritéria
+
+- Hudba se při přepnutí místa prolne do 2 s, bez ticha delšího než 0,5 s, a hraje ve smyčce bez slyšitelného švu
+- Ambient u stolu začne do 1 s od přepnutí; ambient místa a počasí hrají současně
+- Hrom při bouřce „nad námi“ zazní do 1 s po blesku a ambient při něm nepřestane hrát
+- Souboj přepne hudbu na bojovou a nechá ambient počasí; Konec souboje vrátí původní hudbu
+- Ticho ztlumí hudbu i ambient do 1 s, druhé stisknutí je vrátí
+- Výpadek BT reproduktoru nezastaví hudbu v OBS ani světla; kontrolka Zvuk to ukáže
+- Zvukové soubory jdou jen přes localhost a žádný se nedostane do Gitu (hook i `.gitignore`)
+
 ## Blok 3 — Kánon
 
 Výsledek: celý kánon kampaně žije v repu a DM ho u stolu najde jedním hledáním. Notion se poté přepne jen pro čtení.
@@ -516,7 +660,8 @@ Tyto věci Hub dělat nebude, pokud se rozhodnutí výslovně nezmění:
 
 - Vlastní combat tracker nebo náhrada Improved Initiative
 - Sledování zdrojů postav (BV, pozice kouzel, Zuřivost, Divoké podoby, kostky obnovy)
-- Přehrávání zvuku, hudby a ambientu
+- Vlastní mixážní pult a ekvalizér; ovládání jiných světel než rolí hlavní, pozadí a lampa
+- Zveřejnění zvukových souborů v repu (rozhodnutí 63)
 - Odpočet dílků (Lazy DM) a časovač na rozhodování
 - Pohled pro hráče na mobilech u stolu
 - Editace z Hubu mimo domov (mimo domov slouží Obsidian nebo GitHub)
@@ -563,3 +708,6 @@ Nic z této sekce zatím neplatí. Každý bod se rozhodne nejpozději na začá
 | 42 | ⚠ Tlačítko Sloučit | Když se lokální a GitHubová verze rozejdou, Hub odloží neuložené změny do úschovny Gitu, přiskládá lokální commity za novinky z GitHubu, vrátí změny a odešle. Při konfliktu vrátí vše zpět a napíše, který soubor to je. Co se nepodaří vrátit, zůstane v úschovně (`git stash list`) | Akceptace Bloku 2b |
 | 43 | ⚠ Živý náhled místa | Na U stolu je v panelu Místo zmenšený výstup `misto.html` (iframe), jen dokud je panel vidět. Ukazuje to, co teď vidí OBS | Akceptace Bloku 2b |
 | 44 | ⚠ Odkrývání stop u stolu | Odkrýt a Skrýt jsou i na U stolu u ilustrací místa, které je v OBS. Varianta, stav, zahodit a popis zůstávají jen na obrazovce Místa | Akceptace Bloku 2b |
+| 45 | Zdroje hudby a ambientu | Soubory zůstávají jen doma (rozhodnutí 63), stačí licence pro soukromé hraní. Kandidáti: Tabletop Audio (ambienty pro RPG), Freesound.org (zvuky s licencí CC0 nebo CC BY, u každého souboru zvlášť), Incompetech Kevina MacLeoda (hudba CC BY), YouTube Audio Library. Podmínky každého zdroje DM ověří před stažením | Blok 5 |
+| 46 | Druhá WiZ lampa | Role `lampa` bere seznam zařízení; dopíše se v Nastavení bez změny dat | Až bude |
+| 47 | Které BT reproduktory a PC | Reproduktor spárovaný s herním PC, nejlépe se síťovým napájením (bateriové se uspávají). Ověřit, že Windows na tomto PC umí výstup podle aplikace | Blok 5 |

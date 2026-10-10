@@ -16,7 +16,7 @@
 
     <nav class="akce" aria-label="Akce sezení">
       <button type="button" id="tlacitko-sezeni">Zahájit sezení</button>
-      <button type="button" id="tlacitko-souboj" title="Přepne OBS na scénu s iniciativou">Souboj</button>
+      <button type="button" id="tlacitko-souboj" aria-pressed="false" title="Přepne OBS na scénu s iniciativou a světla na bojová; Konec souboje vrátí, co bylo před ním">Souboj</button>
       <button type="button" id="tlacitko-poznamka" title="Klávesa F2">Poznámka <kbd>F2</kbd></button>
       <button type="button" id="tlacitko-dalsi-den" title="Posune kalendář o den a ukáže připomínky">Další den</button>
     </nav>
@@ -25,6 +25,7 @@
       <li><a href="#nastaveni"><span class="svetlo" id="svetlo-server" data-stav="ceka"></span>Server</a></li>
       <li><a href="#nastaveni"><span class="svetlo" id="svetlo-obs" data-stav="ceka"></span>OBS</a></li>
       <li><a href="#prehled-github"><span class="svetlo" id="svetlo-git" data-stav="ceka"></span>Git</a></li>
+      <li><a href="#nastaveni-svetla"><span class="svetlo" id="svetlo-svetla" data-stav="ceka"></span>Světla</a></li>
     </ul>
   </header>
 
@@ -97,6 +98,12 @@
         <p class="stul-stav" id="stul-stav" aria-live="polite"></p>
         <div class="sceny" id="seznam-scen"></div>
 
+        <div class="svetla-lista" id="svetla-lista">
+          <label class="prepinac-svetel"><input type="checkbox" id="svetla-ridit" role="switch"> <span>Řídit světla</span></label>
+          <p class="ulozeni" id="svetla-popis" aria-live="polite"></p>
+          <button type="button" id="svetla-normal" title="Výchozí stav na všech světlech, bez ohledu na scénu">Světla normál</button>
+        </div>
+
         <h2 class="vizualne-skryte">Nastavení scén</h2>
         <div class="stul-zalozky" id="stul-zalozky" role="tablist" aria-label="Nastavení scén"></div>
 
@@ -156,8 +163,11 @@
               <div class="prepinace">
                 <div class="prepinac"><span>Denní doba</span><div class="segment" id="sc-varianta" data-pole="varianta">
                   <button type="button" data-v="den">Den</button><button type="button" data-v="noc">Noc</button></div></div>
-                <div class="prepinac"><span>Počasí <small>(jde kombinovat)</small></span><div class="segment" id="sc-pocasi" data-pole="pocasi" title="Déšť, sníh a mlha jdou zapnout i naráz">
-                  <button type="button" data-v="zadne">Žádné</button><button type="button" data-v="dest">Déšť</button><button type="button" data-v="snih">Sníh</button><button type="button" data-v="mlha">Mlha</button></div></div>
+                <div class="prepinac"><span>Počasí <small>(jde kombinovat)</small></span><div class="segment" id="sc-pocasi" data-pole="pocasi" title="Déšť, sníh, mlha i bouřka jdou zapnout naráz">
+                  <button type="button" data-v="zadne">Žádné</button><button type="button" data-v="dest">Déšť</button><button type="button" data-v="snih">Sníh</button><button type="button" data-v="mlha">Mlha</button><button type="button" data-v="bourka">Bouřka</button></div></div>
+                <div class="prepinac" id="sc-bourka-radek" hidden><span>Bouřka</span><div class="segment" id="sc-bourka" data-pole="bourka" title="Kde je bouřka: kdo bliká a za jak dlouho přijde hrom">
+                  <button type="button" data-v="daleko">Daleko</button><button type="button" data-v="blizko">Blízko</button><button type="button" data-v="nad-nami">Nad námi</button></div>
+                  <button type="button" id="sc-blesk" title="Jeden blesk hned (nejvýš 3 za sekundu)">Blesk</button></div>
                 <div class="prepinac"><span>Intenzita</span><div class="segment" id="sc-intenzita" data-pole="intenzita">
                   <button type="button" data-v="0">0</button><button type="button" data-v="1">1</button><button type="button" data-v="2">2</button><button type="button" data-v="3">3</button></div></div>
                 <div class="prepinac"><span id="sc-stav-popis">Stav místa</span><select id="sc-stav" aria-labelledby="sc-stav-popis"></select></div>
@@ -273,6 +283,16 @@
             <textarea id="misto-popis" rows="3" placeholder="např. a rough bandit camp in a pine forest clearing near the Long Road, tents, a palisade of sharpened stakes…"></textarea>
             <div class="tlacitka"><button type="button" id="misto-popis-ulozit">Uložit popis</button> <a href="#dilna" id="misto-do-dilny">Nová ilustrace v dílně →</a></div>
           </details>
+          <section class="svetla-mista" aria-labelledby="misto-svetla-nadpis">
+            <h3 id="misto-svetla-nadpis">Světla</h3>
+            <p class="ulozeni">Nastav světla ručně v aplikacích Hue a WiZ a klikni na Zachytit. Hub uloží stav všech rolí do hlavičky místa; bez zachycení platí výchozí stav, noc bez vlastních světel vezme den s polovičním jasem.</p>
+            <dl class="svetla-varianty" id="misto-svetla"></dl>
+            <div class="tlacitka">
+              <button type="button" id="misto-zachytit-den">Zachytit světla pro den</button>
+              <button type="button" id="misto-zachytit-noc">Zachytit světla pro noc</button>
+            </div>
+            <p class="ulozeni" id="misto-svetla-vysledek" aria-live="polite"></p>
+          </section>
         </div>
       </section>
 
@@ -385,6 +405,50 @@
           <button type="submit" class="hlavni">Uložit nastavení</button>
           <p class="ulozeni" id="nastaveni-vysledek" aria-live="polite"></p>
         </form>
+        <h2 id="nastaveni-svetla">Světla</h2>
+        <p class="uvod">Světla znají jen role: <strong>hlavní</strong> (Hue v herně, drží nízkou sytost, aby šly číst deníky), <strong>pozadí</strong> (Hue ve vedlejší místnosti) a <strong>lampa</strong> (WiZ u stolu). Adresy a klíč se ukládají jen do <code>hub/.env</code> na tomto počítači.</p>
+        <div class="svetla-nastaveni">
+          <fieldset>
+            <legend>Hue bridge</legend>
+            <label>IP adresa bridge
+              <input id="pole-hue-bridge" placeholder="např. 192.168.1.20" inputmode="decimal" autocomplete="off">
+              <small>Najdeš ji v aplikaci Hue: Nastavení → Bridge Hue → i. Bridgi dej v routeru pevnou adresu.</small>
+            </label>
+            <div class="tlacitka"><button type="button" id="hue-sparovat">Spárovat</button></div>
+            <p class="ulozeni" id="hue-stav" aria-live="polite"></p>
+            <table class="udalosti" id="hue-svetla" hidden>
+              <thead><tr><th>Světlo na bridgi</th><th>Role</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </fieldset>
+          <fieldset>
+            <legend>WiZ lampa</legend>
+            <label>IP adresa lampy (víc lamp odděl čárkou)
+              <input id="pole-wiz" placeholder="např. 192.168.1.40" autocomplete="off">
+              <small>V aplikaci WiZ zapni Nastavení → Zabezpečení → <em>Allow local communication</em> a lampě dej v routeru pevnou adresu. Lampy jsou role lampa.</small>
+            </label>
+          </fieldset>
+          <label class="zaskrtavaci"><input type="checkbox" id="pole-blesky"> Blesky při bouřce (nejvýš 3 záblesky za sekundu; vypnuté = nebliká obraz ani světla)</label>
+          <div class="tlacitka"><button type="button" class="hlavni" id="svetla-ulozit">Uložit světla</button></div>
+          <p class="ulozeni" id="svetla-vysledek" aria-live="polite"></p>
+
+          <h3>Zařízení</h3>
+          <ul class="kontrolni-stav" id="svetla-zarizeni"></ul>
+          <div class="tlacitka">
+            <button type="button" data-test-role="hlavni">Test hlavní</button>
+            <button type="button" data-test-role="pozadi">Test pozadí</button>
+            <button type="button" data-test-role="lampa">Test lampa</button>
+            <button type="button" id="svetla-overit">Zkontrolovat zařízení</button>
+          </div>
+          <h3>Výchozí stav</h3>
+          <p class="ulozeni" id="svetla-vychozi"></p>
+          <div class="tlacitka">
+            <button type="button" id="svetla-zachytit-vychozi" title="Nastav světla v aplikacích Hue a WiZ, pak klikni">Zachytit jako výchozí</button>
+            <button type="button" id="svetla-normal-nastaveni">Světla normál</button>
+          </div>
+          <p class="ulozeni chyba" id="svetla-chyby-vrstev" hidden></p>
+        </div>
+
         <h2>Výstupy pro OBS</h2>
         <p class="uvod">Adresy pro zdroje <em>Browser</em> v OBS. U každého zdroje nech vypnuté <em>Shutdown source when not visible</em> i <em>Refresh browser when scene becomes active</em>, jinak výstup nepřežije výpadek Hubu.</p>
         <dl class="vystupy">

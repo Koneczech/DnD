@@ -14,10 +14,21 @@ export const VYCHOZI = Object.freeze({
   OBS_SCENA_MISTO: '',
   DOMACI_SIT: '0',
   PIN: '',
+  HUE_BRIDGE: '',
+  HUE_KLIC: '',
+  HUE_OTISK: '',
+  SVETLA_HLAVNI: '',
+  SVETLA_POZADI: '',
+  SVETLA_LAMPA: '',
+  BLESKY: '1',
 });
 
 /** Klíče, jejichž hodnoty jsou tajné: nikdy neopustí server a hook je hlídá v commitech. */
-export const TAJNE_KLICE = Object.freeze(['OBS_HESLO', 'PIN', 'OPENAI_API_KEY']);
+export const TAJNE_KLICE = Object.freeze(['OBS_HESLO', 'PIN', 'OPENAI_API_KEY', 'HUE_KLIC']);
+
+const IPV4 = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
+/** Zařízení role: hue:<id světla na bridgi> nebo wiz:<IP lampy>. */
+export const ZARIZENI_SVETLA = /^(hue:[0-9a-f-]{8,64}|wiz:(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3})$/;
 
 export function rozebratEnv(text) {
   const vysledek = {};
@@ -89,6 +100,13 @@ export class Nastaveni {
       scenaMisto: this.hodnoty.OBS_SCENA_MISTO || '',
       domaciSit: this.hodnoty.DOMACI_SIT === '1',
       pinNastaven: Boolean(this.hodnoty.PIN),
+      // Světla (Blok 4): klíč Hue nikdy, jen jestli je bridge spárovaný.
+      hueBridge: this.hodnoty.HUE_BRIDGE || '',
+      hueSparovano: Boolean(this.hodnoty.HUE_KLIC),
+      svetlaHlavni: this.hodnoty.SVETLA_HLAVNI || '',
+      svetlaPozadi: this.hodnoty.SVETLA_POZADI || '',
+      svetlaLampa: this.hodnoty.SVETLA_LAMPA || '',
+      blesky: this.hodnoty.BLESKY !== '0',
     };
   }
 
@@ -124,6 +142,30 @@ export class Nastaveni {
       if (z.domaciSit && !nove.PIN) throw Object.assign(new Error('Přístup z domácí sítě vyžaduje PIN'), { status: 400 });
       nove.DOMACI_SIT = z.domaciSit ? '1' : '0';
     }
+    if (z.hueBridge !== undefined) {
+      const b = String(z.hueBridge).trim();
+      if (b && !IPV4.test(b)) throw Object.assign(new Error('Adresa Hue bridge je IP v domácí síti, např. 192.168.1.20'), { status: 400 });
+      if (b !== nove.HUE_BRIDGE) {
+        // Jiný bridge = jiný klíč i certifikát: spárovat znovu.
+        nove.HUE_KLIC = '';
+        nove.HUE_OTISK = '';
+      }
+      nove.HUE_BRIDGE = b;
+    }
+    if (z.hueSparovani) {
+      // Jen ze serveru po úspěšném spárování (panel klíč nikdy nepošle ani nedostane).
+      nove.HUE_KLIC = String(z.hueSparovani.klic);
+      nove.HUE_OTISK = String(z.hueSparovani.otisk ?? '');
+    }
+    for (const [pole, klic] of [['svetlaHlavni', 'SVETLA_HLAVNI'], ['svetlaPozadi', 'SVETLA_POZADI'], ['svetlaLampa', 'SVETLA_LAMPA']]) {
+      if (z[pole] === undefined) continue;
+      const seznam = String(z[pole]).split(/[,\s]+/).map((x) => x.trim().toLowerCase()).filter(Boolean);
+      const spatne = seznam.find((x) => !ZARIZENI_SVETLA.test(x));
+      if (spatne) throw Object.assign(new Error(`Neznámé zařízení „${spatne.slice(0, 60)}“. Piš hue:<id světla> nebo wiz:<IP lampy>.`), { status: 400 });
+      if (seznam.length > 8) throw Object.assign(new Error('Role má nejvýš 8 světel.'), { status: 400 });
+      nove[klic] = seznam.join(',');
+    }
+    if (z.blesky !== undefined) nove.BLESKY = z.blesky ? '1' : '0';
     await zapsatAtomicky(this.cesta, slozitEnv(nove));
     this.hodnoty = nove;
     this.existuje = true;

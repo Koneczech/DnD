@@ -1,0 +1,5 @@
+# Souboj: rudé hlavní světlo (Hub ho kvůli čtení deníků zesvětlí) a oheň v lampě.
+svetla:
+  hlavni: { barva: [255, 90, 60], jas: 45 }
+  lampa: { wiz_scena: fireplace, rychlost: 80 }
+obs_role: souboj

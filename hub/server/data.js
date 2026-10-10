@@ -5,6 +5,7 @@ import { EventEmitter } from 'node:events';
 import YAML from 'yaml';
 import { rozebrat, upravitHlavicku, odkazy } from './frontmatter.js';
 import { TYPY_SLOZEK, TYPY } from './cesty.js';
+import { WIZ_SCENY } from './zarizeni/wiz.js';
 import { PRIPONA_DOCASNA } from './zapis.js';
 import { Harptos } from '../sdilene/harptos.js';
 
@@ -99,6 +100,21 @@ export async function kontrolaDat(c) {
 
   // Entity a záznamy
   const soubory = await projdi(c.kampan);
+
+  // Vrstvy scén (Blok 4): rozbitý YAML by světla tiše ignorovala.
+  const sceny = path.join(c.kampan, 'sceny');
+  for (const soubor of soubory.filter((s) => s.endsWith('.yaml') && !path.relative(sceny, s).startsWith('..'))) {
+    try {
+      const d = YAML.parse(await fs.readFile(soubor, 'utf8'));
+      if (d?.svetla !== undefined && (typeof d.svetla !== 'object' || Array.isArray(d.svetla))) pridej(soubor, 'chyba', 'svetla musí být mapa rolí (hlavni, pozadi, lampa, vsechny)');
+      for (const [role, v] of Object.entries(d?.svetla ?? {})) {
+        if (!['hlavni', 'pozadi', 'lampa', 'vsechny'].includes(role)) pridej(soubor, 'varovani', `Neznámá role světla „${role}“`);
+        if (v?.wiz_scena && !WIZ_SCENY[v.wiz_scena]) pridej(soubor, 'varovani', `Neznámá scéna WiZ „${v.wiz_scena}“`);
+      }
+    } catch (e) {
+      pridej(soubor, 'chyba', `Chyba v YAML: ${e.message.split('\n')[0]}`);
+    }
+  }
   const zaznamy = [];
   for (const soubor of soubory.filter((s) => s.endsWith('.md'))) {
     const casti = path.relative(c.kampan, soubor).split(path.sep);

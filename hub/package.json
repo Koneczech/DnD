@@ -18,5 +18,8 @@
     "obs-websocket-js": "^5.0.8",
     "ws": "^8.22.0",
     "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "selfsigned": "^5.5.0"
   }
 }

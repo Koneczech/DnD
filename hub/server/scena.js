@@ -9,7 +9,9 @@ import { VARIANTY } from './mista.js';
 
 export const POCASI = Object.freeze(['zadne', 'dest', 'snih', 'mlha']);
 /** Efekty počasí, které jdou zapnout současně (déšť, sníh i mlha naráz). */
-export const EFEKTY_POCASI = Object.freeze(['dest', 'snih', 'mlha']);
+export const EFEKTY_POCASI = Object.freeze(['dest', 'snih', 'mlha', 'bourka']);
+/** Vzdálenost bouřky (rozhodnutí 61): které role blikají a za jak dlouho přijde hrom. */
+export const VZDALENOSTI_BOURKY = Object.freeze(['daleko', 'blizko', 'nad-nami']);
 
 /**
  * Počasí jako seznam zapnutých efektů v pevném pořadí. Přijme i starý tvar jednoho řetězce
@@ -36,6 +38,9 @@ export function vychoziStav() {
     pocasi: [],
     intenzita: 0,
     stridani: { zapnuto: true, sekund: 50 },
+    bourka: 'blizko',
+    rezim: 'pruzkum', // pruzkum | souboj (rozhodnutí 60)
+    zasobnik: null, // stav před soubojem, který Konec souboje vrátí
   };
 }
 
@@ -112,6 +117,8 @@ export class Scena extends EventEmitter {
       pocasi: this.stav.pocasi,
       intenzita: this.stav.intenzita,
       stridani: this.stav.stridani,
+      bourka: this.stav.bourka,
+      rezim: this.stav.rezim,
       // Další ilustrace, aby si ji výstup přednačetl a prolnutí nezačínalo černým snímkem.
       dalsi: seznam.length > 1 && aktualni ? seznam[(seznam.indexOf(aktualni) + 1) % seznam.length].url : null,
     };
@@ -159,6 +166,26 @@ export class Scena extends EventEmitter {
     return this.oznam();
   }
 
+  /**
+   * Souboj jako režim se zásobníkem (rozhodnutí 60): zapamatuje si, co bylo před ním (scéna OBS),
+   * a Konec souboje to vrátí. Zásobník je v scena.json, takže přežije restart Hubu.
+   */
+  zahajitSouboj({ obsScena = null } = {}) {
+    if (this.stav.rezim === 'souboj') return this.oznam();
+    this.stav.zasobnik = { obsScena };
+    this.stav.rezim = 'souboj';
+    return this.oznam();
+  }
+
+  /** @returns {{obsScena: string|null}} co bylo před soubojem */
+  ukoncitSouboj() {
+    const predtim = this.stav.zasobnik ?? { obsScena: null };
+    this.stav.rezim = 'pruzkum';
+    this.stav.zasobnik = null;
+    this.oznam();
+    return predtim;
+  }
+
   async posun(o, { samo = false } = {}) {
     const seznam = viditelne(this.aktualniMisto(), this.stav);
     if (!seznam.length) return this.oznam(!samo);
@@ -179,8 +206,12 @@ export class Scena extends EventEmitter {
     }
     if ('pocasi' in z) {
       const pocasi = normalizujPocasi(z.pocasi);
-      if (!pocasi) throw chyba('Počasí je kombinace deště, sněhu a mlhy (nebo žádné).');
+      if (!pocasi) throw chyba('Počasí je kombinace deště, sněhu, mlhy a bouřky (nebo žádné).');
       this.stav.pocasi = pocasi;
+    }
+    if ('bourka' in z) {
+      if (!VZDALENOSTI_BOURKY.includes(z.bourka)) throw chyba('Bouřka je daleko, blízko, nebo nad námi.');
+      this.stav.bourka = z.bourka;
     }
     if ('intenzita' in z) {
       const n = Number(z.intenzita);

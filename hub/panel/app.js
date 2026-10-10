@@ -2447,6 +2447,9 @@ function prehratUkazku(soubor, tlacitko) {
   ukazka = { a, b: tlacitko, soubor };
 }
 
+/** Jméno bez přípony: dest.mp3 v datech najde i dest.wav (stejně jako server). */
+const kmenZvuku = (x) => x.replace(/\.[a-z0-9]+$/i, '').toLowerCase();
+
 function vykresliZvukMista(m) {
   const kontejner = $('#misto-zvuk');
   if (kontejner.contains(document.activeElement)) return;
@@ -2463,7 +2466,7 @@ function vykresliZvukMista(m) {
         label.textContent = popis;
         const select = document.createElement('select');
         const moznosti = [...new Set([...bezEfektu, ...(aktualni ? [aktualni] : [])])];
-        select.append(new Option(varianta === 'noc' && m.zvuk?.den?.[k] ? '— jako ve dne —' : '— žádná —', ''), ...moznosti.map((x) => new Option(soubory.includes(x) ? x : `${x} (ve složce chybí)`, x)));
+        select.append(new Option(varianta === 'noc' && m.zvuk?.den?.[k] ? '— jako ve dne —' : '— žádná —', ''), ...moznosti.map((x) => new Option(soubory.includes(x) || soubory.some((y) => kmenZvuku(y) === kmenZvuku(x)) ? x : `${x} (ve složce chybí)`, x)));
         select.value = aktualni;
         select.addEventListener('change', async () => {
           const vysledek = $('#misto-zvuk-vysledek');

@@ -1,3 +1,4 @@
 # Sníh: chladné, skoro stejně jasné světlo (sníh odráží).
 svetla:
   vsechny: { jas_nasobek: 0.9, teplota_posun: -1200 }
+zvuk: { ambient: vitr-snih.mp3, hlasitost_podle_intenzity: true }

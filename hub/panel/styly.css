@@ -491,3 +491,18 @@ details.oprava summary { cursor: pointer; color: var(--mlha); font-size: 0.9rem;
 .svetla-nastaveni { display: grid; gap: 0.9rem; max-width: 52rem; }
 .svetla-nastaveni fieldset label { display: grid; gap: 0.3rem; }
 .svetla-nastaveni h3 { margin: 0.5rem 0 0; }
+
+/* ---------- Zvuk (Blok 5) ---------- */
+.zvuk-lista { margin-top: -0.4rem; }
+.posuvnik-zvuku { display: inline-flex; align-items: center; gap: 0.45rem; font-weight: 600; }
+.posuvnik-zvuku input { width: 8rem; }
+.posuvnik-zvuku output { min-width: 2.8rem; color: var(--mlha); font-weight: 400; font-variant-numeric: tabular-nums; }
+.zvuk-efekty { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.zvuk-efekty:empty { display: none; }
+#tlacitko-ticho[aria-pressed="true"] { background: var(--jantar); border-color: var(--jantar); color: var(--noc); }
+.zvuk-mista { display: grid; gap: 0.6rem; margin: 0.5rem 0; }
+.zvuk-radek { display: flex; flex-wrap: wrap; align-items: end; gap: 0.5rem 0.75rem; }
+.zvuk-radek > strong { min-width: 2.5rem; align-self: center; }
+.zvuk-radek label { display: grid; gap: 0.2rem; color: var(--mlha); font-size: 0.9rem; }
+.zvuk-radek select { min-width: 14rem; }
+.svetla-nastaveni > label:not(.zaskrtavaci) { display: grid; gap: 0.3rem; }

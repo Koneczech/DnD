@@ -22,6 +22,8 @@ import { Mista } from './mista.js';
 import { Scena } from './scena.js';
 import { Svetla, ROLE as ROLE_SVETEL } from './svetla.js';
 import { Hue } from './zarizeni/hue.js';
+import { Zvuk, TYPY_ZVUKU } from './zvuk.js';
+import { createReadStream } from 'node:fs';
 import { nacistStyl, sestavPrompt, ZABERY } from './dilna.js';
 
 /**
@@ -142,6 +144,15 @@ export class Hub {
       scena: () => this.scena.stav,
       ovladace: ovladaceSvetel,
     });
+    this.zvuk = new Zvuk({
+      cesty: this.c,
+      nastaveni: () => this.nastaveni.hodnoty,
+      misto: (id) => this.mista.mista.get(id) ?? null,
+      scena: () => this.scena.stav,
+      vrstvy: () => this.svetla.vrstvy,
+      mista: () => [...this.mista.mista.values()],
+    });
+    this.data.dalsiKontroly = () => this.zvuk.kontrola();
     this.sparovatHue = sparovatHue ?? ((v) => Hue.sparovat(v));
     this.casovacOdpoctu = null;
     this.server = null;
@@ -201,9 +212,17 @@ export class Hub {
     this.scena.on('stav', (s) => {
       this.vysilac.vyslat('scena', s);
       this.svetla.zmenaSceny();
+      this.zvuk.zmenaSceny();
     });
+    this.zvuk.on('zvuk', (z) => this.vysilac.vyslat('zvuk', z));
+    this.zvuk.on('efekt', (e) => this.vysilac.vyslat('zvuk-efekt', e));
+    this.zvuk.on('stav', (z) => this.vysilac.vyslat('zvuk-stav', z));
+    this.zvuk.on('soubory', () => this.data.naplanovatKontrolu());
     this.svetla.on('stav', (s) => this.vysilac.vyslat('svetla', s));
-    this.svetla.on('blesk', (b) => this.vysilac.vyslat('blesk', b));
+    this.svetla.on('blesk', (b) => {
+      this.vysilac.vyslat('blesk', b);
+      this.zvuk.hrom(b); // hrom za 0–8 s podle vzdálenosti (Blok 4, tabulka Blesky)
+    });
     this.hlidac.on('zmena', ({ soubor }) => this.souborZmenen(soubor).catch(() => {}));
 
     await this.zapisovac.obnovit();
@@ -213,6 +232,7 @@ export class Hub {
     await this.mista.nacist();
     await this.scena.nacist();
     await this.svetla.nacist();
+    await this.zvuk.nacist();
     await this.odpocet.nacist();
     this.vysilac.vyslat('odpocet', this.odpocet.verejny());
     this.vysilac.vyslat('verze', await otiskKodu([this.c.panel, this.c.vystupy, path.join(HUB_DIR, 'sdilene')]));
@@ -245,6 +265,7 @@ export class Hub {
     if (!relSceny.startsWith('..') && !path.isAbsolute(relSceny)) {
       await this.svetla.nacistVrstvy();
       this.svetla.zmenaSceny();
+      this.zvuk.zmenaSceny();
       this.svetla.oznam();
       this.data.naplanovatKontrolu();
       return;
@@ -336,6 +357,7 @@ export class Hub {
       mista: this.mista.seznam(),
       scena: this.scena.verejny(),
       svetla: this.svetla.verejny(),
+      zvuk: this.zvuk.stav(),
       obs: this.obs.verejnyStav(),
       git: this.git.stav,
       nastaveni: this.nastaveni.verejne(),
@@ -409,6 +431,7 @@ export class Hub {
         return poslatJson(res, 403, { chyba: 'Přístup jen z tohoto počítače.' });
       }
       if (url.pathname.startsWith('/api/')) return await this.api(req, res, url);
+      if (url.pathname.startsWith('/audio/')) return await this.zvukovySoubor(req, res, url);
       return await this.staticky(req, res, url);
     } catch (e) {
       const status = e.status || 500;
@@ -473,6 +496,10 @@ export class Hub {
       this.svetla.sestavitZarizeni();
       this.svetla.zmenaSceny();
       this.svetla.overit().catch(() => {});
+      if (telo.zvukSlozka !== undefined) {
+        await this.zvuk.prohledat();
+        this.data.naplanovatKontrolu();
+      }
       // Restart jen při změně toho, co server čte při startu (audit N4). Nový PIN ruší přihlášení.
       if (telo.pin) this.relace.clear();
       const restart = this.nastaveni.port !== pred.port || this.nastaveni.domaciSit !== pred.domaciSit;
@@ -532,6 +559,10 @@ export class Hub {
     if ((p === '/api/souboj' || p === '/api/obs/souboj') && m === 'POST') {
       const telo = await nacistJson(req);
       return poslatJson(res, 200, await this.souboj(telo.zapnout !== false));
+    }
+    if (p.startsWith('/api/zvuk')) {
+      const v = await this.apiZvuk(req, m, p, url);
+      if (v !== undefined) return poslatJson(res, 200, v);
     }
     if (p.startsWith('/api/svetla')) {
       const v = await this.apiSvetla(req, m, p);
@@ -621,6 +652,81 @@ export class Hub {
       }
     }
     return { ok: !chybaObs, rezim: this.scena.stav.rezim, scena: scenaObs, chybaObs, ms: Date.now() - zacatek };
+  }
+
+  async apiZvuk(req, m, p, url) {
+    const z = this.zvuk;
+    if (p === '/api/zvuk' && m === 'GET') {
+      // Stránky (hudba, stůl) chtějí jen co hrát, panel celý stav.
+      return url.searchParams.get('pro') === 'stranka' ? z.verejny() : z.stav();
+    }
+    if (p === '/api/zvuk' && m === 'PUT') return z.nastavit(await nacistJson(req));
+    if (p === '/api/zvuk/soubory' && m === 'GET') return { soubory: z.soubory, slozka: z.slozka, slozkaExistuje: z.slozkaExistuje };
+    if (p === '/api/zvuk/prohledat' && m === 'POST') {
+      await nacistJson(req);
+      await z.prohledat();
+      this.data.naplanovatKontrolu();
+      return z.stav();
+    }
+    if (p === '/api/zvuk/hlaseni' && m === 'POST') {
+      const telo = await nacistJson(req);
+      return z.hlasit(String(telo.stranka), telo);
+    }
+    if (p === '/api/zvuk/efekt' && m === 'POST') return z.efekt(await nacistJson(req));
+    return undefined;
+  }
+
+  /**
+   * Zvukové soubory ze složky mimo repo (rozhodnutí 63): jen z tohoto počítače, nikdy z domácí sítě,
+   * s podporou Range (prvek <audio> si soubor čte po částech).
+   */
+  async zvukovySoubor(req, res, url) {
+    if (!LOOPBACK.has(req.socket.remoteAddress)) throw Object.assign(new Error('Zvuk jde jen na tomto počítači.'), { status: 403 });
+    if (req.method !== 'GET' && req.method !== 'HEAD') throw Object.assign(new Error('Metoda není povolena'), { status: 405 });
+    let jmeno;
+    try {
+      jmeno = url.pathname.slice('/audio/'.length).split('/').map(decodeURIComponent).join('/');
+    } catch {
+      throw Object.assign(new Error('Neplatná adresa'), { status: 400 });
+    }
+    const cesta = this.zvuk.cestaSouboru(jmeno);
+    let info;
+    try {
+      info = await fs.stat(cesta);
+      if (!info.isFile()) throw new Error('není soubor');
+    } catch {
+      throw Object.assign(new Error('Zvuk ve složce není.'), { status: 404 });
+    }
+    const hlavicky = {
+      ...HLAVICKY_BEZPECNOSTI,
+      'Content-Type': TYPY_ZVUKU[path.extname(cesta).toLowerCase()] ?? 'application/octet-stream',
+      'Accept-Ranges': 'bytes',
+      'Cache-Control': 'no-cache',
+    };
+    const rozsah = /^bytes=(\d*)-(\d*)$/.exec(String(req.headers.range ?? ''));
+    let od = 0;
+    let do_ = info.size - 1;
+    let status = 200;
+    if (rozsah && (rozsah[1] || rozsah[2])) {
+      if (rozsah[1]) {
+        od = Number(rozsah[1]);
+        if (rozsah[2]) do_ = Math.min(Number(rozsah[2]), info.size - 1);
+      } else od = Math.max(0, info.size - Number(rozsah[2]));
+      if (od > do_ || od >= info.size) {
+        res.writeHead(416, { ...hlavicky, 'Content-Range': `bytes */${info.size}` });
+        return res.end();
+      }
+      status = 206;
+      hlavicky['Content-Range'] = `bytes ${od}-${do_}/${info.size}`;
+    }
+    hlavicky['Content-Length'] = do_ - od + 1;
+    res.writeHead(status, hlavicky);
+    if (req.method === 'HEAD' || info.size === 0) return res.end();
+    const proud = createReadStream(cesta, { start: od, end: do_ });
+    proud.on('error', () => res.destroy());
+    res.on('close', () => proud.destroy());
+    proud.pipe(res);
+    return undefined;
   }
 
   async apiSvetla(req, m, p) {
@@ -717,6 +823,12 @@ export class Hub {
 
   async apiMista(req, m, p, url) {
     if (p === '/api/mista' && m === 'GET') return this.mista.seznam();
+    const mz = /^\/api\/mista\/([a-z0-9-]{1,60})\/zvuk\/(den|noc)$/.exec(p);
+    if (mz && m === 'PUT') {
+      const v = await this.mista.nastavitZvuk(mz[1], mz[2], await nacistJson(req));
+      this.data.naplanovatKontrolu();
+      return v;
+    }
     const il = /^\/api\/mista\/([a-z0-9-]{1,60})\/ilustrace\/([^/]{1,120})$/.exec(p);
     if (il && m === 'PUT') return this.mista.upravitIlustraci(il[1], decodeURIComponent(il[2]), await nacistJson(req));
     if (il && m === 'DELETE') return this.mista.smazatIlustraci(il[1], decodeURIComponent(il[2]));
@@ -878,6 +990,7 @@ export class Hub {
     clearTimeout(this.casovacOdpoctu);
     this.scena.zastavit();
     this.svetla.zastavit();
+    this.zvuk.zastavit();
     this.vysilac.zavrit();
     await this.hlidac.zastavit();
     await this.obs.ukoncit();

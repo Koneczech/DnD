@@ -7,6 +7,7 @@ import { EventEmitter } from 'node:events';
 import YAML from 'yaml';
 import { rozebrat, upravitDokument } from './frontmatter.js';
 import { zapsatAtomicky } from './zapis.js';
+import { normalizujZvukMista, platneJmeno } from './zvuk.js';
 
 export const UCELY = Object.freeze(['scena', 'portret', 'token', 'karta']);
 export const VARIANTY = Object.freeze(['den', 'noc']);
@@ -136,6 +137,8 @@ export class Mista extends EventEmitter {
       popisObrazu: typeof d.popis_obrazu === 'string' ? d.popis_obrazu : '',
       // Světla místa pro den a noc (Blok 4); skládá je svetla.js.
       svetla: normalizujSvetlaMista(d.svetla),
+      // Hudba a ambient místa pro den a noc (Blok 5); soubory ze složky zvuku mimo repo.
+      zvuk: normalizujZvukMista(d.zvuk),
       ilustrace: ilustrace.map((il) => ({ ...il, url: this.url(id, il.soubor) })),
     };
   }
@@ -161,6 +164,45 @@ export class Mista extends EventEmitter {
         uzel.set(r, radek);
       }
       svetla.set(varianta, uzel);
+    });
+    return { misto: this.get(id) };
+  }
+
+  /**
+   * Zvuk místa pro den, nebo noc: hudba a ambient (jméno souboru ve složce zvuku, null = žádný).
+   * Mění jen `zvuk.<varianta>.<hudba|ambient>`, zbytek hlavičky zůstává.
+   */
+  async nastavitZvuk(id, varianta, zmeny) {
+    this.get(id);
+    if (!VARIANTY.includes(varianta)) throw chyba('Zvuk se nastavuje pro den, nebo noc.');
+    const nastavit = {};
+    for (const k of ['hudba', 'ambient']) {
+      if (!(k in zmeny)) continue;
+      if (zmeny[k] === null || zmeny[k] === '') nastavit[k] = null;
+      else {
+        const j = platneJmeno(zmeny[k]);
+        if (!j) throw chyba('Zvuk je jméno souboru ve složce zvuku (mp3, ogg, wav …).');
+        nastavit[k] = j;
+      }
+    }
+    await this.upravitSoubor(id, (dok) => {
+      let zvuk = dok.get('zvuk', true);
+      if (!YAML.isMap(zvuk)) {
+        zvuk = dok.createNode({});
+        dok.set('zvuk', zvuk);
+      }
+      let uzel = zvuk.get(varianta, true);
+      if (!YAML.isMap(uzel)) {
+        uzel = dok.createNode({});
+        uzel.flow = true; // { hudba: …, ambient: … } na jednom řádku jako v zadání
+        zvuk.set(varianta, uzel);
+      }
+      for (const [k, v] of Object.entries(nastavit)) {
+        if (v === null) uzel.delete(k);
+        else uzel.set(k, v);
+      }
+      if (!uzel.items.length) zvuk.delete(varianta);
+      if (!zvuk.items.length) dok.delete('zvuk');
     });
     return { misto: this.get(id) };
   }

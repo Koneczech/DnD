@@ -10,6 +10,17 @@ node_modules/
 Thumbs.db
 desktop.ini
 
+# Zvukové soubory (rozhodnutí 63): licence nepovolují zveřejnění, leží ve složce mimo repo
+audio/
+*.mp3
+*.ogg
+*.opus
+*.wav
+*.flac
+*.m4a
+*.aac
+*.wma
+
 # Lokální stav Hubu (logy, odložené zápisy)
 hub/.stav/
 

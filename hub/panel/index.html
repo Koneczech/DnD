@@ -17,6 +17,7 @@
     <nav class="akce" aria-label="Akce sezení">
       <button type="button" id="tlacitko-sezeni">Zahájit sezení</button>
       <button type="button" id="tlacitko-souboj" aria-pressed="false" title="Přepne OBS na scénu s iniciativou a světla na bojová; Konec souboje vrátí, co bylo před ním">Souboj</button>
+      <button type="button" id="tlacitko-ticho" aria-pressed="false" title="Ztlumí hudbu i ambient; druhé stisknutí je vrátí">Ticho</button>
       <button type="button" id="tlacitko-poznamka" title="Klávesa F2">Poznámka <kbd>F2</kbd></button>
       <button type="button" id="tlacitko-dalsi-den" title="Posune kalendář o den a ukáže připomínky">Další den</button>
     </nav>
@@ -26,6 +27,7 @@
       <li><a href="#nastaveni"><span class="svetlo" id="svetlo-obs" data-stav="ceka"></span>OBS</a></li>
       <li><a href="#prehled-github"><span class="svetlo" id="svetlo-git" data-stav="ceka"></span>Git</a></li>
       <li><a href="#nastaveni-svetla"><span class="svetlo" id="svetlo-svetla" data-stav="ceka"></span>Světla</a></li>
+      <li><a href="#nastaveni-zvuk"><span class="svetlo" id="svetlo-zvuk" data-stav="ceka"></span>Zvuk</a></li>
     </ul>
   </header>
 
@@ -102,6 +104,13 @@
           <label class="prepinac-svetel"><input type="checkbox" id="svetla-ridit" role="switch"> <span>Řídit světla</span></label>
           <p class="ulozeni" id="svetla-popis" aria-live="polite"></p>
           <button type="button" id="svetla-normal" title="Výchozí stav na všech světlech, bez ohledu na scénu">Světla normál</button>
+        </div>
+
+        <div class="svetla-lista zvuk-lista" id="zvuk-lista">
+          <label class="posuvnik-zvuku">Hudba <input type="range" id="zvuk-hudba" min="0" max="100" step="5"> <output id="zvuk-hudba-hodnota"></output></label>
+          <label class="posuvnik-zvuku">Ambient <input type="range" id="zvuk-ambient" min="0" max="100" step="5"> <output id="zvuk-ambient-hodnota"></output></label>
+          <p class="ulozeni" id="zvuk-popis" aria-live="polite"></p>
+          <div class="zvuk-efekty" id="zvuk-efekty" aria-label="Zvukové efekty"></div>
         </div>
 
         <h2 class="vizualne-skryte">Nastavení scén</h2>
@@ -293,6 +302,12 @@
             </div>
             <p class="ulozeni" id="misto-svetla-vysledek" aria-live="polite"></p>
           </section>
+          <section class="svetla-mista" aria-labelledby="misto-zvuk-nadpis">
+            <h3 id="misto-zvuk-nadpis">Zvuk</h3>
+            <p class="ulozeni" id="misto-zvuk-popis">Hudba hraje na TV, ambient u stolu. Soubory vybíráš ze složky zvuku (Nastavení → Zvuk). Noc bez vlastního zvuku hraje zvuk dne.</p>
+            <div class="zvuk-mista" id="misto-zvuk"></div>
+            <p class="ulozeni" id="misto-zvuk-vysledek" aria-live="polite"></p>
+          </section>
         </div>
       </section>
 
@@ -449,12 +464,37 @@
           <p class="ulozeni chyba" id="svetla-chyby-vrstev" hidden></p>
         </div>
 
+        <h2 id="nastaveni-zvuk">Zvuk</h2>
+        <p class="uvod">Hudba hraje výstup <strong>Hudba</strong> v OBS (zvuk jde na TV), ambient a efekty stránka <strong>Zvuk u stolu</strong> do BT reproduktoru. Soubory leží ve složce mimo repo a Hub je pouští jen na tomto počítači. Postup nastavení je v <code>reference/zvuk.md</code>.</p>
+        <div class="svetla-nastaveni">
+          <label>Složka zvuku
+            <input id="pole-zvuk-slozka" autocomplete="off" spellcheck="false">
+            <small id="zvuk-slozka-stav"></small>
+          </label>
+          <label class="zaskrtavaci"><input type="checkbox" id="pole-zvuk-otevrit"> Otevřít Zvuk u stolu při startu Hubu</label>
+          <div class="tlacitka">
+            <button type="button" class="hlavni" id="zvuk-ulozit">Uložit zvuk</button>
+            <button type="button" id="zvuk-prohledat">Načíst složku znovu</button>
+          </div>
+          <p class="ulozeni" id="zvuk-vysledek" aria-live="polite"></p>
+          <h3>Stránky zvuku</h3>
+          <ul class="kontrolni-stav" id="zvuk-stranky"></ul>
+          <div class="tlacitka">
+            <button type="button" id="zvuk-otevrit-stul">Otevřít Zvuk u stolu</button>
+            <button type="button" data-zkusebni="stul">Zkušební zvuk u stolu</button>
+            <button type="button" data-zkusebni="hudba">Zkušební zvuk v OBS</button>
+          </div>
+        </div>
+
         <h2>Výstupy pro OBS</h2>
         <p class="uvod">Adresy pro zdroje <em>Browser</em> v OBS. U každého zdroje nech vypnuté <em>Shutdown source when not visible</em> i <em>Refresh browser when scene becomes active</em>, jinak výstup nepřežije výpadek Hubu.</p>
         <dl class="vystupy">
           <dt>Místo</dt>
           <dd><p class="adresa"><code id="adresa-misto">…</code> <button type="button" data-kopirovat="adresa-misto">Kopírovat adresu</button></p>
             <small>Scéna Místo: 1920 × 1080 přes celé plátno, medailon kalendáře nad ním.</small></dd>
+          <dt>Hudba</dt>
+          <dd><p class="adresa"><code id="adresa-hudba">…</code> <button type="button" data-kopirovat="adresa-hudba">Kopírovat adresu</button></p>
+            <small>Zdroj <em>Hub – hudba</em>, 100 × 100, zapni <em>Control audio via OBS</em>. Přidej ho do každé scény jako existující zdroj, jinak hudba mimo jeho scénu ztichne.</small></dd>
           <dt>Obchod</dt>
           <dd><p class="adresa"><code id="adresa-cenik">…</code> <button type="button" data-kopirovat="adresa-cenik">Kopírovat adresu</button></p>
             <small>Scéna Obchod: obrázek interiéru a ceník v pravé třetině, 1920 × 1080.</small></dd>

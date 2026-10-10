@@ -1,3 +1,4 @@
 # Déšť: o něco tmavší a chladnější světlo.
 svetla:
   vsechny: { jas_nasobek: 0.8, teplota_posun: -800 }
+zvuk: { ambient: dest.mp3, hlasitost_podle_intenzity: true }

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <title>DM Hub — hudba</title>
+  <style>
+    /* Hudba scény pro OBS (Blok 5). Browser Source s „Control audio via OBS“; nic se nekreslí,
+       zdroj může být malý a schovaný. Musí být v každé scéně (stejný zdroj přidaný jako existující),
+       jinak OBS jeho zvuk mimo aktivní scénu nepouští. */
+    html, body { margin: 0; background: transparent; overflow: hidden; }
+    #ladeni { display: none; margin: 8px; padding: 6px 8px; font: 14px/1.3 monospace; color: #fff; background: rgba(0,0,0,.7); white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <pre id="ladeni"></pre>
+  <script type="module">
+    import { Prehravac, Vrstvy } from '/sdilene/zvuk.js';
+
+    const ladeni = new URLSearchParams(location.search).has('ladeni');
+    const vypis = document.getElementById('ladeni');
+    if (ladeni) vypis.style.display = 'block';
+
+    let hudba;
+    let sbernice;
+    let efekty;
+    const p = new Prehravac({
+      stranka: 'hudba',
+      priZmene: (s) => {
+        if (!s) return;
+        p.nastavHlasitost(sbernice, s.ticho ? 0 : s.hlasitost.hudba);
+        p.nastavHlasitost(efekty, s.ticho ? 0 : s.hlasitost.efekty);
+        hudba.nastavit(s.hudba ? [s.hudba] : [], s.prolnutiMs);
+        if (ladeni) vypis.textContent = `${new Date().toLocaleTimeString('cs')} ${s.hudba?.soubor ?? '(bez hudby)'}${s.ticho ? ' · ticho' : ''}`;
+        setTimeout(() => p.hlasit(), 300);
+      },
+      priEfektu: (e) => (e.test ? p.test(p.ctx.destination) : p.efekt(e, efekty).catch((x) => p.zaznamenatChybu(String(x)))),
+    });
+    sbernice = p.sbernice();
+    efekty = p.sbernice();
+    hudba = new Vrstvy(p.ctx, sbernice, (t) => p.zaznamenatChybu(t));
+    p.hraje = () => hudba.hraje();
+    // OBS pouští zvuk bez kliknutí; v běžném prohlížeči stačí kliknout do stránky.
+    document.addEventListener('click', () => p.odemknout());
+    p.odemknout().catch(() => {});
+    p.spustit();
+  </script>
+</body>
+</html>

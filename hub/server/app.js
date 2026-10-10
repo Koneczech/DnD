@@ -20,6 +20,8 @@ import { Obchody } from './obchody.js';
 import { HUB_DIR } from './cesty.js';
 import { Mista } from './mista.js';
 import { Scena } from './scena.js';
+import { Svetla, ROLE as ROLE_SVETEL } from './svetla.js';
+import { Hue } from './zarizeni/hue.js';
 import { nacistStyl, sestavPrompt, ZABERY } from './dilna.js';
 
 /**
@@ -115,7 +117,7 @@ export class Hub {
    * @param {object} [volby.obsKlient] náhrada klienta OBS (testy)
    * @param {boolean} [volby.gitSit] kontrolovat GitHub při startu (výchozí true)
    */
-  constructor({ cesty = vychoziCesty(), obsKlient, gitSit = true, port } = {}) {
+  constructor({ cesty = vychoziCesty(), obsKlient, gitSit = true, port, ovladaceSvetel, sparovatHue } = {}) {
     this.c = cesty;
     this.gitSit = gitSit;
     this.portPrepis = port;
@@ -133,6 +135,14 @@ export class Hub {
     this.obchody = new Obchody({ cesty: this.c, zapisovac: this.zapisovac });
     this.mista = new Mista({ cesty: this.c, zapisovac: this.zapisovac });
     this.scena = new Scena({ soubor: path.join(this.c.lokalniStav, 'scena.json'), mista: this.mista });
+    this.svetla = new Svetla({
+      cesty: this.c,
+      nastaveni: () => this.nastaveni.hodnoty,
+      misto: (id) => this.mista.mista.get(id) ?? null,
+      scena: () => this.scena.stav,
+      ovladace: ovladaceSvetel,
+    });
+    this.sparovatHue = sparovatHue ?? ((v) => Hue.sparovat(v));
     this.casovacOdpoctu = null;
     this.server = null;
     this.spusteno = new Date().toISOString();
@@ -186,9 +196,14 @@ export class Hub {
     this.obchody.on('ceniky', (c) => this.vysilac.vyslat('ceniky', c));
     this.mista.on('zmena', (m) => {
       this.vysilac.vyslat('mista', m);
-      this.scena.mistaZmenena();
+      this.scena.mistaZmenena(); // vyšle 'stav' scény a ta pošle i světla místa
     });
-    this.scena.on('stav', (s) => this.vysilac.vyslat('scena', s));
+    this.scena.on('stav', (s) => {
+      this.vysilac.vyslat('scena', s);
+      this.svetla.zmenaSceny();
+    });
+    this.svetla.on('stav', (s) => this.vysilac.vyslat('svetla', s));
+    this.svetla.on('blesk', (b) => this.vysilac.vyslat('blesk', b));
     this.hlidac.on('zmena', ({ soubor }) => this.souborZmenen(soubor).catch(() => {}));
 
     await this.zapisovac.obnovit();
@@ -197,6 +212,7 @@ export class Hub {
     await this.obchody.nacist();
     await this.mista.nacist();
     await this.scena.nacist();
+    await this.svetla.nacist();
     await this.odpocet.nacist();
     this.vysilac.vyslat('odpocet', this.odpocet.verejny());
     this.vysilac.vyslat('verze', await otiskKodu([this.c.panel, this.c.vystupy, path.join(HUB_DIR, 'sdilene')]));
@@ -218,10 +234,21 @@ export class Hub {
     }
     this.obnovitGit(this.gitSit);
     this.hlidatOdpocet();
+    this.svetla.zmenaSceny();
+    this.svetla.overit().catch(() => {});
     return this;
   }
 
   async souborZmenen(soubor) {
+    // Vrstvy světel (kampan/sceny/…): načíst znovu a poslat na světla.
+    const relSceny = path.relative(path.join(this.c.kampan, 'sceny'), path.resolve(soubor));
+    if (!relSceny.startsWith('..') && !path.isAbsolute(relSceny)) {
+      await this.svetla.nacistVrstvy();
+      this.svetla.zmenaSceny();
+      this.svetla.oznam();
+      this.data.naplanovatKontrolu();
+      return;
+    }
     if (await this.kalendar.souborZmenen(soubor)) return;
     if (await this.obchody.souborZmenen(soubor)) return;
     if (await this.mista.souborZmenen(soubor)) {
@@ -308,6 +335,7 @@ export class Hub {
       obchody: this.obchody.seznam(),
       mista: this.mista.seznam(),
       scena: this.scena.verejny(),
+      svetla: this.svetla.verejny(),
       obs: this.obs.verejnyStav(),
       git: this.git.stav,
       nastaveni: this.nastaveni.verejne(),
@@ -435,12 +463,16 @@ export class Hub {
     if (p === '/api/nastaveni' && m === 'GET') return poslatJson(res, 200, this.nastaveni.verejne());
     if (p === '/api/nastaveni' && m === 'PUT') {
       const telo = await nacistJson(req);
+      delete telo.hueSparovani; // klíč Hue zapisuje jen spárování na serveru
       const pred = { port: this.nastaveni.port, domaciSit: this.nastaveni.domaciSit };
       const puvodniObs = [this.nastaveni.hodnoty.OBS_URL, this.nastaveni.hodnoty.OBS_HESLO].join('\n');
       await this.nastaveni.ulozit(telo);
       if ([this.nastaveni.hodnoty.OBS_URL, this.nastaveni.hodnoty.OBS_HESLO].join('\n') !== puvodniObs) {
         this.obs.nastavit(this.nastaveni.hodnoty.OBS_URL, this.nastaveni.hodnoty.OBS_HESLO);
       }
+      this.svetla.sestavitZarizeni();
+      this.svetla.zmenaSceny();
+      this.svetla.overit().catch(() => {});
       // Restart jen při změně toho, co server čte při startu (audit N4). Nový PIN ruší přihlášení.
       if (telo.pin) this.relace.clear();
       const restart = this.nastaveni.port !== pred.port || this.nastaveni.domaciSit !== pred.domaciSit;
@@ -497,13 +529,13 @@ export class Hub {
       return poslatJson(res, 200, await mapa[akce]());
     }
     if (p === '/api/odpocet' && m === 'GET') return poslatJson(res, 200, this.odpocet.verejny());
-    if (p === '/api/obs/souboj' && m === 'POST') {
-      await nacistJson(req);
-      const scena = this.nastaveni.hodnoty.OBS_SCENA_SOUBOJ;
-      if (!scena) throw Object.assign(new Error('Scéna pro souboj není nastavená. Přiřaď ji na obrazovce U stolu v tabulce Role scén.'), { status: 409 });
-      const zacatek = Date.now();
-      await this.obs.prepnoutScenu(scena);
-      return poslatJson(res, 200, { ok: true, scena, ms: Date.now() - zacatek });
+    if ((p === '/api/souboj' || p === '/api/obs/souboj') && m === 'POST') {
+      const telo = await nacistJson(req);
+      return poslatJson(res, 200, await this.souboj(telo.zapnout !== false));
+    }
+    if (p.startsWith('/api/svetla')) {
+      const v = await this.apiSvetla(req, m, p);
+      if (v !== undefined) return poslatJson(res, 200, v);
     }
     if (p.startsWith('/api/kalendar') || p.startsWith('/api/den/')) {
       const v = await this.apiKalendar(req, m, p);
@@ -562,6 +594,83 @@ export class Hub {
       return poslatJson(res, 200, { ...vysledek, git: this.git.stav });
     }
     throw Object.assign(new Error('Neznámá adresa'), { status: 404 });
+  }
+
+  /**
+   * Souboj / Konec souboje (rozhodnutí 60). Zahájení si zapamatuje scénu OBS, která běžela,
+   * přepne na scénu Souboj a světla na bojová. Konec vrátí OBS i světla do stavu před soubojem.
+   * Scéna Hubu se přepne i bez OBS; chyba OBS se jen ohlásí.
+   */
+  async souboj(zapnout) {
+    let scenaObs = null;
+    let chybaObs = null;
+    if (zapnout) {
+      scenaObs = this.nastaveni.hodnoty.OBS_SCENA_SOUBOJ || null;
+      if (!scenaObs) throw Object.assign(new Error('Scéna pro souboj není nastavená. Přiřaď ji na obrazovce U stolu v tabulce Role scén.'), { status: 409 });
+      const predtim = this.scena.stav.rezim === 'souboj' ? undefined : this.obs.aktualniScena ?? null;
+      if (predtim !== undefined) this.scena.zahajitSouboj({ obsScena: predtim === scenaObs ? null : predtim });
+    } else {
+      scenaObs = this.scena.ukoncitSouboj().obsScena;
+    }
+    const zacatek = Date.now();
+    if (scenaObs) {
+      try {
+        await this.obs.prepnoutScenu(scenaObs);
+      } catch (e) {
+        chybaObs = `OBS scénu nepřepnul: ${e.message}`;
+      }
+    }
+    return { ok: !chybaObs, rezim: this.scena.stav.rezim, scena: scenaObs, chybaObs, ms: Date.now() - zacatek };
+  }
+
+  async apiSvetla(req, m, p) {
+    const s = this.svetla;
+    if (p === '/api/svetla' && m === 'GET') return s.verejny();
+    if (p === '/api/svetla/ridit' && m === 'PUT') {
+      const { ridit } = await nacistJson(req);
+      if (typeof ridit !== 'boolean') throw Object.assign(new Error('Řídit světla je zapnuto, nebo vypnuto.'), { status: 400 });
+      return s.nastavitRidit(ridit);
+    }
+    if (p === '/api/svetla/overit' && m === 'POST') {
+      await nacistJson(req);
+      return s.overit();
+    }
+    if (p === '/api/svetla/normal' && m === 'POST') {
+      await nacistJson(req);
+      return s.normal();
+    }
+    if (p === '/api/svetla/blesk' && m === 'POST') {
+      const { vzdalenost } = await nacistJson(req);
+      return s.blesk({ vzdalenost: vzdalenost || undefined });
+    }
+    if (p === '/api/svetla/test' && m === 'POST') {
+      const { role } = await nacistJson(req);
+      return s.testRole(String(role));
+    }
+    if (p === '/api/svetla/zachytit' && m === 'POST') {
+      const telo = await nacistJson(req);
+      if (telo.cil === 'vychozi') return s.zachytitVychozi();
+      const role = await s.zachytitProMisto();
+      const vysledek = await this.mista.ulozitSvetla(String(telo.misto ?? ''), telo.varianta, role);
+      return { ...vysledek, zachyceno: role };
+    }
+    if (p === '/api/svetla/hue' && m === 'GET') {
+      const n = this.nastaveni.hodnoty;
+      if (!n.HUE_BRIDGE || !n.HUE_KLIC) throw Object.assign(new Error('Hue bridge není spárovaný.'), { status: 409 });
+      return { svetla: await new Hue({ bridge: n.HUE_BRIDGE, klic: n.HUE_KLIC, otisk: n.HUE_OTISK || null }).svetla(), role: ROLE_SVETEL };
+    }
+    if (p === '/api/svetla/hue/sparovat' && m === 'POST') {
+      const { bridge } = await nacistJson(req);
+      if (bridge !== undefined) await this.nastaveni.ulozit({ hueBridge: bridge });
+      const adresa = this.nastaveni.hodnoty.HUE_BRIDGE;
+      if (!adresa) throw Object.assign(new Error('Nejdřív zadej IP adresu Hue bridge.'), { status: 400 });
+      const sparovani = await this.sparovatHue({ bridge: adresa });
+      await this.nastaveni.ulozit({ hueSparovani: sparovani });
+      s.sestavitZarizeni();
+      s.zmenaSceny();
+      return { ok: true, nastaveni: this.nastaveni.verejne(), svetla: s.verejny() };
+    }
+    return undefined;
   }
 
   async apiKalendar(req, m, p) {
@@ -768,6 +877,7 @@ export class Hub {
   async zastavit() {
     clearTimeout(this.casovacOdpoctu);
     this.scena.zastavit();
+    this.svetla.zastavit();
     this.vysilac.zavrit();
     await this.hlidac.zastavit();
     await this.obs.ukoncit();

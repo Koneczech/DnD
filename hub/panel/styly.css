@@ -468,3 +468,26 @@ li[data-uroven="info"] .stav-ikona { box-shadow: inset 0 0 0 2px var(--mlha); }
 .poznamky li > time + p { grid-row: 1; }
 details.oprava { margin-top: 0.5rem; }
 details.oprava summary { cursor: pointer; color: var(--mlha); font-size: 0.9rem; }
+
+/* ---------- Světla (Blok 4) ---------- */
+.svetla-lista { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; margin: 0.75rem 0 1rem; padding: 0.6rem 0.8rem; border: 1px solid var(--linka); border-radius: var(--zaobleni); background: var(--deska-svetla); }
+.svetla-lista .ulozeni { flex: 1 1 18rem; margin: 0; }
+.prepinac-svetel { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; cursor: pointer; }
+.prepinac-svetel input { appearance: none; width: 2.6rem; height: 1.4rem; margin: 0; border-radius: 0.7rem; background: var(--linka); position: relative; cursor: pointer; transition: background 0.15s; }
+.prepinac-svetel input::after { content: ""; position: absolute; top: 0.15rem; left: 0.15rem; width: 1.1rem; height: 1.1rem; border-radius: 50%; background: var(--kost); transition: transform 0.15s; }
+.prepinac-svetel input:checked { background: var(--zelena); }
+.prepinac-svetel input:checked::after { transform: translateX(1.2rem); }
+.prepinac-svetel input:disabled { opacity: 0.5; cursor: not-allowed; }
+.prepinac-svetel input:focus-visible { outline: 2px solid var(--jantar); outline-offset: 2px; }
+#sc-bourka-radek { grid-template-columns: auto; }
+#sc-bourka-radek > .segment { margin-right: 0.5rem; }
+#sc-blesk { justify-self: start; }
+#tlacitko-souboj[aria-pressed="true"] { background: var(--rez); border-color: var(--rez); color: var(--kost); }
+.svetla-mista { margin-top: 1.25rem; }
+.svetla-varianty { display: grid; grid-template-columns: max-content 1fr; gap: 0.3rem 1rem; margin: 0.5rem 0; }
+.svetla-varianty dt { font-weight: 600; }
+.svetla-varianty dd { margin: 0; color: var(--mlha); }
+.vzorek-barvy { display: inline-block; width: 0.8rem; height: 0.8rem; margin: 0 0.3rem 0 0.15rem; border-radius: 2px; vertical-align: -0.1rem; background: transparent; box-shadow: inset 0 0 0 1px var(--linka); }
+.svetla-nastaveni { display: grid; gap: 0.9rem; max-width: 52rem; }
+.svetla-nastaveni fieldset label { display: grid; gap: 0.3rem; }
+.svetla-nastaveni h3 { margin: 0.5rem 0 0; }

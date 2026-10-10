@@ -1,0 +1,3 @@
+# Bouřka: tma a chlad. Blesky podle vzdálenosti dělá Hub sám (ZADANI.md, Blesky).
+svetla:
+  vsechny: { jas_nasobek: 0.7, teplota_posun: -1000 }

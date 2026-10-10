@@ -38,6 +38,19 @@ export function normalizujIlustraci(il) {
   };
 }
 
+/** Pole `svetla` z hlavičky: jen den/noc a role jako objekty, zbytek se zahodí. */
+export function normalizujSvetlaMista(svetla) {
+  if (!svetla || typeof svetla !== 'object') return null;
+  const vysledek = {};
+  for (const v of VARIANTY) {
+    const x = svetla[v];
+    if (!x || typeof x !== 'object') continue;
+    const role = Object.fromEntries(Object.entries(x).filter(([, h]) => h && typeof h === 'object' && !Array.isArray(h)));
+    if (Object.keys(role).length) vysledek[v] = role;
+  }
+  return Object.keys(vysledek).length ? vysledek : null;
+}
+
 /**
  * Události: 'zmena' (seznam míst se všemi ilustracemi pro panel)
  */
@@ -121,8 +134,35 @@ export class Mista extends EventEmitter {
       nazev: String(d.nazev ?? id),
       verejne: d.verejne !== false,
       popisObrazu: typeof d.popis_obrazu === 'string' ? d.popis_obrazu : '',
+      // Světla místa pro den a noc (Blok 4); skládá je svetla.js.
+      svetla: normalizujSvetlaMista(d.svetla),
       ilustrace: ilustrace.map((il) => ({ ...il, url: this.url(id, il.soubor) })),
     };
+  }
+
+  /**
+   * Zachytit světla: uloží stav rolí do `svetla.<varianta>` v hlavičce. Ostatní pole, pořadí
+   * a komentáře zůstávají (upravitDokument mění jen tento uzel).
+   * @param {Record<string, object>} role např. {hlavni: {barva, jas}, lampa: {wiz_scena, rychlost, jas}}
+   */
+  async ulozitSvetla(id, varianta, role) {
+    this.get(id);
+    if (!VARIANTY.includes(varianta)) throw chyba('Světla se ukládají pro den, nebo noc.');
+    await this.upravitSoubor(id, (dok) => {
+      let svetla = dok.get('svetla', true);
+      if (!YAML.isMap(svetla)) {
+        svetla = dok.createNode({});
+        dok.set('svetla', svetla);
+      }
+      const uzel = dok.createNode({});
+      for (const [r, hodnota] of Object.entries(role)) {
+        const radek = dok.createNode(hodnota);
+        radek.flow = true; // { barva: [...], jas: 55 } na jednom řádku jako v zadání
+        uzel.set(r, radek);
+      }
+      svetla.set(varianta, uzel);
+    });
+    return { misto: this.get(id) };
   }
 
   /** Odkrytí, varianta a stav jedné ilustrace. */

@@ -8,7 +8,7 @@
        Ovládá ji panel (Místa a ilustrace): ilustrace, den/noc, stav, počasí, intenzita.
        Všechny přechody se prolínají za 1 s; skryté ilustrace sem server vůbec neposílá. */
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
-    #obraz, .vrstva, #nalada, #vineta, #pocasi, .mlha { position: absolute; inset: 0; }
+    #obraz, .vrstva, #nalada, #vineta, #pocasi, .mlha, #bourka, #blesk { position: absolute; inset: 0; }
     /* Pořadí vrstev: obraz < mlha < déšť/sníh < ztmavení < vinětace. Obraz má vlastní kontext skládání,
        jinak by z-index jeho dvou prolínaných vrstev přebil všechno ostatní a počasí by nebylo vidět. */
     #obraz { z-index: 0; isolation: isolate; }
@@ -16,6 +16,9 @@
     #pocasi { z-index: 2; }
     #nalada { z-index: 3; }
     #vineta { z-index: 4; }
+    #bourka { z-index: 3; background: linear-gradient(180deg, rgba(14,18,34,0.55), rgba(10,12,22,0.25)); opacity: 0; transition: opacity 1.2s ease-in-out; pointer-events: none; }
+    /* Blesk: krátký záblesk nad vším (server pouští nejvýš 3 za sekundu, rozhodnutí 64). */
+    #blesk { z-index: 5; background: radial-gradient(ellipse at 50% 0%, rgba(235,240,255,1), rgba(200,210,255,0.6) 60%, rgba(180,190,240,0.3)); opacity: 0; pointer-events: none; }
     .vrstva { background-size: cover; background-position: center; opacity: 0; }
     #nalada { background: #14121a; opacity: 0; transition: opacity 1.2s ease-in-out; pointer-events: none; }
     #vineta {
@@ -45,9 +48,12 @@
   <div class="mlha m2"></div>
   <canvas id="pocasi"></canvas>
   <div id="nalada"></div>
+  <div id="bourka"></div>
   <div id="vineta"></div>
+  <div id="blesk"></div>
   <script type="module">
     import { sledovat, Prolinac, predNacist } from '/sdilene/vystup.js';
+    import { odebirat } from '/sdilene/zive.js';
 
     const obraz = document.getElementById('obraz');
     const prolinac = new Prolinac(obraz, { trvaniMs: 1000 });
@@ -182,6 +188,7 @@
     function nastavPocasi(pocasi, s) {
       const zap = new Set(Array.isArray(pocasi) ? pocasi : pocasi && pocasi !== 'zadne' ? [pocasi] : []);
       silaSnehu = Number(s) || 0;
+      document.getElementById('bourka').style.opacity = zap.has('bourka') ? String(0.6 + s * 0.13) : '0';
       document.querySelectorAll('.mlha').forEach((m) => {
         m.style.opacity = zap.has('mlha') ? String(0.55 + s * 0.15) : '0';
         // Vypnutá mlha se nehýbe: v OBS by jinak zbytečně zatěžovala vykreslování (audit N8).
@@ -223,6 +230,32 @@
     }
 
     sledovat('scena', '/api/scena', prevzit);
+
+    /* Blesk podle vzdálenosti bouřky: daleko slabě, nad námi naplno a dvakrát. */
+    const SILA_BLESKU = { daleko: [0.18], blizko: [0.5, 0.25], 'nad-nami': [0.85, 0.4, 0.7] };
+    const blesk = document.getElementById('blesk');
+    let bleskBezi = false;
+    let pulzy = [];
+    async function zablesknout({ vzdalenost } = {}) {
+      if (bleskBezi) return;
+      bleskBezi = true;
+      zapsat('blesk ' + vzdalenost);
+      for (const sila of SILA_BLESKU[vzdalenost] ?? SILA_BLESKU.blizko) {
+        // I obraz drží nejvýš 3 záblesky za sekundu, i když jeden blesk má víc pulzů.
+        const ted = performance.now();
+        pulzy = pulzy.filter((t) => ted - t < 1000);
+        if (pulzy.length >= 3) break;
+        pulzy.push(ted);
+        blesk.style.transition = 'none';
+        blesk.style.opacity = String(sila);
+        await new Promise((r) => setTimeout(r, 70));
+        blesk.style.transition = 'opacity 140ms ease-out';
+        blesk.style.opacity = '0';
+        await new Promise((r) => setTimeout(r, 120));
+      }
+      bleskBezi = false;
+    }
+    odebirat(['blesk'], (_, data) => zablesknout(data));
   </script>
 </body>
 </html>

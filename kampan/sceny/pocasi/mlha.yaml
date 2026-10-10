@@ -1,0 +1,4 @@
+# Mlha: tlumené světlo, vedlejší místnost se skoro ztratí.
+svetla:
+  vsechny: { jas_nasobek: 0.75, teplota_posun: -300 }
+  pozadi: { jas_nasobek: 0.5 }

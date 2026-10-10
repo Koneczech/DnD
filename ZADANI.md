@@ -725,3 +725,4 @@ Nic z této sekce zatím neplatí. Každý bod se rozhodne nejpozději na začá
 | 59 | ⚠ Spouštěč otevře Zvuk u stolu | Po panelu otevře i `zvuk-u-stolu.html` (vypínač v Nastavení → Zvuk, `ZVUK_OTEVRIT`). Prohlížeč pustí zvuk až po kliknutí na Zapnout zvuk u stolu | Akceptace Bloku 5 |
 | 60 | ⚠ Výchozí zvuky vrstev | `kampan/sceny/`: déšť `dest.mp3`, sníh `vitr-snih.mp3`, bouřka `bourka.mp3` a hromy `hrom-1.mp3` až `hrom-3.mp3`, souboj hudba `souboj.mp3`. Mlha bez zvuku. Seznam v `reference/zvuk.md`; DM soubory stáhne a případně přejmenuje v YAML | Akceptace Bloku 5 |
 | 61 | ⚠ Zvuk jen na tomto počítači | Soubory `/audio/…` Hub pošle jen na localhost, i se zapnutou domácí sítí. Ukázka v Místa → Zvuk tak z iPadu nehraje | Akceptace Bloku 5 |
+| 62 | ⚠ Na příponě zvuku nezáleží | Jméno v datech najde soubor se stejným jménem a jinou příponou nebo velikostí písmen (`dest.mp3` → `dest.wav`); při víc shodách vyhraje mp3, ogg, opus, wav, flac, m4a | Akceptace Bloku 5 |

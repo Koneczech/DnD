@@ -15,6 +15,7 @@ export function odebirat(udalosti, priZprave, { priStavu } = {}) {
   const adresa = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/api/zive${dotaz}`;
   let poVypadku = false;
   let casovac = null;
+  let verze = null;
 
   function pripojit() {
     casovac = null;
@@ -35,7 +36,14 @@ export function odebirat(udalosti, priZprave, { priStavu } = {}) {
       } catch {
         return;
       }
-      if (zprava && typeof zprava.u === 'string') priZprave(zprava.u, zprava.d);
+      if (!zprava || typeof zprava.u !== 'string') return;
+      if (zprava.u === 'verze') {
+        // Hub po restartu běží s jiným kódem panelu a výstupů: načti stránku znovu, ať neběží stará verze.
+        if (verze && zprava.d !== verze) location.reload();
+        verze = zprava.d;
+        return;
+      }
+      priZprave(zprava.u, zprava.d);
     });
     spojeni.addEventListener('close', () => {
       poVypadku = true;

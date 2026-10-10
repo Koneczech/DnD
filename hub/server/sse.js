@@ -21,7 +21,8 @@ export function filtrUdalosti(url) {
   return seznam.length ? new Set(seznam) : null;
 }
 
-const chce = (filtr, udalost) => !filtr || filtr.has(udalost);
+// „verze“ (otisk kódu panelu a výstupů) dostává každý klient: po změně kódu se stránka sama obnoví.
+const chce = (filtr, udalost) => !filtr || udalost === 'verze' || filtr.has(udalost);
 
 export class Vysilac {
   constructor({ srdceMs = 15000 } = {}) {

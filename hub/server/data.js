@@ -314,6 +314,15 @@ export class DataKampane extends EventEmitter {
 
   async zkontrolovat() {
     this.kontrola = await kontrolaDat(this.c);
+    // Další kontroly mimo složku kampaně (chybějící zvukové soubory, Blok 5).
+    if (this.dalsiKontroly) {
+      try {
+        const navic = await this.dalsiKontroly();
+        this.kontrola = { ...this.kontrola, problemy: [...this.kontrola.problemy, ...navic] };
+      } catch {
+        /* doplňková kontrola nesmí shodit hlavní */
+      }
+    }
     this.emit('kontrola', this.kontrola);
     return this.kontrola;
   }

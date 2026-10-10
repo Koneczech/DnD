@@ -131,6 +131,8 @@ function spustitServer() {
     if (z?.typ === 'pripraveno' && !otevreno) {
       otevreno = true;
       otevritProhlizec(url);
+      // Zvuk u stolu (Blok 5): stránka pro BT reproduktor, vypíná se v Nastavení → Zvuk.
+      if (nastaveni.hodnoty.ZVUK_OTEVRIT !== '0') setTimeout(() => otevritProhlizec(`${url}vystupy/zvuk-u-stolu.html`), 1500);
     }
   });
   potomek.on('exit', (kod, signal) => {

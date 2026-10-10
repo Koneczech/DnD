@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DM Hub — zvuk u stolu</title>
+  <link rel="stylesheet" href="/panel/styly.css">
+  <link rel="icon" href="/panel/ikona.svg" type="image/svg+xml">
+  <style>
+    /* Ambient a efekty pro BT reproduktor u stolu (Blok 5). Okno nech otevřené celou hru. */
+    body { padding: 1.25rem 1.5rem; max-width: 46rem; }
+    h1 { margin-top: 0; }
+    .stav-zvuku { display: grid; gap: 0.35rem; margin: 1rem 0; padding: 0.8rem 1rem; border: 1px solid var(--linka); border-radius: var(--zaobleni); background: var(--deska); }
+    .stav-zvuku p { margin: 0; }
+    .ticho { color: var(--jantar); font-weight: 600; }
+    #odemknout { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(10, 12, 20, 0.92); z-index: 10; }
+    #odemknout button { font-size: 1.4rem; padding: 1rem 2rem; }
+    #odemknout[hidden] { display: none; }
+    .vystup { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    .vystup select { min-width: 18rem; }
+  </style>
+</head>
+<body>
+  <div id="odemknout">
+    <div>
+      <button type="button" class="hlavni" id="tlacitko-odemknout">Zapnout zvuk u stolu</button>
+      <p class="uvod">Prohlížeč pustí zvuk až po kliknutí. Pak nech okno otevřené.</p>
+    </div>
+  </div>
+
+  <h1>Zvuk u stolu</h1>
+  <p class="uvod">Ambient místa a počasí, hrom a ruční efekty pro reproduktor u stolu. Ovládá je panel Hubu; toto okno nech otevřené celou hru (klidně minimalizované).</p>
+
+  <div class="stav-zvuku" aria-live="polite">
+    <p id="stav-hraje">Čekám na Hub…</p>
+    <p id="stav-ticho" class="ticho" hidden>Ticho: zvuk je ztlumený z panelu.</p>
+    <p class="ulozeni chyba" id="stav-chyba" hidden></p>
+  </div>
+
+  <h2>Reproduktor</h2>
+  <p class="uvod" id="vystup-popis">Hraje výchozí zvukové zařízení Windows. Vyber BT reproduktor tady, nebo ho ve Windows nastav prohlížeči v Nastavení → Systém → Zvuk → Směšovač hlasitosti.</p>
+  <div class="vystup">
+    <button type="button" id="vystup-vybrat">Vybrat reproduktor</button>
+    <select id="vystup-seznam" hidden aria-label="Reproduktor"></select>
+    <button type="button" id="zkusebni">Zkušební zvuk</button>
+  </div>
+  <p class="ulozeni" id="vystup-vysledek" aria-live="polite"></p>
+
+  <script type="module">
+    import { Prehravac, Vrstvy } from '/sdilene/zvuk.js';
+
+    const $ = (s) => document.querySelector(s);
+    const KLIC = 'dmhub-reproduktor';
+    let ambient;
+    let sbernice;
+    let efekty;
+    let posledni = null;
+
+    const p = new Prehravac({
+      stranka: 'stul',
+      priZmene: (s) => {
+        if (!s) return;
+        posledni = s;
+        p.nastavHlasitost(sbernice, s.ticho ? 0 : s.hlasitost.ambient);
+        p.nastavHlasitost(efekty, s.ticho ? 0 : s.hlasitost.efekty);
+        ambient.nastavit(s.ambient, s.prolnutiMs);
+        vykreslit();
+        setTimeout(() => p.hlasit(), 300);
+      },
+      priEfektu: (e) => (e.test ? p.test(p.ctx.destination) : p.efekt(e, efekty).catch((x) => p.zaznamenatChybu(`Efekt ${e.soubor} nehraje: ${x.message ?? x}`))),
+    });
+    sbernice = p.sbernice();
+    efekty = p.sbernice();
+    ambient = new Vrstvy(p.ctx, sbernice, (t) => {
+      p.zaznamenatChybu(t);
+      vykreslit();
+    });
+    p.hraje = () => ambient.hraje();
+
+    function vykreslit() {
+      const s = posledni;
+      $('#odemknout').hidden = p.odemceno;
+      $('#stav-hraje').textContent = !s ? 'Čekám na Hub…' : s.ambient.length ? `Hraje: ${s.ambient.map((a) => `${a.soubor} (${Math.round(a.hlasitost * 100)} %)`).join(', ')}` : 'Teď nehraje žádný ambient.';
+      $('#stav-ticho').hidden = !s?.ticho;
+      $('#stav-chyba').hidden = !p.chyba;
+      $('#stav-chyba').textContent = p.chyba ?? '';
+    }
+    p.ctx.addEventListener('statechange', vykreslit);
+
+    $('#tlacitko-odemknout').addEventListener('click', async () => {
+      await p.odemknout();
+      p.chyba = null;
+      if (posledni) ambient.nastavit(posledni.ambient, 300);
+      vykreslit();
+    });
+
+    /* ---------- Výběr reproduktoru (AudioContext.setSinkId, Chrome a Edge) ---------- */
+    function ulozeny() {
+      try {
+        return JSON.parse(localStorage.getItem(KLIC) || 'null');
+      } catch {
+        return null;
+      }
+    }
+
+    async function vystupy() {
+      const zarizeni = await navigator.mediaDevices.enumerateDevices();
+      return zarizeni.filter((d) => d.kind === 'audiooutput' && d.deviceId !== 'communications');
+    }
+
+    async function pouzit(volba) {
+      if (!p.ctx.setSinkId) throw new Error('Tento prohlížeč neumí vybrat reproduktor; nastav ho ve Windows.');
+      await p.ctx.setSinkId(volba?.id && volba.id !== 'default' ? volba.id : '');
+      p.vystup = { nazev: volba?.nazev ?? 'výchozí zařízení', ok: true, vybrany: Boolean(volba?.id && volba.id !== 'default') };
+      $('#vystup-popis').textContent = p.vystup.vybrany ? `Hraje: ${p.vystup.nazev}.` : 'Hraje výchozí zvukové zařízení Windows.';
+      p.hlasit();
+    }
+
+    /** Odpojený reproduktor (vybitý, mimo dosah): kontrolka Zvuk v panelu to ukáže, po návratu se vrátí. */
+    async function zkontrolovat() {
+      const v = ulozeny();
+      if (!v?.id || v.id === 'default') return;
+      const je = (await vystupy()).some((d) => d.deviceId === v.id);
+      if (!je) {
+        p.vystup = { nazev: v.nazev, ok: false, vybrany: true };
+        $('#vystup-popis').textContent = `${v.nazev} je odpojený. Hraje výchozí zařízení, po připojení se vrátí sám.`;
+        await p.ctx.setSinkId?.('').catch(() => {});
+        p.hlasit();
+      } else if (!p.vystup?.ok) {
+        await pouzit(v).catch(() => {});
+      }
+    }
+    navigator.mediaDevices?.addEventListener('devicechange', () => zkontrolovat().catch(() => {}));
+
+    $('#vystup-vybrat').addEventListener('click', async () => {
+      const vysledek = $('#vystup-vysledek');
+      try {
+        // Jména reproduktorů prohlížeč ukáže až po povolení mikrofonu. Hub mikrofon nepoužívá:
+        // stream se hned zavře.
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((t) => t.stop());
+        const seznam = await vystupy();
+        const select = $('#vystup-seznam');
+        select.replaceChildren(...seznam.map((d) => new Option(d.label || 'Neznámé zařízení', d.deviceId)));
+        select.value = ulozeny()?.id ?? 'default';
+        select.hidden = false;
+        vysledek.textContent = 'Vyber BT reproduktor a klikni na Zkušební zvuk.';
+      } catch (e) {
+        vysledek.textContent = `Seznam reproduktorů se nenačetl (${e.message}). Nastav reproduktor ve Windows.`;
+      }
+    });
+
+    $('#vystup-seznam').addEventListener('change', async (e) => {
+      const volba = { id: e.target.value, nazev: e.target.selectedOptions[0]?.textContent ?? '' };
+      try {
+        await pouzit(volba);
+        try {
+          localStorage.setItem(KLIC, JSON.stringify(volba));
+        } catch {
+          /* bez úložiště jen pro toto otevření */
+        }
+        $('#vystup-vysledek').textContent = `Uloženo: ${volba.nazev}.`;
+      } catch (x) {
+        $('#vystup-vysledek').textContent = x.message;
+      }
+    });
+
+    $('#zkusebni').addEventListener('click', async () => {
+      await p.odemknout();
+      p.test(p.ctx.destination); // zkouška hraje i při Tichu
+    });
+
+    const v = ulozeny();
+    if (v) pouzit(v).then(zkontrolovat).catch(() => {});
+    p.odemknout().catch(() => {}).finally(vykreslit);
+    p.spustit();
+  </script>
+</body>
+</html>

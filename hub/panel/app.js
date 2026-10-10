@@ -81,7 +81,7 @@ function ukazObrazovku(jmeno) {
     history.replaceState(null, '', `#${jmeno}`);
   }
   // Kotvy z kontrolek v liště: Git → GitHub v Sezení, Světla → Nastavení → Světla.
-  const KOTVY = { 'prehled-github': 'prehled', 'nastaveni-svetla': 'nastaveni' };
+  const KOTVY = { 'prehled-github': 'prehled', 'nastaveni-svetla': 'nastaveni', 'nastaveni-zvuk': 'nastaveni' };
   const kotva = KOTVY[jmeno] ? jmeno : null;
   if (kotva) jmeno = KOTVY[jmeno];
   const cil = platne.includes(jmeno) ? jmeno : 'prehled';
@@ -312,8 +312,13 @@ function vykresliKontrolky() {
   $('#svetlo-svetla').parentElement.title = !zar.length
     ? 'Světla nejsou nastavená'
     : `${sv.ridit ? 'Hub řídí světla' : 'Hub na světla nesahá (Řídit světla je vypnuté)'}. ${zar.map((z) => `${NAZVY_ROLI[z.role]} ${z.typ === 'hue' ? 'Hue' : `WiZ ${z.id}`}: ${z.ok ? 'odpovídá' : z.ok === false ? z.chyba ?? 'neodpovídá' : 'zjišťuji'}`).join('; ')}`;
+  const zv = p?.zvuk;
+  const [sh, ss] = [zv?.stranky?.hudba, zv?.stranky?.stul];
+  const zvukOk = sh?.pripojeno && ss?.pripojeno && ss.odemceno && sh.odemceno !== false && ss.vystup?.ok !== false && !sh.chyba && !ss.chyba;
+  $('#svetlo-zvuk').dataset.stav = !zv ? 'ceka' : zvukOk ? 'ok' : sh?.pripojeno || ss?.pripojeno ? 'varovani' : 'chyba';
+  $('#svetlo-zvuk').parentElement.title = !zv ? 'Zjišťuji' : [popisStrankyZvuku('Hudba v OBS', sh), popisStrankyZvuku('Zvuk u stolu', ss)].join('; ');
   // Stav i slovy, nejen barvou (čtečka obrazovky, audit N12).
-  for (const k of ['server', 'obs', 'git', 'svetla']) {
+  for (const k of ['server', 'obs', 'git', 'svetla', 'zvuk']) {
     const li = $(`#svetlo-${k}`).parentElement;
     li.setAttribute('aria-label', `${li.textContent.trim()}: ${li.title}`);
   }
@@ -500,6 +505,8 @@ function vykresliNastaveni(n) {
     ? 'Zadej IP adresu bridge, stiskni na něm kulaté tlačítko a do 30 s klikni na Spárovat.'
     : n.hueSparovano ? `Bridge ${n.hueBridge} je spárovaný.` : `Bridge ${n.hueBridge} zatím není spárovaný: stiskni na něm kulaté tlačítko a do 30 s klikni na Spárovat.`;
   if (n.hueSparovano && !stav.hueSvetla) nactiHueSvetla();
+  if (document.activeElement !== $('#pole-zvuk-slozka')) $('#pole-zvuk-slozka').value = n.zvukSlozka ?? '';
+  $('#pole-zvuk-otevrit').checked = n.zvukOtevrit !== false;
   vykresliVyberSouboje();
   const srv = stav.prehled?.server;
   $('#server-info').textContent = srv
@@ -576,6 +583,7 @@ function prekresli() {
   vykresliMista();
   vykresliSvetla();
   vykresliSouboj();
+  vykresliZvuk();
 }
 
 async function nactiPrehled() {
@@ -612,6 +620,15 @@ function pripojitUdalosti() {
       stav.prehled.scena = data;
       vykresliScenu();
       vykresliSouboj();
+    },
+    'zvuk-stav': (data) => {
+      if (!stav.prehled) return;
+      const zmenaSouboru = stav.prehled.zvuk?.pocetSouboru !== data.pocetSouboru;
+      stav.prehled.zvuk = data;
+      if (zmenaSouboru) nactiZvukoveSoubory();
+      vykresliZvuk();
+      vykresliKontrolky();
+      vykresliObrazovkuSezeni();
     },
     svetla: (data) => {
       if (!stav.prehled) return;
@@ -736,6 +753,23 @@ function vykresliObrazovkuSezeni() {
         : polozkaKontroly('varovani', 'Řídit světla je vypnuté: světla nebudou sledovat scénu.', { text: 'Zapnout', klik: () => nastavitRidit(true) }));
     } else {
       k.push(polozkaKontroly('info', 'Světla nejsou nastavená (volitelné).', { text: 'Nastavení → Světla', odkaz: '#nastaveni-svetla' }));
+    }
+    const zv = p.zvuk;
+    if (zv) {
+      const sh = zv.stranky?.hudba;
+      const ss = zv.stranky?.stul;
+      k.push(sh?.pripojeno
+        ? polozkaKontroly(sh.chyba ? 'varovani' : 'ok', sh.chyba ? `Hudba v OBS: ${sh.chyba}` : 'Hudba v OBS je připojená.')
+        : polozkaKontroly('varovani', 'Hudba v OBS není připojená (zdroj Hub – hudba).', { text: 'Adresa výstupu', odkaz: '#nastaveni-zvuk' }));
+      k.push(!ss?.pripojeno
+        ? polozkaKontroly('varovani', 'Zvuk u stolu není otevřený.', { text: 'Otevřít', klik: otevritZvukUStolu })
+        : !ss.odemceno
+          ? polozkaKontroly('varovani', 'Zvuk u stolu čeká na kliknutí (Zapnout zvuk u stolu).', { text: 'Otevřít', klik: otevritZvukUStolu })
+          : ss.vystup?.ok === false
+            ? polozkaKontroly('chyba', `Reproduktor ${ss.vystup.nazev} je odpojený.`)
+            : polozkaKontroly('ok', `Zvuk u stolu hraje${ss.vystup?.vybrany ? ` do ${ss.vystup.nazev}` : ''}.`));
+      const chybi = (p.kontrola?.problemy ?? []).filter((x) => /^Zvuk „|^Složka zvuku/.test(x.zprava)).length;
+      if (chybi) k.push(polozkaKontroly('varovani', `Chybí zvukové soubory scén: ${chybi}.`, { text: 'Kontrola dat', odkaz: '#kontrola' }));
     }
     if (p.server?.restartNutny) k.push(polozkaKontroly('varovani', p.server.restartNutny, p.server.restartZPanelu ? { text: 'Restartovat Hub', klik: restartovatHub } : undefined));
     $('#sezeni-kontrola').replaceChildren(...k);
@@ -1700,6 +1734,7 @@ function vykresliMista() {
     ? `Klikni na odkrytou ilustraci a ukáže se v OBS. Skryté (šedé) do OBS nejdou, dokud je neodkryješ.`
     : 'Místo zatím nemá žádnou ilustraci. Vytvoř ji v Ilustrační dílně.';
   vykresliSvetlaMista(m);
+  vykresliZvukMista(m);
   // Rozepsaný popis nepřepíše žádná živá změna (střídání ilustrací, změna jinde), dokud ho DM neuloží (audit S7).
   if (document.activeElement !== $('#misto-popis') && !stav.rozpracovano.has(`popis:${m.id}`)) $('#misto-popis').value = m.popisObrazu;
   const mrizka = $('#misto-ilustrace');
@@ -2025,6 +2060,7 @@ $('#adresa-orloj-maly').textContent = `${location.origin}/vystupy/kalendar-maly.
 $('#adresa-rekapitulace').textContent = `${location.origin}/vystupy/rekapitulace.html`;
 $('#adresa-cenik').textContent = `${location.origin}/vystupy/obchod.html`;
 $('#adresa-misto').textContent = `${location.origin}/vystupy/misto.html`;
+$('#adresa-hudba').textContent = `${location.origin}/vystupy/hudba.html`;
 for (const b of document.querySelectorAll('[data-kopirovat]')) {
   b.addEventListener('click', async () => {
     await navigator.clipboard?.writeText($(`#${b.dataset.kopirovat}`).textContent).catch(() => {});
@@ -2273,3 +2309,185 @@ $('#svetla-zachytit-vychozi').addEventListener('click', async () => {
     toast(chyba.message, { chyba: true });
   }
 });
+
+/* ---------- Zvuk (Blok 5) ---------- */
+
+stav.zvukoveSoubory = null;
+
+function popisStrankyZvuku(nazev, x) {
+  if (!x?.pripojeno) return `${nazev}: neotevřeno`;
+  if (x.odemceno === false) return `${nazev}: čeká na kliknutí`;
+  if (x.chyba) return `${nazev}: ${x.chyba}`;
+  if (x.vystup?.ok === false) return `${nazev}: reproduktor ${x.vystup.nazev} odpojený`;
+  return `${nazev}: ${x.hraje?.length ? `hraje ${x.hraje.join(', ')}` : 'připojeno, nic nehraje'}${x.vystup?.vybrany ? ` (${x.vystup.nazev})` : ''}`;
+}
+
+async function nactiZvukoveSoubory() {
+  try {
+    stav.zvukoveSoubory = (await api('/api/zvuk/soubory')).soubory;
+  } catch {
+    stav.zvukoveSoubory = [];
+  }
+  const m = stav.prehled?.mista?.mista?.find((x) => x.id === vybraneMisto);
+  if (m) vykresliZvukMista(m);
+}
+
+function vykresliZvuk() {
+  const z = stav.prehled?.zvuk;
+  if (!z) return;
+  if (stav.zvukoveSoubory === null) nactiZvukoveSoubory();
+  const ticho = $('#tlacitko-ticho');
+  ticho.setAttribute('aria-pressed', String(z.ticho));
+  ticho.textContent = z.ticho ? 'Zrušit ticho' : 'Ticho';
+  for (const k of ['hudba', 'ambient']) {
+    const posuvnik = $(`#zvuk-${k}`);
+    if (document.activeElement !== posuvnik) posuvnik.value = Math.round(z.hlasitost[k] * 100);
+    $(`#zvuk-${k}-hodnota`).textContent = `${posuvnik.value} %`;
+  }
+  $('#zvuk-popis').textContent = z.ticho
+    ? 'Ticho: hudba i ambient jsou ztlumené.'
+    : `Hudba: ${z.hudba?.soubor ?? 'žádná'} · Ambient: ${z.ambient.length ? z.ambient.map((a) => a.soubor).join(', ') : 'žádný'}${z.chybiTed?.length ? ` · chybí: ${z.chybiTed.join(', ')}` : ''}`;
+  // Ruční efekty: soubory v podsložce efekty/ ve složce zvuku.
+  const efekty = $('#zvuk-efekty');
+  if (!efekty.contains(document.activeElement)) {
+    efekty.replaceChildren(
+      ...z.efekty.map((soubor) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = soubor.replace(/^efekty\//, '').replace(/\.[a-z0-9]+$/i, '').replace(/[-_]/g, ' ');
+        b.title = `Přehrát ${soubor} u stolu`;
+        b.addEventListener('click', () => api('/api/zvuk/efekt', { metoda: 'POST', telo: { soubor } }).catch((e) => toast(e.message, { chyba: true })));
+        return b;
+      }),
+    );
+  }
+
+  // Nastavení → Zvuk
+  $('#zvuk-slozka-stav').textContent = `${z.slozkaNastavena ? '' : 'Nevyplněno = výchozí '}${z.slozka}: ${z.slozkaExistuje ? `${z.pocetSouboru} zvukových souborů` : 'složka neexistuje'}. Efekty pro tlačítka U stolu dej do podsložky efekty.`;
+  $('#zvuk-stranky').replaceChildren(
+    ...[['Hudba v OBS', z.stranky.hudba], ['Zvuk u stolu', z.stranky.stul]].map(([nazev, x]) =>
+      polozkaKontroly(x?.pripojeno && x.odemceno !== false && !x.chyba && x.vystup?.ok !== false ? 'ok' : x?.pripojeno ? 'varovani' : 'chyba', popisStrankyZvuku(nazev, x))),
+  );
+}
+
+let casovacHlasitosti = null;
+for (const k of ['hudba', 'ambient']) {
+  $(`#zvuk-${k}`).addEventListener('input', (e) => {
+    $(`#zvuk-${k}-hodnota`).textContent = `${e.target.value} %`;
+    clearTimeout(casovacHlasitosti);
+    casovacHlasitosti = setTimeout(() => api('/api/zvuk', { metoda: 'PUT', telo: { [k]: Number(e.target.value) / 100 } }).catch((x) => toast(x.message, { chyba: true })), 150);
+  });
+}
+
+$('#tlacitko-ticho').addEventListener('click', async () => {
+  try {
+    stav.prehled.zvuk = await api('/api/zvuk', { metoda: 'PUT', telo: { ticho: !stav.prehled?.zvuk?.ticho } });
+    vykresliZvuk();
+  } catch (e) {
+    toast(e.message, { chyba: true });
+  }
+});
+
+function otevritZvukUStolu() {
+  window.open('/vystupy/zvuk-u-stolu.html', 'dmhub-zvuk', 'popup,width=760,height=620');
+}
+$('#zvuk-otevrit-stul').addEventListener('click', otevritZvukUStolu);
+
+for (const b of document.querySelectorAll('[data-zkusebni]')) {
+  b.addEventListener('click', async () => {
+    try {
+      const r = await api('/api/zvuk/efekt', { metoda: 'POST', telo: { test: true, cil: b.dataset.zkusebni } });
+      toast(r.pripojeno ? 'Hrají tři tóny. Slyšíš je z reproduktoru?' : 'Stránka není otevřená, zkušební zvuk nemá kdo zahrát.', { chyba: !r.pripojeno });
+    } catch (e) {
+      toast(e.message, { chyba: true });
+    }
+  });
+}
+
+$('#zvuk-ulozit').addEventListener('click', async () => {
+  const vysledek = $('#zvuk-vysledek');
+  try {
+    const r = await api('/api/nastaveni', { metoda: 'PUT', telo: { zvukSlozka: $('#pole-zvuk-slozka').value.trim(), zvukOtevrit: $('#pole-zvuk-otevrit').checked } });
+    stav.prehled.nastaveni = r.nastaveni;
+    vysledek.className = 'ulozeni';
+    vysledek.textContent = `Uloženo v ${cas()}.`;
+    await nactiPrehled();
+    nactiZvukoveSoubory();
+  } catch (e) {
+    vysledek.className = 'ulozeni chyba';
+    vysledek.textContent = `Neuloženo: ${e.message}`;
+  }
+});
+$('#zvuk-prohledat').addEventListener('click', async () => {
+  try {
+    stav.prehled.zvuk = await api('/api/zvuk/prohledat', { metoda: 'POST', telo: {} });
+    await nactiZvukoveSoubory();
+    vykresliZvuk();
+    toast(`Ve složce je ${stav.prehled.zvuk.pocetSouboru} zvukových souborů.`);
+  } catch (e) {
+    toast(e.message, { chyba: true });
+  }
+});
+
+/* Místa → Zvuk: hudba a ambient pro den a noc, ukázka v panelu. */
+let ukazka = null;
+function prehratUkazku(soubor, tlacitko) {
+  if (ukazka) {
+    ukazka.a.pause();
+    ukazka.b.textContent = '▶';
+    const stejne = ukazka.soubor === soubor;
+    ukazka = null;
+    if (stejne) return;
+  }
+  const a = new Audio(`/audio/${soubor.split('/').map(encodeURIComponent).join('/')}`);
+  a.volume = 0.8;
+  a.play().catch((e) => toast(`Ukázka nehraje: ${e.message}`, { chyba: true }));
+  a.addEventListener('ended', () => prehratUkazku(soubor, tlacitko));
+  tlacitko.textContent = '■';
+  ukazka = { a, b: tlacitko, soubor };
+}
+
+function vykresliZvukMista(m) {
+  const kontejner = $('#misto-zvuk');
+  if (kontejner.contains(document.activeElement)) return;
+  const soubory = stav.zvukoveSoubory ?? [];
+  const bezEfektu = soubory.filter((x) => !x.startsWith('efekty/'));
+  kontejner.replaceChildren(
+    ...['den', 'noc'].map((varianta) => {
+      const radek = document.createElement('div');
+      radek.className = 'zvuk-radek';
+      radek.append(Object.assign(document.createElement('strong'), { textContent: varianta === 'den' ? 'Den' : 'Noc' }));
+      for (const [k, popis] of [['hudba', 'Hudba'], ['ambient', 'Ambient']]) {
+        const aktualni = m.zvuk?.[varianta]?.[k] ?? '';
+        const label = document.createElement('label');
+        label.textContent = popis;
+        const select = document.createElement('select');
+        const moznosti = [...new Set([...bezEfektu, ...(aktualni ? [aktualni] : [])])];
+        select.append(new Option(varianta === 'noc' && m.zvuk?.den?.[k] ? '— jako ve dne —' : '— žádná —', ''), ...moznosti.map((x) => new Option(soubory.includes(x) ? x : `${x} (ve složce chybí)`, x)));
+        select.value = aktualni;
+        select.addEventListener('change', async () => {
+          const vysledek = $('#misto-zvuk-vysledek');
+          try {
+            await api(`/api/mista/${m.id}/zvuk/${varianta}`, { metoda: 'PUT', telo: { [k]: select.value || null } });
+            vysledek.className = 'ulozeni';
+            vysledek.textContent = `${popis} pro ${varianta === 'den' ? 'den' : 'noc'} uložen${k === 'hudba' ? 'a' : ''} v ${cas()}.`;
+          } catch (e) {
+            vysledek.className = 'ulozeni chyba';
+            vysledek.textContent = `Neuloženo: ${e.message}`;
+          }
+        });
+        const prehrat = document.createElement('button');
+        prehrat.type = 'button';
+        prehrat.textContent = '▶';
+        prehrat.title = 'Přehrát ukázku v tomto prohlížeči';
+        prehrat.addEventListener('click', () => select.value && prehratUkazku(select.value, prehrat));
+        label.append(select);
+        radek.append(label, prehrat);
+      }
+      return radek;
+    }),
+  );
+  $('#misto-zvuk-popis').textContent = soubory.length
+    ? 'Hudba hraje na TV, ambient u stolu. Noc bez vlastního zvuku hraje zvuk dne.'
+    : 'Ve složce zvuku zatím nic není. Nastav ji v Nastavení → Zvuk a nahraj do ní soubory (mp3, ogg, wav).';
+}

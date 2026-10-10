@@ -1,3 +1,8 @@
 # Bouřka: tma a chlad. Blesky podle vzdálenosti dělá Hub sám (ZADANI.md, Blesky).
 svetla:
   vsechny: { jas_nasobek: 0.7, teplota_posun: -1000 }
+# Bouřka: ambient s deštěm a větrem; hrom po každém blesku, náhodně jeden ze seznamu.
+zvuk:
+  ambient: bourka.mp3
+  hlasitost_podle_intenzity: true
+  hrom: [hrom-1.mp3, hrom-2.mp3, hrom-3.mp3]

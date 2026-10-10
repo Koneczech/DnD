@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Pre-commit hook DM Hubu (rozhodnutí 13 a 31). Repo je veřejné, takže commit odmítne:
 //  - soubor .env (kromě vzoru .env.example),
+//  - zvukové soubory (mp3, ogg, wav …; licence nepovolují zveřejnění, rozhodnutí 63),
 //  - obsah s hodnotami z hub/.env (heslo OBS, PIN, API klíč),
 //  - řetězce, které vypadají jako známé typy klíčů a tokenů,
 //  - soubory se značkami konfliktu Gitu (<<<<<<< … >>>>>>>).
@@ -36,6 +37,12 @@ export function jeZakazanySoubor(cesta) {
   return jmeno === '.env' || jmeno.startsWith('.env.');
 }
 
+/** Zvukové soubory do veřejného repa nesmí: licence to nepovolují (rozhodnutí 63). */
+export const PRIPONY_ZVUKU = Object.freeze(['.mp3', '.ogg', '.opus', '.wav', '.flac', '.m4a', '.aac', '.wma']);
+export function jeZvukovySoubor(cesta) {
+  return PRIPONY_ZVUKU.includes(path.posix.extname(cesta.replace(/\\/g, '/')).toLowerCase());
+}
+
 /**
  * @param {Array<{cesta:string, obsah:string|null}>} soubory staged soubory (obsah null = binární)
  * @param {string[]} tajneHodnoty hodnoty z hub/.env
@@ -49,6 +56,10 @@ export function najdiProblemy(soubory, tajneHodnoty = []) {
   for (const { cesta, obsah } of soubory) {
     if (jeZakazanySoubor(cesta)) {
       problemy.push({ cesta, duvod: 'soubor .env s tajnými hodnotami nesmí do Gitu' });
+      continue;
+    }
+    if (jeZvukovySoubor(cesta)) {
+      problemy.push({ cesta, duvod: 'zvukový soubor do veřejného repa nesmí (licence, rozhodnutí 63); patří do složky zvuku mimo repo' });
       continue;
     }
     if (obsah == null) continue;
@@ -79,7 +90,7 @@ function main() {
   const vystup = execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR', '-z'], { cwd: koren });
   const cesty = vystup.toString('utf8').split('\0').filter(Boolean);
   const soubory = cesty.map((cesta) => {
-    if (jeZakazanySoubor(cesta)) return { cesta, obsah: null };
+    if (jeZakazanySoubor(cesta) || jeZvukovySoubor(cesta)) return { cesta, obsah: null };
     const buffer = execFileSync('git', ['show', `:${cesta}`], { cwd: koren, maxBuffer: 64 * 1024 * 1024 });
     return { cesta, obsah: jeBinarni(buffer) ? null : buffer.toString('utf8') };
   });

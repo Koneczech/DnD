@@ -898,7 +898,7 @@ $('#tlacitko-sezeni').addEventListener('click', () => (stav.prehled?.sezeni?.bez
 function vykresliSouboj() {
   const souboj = stav.prehled?.scena?.rezim === 'souboj';
   const b = $('#tlacitko-souboj');
-  b.textContent = souboj ? 'Konec souboje' : 'Souboj';
+  b.querySelector('span').textContent = souboj ? 'Konec souboje' : 'Souboj';
   b.setAttribute('aria-pressed', String(souboj));
 }
 
@@ -2338,7 +2338,7 @@ function vykresliZvuk() {
   if (stav.zvukoveSoubory === null) nactiZvukoveSoubory();
   const ticho = $('#tlacitko-ticho');
   ticho.setAttribute('aria-pressed', String(z.ticho));
-  ticho.textContent = z.ticho ? 'Zrušit ticho' : 'Ticho';
+  ticho.querySelector('span').textContent = z.ticho ? 'Zrušit ticho' : 'Ticho';
   for (const k of ['hudba', 'ambient']) {
     const posuvnik = $(`#zvuk-${k}`);
     if (document.activeElement !== posuvnik) posuvnik.value = Math.round(z.hlasitost[k] * 100);
@@ -2494,3 +2494,20 @@ function vykresliZvukMista(m) {
     ? 'Hudba hraje na TV, ambient u stolu. Noc bez vlastního zvuku hraje zvuk dne.'
     : 'Ve složce zvuku zatím nic není. Nastav ji v Nastavení → Zvuk a nahraj do ní soubory (mp3, ogg, wav).';
 }
+
+/* ---------- Odezva (rozhodnutí 65) ----------
+   U pole: „Uloženo ✓“ na 3 s (oznacUlozeno). Výsledek akce: toast. Výpadek systému: pruh upozornění nahoře. */
+const casovaceZnacek = new WeakMap();
+function oznacUlozeno(pole) {
+  let znacka = pole?.parentElement?.querySelector(':scope > .ulozeno-znacka');
+  if (!pole) return;
+  if (!znacka) {
+    znacka = Object.assign(document.createElement('span'), { className: 'ulozeno-znacka', textContent: 'Uloženo ✓' });
+    znacka.setAttribute('aria-live', 'polite');
+    pole.insertAdjacentElement('afterend', znacka);
+  }
+  znacka.dataset.ukazat = 'true';
+  clearTimeout(casovaceZnacek.get(znacka));
+  casovaceZnacek.set(znacka, setTimeout(() => (znacka.dataset.ukazat = 'false'), 3000));
+}
+window.oznacUlozeno = oznacUlozeno;

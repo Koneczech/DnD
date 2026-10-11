@@ -23,6 +23,8 @@ import { Scena } from './scena.js';
 import { Svetla, ROLE as ROLE_SVETEL } from './svetla.js';
 import { Hue } from './zarizeni/hue.js';
 import { Zvuk, TYPY_ZVUKU } from './zvuk.js';
+import { Iniciativa } from './iniciativa.js';
+import { PruchodIniciativy } from './iniciativa-pruchod.js';
 import { createReadStream } from 'node:fs';
 import { nacistStyl, sestavPrompt, ZABERY } from './dilna.js';
 
@@ -153,6 +155,7 @@ export class Hub {
       mista: () => [...this.mista.mista.values()],
     });
     this.data.dalsiKontroly = () => this.zvuk.kontrola();
+    this.iniciativa = new Iniciativa({ cesty: this.c, obs: this.obs });
     this.sparovatHue = sparovatHue ?? ((v) => Hue.sparovat(v));
     this.casovacOdpoctu = null;
     this.server = null;
@@ -196,7 +199,11 @@ export class Hub {
     this.obs.on('stav', (s) => {
       this.vysilac.vyslat('obs', s);
       if (s.pripojeno) this.hlidatOdpocet();
+      // Po (opětovném) připojení OBS dostane poslední odkaz na Player View.
+      if (s.pripojeno && !this.obsBylPripojen) this.iniciativa.doObs().catch(() => {});
+      this.obsBylPripojen = s.pripojeno;
     });
+    this.iniciativa.on('stav', () => this.vysilac.vyslat('iniciativa', this.stavIniciativy()));
     this.odpocet.on('stav', (s) => {
       this.vysilac.vyslat('odpocet', s);
       this.hlidatOdpocet();
@@ -233,6 +240,8 @@ export class Hub {
     await this.scena.nacist();
     await this.svetla.nacist();
     await this.zvuk.nacist();
+    await this.iniciativa.nacist();
+    if (this.obs.pripojeno) this.iniciativa.doObs().catch(() => {});
     await this.odpocet.nacist();
     this.vysilac.vyslat('odpocet', this.odpocet.verejny());
     this.vysilac.vyslat('verze', await otiskKodu([this.c.panel, this.c.vystupy, path.join(HUB_DIR, 'sdilene')]));
@@ -246,6 +255,9 @@ export class Hub {
       this.server.once('error', reject);
       this.server.listen(port, host, resolve);
     });
+
+    this.portPruchodu = this.server.address().port + 1;
+    await this.zajistitPruchod();
 
     // Pomalé věci až po startu, aby se panel otevřel hned.
     this.prostredi.hook = await nainstalovatHook(this.c.koren).catch(() => 'chyba');
@@ -359,6 +371,7 @@ export class Hub {
       svetla: this.svetla.verejny(),
       zvuk: this.zvuk.stav(),
       obs: this.obs.verejnyStav(),
+      iniciativa: this.stavIniciativy(),
       git: this.git.stav,
       nastaveni: this.nastaveni.verejne(),
       prostredi: this.prostredi,
@@ -493,6 +506,7 @@ export class Hub {
       if ([this.nastaveni.hodnoty.OBS_URL, this.nastaveni.hodnoty.OBS_HESLO].join('\n') !== puvodniObs) {
         this.obs.nastavit(this.nastaveni.hodnoty.OBS_URL, this.nastaveni.hodnoty.OBS_HESLO);
       }
+      if (telo.iiRelace || telo.smazatIiRelace) await this.zajistitPruchod();
       this.svetla.sestavitZarizeni();
       this.svetla.zmenaSceny();
       this.svetla.overit().catch(() => {});
@@ -556,6 +570,10 @@ export class Hub {
       return poslatJson(res, 200, await mapa[akce]());
     }
     if (p === '/api/odpocet' && m === 'GET') return poslatJson(res, 200, this.odpocet.verejny());
+    if (p === '/api/iniciativa' && m === 'PUT') {
+      const telo = await nacistJson(req);
+      return poslatJson(res, 200, await this.iniciativa.nastavit(telo.odkaz));
+    }
     if ((p === '/api/souboj' || p === '/api/obs/souboj') && m === 'POST') {
       const telo = await nacistJson(req);
       return poslatJson(res, 200, await this.souboj(telo.zapnout !== false));
@@ -986,8 +1004,48 @@ export class Hub {
     res.end(req.method === 'HEAD' ? undefined : obsah);
   }
 
+  /** Player View a průchod s přihlášením pro panel (relace nikdy, jen jestli platí). */
+  stavIniciativy() {
+    return {
+      ...this.iniciativa.verejny(),
+      pruchod: this.pruchod?.server ? { port: this.portPruchodu, prihlasen: this.pruchod.prihlasen } : null,
+      pruchodChyba: this.pruchodChyba ?? null,
+    };
+  }
+
+  /**
+   * Průchod k Improved Initiative s relací DM (otevřený bod 70): běží, jen když je relace vložená.
+   * Selhání (obsazený port) Hub neshodí, jen ho ohlásí.
+   */
+  async zajistitPruchod() {
+    const relace = () => this.nastaveni.hodnoty.II_RELACE || null;
+    if (!relace()) {
+      if (this.pruchod) await this.pruchod.zastavit();
+      this.pruchod = null;
+      clearInterval(this.casovacPruchodu);
+    } else if (!this.pruchod) {
+      const p = new PruchodIniciativy({ port: this.portPruchodu, relace });
+      // Server poslal obnovenou relaci: uložit, ať vydrží další 4 týdny.
+      p.on('relace', (nova) => this.nastaveni.ulozit({ iiRelace: nova }).catch(() => {}));
+      p.on('stav', () => this.vysilac.vyslat('iniciativa', this.stavIniciativy()));
+      try {
+        await p.spustit();
+        this.pruchod = p;
+        this.pruchodChyba = null;
+        this.casovacPruchodu = setInterval(() => p.overit().catch(() => {}), 30 * 60000);
+        this.casovacPruchodu.unref?.();
+      } catch (e) {
+        this.pruchodChyba = `Průchod k Improved Initiative se nespustil na portu ${this.portPruchodu}: ${e.message}`;
+      }
+    }
+    this.pruchod?.overit().catch(() => {});
+    this.vysilac.vyslat('iniciativa', this.stavIniciativy());
+  }
+
   async zastavit() {
     clearTimeout(this.casovacOdpoctu);
+    clearInterval(this.casovacPruchodu);
+    await this.pruchod?.zastavit();
     this.scena.zastavit();
     this.svetla.zastavit();
     this.zvuk.zastavit();

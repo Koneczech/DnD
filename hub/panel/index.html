@@ -186,9 +186,19 @@
               <h2 class="vizualne-skryte">Souboj</h2>
               <div class="karta souboj-karta">
                 <p class="souboj-stav" id="souboj-stav">Souboj neběží.</p>
-                <p class="ulozeni" id="souboj-popis">Souboj přepne OBS na scénu s iniciativou z Improved Initiative, světla na bojová a hudbu na bojovou. Ambient počasí nechá. Konec souboje vrátí scénu i světla přesně tam, kde byly.</p>
+                <p class="ulozeni" id="souboj-popis" title="Souboj přepne OBS na scénu s iniciativou, světla na bojová a hudbu na bojovou. Ambient počasí nechá. Konec souboje vrátí scénu i světla přesně tam, kde byly.">Přepne OBS na iniciativu, světla a hudbu na bojové; konec vrátí, co bylo.</p>
+                <button type="button" class="tiche" id="iniciativa-okno" title="Otevře Improved Initiative v běžné záložce (s Epic účtem), nebo ji přenese do popředí">V záložce <kbd>F4</kbd></button>
                 <button type="button" class="hlavni" id="souboj-prepnout">Zahájit souboj</button>
+                <form class="iniciativa-odkaz" id="iniciativa-formular" autocomplete="off">
+                  <label for="iniciativa-pole">Player View</label>
+                  <input id="iniciativa-pole" type="url" placeholder="https://improvedinitiative.app/p/…" spellcheck="false">
+                  <button type="button" id="iniciativa-schranka" title="Vloží odkaz ze schránky a pošle ho do OBS">Vložit ze schránky</button>
+                  <p class="ulozeni" id="iniciativa-stav" aria-live="polite"></p>
+                </form>
               </div>
+              <!-- Improved Initiative přímo v panelu (otevřený bod 68), bez Epic účtu: data má vlastní, uložená v prohlížeči
+                   pro adresu Hubu. Načte se při prvním otevření záložky a zůstává načtený. Epic je v záložce (F4). -->
+              <iframe class="iniciativa" id="iniciativa-ramec" title="Improved Initiative" allow="clipboard-write"></iframe>
             </div>
           </div>
 
@@ -572,6 +582,18 @@
                   <button type="button" id="pin-ulozit">Uložit PIN</button>
                 </div>
                 <p class="ulozeni" id="nastaveni-vysledek" aria-live="polite"></p>
+              </div>
+              <h2>Improved Initiative s Epic účtem</h2>
+              <div class="formular">
+                <p class="ulozeni" id="ii-stav" aria-live="polite"></p>
+                <div class="pole-s-tlacitkem">
+                  <label>Přihlášení (hodnota cookie <code>connect.sid</code>)
+                    <input id="pole-ii-relace" type="password" autocomplete="off" spellcheck="false" placeholder="s%3A…">
+                  </label>
+                  <button type="button" id="ii-relace-ulozit">Uložit přihlášení</button>
+                  <button type="button" class="tiche" id="ii-relace-smazat" hidden>Odebrat</button>
+                </div>
+                <small class="poznamka">V Edgi se přihlas na <code>improvedinitiative.app</code>, stiskni F12 → Aplikace → Soubory cookie → <code>https://improvedinitiative.app</code> a zkopíruj hodnotu <code>connect.sid</code>. Platí asi 4 týdny. Je to jako heslo: zůstane jen v <code>hub/.env</code> na tomto počítači.</small>
               </div>
               <h2>Restart</h2>
               <div class="server-blok">

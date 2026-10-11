@@ -24,14 +24,22 @@ export const VYCHOZI = Object.freeze({
   BLESKY: '1',
   ZVUK_SLOZKA: '',
   ZVUK_OTEVRIT: '1',
+  II_RELACE: '',
 });
 
 /** Klíče, jejichž hodnoty jsou tajné: nikdy neopustí server a hook je hlídá v commitech. */
-export const TAJNE_KLICE = Object.freeze(['OBS_HESLO', 'PIN', 'OPENAI_API_KEY', 'HUE_KLIC']);
+export const TAJNE_KLICE = Object.freeze(['OBS_HESLO', 'PIN', 'OPENAI_API_KEY', 'HUE_KLIC', 'II_RELACE']);
 
 const IPV4 = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
 /** Zařízení role: hue:<id světla na bridgi> nebo wiz:<IP lampy>. */
 export const ZARIZENI_SVETLA = /^(hue:[0-9a-f-]{8,64}|wiz:(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3})$/;
+
+// Pre-commit hook importuje tento soubor samostatně: bez dalších importů z Hubu.
+/** Relace Improved Initiative: hodnota z toho, co DM zkopíroval (sama hodnota, nebo celé „connect.sid=…“). */
+export function hodnotaRelace(text) {
+  const t = String(text ?? '').trim().replace(/^connect\.sid\s*=\s*/i, '').replace(/;.*$/, '').trim();
+  return /^[A-Za-z0-9%._~+\-/=:]{20,600}$/.test(t) ? t : null;
+}
 
 export function rozebratEnv(text) {
   const vysledek = {};
@@ -113,6 +121,8 @@ export class Nastaveni {
       // Zvuk (Blok 5): složka mimo repo, prázdná = Dokumenty\DnD\audio.
       zvukSlozka: this.hodnoty.ZVUK_SLOZKA || '',
       zvukOtevrit: this.hodnoty.ZVUK_OTEVRIT !== '0',
+      // Improved Initiative (otevřený bod 70): relace nikdy, jen jestli je vložená.
+      iiRelaceNastavena: Boolean(this.hodnoty.II_RELACE),
     };
   }
 
@@ -180,6 +190,12 @@ export class Nastaveni {
       nove.ZVUK_SLOZKA = s;
     }
     if (z.zvukOtevrit !== undefined) nove.ZVUK_OTEVRIT = z.zvukOtevrit ? '1' : '0';
+    if (z.iiRelace) {
+      const r = hodnotaRelace(z.iiRelace);
+      if (!r) throw Object.assign(new Error('To nevypadá jako hodnota connect.sid. Zkopíruj ji z F12 → Aplikace → Soubory cookie → improvedinitiative.app.'), { status: 400 });
+      nove.II_RELACE = r;
+    }
+    if (z.smazatIiRelace) nove.II_RELACE = '';
     await zapsatAtomicky(this.cesta, slozitEnv(nove));
     this.hodnoty = nove;
     this.existuje = true;

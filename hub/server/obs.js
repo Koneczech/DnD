@@ -133,6 +133,25 @@ export class Obs extends EventEmitter {
     this.oznam();
   }
 
+  /**
+   * Nastaví adresu všem zdrojům Browser, jejichž současná adresa projde testem `vybrat`.
+   * Ostatní nastavení zdroje (CSS, rozměry) zůstanou. Vrátí jména změněných zdrojů.
+   */
+  async nastavitUrlZdroju(vybrat, url) {
+    if (!this.pripojeno) throw Object.assign(new Error('OBS není připojené'), { status: 503 });
+    const { inputs } = await this.klient.call('GetInputList', { inputKind: 'browser_source' });
+    const zmenene = [];
+    for (const vstup of inputs) {
+      const { inputSettings } = await this.klient.call('GetInputSettings', { inputName: vstup.inputName });
+      if (!vybrat(inputSettings?.url)) continue;
+      if (inputSettings.url !== url) {
+        await this.klient.call('SetInputSettings', { inputName: vstup.inputName, inputSettings: { url }, overlay: true });
+      }
+      zmenene.push(vstup.inputName);
+    }
+    return zmenene;
+  }
+
   async ukoncit() {
     this.ukonceno = true;
     clearTimeout(this.casovac);

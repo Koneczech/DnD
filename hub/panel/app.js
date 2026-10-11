@@ -359,6 +359,13 @@ function vykresliKontrolky() {
 // Role scén v OBS. Dlaždice ukazuje ovládání té role, kterou má přiřazenou v tabulce Role scén.
 const ROLE_SCEN = [['start', 'scenaStart', 'Start'], ['misto', 'scenaMisto', 'Místo'], ['obchod', 'scenaObchod', 'Obchod'], ['souboj', 'scenaSouboj', 'Souboj']];
 const PANELY = ['start', 'misto', 'obchod', 'souboj'];
+/** Improved Initiative: tracker zůstává jeho (rozhodnutí 6). Hub ho ukazuje v záložce Souboj, s Epic účtem ve vlastní záložce (F4). */
+const ADRESA_INICIATIVY = 'https://improvedinitiative.app/e/';
+function adresaVlozeneIniciativy() {
+  const pr = stav.prehled?.iniciativa?.pruchod;
+  return pr ? `http://${location.hostname}:${pr.port}/e/` : ADRESA_INICIATIVY;
+}
+
 const POCASI_TEXT = { dest: 'déšť', snih: 'sníh', mlha: 'mlha', bourka: 'bouřka' };
 const NAZVY_ROLI = { hlavni: 'Hlavní', pozadi: 'Pozadí', lampa: 'Lampa' };
 /** Počasí scény jako seznam efektů (starší server posílal jeden řetězec). */
@@ -470,6 +477,14 @@ function vykresliSceny() {
   rada.replaceChildren(...karty, dalsi);
 
   for (const id of PANELY) $(`#stul-${id}`).hidden = id !== role;
+  // Vložený Improved Initiative se načte až při prvním otevření záložky Souboj a pak už zůstane načtený.
+  // S vloženým přihlášením jde přes průchod Hubu (přihlášený Epic), jinak přímo (bez Epicu).
+  const ramec = $('#iniciativa-ramec');
+  const adresaRamce = adresaVlozeneIniciativy();
+  if (role === 'souboj' && !$('#obrazovka-sceny').hidden && ramec.dataset.adresa !== adresaRamce) {
+    ramec.dataset.adresa = adresaRamce;
+    ramec.setAttribute('src', adresaRamce);
+  }
   vykresliSouboj();
   nahledMista(!$('#obrazovka-sceny').hidden, roleVObs);
 }
@@ -498,9 +513,11 @@ $('#stul-zalozky').addEventListener('keydown', (e) => {
 /** Živý náhled výstupu místa: iframe 1920 × 1080 zmenšený na šířku rámečku, jen dokud je panel vidět. */
 function nahledMista(zobrazit, roleVObs) {
   const ramec = $('#stul-nahled-ramec');
-  const cil = !zobrazit ? 'about:blank' : NAHLEDY[roleVObs] ?? NAHLEDY.misto;
+  // Souboj: náhled je Player View z Improved Initiative (bez CSS carouselu z OBS).
+  const iniciativa = stav.prehled?.iniciativa?.odkaz;
+  const cil = !zobrazit ? 'about:blank' : roleVObs === 'souboj' && iniciativa ? iniciativa : NAHLEDY[roleVObs] ?? NAHLEDY.misto;
   if (ramec.getAttribute('src') !== cil) ramec.setAttribute('src', cil);
-  $('#nahled-zive').hidden = !roleVObs || !NAHLEDY[roleVObs];
+  $('#nahled-zive').hidden = !roleVObs || !(NAHLEDY[roleVObs] || (roleVObs === 'souboj' && iniciativa));
 }
 new ResizeObserver(([zaznam]) => {
   const sirka = zaznam.contentRect.width;
@@ -667,6 +684,7 @@ function prekresli() {
   vykresliSvetla();
   vykresliSouboj();
   vykresliZvuk();
+  vykresliIniciativu();
 }
 
 async function nactiPrehled() {
@@ -698,6 +716,12 @@ function pripojitUdalosti() {
     obchody: aktualizuj('obchody'),
     mista: aktualizuj('mista'),
     server: aktualizuj('server'),
+    iniciativa: (data) => {
+      if (!stav.prehled) return;
+      stav.prehled.iniciativa = data;
+      vykresliIniciativu();
+      vykresliSceny();
+    },
     scena: (data) => {
       if (!stav.prehled) return;
       stav.prehled.scena = data;
@@ -856,6 +880,14 @@ function vykresliObrazovkuSezeni() {
       const chybi = (p.kontrola?.problemy ?? []).filter((x) => /^Zvuk „|^Složka zvuku/.test(x.zprava)).length;
       if (chybi) k.push(polozkaKontroly('varovani', `Chybí zvukové soubory scén: ${chybi}.`, { text: 'Kontrola dat', odkaz: '#kontrola' }));
     }
+    const ii = p.iniciativa;
+    if (p.nastaveni?.iiRelaceNastavena) {
+      k.push(ii?.pruchodChyba
+        ? polozkaKontroly('chyba', ii.pruchodChyba)
+        : ii?.pruchod?.prihlasen === false
+          ? polozkaKontroly('varovani', 'Přihlášení Improved Initiative vypršelo: Souboj poběží bez Epic účtu.', { text: 'Nastavení → Hub', odkaz: '#nastaveni-hub' })
+          : polozkaKontroly(ii?.pruchod?.prihlasen ? 'ok' : 'info', ii?.pruchod?.prihlasen ? 'Improved Initiative je přihlášený.' : 'Improved Initiative: ověřuji přihlášení…'));
+    }
     if (p.server?.restartNutny) k.push(polozkaKontroly('varovani', p.server.restartNutny, p.server.restartZPanelu ? { text: 'Restartovat Hub', klik: restartovatHub } : undefined));
     // Nejdřív to, co je potřeba vyřešit; body v pořádku sbalené do jednoho řádku (rozhodnutí 65).
     const PORADI = { chyba: 0, varovani: 1, info: 2, ok: 3 };
@@ -1006,6 +1038,64 @@ function vykresliSouboj() {
 }
 
 $('#souboj-prepnout').addEventListener('click', () => $('#tlacitko-souboj').click());
+
+/* Player View: Improved Initiative dává pro každé setkání nový odkaz (otevřený bod 69). */
+function vykresliIniciativu() {
+  const i = stav.prehled?.iniciativa;
+  // Nastavení → Hub: přihlášení Epic přes průchod.
+  const n = stav.prehled?.nastaveni;
+  const iiStav = $('#ii-stav');
+  const pr = i?.pruchod;
+  iiStav.className = i?.pruchodChyba || pr?.prihlasen === false ? 'ulozeni chyba' : 'ulozeni';
+  iiStav.textContent = i?.pruchodChyba
+    ?? (!n?.iiRelaceNastavena ? 'Není vložené: Improved Initiative v záložce Souboj běží bez Epic účtu.'
+      : pr?.prihlasen === true ? 'Přihlášení platí: záložka Souboj běží s Epic účtem.'
+        : pr?.prihlasen === false ? 'Přihlášení vypršelo nebo je neplatné. Vlož novou hodnotu connect.sid.'
+          : 'Ověřuji přihlášení…');
+  $('#ii-relace-smazat').hidden = !n?.iiRelaceNastavena;
+  const pole = $('#iniciativa-pole');
+  if (document.activeElement !== pole) pole.value = i?.odkaz ?? '';
+  const el = $('#iniciativa-stav');
+  // Odmítnutý odkaz zůstane ohlášený, dokud DM nevloží platný.
+  el.className = stav.iniciativaChyba ? 'ulozeni chyba' : i?.chyba ? 'ulozeni varovani' : 'ulozeni';
+  el.textContent = stav.iniciativaChyba
+    ?? (!i?.odkaz ? 'Vlož odkaz na Player View: Hub ho dá do OBS i do náhledu.' : i.chyba ?? `V OBS: ${i.zdroje.join(', ')}`);
+}
+async function ulozitIniciativu(odkaz) {
+  try {
+    const r = await api('/api/iniciativa', { metoda: 'PUT', telo: { odkaz } });
+    stav.iniciativaChyba = null;
+    stav.prehled.iniciativa = r;
+    vykresliIniciativu();
+    vykresliSceny();
+    if (!r.chyba) toast('Player View je v OBS.');
+  } catch (chyba) {
+    stav.iniciativaChyba = chyba.message;
+    vykresliIniciativu();
+  }
+}
+// Enter i opuštění pole vyvolá change; odeslání formuláře jen zastavit, ať se neukládá dvakrát.
+$('#iniciativa-formular').addEventListener('submit', (e) => e.preventDefault());
+$('#ii-relace-ulozit').addEventListener('click', async () => {
+  const pole = $('#pole-ii-relace');
+  if (!pole.value.trim()) return pole.focus();
+  if (await ulozitNastaveni({ iiRelace: pole.value.trim() }, pole, { chybaDo: $('#ii-stav') })) pole.value = '';
+});
+$('#ii-relace-smazat').addEventListener('click', async () => {
+  if (!confirm('Odebrat přihlášení? Záložka Souboj pak poběží bez Epic účtu.')) return;
+  await ulozitNastaveni({ smazatIiRelace: true }, $('#ii-relace-smazat'), { chybaDo: $('#ii-stav') });
+});
+$('#iniciativa-pole').addEventListener('change', (e) => e.target.value.trim() && ulozitIniciativu(e.target.value));
+$('#iniciativa-schranka').addEventListener('click', async () => {
+  try {
+    const text = await navigator.clipboard.readText();
+    $('#iniciativa-pole').value = text.trim();
+    await ulozitIniciativu(text);
+  } catch {
+    toast('Schránku se nepodařilo přečíst. Vlož odkaz do pole ručně (Ctrl+V).', { chyba: true });
+    $('#iniciativa-pole').focus();
+  }
+});
 $('#tlacitko-souboj').addEventListener('click', async () => {
   const zapnout = stav.prehled?.scena?.rezim !== 'souboj';
   try {
@@ -1066,7 +1156,30 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault();
     otevritPoznamku();
   }
+  if (e.key === 'F4') {
+    e.preventDefault();
+    otevritIniciativu();
+  }
 });
+
+/* Pojmenované okno: první klik ho otevře, další ho jen přenese do popředí (stav setkání se neztratí). */
+let oknoIniciativy = null;
+function otevritIniciativu() {
+  if (!oknoIniciativy || oknoIniciativy.closed) {
+    // Po obnovení panelu Hub o okně neví: prázdné jméno okno najde, ale nenačte znovu (souboj se nepřeruší).
+    oknoIniciativy = window.open('', 'improved-initiative');
+    if (!oknoIniciativy) return toast('Prohlížeč zablokoval otevření okna. Povol pro Hub vyskakovací okna.', { chyba: true });
+    let prazdne = false;
+    try {
+      prazdne = oknoIniciativy.location.href === 'about:blank'; // cizí stránka (Improved Initiative) sem nepustí
+    } catch {
+      prazdne = false;
+    }
+    if (prazdne) oknoIniciativy.location.href = ADRESA_INICIATIVY;
+  }
+  oknoIniciativy.focus();
+}
+$('#iniciativa-okno').addEventListener('click', otevritIniciativu);
 
 /* ---------- Odpočet ---------- */
 

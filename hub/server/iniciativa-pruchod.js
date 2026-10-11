@@ -57,6 +57,21 @@ export function hlavickyZpet(puvodni, puvodHost) {
   return { hlavicky: h, novaRelace };
 }
 
+/**
+ * Skript na začátek stránky editoru: Improved Initiative čte nastavení jen z úložiště prohlížeče a vložená
+ * stránka ho má vlastní (prázdné). Bez toho by do Player View poslala výchozí nastavení bez CSS a po uložení
+ * by výchozí nastavení přepsalo i to v účtu. Skript před startem editoru zapíše nastavení z účtu (GET /my).
+ */
+export const SKRIPT_NASTAVENI = `<script>/* DM Hub: nastavení z účtu Epic */(function(){try{var x=new XMLHttpRequest();x.open('GET','/my',false);x.send();if(x.status!==200)return;var a=JSON.parse(x.responseText);if(!a||!a.settings)return;var k='ImprovedInitiative.User';var s=JSON.parse(localStorage.getItem(k)||'[]');if(s.indexOf('Settings')<0){s.push('Settings');localStorage.setItem(k,JSON.stringify(s));}localStorage.setItem(k+'.Settings',JSON.stringify(a.settings));}catch(e){console.warn('DM Hub: nastavení z účtu se nenačetlo',e);}})();</script>`;
+
+/** Vloží skript hned za <head>; stránka bez <head> zůstane, jak je. */
+export function vlozitSkript(html) {
+  return /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, (m) => `${m}${SKRIPT_NASTAVENI}`) : html;
+}
+
+/** Je to stránka editoru (pohled DM)? Jen ta potřebuje nastavení z účtu. */
+const jeEditor = (metoda, cesta) => metoda === 'GET' && /^\/e(\/|\?|$)/.test(String(cesta ?? ''));
+
 /** Události: 'relace' (server poslal obnovenou relaci), 'stav'. */
 export class PruchodIniciativy extends EventEmitter {
   constructor({ port, relace, request = https.request, pripojit = tls.connect }) {
@@ -98,18 +113,35 @@ export class PruchodIniciativy extends EventEmitter {
       res.writeHead(403, { 'content-type': 'text/plain; charset=utf-8' });
       return res.end(zamitnuto);
     }
+    const editor = jeEditor(req.method, req.url);
+    const hlavickyVen = hlavickyNaCil(req.headers, this.relace(), this.port);
+    // Stránku editoru průchod upravuje, proto ji chce nekomprimovanou.
+    if (editor) hlavickyVen['accept-encoding'] = 'identity';
     const ven = this.request({
       host: CIL,
       port: 443,
       servername: CIL,
       method: req.method,
       path: req.url,
-      headers: hlavickyNaCil(req.headers, this.relace(), this.port),
+      headers: hlavickyVen,
     }, (odpoved) => {
       const { hlavicky, novaRelace } = hlavickyZpet(odpoved.headers, req.headers.host);
       if (novaRelace && novaRelace !== this.relace()) this.emit('relace', novaRelace);
-      res.writeHead(odpoved.statusCode ?? 502, hlavicky);
-      odpoved.pipe(res);
+      const html = /text\/html/i.test(String(odpoved.headers['content-type'] ?? ''));
+      if (!editor || !html || odpoved.headers['content-encoding']) {
+        res.writeHead(odpoved.statusCode ?? 502, hlavicky);
+        odpoved.pipe(res);
+        return;
+      }
+      const casti = [];
+      odpoved.on('data', (c) => casti.push(c));
+      odpoved.on('end', () => {
+        const telo = Buffer.from(vlozitSkript(Buffer.concat(casti).toString('utf8')), 'utf8');
+        delete hlavicky['transfer-encoding'];
+        hlavicky['content-length'] = String(telo.length);
+        res.writeHead(odpoved.statusCode ?? 502, hlavicky);
+        res.end(telo);
+      });
     });
     ven.on('error', (e) => {
       if (!res.headersSent) res.writeHead(502, { 'content-type': 'text/plain; charset=utf-8' });
@@ -141,7 +173,10 @@ export class PruchodIniciativy extends EventEmitter {
     socket.on('error', zavrit);
   }
 
-  /** Je relace platná? /my vrací 403 bez přihlášení (účet s úložištěm Epic). */
+  /**
+   * Je relace platná? /my vrací 403 bez přihlášení (účet s úložištěm Epic). Z účtu si vezme i vlastní
+   * Encounter ID (událost 'encounter'): s ním má Player View stálý odkaz a Hub ho dosadí do OBS sám.
+   */
   async overit() {
     if (!this.relace()) {
       this.prihlasen = null;
@@ -153,8 +188,21 @@ export class PruchodIniciativy extends EventEmitter {
         host: CIL, port: 443, servername: CIL, method: 'GET', path: '/my',
         headers: { host: CIL, cookie: `${COOKIE}=${this.relace()}`, accept: 'application/json' },
       }, (odpoved) => {
-        odpoved.resume();
-        ok(odpoved.statusCode === 200);
+        if (odpoved.statusCode !== 200) {
+          odpoved.resume();
+          return ok(false);
+        }
+        const casti = [];
+        odpoved.on('data', (c) => casti.push(c));
+        odpoved.on('end', () => {
+          try {
+            const id = JSON.parse(Buffer.concat(casti).toString('utf8'))?.settings?.PlayerView?.CustomEncounterId;
+            if (typeof id === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(id)) this.emit('encounter', id);
+          } catch {
+            /* tělo bez nastavení: přihlášení platí, ID nevíme */
+          }
+          ok(true);
+        });
       });
       r.setTimeout(8000, () => r.destroy(new Error('čas vypršel')));
       r.on('error', () => ok(null));

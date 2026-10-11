@@ -25,6 +25,7 @@ import { Hue } from './zarizeni/hue.js';
 import { Zvuk, TYPY_ZVUKU } from './zvuk.js';
 import { Iniciativa } from './iniciativa.js';
 import { PruchodIniciativy } from './iniciativa-pruchod.js';
+import { SledovaniHp } from './iniciativa-hp.js';
 import { createReadStream } from 'node:fs';
 import { nacistStyl, sestavPrompt, ZABERY } from './dilna.js';
 
@@ -156,6 +157,16 @@ export class Hub {
     });
     this.data.dalsiKontroly = () => this.zvuk.kontrola();
     this.iniciativa = new Iniciativa({ cesty: this.c, obs: this.obs });
+    // Světla podle HP (otevřený bod 72): Player View se čte jen během souboje se zapnutým vypínačem.
+    this.sledovaniHp = new SledovaniHp({
+      odkaz: () => this.iniciativa.odkaz,
+      // Obraz pulzuje i s vypnutým Řídit světla; lampa jen s ním (hlídá Svetla).
+      aktivni: () => this.scena.stav.rezim === 'souboj' && this.nastaveni.hodnoty.HP_SVETLA !== '0',
+    });
+    this.sledovaniHp.on('zmena', (k) => {
+      this.svetla.nastavitKritickeHp(k);
+      this.vysilac.vyslat('kriticke-hp', k);
+    });
     this.sparovatHue = sparovatHue ?? ((v) => Hue.sparovat(v));
     this.casovacOdpoctu = null;
     this.server = null;
@@ -241,23 +252,25 @@ export class Hub {
     await this.svetla.nacist();
     await this.zvuk.nacist();
     await this.iniciativa.nacist();
+    this.sledovaniHp.spustit();
     if (this.obs.pripojeno) this.iniciativa.doObs().catch(() => {});
     await this.odpocet.nacist();
     this.vysilac.vyslat('odpocet', this.odpocet.verejny());
     this.vysilac.vyslat('verze', await otiskKodu([this.c.panel, this.c.vystupy, path.join(HUB_DIR, 'sdilene')]));
     await this.hlidac.spustit();
 
-    this.server = http.createServer((req, res) => this.obsluha(req, res));
-    this.server.on('upgrade', (req, socket, head) => this.upgrade(req, socket, head));
     const host = this.nastaveni.domaciSit ? '0.0.0.0' : '127.0.0.1';
     const port = this.portPrepis ?? this.nastaveni.port;
+    // Průchod k Improved Initiative startuje dřív než panel: první přehled ho už musí znát,
+    // jinak by se vložený Improved Initiative načetl napřímo bez přihlášení (port 0 = testy, volný port).
+    this.portPruchodu = port ? port + 1 : 0;
+    await this.zajistitPruchod();
+    this.server = http.createServer((req, res) => this.obsluha(req, res));
+    this.server.on('upgrade', (req, socket, head) => this.upgrade(req, socket, head));
     await new Promise((resolve, reject) => {
       this.server.once('error', reject);
       this.server.listen(port, host, resolve);
     });
-
-    this.portPruchodu = this.server.address().port + 1;
-    await this.zajistitPruchod();
 
     // Pomalé věci až po startu, aby se panel otevřel hned.
     this.prostredi.hook = await nainstalovatHook(this.c.koren).catch(() => 'chyba');
@@ -1028,11 +1041,19 @@ export class Hub {
       // Server poslal obnovenou relaci: uložit, ať vydrží další 4 týdny.
       p.on('relace', (nova) => this.nastaveni.ulozit({ iiRelace: nova }).catch(() => {}));
       p.on('stav', () => this.vysilac.vyslat('iniciativa', this.stavIniciativy()));
+      // Vlastní Encounter ID z účtu = stálý odkaz na Player View: Hub ho dosadí do OBS i náhledu sám.
+      p.on('encounter', (id) => {
+        const odkaz = `https://improvedinitiative.app/p/${id}`;
+        if (this.iniciativa.odkaz !== odkaz) this.iniciativa.nastavit(odkaz).catch(() => {});
+      });
       try {
         await p.spustit();
+        if (!p.port) p.port = p.server.address().port;
+        this.portPruchodu = p.port;
         this.pruchod = p;
         this.pruchodChyba = null;
-        this.casovacPruchodu = setInterval(() => p.overit().catch(() => {}), 30 * 60000);
+        // Každých 5 min: platnost přihlášení a změna vlastního Encounter ID v účtu.
+        this.casovacPruchodu = setInterval(() => p.overit().catch(() => {}), 5 * 60000);
         this.casovacPruchodu.unref?.();
       } catch (e) {
         this.pruchodChyba = `Průchod k Improved Initiative se nespustil na portu ${this.portPruchodu}: ${e.message}`;
@@ -1045,6 +1066,7 @@ export class Hub {
   async zastavit() {
     clearTimeout(this.casovacOdpoctu);
     clearInterval(this.casovacPruchodu);
+    this.sledovaniHp.zastavit();
     await this.pruchod?.zastavit();
     this.scena.zastavit();
     this.svetla.zastavit();

@@ -361,9 +361,13 @@ const ROLE_SCEN = [['start', 'scenaStart', 'Start'], ['misto', 'scenaMisto', 'M�
 const PANELY = ['start', 'misto', 'obchod', 'souboj'];
 /** Improved Initiative: tracker zůstává jeho (rozhodnutí 6). Hub ho ukazuje v záložce Souboj, s Epic účtem ve vlastní záložce (F4). */
 const ADRESA_INICIATIVY = 'https://improvedinitiative.app/e/';
+/** Kam vložený Improved Initiative míří: s vloženým přihlášením jen přes průchod, nikdy napřímo. */
 function adresaVlozeneIniciativy() {
   const pr = stav.prehled?.iniciativa?.pruchod;
-  return pr ? `http://${location.hostname}:${pr.port}/e/` : ADRESA_INICIATIVY;
+  if (pr) return `http://${location.hostname}:${pr.port}/e/`;
+  // Přihlášení je vložené, ale průchod ještě není znát: radši počkat, než načíst nepřihlášenou variantu.
+  if (stav.prehled?.nastaveni?.iiRelaceNastavena) return null;
+  return ADRESA_INICIATIVY;
 }
 
 const POCASI_TEXT = { dest: 'déšť', snih: 'sníh', mlha: 'mlha', bourka: 'bouřka' };
@@ -481,7 +485,7 @@ function vykresliSceny() {
   // S vloženým přihlášením jde přes průchod Hubu (přihlášený Epic), jinak přímo (bez Epicu).
   const ramec = $('#iniciativa-ramec');
   const adresaRamce = adresaVlozeneIniciativy();
-  if (role === 'souboj' && !$('#obrazovka-sceny').hidden && ramec.dataset.adresa !== adresaRamce) {
+  if (role === 'souboj' && !$('#obrazovka-sceny').hidden && adresaRamce && ramec.dataset.adresa !== adresaRamce) {
     ramec.dataset.adresa = adresaRamce;
     ramec.setAttribute('src', adresaRamce);
   }
@@ -517,6 +521,12 @@ function nahledMista(zobrazit, roleVObs) {
   const iniciativa = stav.prehled?.iniciativa?.odkaz;
   const cil = !zobrazit ? 'about:blank' : roleVObs === 'souboj' && iniciativa ? iniciativa : NAHLEDY[roleVObs] ?? NAHLEDY.misto;
   if (ramec.getAttribute('src') !== cil) ramec.setAttribute('src', cil);
+  // Při souboji leží v OBS pod Player View zdroj Hub – místo: náhled skládá stejné dvě vrstvy.
+  const podklad = $('#stul-nahled-podklad');
+  const sPodkladem = zobrazit && roleVObs === 'souboj' && Boolean(iniciativa);
+  const cilPodkladu = sPodkladem ? NAHLEDY.misto : 'about:blank';
+  if (podklad.getAttribute('src') !== cilPodkladu) podklad.setAttribute('src', cilPodkladu);
+  podklad.hidden = !sPodkladem;
   $('#nahled-zive').hidden = !roleVObs || !(NAHLEDY[roleVObs] || (roleVObs === 'souboj' && iniciativa));
 }
 new ResizeObserver(([zaznam]) => {
@@ -558,6 +568,8 @@ $('#zkontrolovat').addEventListener('click', async () => vykresliKontrolu(await 
 /* ---------- Nastavení ---------- */
 
 function vykresliNastaveni(n) {
+  // Stav přihlášení Improved Initiative závisí i na nastavení (relace vložená / odebraná).
+  queueMicrotask(vykresliIniciativu);
   if (!n) return;
   if (document.activeElement !== $('#pole-obs-url')) $('#pole-obs-url').value = n.obsUrl;
   $('#pole-obs-heslo').placeholder = n.obsHesloNastaveno ? 'Heslo je uložené. Vyplň jen při změně.' : 'Heslo z OBS';
@@ -570,6 +582,7 @@ function vykresliNastaveni(n) {
     vykresliWiz();
   }
   $('#pole-blesky').checked = n.blesky !== false;
+  $('#pole-hp-svetla').checked = n.hpSvetla !== false;
   $('#hue-stav').textContent = !n.hueBridge
     ? 'Zadej IP adresu bridge, stiskni na něm kulaté tlačítko a do 30 s klikni na Spárovat.'
     : n.hueSparovano ? `Bridge ${n.hueBridge} je spárovaný.` : `Bridge ${n.hueBridge} zatím není spárovaný: stiskni na něm kulaté tlačítko a do 30 s klikni na Spárovat.`;
@@ -2418,7 +2431,9 @@ function vykresliSvetla() {
   ridit.checked = sv.ridit;
   ridit.disabled = !sv.nastaveno;
   const spatne = sv.zarizeni.filter((z) => z.ok === false);
-  $('#svetla-popis').textContent = !sv.nastaveno
+  $('#svetla-popis').textContent = sv.kritickeHp
+    ? `${sv.kritickeHp.jmeno} na ${sv.kritickeHp.hp}/${sv.kritickeHp.max} HP: lampa pulzuje do červena.`
+    : !sv.nastaveno
     ? 'Světla nejsou nastavená. Přiřaď je v Nastavení → Světla.'
     : !sv.ridit
       ? 'Hub na světla nesahá. Zapni, a světla budou sledovat místo, denní dobu, počasí i souboj.'
@@ -2643,6 +2658,7 @@ $('#hue-svetla').addEventListener('change', (e) => {
   if (e.target.matches('select')) ulozitNastaveni(seznamyRoli(), e.target, { chybaDo: $('#svetla-vysledek') });
 });
 $('#pole-wiz').addEventListener('change', () => ulozitNastaveni(seznamyRoli(), $('#wiz-tabulka'), { chybaDo: $('#svetla-vysledek') }));
+$('#pole-hp-svetla').addEventListener('change', (e) => ulozitNastaveni({ hpSvetla: e.target.checked }, e.target.closest('label'), { chybaDo: $('#svetla-vysledek') }));
 $('#pole-blesky').addEventListener('change', (e) => ulozitNastaveni({ blesky: e.target.checked }, e.target.closest('label'), { chybaDo: $('#svetla-vysledek') }));
 $('#pole-hue-bridge').addEventListener('change', async (e) => {
   const n = stav.prehled?.nastaveni ?? {};

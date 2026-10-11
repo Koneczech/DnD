@@ -395,7 +395,6 @@ async function doObs(id) {
 function vykresliSceny() {
   const o = stav.prehled?.obs;
   const popis = $('#obs-popis');
-  const stavEl = $('#stul-stav');
   const pripojeno = Boolean(o?.pripojeno);
   let pripojitTlacitko = null;
 
@@ -408,9 +407,9 @@ function vykresliSceny() {
   // Text nad řadou jen při potížích s OBS; když vše běží, nic nevysvětluje.
   popis.hidden = pripojeno;
   if (!stav.prehled) popis.textContent = 'Čekám na server Hubu…';
-  else if (!o?.nastaveno) popis.textContent = 'OBS ještě není nastavené (Nastavení → OBS). Záložky fungují i bez OBS, jen se nepřepínají scény.';
+  else if (!o?.nastaveno) popis.textContent = 'OBS není nastavené (Nastavení → OBS). Ovládání funguje, jen se nepřepínají scény.';
   else if (!pripojeno) {
-    popis.textContent = `${o.chyba || 'OBS není připojené.'} Hub to zkouší znovu každých 5 sekund.`;
+    popis.textContent = `${o.chyba || 'OBS není připojené.'} Zkouším znovu každých 5 s.`;
     pripojitTlacitko = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Připojit teď' });
     pripojitTlacitko.addEventListener('click', () => api('/api/obs/pripojit', { metoda: 'POST', telo: {} }).catch(() => {}));
     popis.append(' ', pripojitTlacitko);
@@ -469,10 +468,6 @@ function vykresliSceny() {
   }
   dalsi.append(Object.assign(document.createElement('a'), { href: '#nastaveni-role', textContent: 'Role scén…', className: 'odkaz-role' }));
   rada.replaceChildren(...karty, dalsi);
-
-  // „Co je teď v OBS“ vedle nadpisu.
-  stavEl.textContent = pripojeno ? `V OBS: ${o.aktualniScena || 'neznámá scéna'}` : 'OBS není připojené';
-  stavEl.dataset.pripojeno = String(pripojeno);
 
   for (const id of PANELY) $(`#stul-${id}`).hidden = id !== role;
   vykresliSouboj();
@@ -1095,29 +1090,52 @@ function vykresliOdpocet() {
     pauza: 'Pozastaveno. V OBS stojí na posledním čase.',
   };
   popis.textContent = texty[o?.stav ?? 'zadny'];
-  $('#odpocet-spustit').textContent = o?.stav === 'pauza' ? 'Pokračovat' : 'Spustit';
-  $('#odpocet-spustit').disabled = !o || o.stav === 'zadny' || o.stav === 'bezi';
-  $('#odpocet-pauza').disabled = o?.stav !== 'bezi' || zbyva === 0;
-  $('#odpocet-zrusit').disabled = !o || o.stav === 'zadny';
+  // Jedno ovládání podle stavu (rozhodnutí 66): bez odpočtu nebo připravený = čas + Spustit odpočet;
+  // běží nebo stojí = Pauza / Pokračovat a Zrušit. Doběhlý odpočet jde rovnou nastavit znovu.
+  const bezi = (o?.stav === 'bezi' && zbyva !== 0) || o?.stav === 'pauza';
+  $('#formular-odpocet').hidden = bezi;
+  $('#odpocet-bezi').hidden = !bezi;
+  $('#odpocet-spustit').hidden = o?.stav !== 'pauza';
+  $('#odpocet-pauza').hidden = o?.stav !== 'bezi';
+  for (const b of document.querySelectorAll('#odpocet-predvolby button')) b.setAttribute('aria-pressed', String(Number(b.dataset.minut) === stav.odpocetMinut));
   const pr = o?.prepnuti;
-  const scena = stav.prehled?.nastaveni?.scenaPoOdpoctu;
   $('#odpocet-prepnuti').className = pr && !pr.ok ? 'ulozeni varovani' : 'ulozeni';
   $('#odpocet-prepnuti').textContent = pr
     ? pr.ok ? `Po doběhnutí přepnuto na scénu „${pr.scena}“.` : pr.duvod
-    : scena ? `Po doběhnutí se OBS přepne na scénu „${scena}“.` : 'Po doběhnutí se scéna nepřepne.';
+    : ''; // kam se přepne, ukazuje výběr hned vedle
 }
 setInterval(() => {
   if (stav.prehled?.odpocet?.stav === 'bezi') vykresliOdpocet();
 }, 250);
 
+// Předvolba vyplní „za kolik minut“ a vymaže čas; čas vymaže předvolbu. Jedno Spustit připraví a spustí.
+$('#odpocet-predvolby').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-minut]');
+  if (!b) return;
+  const minut = Number(b.dataset.minut);
+  stav.odpocetMinut = stav.odpocetMinut === minut ? null : minut;
+  if (stav.odpocetMinut) $('#pole-odpocet-cas').value = '';
+  vykresliOdpocet();
+});
+$('#pole-odpocet-cas').addEventListener('input', () => {
+  stav.odpocetMinut = null;
+  vykresliOdpocet();
+});
 $('#formular-odpocet').addEventListener('submit', async (e) => {
   e.preventDefault();
   const cas = $('#pole-odpocet-cas').value.trim();
-  const minut = Number($('#pole-odpocet-minut').value);
+  const minut = stav.odpocetMinut;
+  const o = stav.prehled?.odpocet;
+  if (!cas && !minut && o?.stav !== 'pripraveny') {
+    toast('Zadej čas začátku nebo vyber, za kolik minut.', { chyba: true });
+    $('#pole-odpocet-cas').focus();
+    return;
+  }
   try {
-    await api('/api/odpocet/pripravit', { metoda: 'POST', telo: cas ? { cas } : { minut } });
+    if (cas || minut) await api('/api/odpocet/pripravit', { metoda: 'POST', telo: cas ? { cas } : { minut } });
+    await api('/api/odpocet/spustit', { metoda: 'POST', telo: {} });
     $('#pole-odpocet-cas').value = '';
-    $('#pole-odpocet-minut').value = '';
+    stav.odpocetMinut = null;
   } catch (chyba) {
     toast(chyba.message, { chyba: true });
   }
@@ -1285,7 +1303,7 @@ function vykresliKalendar() {
   const dnes = k.dnes;
   $('#kalendar-datum').textContent = dnes ? Harptos.format(dnes) : 'Datum není zadané';
   $('#kalendar-svatek').textContent = dnes?.svatek ? `Svátek ${Harptos.popisSvatku(dnes)}.` : '';
-  for (const b of document.querySelectorAll('[data-posun], #kalendar-dalsi-den, #tlacitko-dalsi-den')) b.disabled = !dnes;
+  for (const b of document.querySelectorAll('[data-posun], #kalendar-dalsi-den, #sc-dalsi-den')) b.disabled = !dnes;
   if (JSON.stringify(dnes) !== JSON.stringify(posledniDnes) && !$('#formular-dnes').contains(document.activeElement)) {
     vyberDnes.set(dnes ?? k.zacatek ?? { rok: 1491, mesic: 'Hammer', den: 1 });
     posledniDnes = dnes;
@@ -1539,7 +1557,7 @@ $('#formular-den').addEventListener('submit', async (e) => {
     $('#den-chyba').textContent = chyba.message;
   }
 });
-$('#tlacitko-dalsi-den').addEventListener('click', otevritDalsiDen);
+$('#sc-dalsi-den').addEventListener('click', otevritDalsiDen);
 $('#kalendar-dalsi-den').addEventListener('click', otevritDalsiDen);
 
 /* ---------- Obchody ---------- */
@@ -1758,13 +1776,11 @@ function vykresliMista() {
     ...seznam.map((m) => {
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'karta-mista mala';
+      b.className = 'polozka-mista';
       b.setAttribute('aria-pressed', String(m.id === vybrane?.id));
       if (m.id === zive?.id) b.classList.add('v-obs');
-      const nahled = (m.ilustrace.find((il) => !il.skryta && il.ucel === 'scena') ?? m.ilustrace[0]);
-      if (nahled) b.style.backgroundImage = `url("${nahled.url}")`;
       b.append(Object.assign(document.createElement('span'), { textContent: m.nazev }));
-      if (m.id === zive?.id) b.append(Object.assign(document.createElement('small'), { textContent: 'v OBS' }));
+      if (m.id === zive?.id) b.append(Object.assign(document.createElement('span'), { className: 'zive', textContent: 'Živě' }));
       // Místo, které by teď v OBS dalo černo, je označené už na dlaždici (audit S6).
       if (!viditelneIlustrace(m, volby).length) {
         b.classList.add('bez-ilustrace');
@@ -1786,21 +1802,16 @@ function vykresliMista() {
     : !vybrane.ilustrace.length
       ? 'Místo zatím nemá žádnou ilustraci. Vytvoř ji v Ilustrační dílně.'
       : jeZive
-        ? 'Klikni na ilustraci a ukáže se v OBS. Odkrýt a Skrýt rozhoduje, co se do OBS vůbec dostane.'
+        ? 'Klik na ilustraci = do OBS. Šedé jsou skryté, do OBS nejdou.'
         : `V OBS je pořád ${zive ? zive.nazev : 'jiná scéna'}. Klikni na ilustraci a OBS přepne rovnou na ni.`;
   const ukazatMisto = $('#stul-misto-ukazat');
   ukazatMisto.hidden = !vybrane || jeZive;
   ukazatMisto.textContent = vybrane ? `Ukázat ${vybrane.nazev} v OBS (výchozí ilustrace)` : '';
-  // Viditelné ilustrace nahoře, skryté sbalené pod tlačítkem (rozhodnutí 65): u stolu se odkrývají jen občas.
+  // Všechny ilustrace v jedné mřížce, skryté za odkrytými a ztlumené (rozhodnutí 66): odkrytí je u stolu
+  // běžná akce, nemá se schovávat za rozbalovací tlačítko.
   const vsechny = vybrane?.ilustrace ?? [];
-  const skryte = vsechny.filter((il) => il.skryta);
-  $('#stul-ilustrace').replaceChildren(...vsechny.filter((il) => !il.skryta).map((il) => kartaIlustrace(vybrane, il, s, jeZive, false)));
-  const prepinac = $('#stul-skryte-prepinac');
-  prepinac.hidden = !skryte.length;
-  prepinac.textContent = stav.stulSkryte ? `Sbalit skryté (${skryte.length}) ▴` : `Ukázat skryté (${skryte.length}) ▾`;
-  prepinac.setAttribute('aria-expanded', String(Boolean(stav.stulSkryte)));
-  $('#stul-ilustrace-skryte').hidden = !stav.stulSkryte || !skryte.length;
-  $('#stul-ilustrace-skryte').replaceChildren(...skryte.map((il) => kartaIlustrace(vybrane, il, s, jeZive, false)));
+  const serazene = [...vsechny.filter((il) => !il.skryta), ...vsechny.filter((il) => il.skryta)];
+  $('#stul-ilustrace').replaceChildren(...serazene.map((il) => kartaIlustrace(vybrane, il, s, jeZive, false)));
 
   $('#seznam-mist').replaceChildren(
     ...seznam.map((m) => {
@@ -1923,10 +1934,6 @@ $('#misto-ukazat').addEventListener('click', async () => {
   if (m && s?.misto?.id !== m.id && !potvrditCerno(m, { varianta: s?.varianta ?? 'den', stav: null })) return;
   const r = await scenaApi('/api/scena/zobrazit', 'POST', { misto: vybraneMisto, prepnout: true });
   if (r && !r.chybaObs) toast(`V OBS: ${r.misto?.nazev ?? ''}${r.scenaObs ? ` (scéna ${r.scenaObs})` : ''}`);
-});
-$('#stul-skryte-prepinac').addEventListener('click', () => {
-  stav.stulSkryte = !stav.stulSkryte;
-  vykresliMista();
 });
 $('#stul-misto-ukazat').addEventListener('click', async () => {
   const s = stav.prehled?.scena;

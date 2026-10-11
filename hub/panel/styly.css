@@ -674,3 +674,66 @@ button:has(> .ik) { display: inline-flex; align-items: center; gap: var(--m-2); 
 .misto-zalozky button[aria-selected="true"] { background: var(--povrch-1); border-color: var(--linka); color: var(--akcent); }
 .misto-panel { padding-top: var(--m-3); }
 .misto-panel.svetla-mista { margin-top: 0; }
+
+/* ---------- Rozložení v2: každá obrazovka do jednoho okna 1920 × 960 (rozhodnutí 66) ---------- */
+main { padding: var(--m-4) var(--m-5) var(--m-5); }
+.obrazovka { max-width: none; }
+
+/* U stolu: vlevo záložka scény, vpravo sloupec Ve hře teď (stejný na všech záložkách) */
+.stul-rozlozeni { display: grid; grid-template-columns: minmax(0, 1fr) 27rem; gap: var(--m-5); align-items: start; flex-wrap: nowrap; }
+.stul-priprava { min-width: 0; }
+.stul-zive { position: static; max-width: none; gap: var(--m-3); }
+.stul-role { margin-bottom: var(--m-3); }
+.role-zalozka { min-width: 7rem; }
+.stul-obs { display: flex; flex-wrap: wrap; align-items: center; gap: var(--m-2) var(--m-3); margin: 0 0 var(--m-3); color: var(--varovani); font-size: var(--t-popisek); }
+.stul-obs button { padding: var(--m-1) var(--m-3); font-size: var(--t-popisek); }
+
+/* Podmínky ve sloupci: popisek vlevo, ovládání vpravo, jeden řádek na věc */
+.stul-zive .podminky { padding: var(--m-3) var(--m-4); }
+.stul-zive .podminky .prepinace { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); gap: var(--m-2) var(--m-3); align-items: center; }
+.stul-zive .podminky .prepinac { display: contents; }
+.stul-zive .podminky .prepinac[hidden] { display: none; }
+.stul-zive .podminky .prepinac > span { color: var(--text-tlumeny); font-size: var(--t-stitek); letter-spacing: 0.06em; text-transform: uppercase; }
+.stul-zive .podminky .segment button { padding: var(--m-1) var(--m-2); min-width: 2.4rem; }
+.stul-zive .podminky select { justify-self: start; padding: var(--m-1) var(--m-3); }
+.radek-ovladani { display: flex; flex-wrap: wrap; align-items: center; gap: var(--m-2); }
+.radek-ovladani > button { padding: var(--m-1) var(--m-3); }
+#sc-bourka-radek { display: contents; }
+.radek-karty { display: flex; align-items: center; justify-content: space-between; gap: var(--m-3); width: 100%; }
+.radek-karty button { padding: var(--m-1) var(--m-3); font-size: var(--t-popisek); }
+.zive-popis { padding: var(--m-2) var(--m-4); }
+
+/* Místo: svislý seznam míst a jedna mřížka ilustrací */
+.stul-misto-mrizka { display: grid; grid-template-columns: 12rem minmax(0, 1fr); gap: var(--m-4); align-items: start; }
+.stul-mista { display: flex; flex-direction: column; gap: 2px; }
+.polozka-mista { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 var(--m-2); text-align: left; background: transparent; border-color: transparent; padding: var(--m-2) var(--m-3); }
+.polozka-mista[aria-pressed="true"] { background: var(--povrch-2); border-color: var(--akcent); }
+.polozka-mista small { flex-basis: 100%; font-size: var(--t-stitek); color: var(--varovani); }
+.stul-ilustrace-hlava { margin-bottom: var(--m-1); }
+.stul-vyber { margin: 0 0 var(--m-2); }
+.ilustrace-zive { grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: var(--m-3); margin-top: 0; }
+.ilustrace-zive .karta-ilustrace { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+.ilustrace-zive .karta-ilustrace .obrazek { grid-column: 1 / -1; }
+.ilustrace-zive .karta-ilustrace .jmeno { grid-column: 1; margin: var(--m-1) var(--m-3) 0; }
+.ilustrace-zive .karta-ilustrace .stitky { grid-column: 1; margin: 0 var(--m-3) var(--m-2); }
+.ilustrace-zive .ovladani-ilustrace { grid-column: 2; grid-row: 2 / span 2; padding: 0 var(--m-2) 0 0; }
+.ilustrace-zive .karta-ilustrace[data-skryta="true"] { border-style: dashed; }
+
+/* Start: odpočet */
+.odpocet-karta { display: flex; flex-direction: column; gap: var(--m-4); padding: var(--m-4) var(--m-5); max-width: 52rem; }
+.odpocet-karta .stitek-skupiny { margin: 0; }
+.odpocet-hlava { display: flex; flex-wrap: wrap; align-items: center; gap: var(--m-2) var(--m-6); }
+.odpocet-hlava .odpocet-cas { margin: 0; font-size: 6rem; }
+.odpocet-hlava .ulozeni { margin: 0; font-size: var(--t-text); max-width: 22rem; }
+.odpocet-nastavit { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--m-3) var(--m-4); }
+.odpocet-nastavit label { display: grid; gap: var(--m-1); color: var(--text-tlumeny); font-size: var(--t-popisek); }
+.odpocet-nastavit input { width: 7rem; }
+.odpocet-nastavit[hidden], .odpocet-bezi[hidden] { display: none; }
+.odpocet-bezi { display: flex; gap: var(--m-2); }
+.odpocet-po { display: flex; flex-wrap: wrap; align-items: center; gap: var(--m-2) var(--m-4); padding-top: var(--m-3); border-top: 1px solid var(--linka); max-width: none; }
+.odpocet-po label { display: flex; align-items: center; gap: var(--m-2); color: var(--text); font-size: var(--t-text); }
+.odpocet-po .ulozeni { margin: 0; }
+@media (max-width: 64rem) { .stul-rozlozeni { grid-template-columns: minmax(0, 1fr); } .stul-misto-mrizka { grid-template-columns: minmax(0, 1fr); } }
+.stul-zive #sc-bourka-radek > span { grid-column: auto; }
+.stul-zive .stul-nahled { aspect-ratio: auto; height: 12.5rem; }
+.stul-zive .podminky .segment, .stul-zive .podminky .radek-ovladani { justify-self: start; }

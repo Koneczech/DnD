@@ -632,3 +632,24 @@ button:has(> .ik) { display: inline-flex; align-items: center; gap: var(--m-2); 
 .zive[hidden] { display: none; }
 .prepinac { align-content: start; justify-items: start; }
 .role-karta { flex: 0 1 auto; }
+
+/* ---------- Nastavení: kategorie a ukládání po polích (rozhodnutí 65) ---------- */
+.nastaveni-rozlozeni { display: flex; flex-wrap: wrap; gap: var(--m-5) var(--m-6); align-items: flex-start; }
+.nastaveni-kategorie { flex: 1 1 12rem; max-width: 14rem; display: flex; flex-direction: column; gap: 2px; position: sticky; top: 0; }
+.nastaveni-kategorie a { display: flex; align-items: center; justify-content: space-between; gap: var(--m-2); padding: var(--m-2) var(--m-3); border-radius: var(--zaobleni); color: var(--text); text-decoration: none; }
+.nastaveni-kategorie a:hover { background: var(--povrch-1); }
+.nastaveni-kategorie a[aria-current="page"] { background: var(--povrch-2); box-shadow: inset 3px 0 0 var(--akcent); }
+.nastaveni-kategorie .svetlo { width: 8px; height: 8px; }
+.nastaveni-obsah { flex: 999 1 32rem; min-width: 0; max-width: 52rem; }
+.kategorie > h2:first-child, .kategorie > .sekce-hlava:first-child h2 { margin-top: 0; }
+.sekce-hlava { display: flex; align-items: center; justify-content: space-between; gap: var(--m-4); margin: var(--m-6) 0 var(--m-2); }
+.sekce-hlava h2 { margin: 0; }
+.kategorie:not([hidden]) > .sekce-hlava:first-child { margin-top: 0; }
+.pole-s-tlacitkem { display: flex; align-items: flex-end; gap: var(--m-2); flex-wrap: wrap; }
+.pole-s-tlacitkem > label { flex: 1 1 16rem; }
+.pole-s-tlacitkem > label.kratke { flex: 0 1 12rem; }
+.formular.siroky { max-width: 46rem; }
+.prepinac-zap.samostatny { margin-top: var(--m-4); }
+.formular .ulozeno-znacka, .pole-s-tlacitkem .ulozeno-znacka { align-self: center; }
+.kategorie .formular label { color: var(--text-tlumeny); }
+.ulozeni:empty { min-height: 0; margin: 0; }

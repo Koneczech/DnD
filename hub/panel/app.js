@@ -765,7 +765,7 @@ function vykresliObrazovkuSezeni() {
   const delka = delkaSezeni(s);
   $('#sezeni-detail').textContent = bezi
     ? `${delka ? `Běží ${delka} h. ` : ''}Poznámky padají do ${s.soubor}.`
-    : 'Než hráči dorazí, projdi seznam níže a zahaj sezení. Odpočet do začátku nastavíš při zahájení.';
+    : 'Zahájení spustí čas sezení; odpočet do začátku nastavíš v dialogu.';
   const akce = $('#sezeni-akce');
   akce.textContent = bezi ? `Ukončit sezení ${s.cislo}` : `Zahájit sezení ${(s?.cislo ?? 0) + 1}`;
   akce.disabled = !p;
@@ -838,25 +838,18 @@ function vykresliObrazovkuSezeni() {
     // Nejdřív to, co je potřeba vyřešit; body v pořádku sbalené do jednoho řádku (rozhodnutí 65).
     const PORADI = { chyba: 0, varovani: 1, info: 2, ok: 3 };
     k.sort((x, y) => PORADI[x.dataset.uroven] - PORADI[y.dataset.uroven]);
+    // Řádky jen pro to, co je potřeba vyřešit; ostatní jako drobné štítky v jedné řadě (rozhodnutí 66).
     const vporadku = k.filter((x) => x.dataset.uroven === 'ok');
     const resit = k.filter((x) => ['chyba', 'varovani'].includes(x.dataset.uroven)).length;
-    const radky = k.filter((x) => x.dataset.uroven !== 'ok');
-    if (vporadku.length) {
-      const li = document.createElement('li');
-      li.className = 'v-poradku';
-      const d = document.createElement('details');
-      d.open = stav.sezeniOkOtevrene === true;
-      d.addEventListener('toggle', () => (stav.sezeniOkOtevrene = d.open));
-      const sum = document.createElement('summary');
-      sum.append(Object.assign(document.createElement('span'), { className: 'stav-ikona' }), `${vporadku.length} v pořádku`);
-      const ul = Object.assign(document.createElement('ul'), { className: 'kontrolni-stav' });
-      ul.append(...vporadku);
-      d.append(sum, ul);
-      li.append(d);
-      li.dataset.uroven = 'ok';
-      radky.push(li);
+    const radky = k.filter((x) => ['chyba', 'varovani'].includes(x.dataset.uroven));
+    const stitky = k.filter((x) => ['info', 'ok'].includes(x.dataset.uroven));
+    for (const li of stitky) {
+      const t = li.querySelector('.text');
+      t.textContent = t.textContent.replace(/\.$/, '');
     }
     $('#sezeni-kontrola').replaceChildren(...radky);
+    $('#sezeni-kontrola').hidden = !radky.length;
+    $('#sezeni-v-poradku').replaceChildren(...stitky);
     $('#sezeni-souhrn').textContent = resit ? `${resit} k vyřešení · ${vporadku.length} v pořádku` : 'Všechno je připravené.';
   }
 
@@ -864,7 +857,7 @@ function vykresliObrazovkuSezeni() {
   const poznamky = s?.poznamky ?? [];
   $('#sezeni-poznamky-nadpis').textContent = bezi ? 'Poznámky ze stolu' : 'Poznámky mimo sezení';
   $('#sezeni-poznamky-popis').textContent = poznamky.length
-    ? `Zapisuješ je klávesou F2 nebo tlačítkem Poznámka. Ukládají se do ${s?.soubor ?? 'souboru sezení'}.`
+    ? `Ukládají se do ${s?.soubor ?? 'souboru sezení'}.`
     : 'Zatím žádné. Zapisuješ je klávesou F2 nebo tlačítkem Poznámka v horní liště.';
   $('#sezeni-poznamky').replaceChildren(
     ...[...poznamky].reverse().map((x) => {

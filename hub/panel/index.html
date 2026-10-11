@@ -52,7 +52,7 @@
       <div id="upozorneni" class="upozorneni" aria-live="polite"></div>
 
       <section id="obrazovka-prehled" class="obrazovka">
-        <h1>Sezení</h1>
+        <h1 class="vizualne-skryte">Sezení</h1>
         <div class="dva-sloupce">
           <div class="hlavni-sloupec">
         <div class="sezeni-hlavicka">
@@ -66,11 +66,9 @@
         <div id="sezeni-pred">
           <div class="sekce-hlava"><h2>Před hrou</h2><span class="ulozeni" id="sezeni-souhrn"></span></div>
           <ul class="kontrolni-stav" id="sezeni-kontrola"></ul>
+          <ul class="stitky-ok" id="sezeni-v-poradku" aria-label="V pořádku"></ul>
         </div>
 
-        <h2 id="sezeni-poznamky-nadpis">Poznámky ze stolu</h2>
-        <p class="uvod" id="sezeni-poznamky-popis">Zapisuješ je klávesou F2 nebo tlačítkem Poznámka v horní liště, ukládají se s časem do souboru sezení.</p>
-        <ol class="poznamky" id="sezeni-poznamky"></ol>
 
           </div>
           <aside class="bocni-sloupec">
@@ -101,6 +99,11 @@
           <button type="button" id="git-stahnout" hidden>Stáhnout změny</button>
         </div>
         <p class="ulozeni" id="git-vysledek" aria-live="polite"></p>
+          </section>
+          <section class="karta bocni-karta karta-poznamky" aria-labelledby="sezeni-poznamky-nadpis">
+            <div class="sekce-hlava"><h2 id="sezeni-poznamky-nadpis">Poznámky ze stolu</h2><span class="ulozeni">F2 = nová</span></div>
+            <p class="uvod" id="sezeni-poznamky-popis"></p>
+            <ol class="poznamky" id="sezeni-poznamky"></ol>
           </section>
           </aside>
         </div>

@@ -92,10 +92,26 @@ function ukazObrazovku(jmeno) {
     if (a.dataset.obrazovka === cil) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   }
+  if (cil === 'nastaveni') ukazKategorii(KATEGORIE_KOTVY[kotva] ?? stav.nastaveniKat ?? 'obs', kotva);
   vykresliSceny();
-  if (kotva) document.getElementById(kotva)?.scrollIntoView({ block: 'start' });
+  if (kotva && cil !== 'nastaveni') document.getElementById(kotva)?.scrollIntoView({ block: 'start' });
 }
 window.addEventListener('hashchange', () => ukazObrazovku(location.hash.slice(1)));
+
+/* Nastavení po kategoriích: vlevo seznam, vpravo jen otevřená kategorie (rozhodnutí 65). */
+const KATEGORIE_KOTVY = {
+  'nastaveni-obs': 'obs', 'nastaveni-role': 'obs', 'nastaveni-svetla': 'svetla', 'nastaveni-zvuk': 'zvuk',
+  'nastaveni-vystupy': 'vystupy', 'nastaveni-hub': 'hub',
+};
+function ukazKategorii(k, kotva) {
+  stav.nastaveniKat = k;
+  for (const sekce of document.querySelectorAll('.kategorie')) sekce.hidden = sekce.dataset.kategorie !== k;
+  for (const a of document.querySelectorAll('.nastaveni-kategorie a')) {
+    if (a.dataset.kategorie === k) a.setAttribute('aria-current', 'page');
+    else a.removeAttribute('aria-current');
+  }
+  if (kotva === 'nastaveni-role') document.getElementById(kotva)?.scrollIntoView({ block: 'start' });
+}
 // Rozbalený Systém se zavře klikem mimo něj nebo po výběru kontrolky.
 document.addEventListener('click', (e) => {
   const sys = $('#system');
@@ -333,6 +349,7 @@ function vykresliKontrolky() {
     tecky.at(-1).dataset.stav = svetlo.dataset.stav;
   }
   $('#system-tecky').replaceChildren(...tecky);
+  for (const t of document.querySelectorAll('.nastaveni-kategorie .svetlo[data-z]')) t.dataset.stav = $(`#svetlo-${t.dataset.z}`).dataset.stav;
   const spatne = tecky.filter((t) => ['chyba', 'varovani'].includes(t.dataset.stav)).length;
   $('#system-souhrn').setAttribute('aria-label', spatne ? `Stav systému: ${spatne} hlásí problém` : 'Stav systému: vše běží');
 }
@@ -530,9 +547,9 @@ $('#zkontrolovat').addEventListener('click', async () => vykresliKontrolu(await 
 
 function vykresliNastaveni(n) {
   if (!n) return;
-  $('#pole-obs-url').value = n.obsUrl;
+  if (document.activeElement !== $('#pole-obs-url')) $('#pole-obs-url').value = n.obsUrl;
   $('#pole-obs-heslo').placeholder = n.obsHesloNastaveno ? 'Heslo je uložené. Vyplň jen při změně.' : 'Heslo z OBS';
-  $('#pole-port').value = n.port;
+  if (document.activeElement !== $('#pole-port')) $('#pole-port').value = n.port;
   $('#pole-domaci-sit').checked = n.domaciSit;
   $('#pole-pin').placeholder = n.pinNastaven ? 'PIN je uložený. Vyplň jen při změně.' : '6–8 číslic';
   if (document.activeElement !== $('#pole-hue-bridge')) $('#pole-hue-bridge').value = n.hueBridge ?? '';
@@ -579,30 +596,40 @@ for (const select of document.querySelectorAll('.role-sceny select')) {
   });
 }
 
-$('#formular-nastaveni').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const f = new FormData(e.target);
-  const telo = {
-    obsUrl: f.get('obsUrl').trim(),
-    port: Number(f.get('port')),
-    domaciSit: f.get('domaciSit') === 'on',
-  };
-  if (f.get('obsHeslo')) telo.obsHeslo = f.get('obsHeslo');
-  if (f.get('pin')) telo.pin = f.get('pin');
-  const vysledek = $('#nastaveni-vysledek');
+/* Nastavení se ukládá samo (rozhodnutí 65): každé pole po změně, „Uloženo ✓“ u něj.
+   Heslo OBS a PIN mají vlastní tlačítko, ať se neuloží rozepsané. */
+async function ulozitNastaveni(telo, pole, { chybaDo } = {}) {
   try {
-    const odpoved = await api('/api/nastaveni', { metoda: 'PUT', telo });
-    $('#pole-obs-heslo').value = '';
-    $('#pole-pin').value = '';
-    vysledek.className = 'ulozeni';
-    vysledek.textContent = odpoved.potrebaRestartu
-      ? 'Nastavení uloženo. Změna portu nebo přístupu z domácí sítě se projeví po restartu Hubu (tlačítko níž).'
-      : `Nastavení uloženo v ${cas()}.`;
-    await nactiPrehled();
+    const r = await api('/api/nastaveni', { metoda: 'PUT', telo });
+    stav.prehled.nastaveni = r.nastaveni;
+    vykresliNastaveni(r.nastaveni);
+    if (pole) oznacUlozeno(pole);
+    if (r.potrebaRestartu) {
+      $('#nastaveni-vysledek').className = 'ulozeni';
+      $('#nastaveni-vysledek').textContent = 'Změna portu nebo přístupu z domácí sítě se projeví po restartu Hubu (níž).';
+    }
+    return r;
   } catch (chyba) {
-    vysledek.className = 'ulozeni chyba';
-    vysledek.textContent = `Neuloženo: ${chyba.message}`;
+    const kam = chybaDo ?? $('#nastaveni-vysledek');
+    kam.className = 'ulozeni chyba';
+    kam.textContent = `Neuloženo: ${chyba.message}`;
+    vykresliNastaveni(stav.prehled?.nastaveni);
+    return null;
   }
+}
+
+$('#pole-obs-url').addEventListener('change', (e) => ulozitNastaveni({ obsUrl: e.target.value.trim() }, e.target, { chybaDo: $('#napoveda-heslo') }));
+$('#obs-heslo-ulozit').addEventListener('click', async () => {
+  const pole = $('#pole-obs-heslo');
+  if (!pole.value) return pole.focus();
+  if (await ulozitNastaveni({ obsHeslo: pole.value }, pole, { chybaDo: $('#napoveda-heslo') })) pole.value = '';
+});
+$('#pole-port').addEventListener('change', (e) => ulozitNastaveni({ port: Number(e.target.value) }, e.target));
+$('#pole-domaci-sit').addEventListener('change', (e) => ulozitNastaveni({ domaciSit: e.target.checked }, e.target.closest('label')));
+$('#pin-ulozit').addEventListener('click', async () => {
+  const pole = $('#pole-pin');
+  if (!pole.value) return pole.focus();
+  if (await ulozitNastaveni({ pin: pole.value }, pole)) pole.value = '';
 });
 
 /* ---------- Data ze serveru ---------- */
@@ -2319,32 +2346,35 @@ $('#hue-sparovat').addEventListener('click', async () => {
   }
 });
 
-$('#svetla-ulozit').addEventListener('click', async () => {
+/** Seznamy zařízení rolí z výběru Hue světel a pole WiZ lamp. */
+function seznamyRoli() {
   const role = { hlavni: [], pozadi: [], lampa: [] };
   const n = stav.prehled?.nastaveni ?? {};
   // Hue světla podle výběru; když se z bridge nenačetla, zůstanou uložená.
   if (stav.hueSvetla?.length) {
-    for (const s of document.querySelectorAll('#hue-svetla select')) if (s.value) role[s.value].push(`hue:${s.dataset.hue}`);
+    for (const v of document.querySelectorAll('#hue-svetla select')) if (v.value) role[v.value].push(`hue:${v.dataset.hue}`);
   } else {
     for (const [r, klic] of [['hlavni', 'svetlaHlavni'], ['pozadi', 'svetlaPozadi'], ['lampa', 'svetlaLampa']]) {
       role[r].push(...String(n[klic] ?? '').split(',').filter((x) => x.startsWith('hue:')));
     }
   }
   for (const ip of $('#pole-wiz').value.split(/[,\s]+/).map((x) => x.trim()).filter(Boolean)) role.lampa.push(`wiz:${ip}`);
-  const vysledek = $('#svetla-vysledek');
-  try {
-    const odpoved = await api('/api/nastaveni', {
-      metoda: 'PUT',
-      telo: { hueBridge: $('#pole-hue-bridge').value.trim(), svetlaHlavni: role.hlavni.join(','), svetlaPozadi: role.pozadi.join(','), svetlaLampa: role.lampa.join(','), blesky: $('#pole-blesky').checked },
-    });
-    stav.prehled.nastaveni = odpoved.nastaveni;
-    vysledek.className = 'ulozeni';
-    vysledek.textContent = `Světla uložena v ${cas()}. Ověřuji zařízení…`;
-    vykresliNastaveni(odpoved.nastaveni);
-  } catch (chyba) {
-    vysledek.className = 'ulozeni chyba';
-    vysledek.textContent = `Neuloženo: ${chyba.message}`;
+  return { svetlaHlavni: role.hlavni.join(','), svetlaPozadi: role.pozadi.join(','), svetlaLampa: role.lampa.join(',') };
+}
+$('#hue-svetla').addEventListener('change', (e) => {
+  if (e.target.matches('select')) ulozitNastaveni(seznamyRoli(), e.target, { chybaDo: $('#svetla-vysledek') });
+});
+$('#pole-wiz').addEventListener('change', (e) => ulozitNastaveni(seznamyRoli(), e.target, { chybaDo: $('#svetla-vysledek') }));
+$('#pole-blesky').addEventListener('change', (e) => ulozitNastaveni({ blesky: e.target.checked }, e.target.closest('label'), { chybaDo: $('#svetla-vysledek') }));
+$('#pole-hue-bridge').addEventListener('change', async (e) => {
+  const n = stav.prehled?.nastaveni ?? {};
+  const nova = e.target.value.trim();
+  // Jiná adresa bridge zruší spárování (jiný klíč i certifikát): zeptat se.
+  if (n.hueSparovano && nova !== n.hueBridge && !confirm(`Změna adresy zruší spárování s bridgem ${n.hueBridge}. Pokračovat?`)) {
+    e.target.value = n.hueBridge;
+    return;
   }
+  await ulozitNastaveni({ hueBridge: nova }, e.target, { chybaDo: $('#hue-stav') });
 });
 
 for (const b of document.querySelectorAll('[data-test-role]')) {
@@ -2462,20 +2492,13 @@ for (const b of document.querySelectorAll('[data-zkusebni]')) {
   });
 }
 
-$('#zvuk-ulozit').addEventListener('click', async () => {
-  const vysledek = $('#zvuk-vysledek');
-  try {
-    const r = await api('/api/nastaveni', { metoda: 'PUT', telo: { zvukSlozka: $('#pole-zvuk-slozka').value.trim(), zvukOtevrit: $('#pole-zvuk-otevrit').checked } });
-    stav.prehled.nastaveni = r.nastaveni;
-    vysledek.className = 'ulozeni';
-    vysledek.textContent = `Uloženo v ${cas()}.`;
+$('#pole-zvuk-slozka').addEventListener('change', async (e) => {
+  if (await ulozitNastaveni({ zvukSlozka: e.target.value.trim() }, e.target, { chybaDo: $('#zvuk-vysledek') })) {
     await nactiPrehled();
     nactiZvukoveSoubory();
-  } catch (e) {
-    vysledek.className = 'ulozeni chyba';
-    vysledek.textContent = `Neuloženo: ${e.message}`;
   }
 });
+$('#pole-zvuk-otevrit').addEventListener('change', (e) => ulozitNastaveni({ zvukOtevrit: e.target.checked }, e.target.closest('label'), { chybaDo: $('#zvuk-vysledek') }));
 $('#zvuk-prohledat').addEventListener('click', async () => {
   try {
     stav.prehled.zvuk = await api('/api/zvuk/prohledat', { metoda: 'POST', telo: {} });

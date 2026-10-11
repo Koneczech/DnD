@@ -397,147 +397,166 @@
       </section>
 
       <section id="obrazovka-nastaveni" class="obrazovka" hidden>
-        <h1>Nastavení</h1>
-        <p class="uvod" id="nastaveni-uvod">Nastavení se ukládá do <code>hub/.env</code> na tomto počítači. Do Gitu se nikdy nedostane.</p>
-        <form id="formular-nastaveni" class="formular" autocomplete="off">
-          <fieldset id="nastaveni-obs">
-            <legend>OBS</legend>
-            <label>Adresa WebSocket serveru
-              <input name="obsUrl" id="pole-obs-url" placeholder="ws://127.0.0.1:4455">
-            </label>
-            <label>Heslo WebSocket serveru
-              <input name="obsHeslo" id="pole-obs-heslo" type="password" autocomplete="new-password">
-              <small id="napoveda-heslo">Najdeš ho v OBS: Tools → WebSocket Server Settings → Show Connect Info.</small>
-            </label>
-            <p class="poznamka">Které scény OBS jsou Start, Místo, Obchod, Souboj a „po odpočtu“, nastavíš níž v <a href="#nastaveni-role">Role scén v OBS</a>.</p>
-          </fieldset>
-          <fieldset>
-            <legend>Hub</legend>
-            <label class="kratke">Port
-              <input name="port" id="pole-port" type="number" min="1024" max="65535">
-            </label>
-            <label class="zaskrtavaci">
-              <input name="domaciSit" id="pole-domaci-sit" type="checkbox">
-              Povolit ovládání z jiného zařízení v domácí síti
-            </label>
-            <label class="kratke">PIN pro domácí síť
-              <input name="pin" id="pole-pin" type="password" inputmode="numeric" autocomplete="new-password" placeholder="6–8 číslic">
-            </label>
-          </fieldset>
-          <button type="submit" class="hlavni">Uložit nastavení</button>
-          <p class="ulozeni" id="nastaveni-vysledek" aria-live="polite"></p>
-        </form>
-        <section id="nastaveni-role" aria-labelledby="role-nadpis">
-        <h2 id="role-nadpis">Role scén v OBS</h2>
-        <p class="uvod">Řekni Hubu, která scéna v OBS co dělá. Na ni přepínají tlačítka Do OBS na U stolu, Ukázat v OBS a Souboj.</p>
-        <div class="formular role-sceny">
-          <label>Start (odpočet a rekapitulace)<select id="role-start" data-klic="scenaStart"></select></label>
-          <label>Místo<select id="role-misto" data-klic="scenaMisto"></select></label>
-          <label>Obchod<select id="role-obchod" data-klic="scenaObchod"></select></label>
-          <label>Souboj<select id="role-souboj" data-klic="scenaSouboj"></select></label>
-          <label>Po doběhnutí odpočtu přepnout na<select id="role-po-odpoctu" data-klic="scenaPoOdpoctu"></select></label>
+        <div class="stul-hlava">
+          <h1>Nastavení</h1>
+          <p class="stul-stav">Ukládá se samo do <code>hub/.env</code> na tomto počítači, do Gitu nikdy.</p>
         </div>
-        <p class="poznamka">Prázdná role = Hub nic nepřepíná, jen vymění obsah. „Po odpočtu“ Hub přepne jednou, hned jak odpočet doběhne.</p>
-        </section>
-        <h2 id="nastaveni-svetla">Světla</h2>
-        <p class="uvod">Světla znají jen role: <strong>hlavní</strong> (Hue v herně, drží nízkou sytost, aby šly číst deníky), <strong>pozadí</strong> (Hue ve vedlejší místnosti) a <strong>lampa</strong> (WiZ u stolu). Adresy a klíč se ukládají jen do <code>hub/.env</code> na tomto počítači.</p>
-        <div class="svetla-nastaveni">
-          <fieldset>
-            <legend>Hue bridge</legend>
-            <label>IP adresa bridge
-              <input id="pole-hue-bridge" placeholder="např. 192.168.1.20" inputmode="decimal" autocomplete="off">
-              <small>Najdeš ji v aplikaci Hue: Nastavení → Bridge Hue → i. Bridgi dej v routeru pevnou adresu.</small>
-            </label>
-            <div class="tlacitka"><button type="button" id="hue-sparovat">Spárovat</button></div>
-            <p class="ulozeni" id="hue-stav" aria-live="polite"></p>
-            <table class="udalosti" id="hue-svetla" hidden>
-              <thead><tr><th>Světlo na bridgi</th><th>Role</th></tr></thead>
-              <tbody></tbody>
-            </table>
-          </fieldset>
-          <fieldset>
-            <legend>WiZ lampa</legend>
-            <label>IP adresa lampy (víc lamp odděl čárkou)
-              <input id="pole-wiz" placeholder="např. 192.168.1.40" autocomplete="off">
-              <small>V aplikaci WiZ zapni Nastavení → Zabezpečení → <em>Allow local communication</em> a lampě dej v routeru pevnou adresu. Lampy jsou role lampa.</small>
-            </label>
-          </fieldset>
-          <label class="prepinac-zap"><input type="checkbox" id="pole-blesky" role="switch"> <span>Blesky při bouřce <small>· nejvýš 3 záblesky za sekundu; vypnuté = nebliká obraz ani světla</small></span></label>
-          <div class="tlacitka"><button type="button" class="hlavni" id="svetla-ulozit">Uložit světla</button></div>
-          <p class="ulozeni" id="svetla-vysledek" aria-live="polite"></p>
+        <div class="nastaveni-rozlozeni">
+          <nav class="nastaveni-kategorie" aria-label="Kategorie nastavení">
+            <a href="#nastaveni-obs" data-kategorie="obs"><span>OBS a scény</span><span class="svetlo" data-z="obs"></span></a>
+            <a href="#nastaveni-svetla" data-kategorie="svetla"><span>Světla</span><span class="svetlo" data-z="svetla"></span></a>
+            <a href="#nastaveni-zvuk" data-kategorie="zvuk"><span>Zvuk</span><span class="svetlo" data-z="zvuk"></span></a>
+            <a href="#nastaveni-vystupy" data-kategorie="vystupy"><span>Výstupy pro OBS</span></a>
+            <a href="#nastaveni-hub" data-kategorie="hub"><span>Hub a domácí síť</span><span class="svetlo" data-z="server"></span></a>
+          </nav>
 
-          <h3>Zařízení</h3>
-          <ul class="kontrolni-stav" id="svetla-zarizeni"></ul>
-          <div class="tlacitka">
-            <button type="button" data-test-role="hlavni">Test hlavní</button>
-            <button type="button" data-test-role="pozadi">Test pozadí</button>
-            <button type="button" data-test-role="lampa">Test lampa</button>
-            <button type="button" id="svetla-overit">Zkontrolovat zařízení</button>
-          </div>
-          <h3>Výchozí stav</h3>
-          <p class="ulozeni" id="svetla-vychozi"></p>
-          <div class="tlacitka">
-            <button type="button" id="svetla-zachytit-vychozi" title="Nastav světla v aplikacích Hue a WiZ, pak klikni">Zachytit jako výchozí</button>
-            <button type="button" id="svetla-normal-nastaveni">Světla normál</button>
-          </div>
-          <p class="ulozeni chyba" id="svetla-chyby-vrstev" hidden></p>
-        </div>
+          <div class="nastaveni-obsah">
+            <section class="kategorie" id="nastaveni-obs" data-kategorie="obs">
+              <h2>Připojení k OBS</h2>
+              <div class="formular">
+                <label>Adresa WebSocket serveru
+                  <input id="pole-obs-url" placeholder="ws://127.0.0.1:4455" autocomplete="off">
+                </label>
+                <div class="pole-s-tlacitkem">
+                  <label>Heslo WebSocket serveru
+                    <input id="pole-obs-heslo" type="password" autocomplete="new-password">
+                  </label>
+                  <button type="button" id="obs-heslo-ulozit">Uložit heslo</button>
+                </div>
+                <small id="napoveda-heslo" class="poznamka">Najdeš ho v OBS: Tools → WebSocket Server Settings → Show Connect Info.</small>
+              </div>
+              <h2 id="nastaveni-role">Role scén v OBS</h2>
+              <p class="uvod">Na tyto scény přepínají tlačítka Do OBS na U stolu, Ukázat v OBS a Souboj.</p>
+              <div class="formular role-sceny">
+                <label>Start (odpočet a rekapitulace)<select id="role-start" data-klic="scenaStart"></select></label>
+                <label>Místo<select id="role-misto" data-klic="scenaMisto"></select></label>
+                <label>Obchod<select id="role-obchod" data-klic="scenaObchod"></select></label>
+                <label>Souboj<select id="role-souboj" data-klic="scenaSouboj"></select></label>
+                <label>Po doběhnutí odpočtu přepnout na<select id="role-po-odpoctu" data-klic="scenaPoOdpoctu"></select></label>
+              </div>
+              <p class="poznamka">Prázdná role = Hub nic nepřepíná, jen vymění obsah. „Po odpočtu“ Hub přepne jednou, hned jak odpočet doběhne.</p>
+            </section>
 
-        <h2 id="nastaveni-zvuk">Zvuk</h2>
-        <p class="uvod">Hudba hraje výstup <strong>Hudba</strong> v OBS (zvuk jde na TV), ambient a efekty stránka <strong>Zvuk u stolu</strong> do BT reproduktoru. Soubory leží ve složce mimo repo a Hub je pouští jen na tomto počítači. Postup nastavení je v <code>reference/zvuk.md</code>.</p>
-        <div class="svetla-nastaveni">
-          <label>Složka zvuku
-            <input id="pole-zvuk-slozka" autocomplete="off" spellcheck="false">
-            <small id="zvuk-slozka-stav"></small>
-          </label>
-          <label class="prepinac-zap"><input type="checkbox" id="pole-zvuk-otevrit" role="switch"> <span>Otevřít Zvuk u stolu při startu Hubu</span></label>
-          <div class="tlacitka">
-            <button type="button" class="hlavni" id="zvuk-ulozit">Uložit zvuk</button>
-            <button type="button" id="zvuk-prohledat">Načíst složku znovu</button>
-          </div>
-          <p class="ulozeni" id="zvuk-vysledek" aria-live="polite"></p>
-          <h3>Stránky zvuku</h3>
-          <ul class="kontrolni-stav" id="zvuk-stranky"></ul>
-          <div class="tlacitka">
-            <button type="button" id="zvuk-otevrit-stul">Otevřít Zvuk u stolu</button>
-            <button type="button" data-zkusebni="stul">Zkušební zvuk u stolu</button>
-            <button type="button" data-zkusebni="hudba">Zkušební zvuk v OBS</button>
-          </div>
-        </div>
+            <section class="kategorie" id="nastaveni-svetla" data-kategorie="svetla" hidden>
+              <div class="sekce-hlava"><h2>Zařízení</h2><button type="button" id="svetla-overit">Zkontrolovat</button></div>
+              <ul class="kontrolni-stav" id="svetla-zarizeni"></ul>
+              <div class="tlacitka">
+                <button type="button" data-test-role="hlavni">Bliknout hlavní</button>
+                <button type="button" data-test-role="pozadi">Bliknout pozadí</button>
+                <button type="button" data-test-role="lampa">Bliknout lampa</button>
+              </div>
 
-        <h2>Výstupy pro OBS</h2>
-        <p class="uvod">Adresy pro zdroje <em>Browser</em> v OBS. U každého zdroje nech vypnuté <em>Shutdown source when not visible</em> i <em>Refresh browser when scene becomes active</em>, jinak výstup nepřežije výpadek Hubu.</p>
-        <dl class="vystupy">
-          <dt>Místo</dt>
-          <dd><p class="adresa"><code id="adresa-misto">…</code> <button type="button" data-kopirovat="adresa-misto">Kopírovat adresu</button></p>
-            <small>Scéna Místo: 1920 × 1080 přes celé plátno, medailon kalendáře nad ním.</small></dd>
-          <dt>Hudba</dt>
-          <dd><p class="adresa"><code id="adresa-hudba">…</code> <button type="button" data-kopirovat="adresa-hudba">Kopírovat adresu</button></p>
-            <small>Zdroj <em>Hub – hudba</em>, 100 × 100, zapni <em>Control audio via OBS</em>. Přidej ho do každé scény jako existující zdroj, jinak hudba mimo jeho scénu ztichne.</small></dd>
-          <dt>Obchod</dt>
-          <dd><p class="adresa"><code id="adresa-cenik">…</code> <button type="button" data-kopirovat="adresa-cenik">Kopírovat adresu</button></p>
-            <small>Scéna Obchod: obrázek interiéru a ceník v pravé třetině, 1920 × 1080.</small></dd>
-          <dt>Odpočet</dt>
-          <dd><p class="adresa"><code id="adresa-odpoctu">…</code> <button type="button" data-kopirovat="adresa-odpoctu">Kopírovat adresu</button></p>
-            <small>Scéna Start: odpočet do začátku hry.</small></dd>
-          <dt>Rekapitulace</dt>
-          <dd><p class="adresa"><code id="adresa-rekapitulace">…</code> <button type="button" data-kopirovat="adresa-rekapitulace">Kopírovat adresu</button></p>
-            <small>Scéna Start pod odpočtem: protočí dny od začátku kampaně po dnešek a ukáže veřejné události.</small></dd>
-          <dt>Malý medailon</dt>
-          <dd><p class="adresa"><code id="adresa-orloj-maly">…</code> <button type="button" data-kopirovat="adresa-orloj-maly">Kopírovat adresu</button></p>
-            <small>Do rohu obrazu, 1000 × 270; lhůty se ukazují vlevo. <code>?zrcadlo=1</code> je dá doprava.</small></dd>
-          <dt>Velký orloj</dt>
-          <dd><p class="adresa"><code id="adresa-orloj-velky">…</code> <button type="button" data-kopirovat="adresa-orloj-velky">Kopírovat adresu</button></p>
-            <small>Celý rok s cestou družiny, 1080 × 1080. <code>?pozadi=1</code> přidá tmavé pozadí.</small></dd>
-          <dt>Testovací výstup</dt>
-          <dd><p class="adresa"><code id="adresa-vystupu">…</code> <button type="button" data-kopirovat="adresa-vystupu">Kopírovat adresu</button></p>
-            <small>Jen pro zkoušku: ukáže datum, místo a sezení a ověří, že živé změny dorazí do OBS.</small></dd>
-        </dl>
+              <h2>Přiřazení rolí</h2>
+              <p class="uvod">Role: <strong>hlavní</strong> (herna, nízká sytost kvůli čtení), <strong>pozadí</strong> (vedlejší místnost), <strong>lampa</strong> (u stolu).</p>
+              <table class="udalosti" id="hue-svetla" hidden>
+                <thead><tr><th>Světlo na Hue bridgi</th><th>Role</th></tr></thead>
+                <tbody></tbody>
+              </table>
+              <div class="formular">
+                <label>WiZ lampy (IP adresy oddělené čárkou, role lampa)
+                  <input id="pole-wiz" placeholder="např. 192.168.0.87" autocomplete="off">
+                  <small>V aplikaci WiZ zapni Nastavení → Zabezpečení → <em>Allow local communication</em> a lampě dej v routeru pevnou adresu.</small>
+                </label>
+              </div>
+              <p class="ulozeni" id="svetla-vysledek" aria-live="polite"></p>
 
-        <h2 id="nastaveni-hub">Hub</h2>
-        <div class="server-blok">
-          <p class="poznamka" id="server-info"></p>
-          <button type="button" id="tlacitko-restart">Restartovat Hub</button>
+              <h2>Hue bridge</h2>
+              <div class="formular">
+                <div class="pole-s-tlacitkem">
+                  <label>IP adresa bridge
+                    <input id="pole-hue-bridge" placeholder="např. 192.168.0.101" inputmode="decimal" autocomplete="off">
+                  </label>
+                  <button type="button" id="hue-sparovat">Spárovat</button>
+                </div>
+                <small class="poznamka">Najdeš ji v aplikaci Hue: Nastavení → Bridge Hue → i. Před Spárovat stiskni kulaté tlačítko na bridgi.</small>
+                <p class="ulozeni" id="hue-stav" aria-live="polite"></p>
+              </div>
+
+              <h2>Výchozí stav a bezpečnost</h2>
+              <p class="ulozeni" id="svetla-vychozi"></p>
+              <div class="tlacitka">
+                <button type="button" id="svetla-zachytit-vychozi" title="Nastav světla v aplikacích Hue a WiZ, pak klikni">Zachytit z aplikací jako výchozí</button>
+                <button type="button" id="svetla-normal-nastaveni">Světla normál</button>
+              </div>
+              <label class="prepinac-zap samostatny"><input type="checkbox" id="pole-blesky" role="switch"> <span>Blesky při bouřce <small>· nejvýš 3 záblesky za sekundu; vypnuté = nebliká obraz ani světla</small></span></label>
+              <p class="ulozeni chyba" id="svetla-chyby-vrstev" hidden></p>
+            </section>
+
+            <section class="kategorie" id="nastaveni-zvuk" data-kategorie="zvuk" hidden>
+              <div class="sekce-hlava"><h2>Stránky zvuku</h2><button type="button" id="zvuk-otevrit-stul">Otevřít Zvuk u stolu</button></div>
+              <ul class="kontrolni-stav" id="zvuk-stranky"></ul>
+              <div class="tlacitka">
+                <button type="button" data-zkusebni="stul">Zkušební zvuk u stolu</button>
+                <button type="button" data-zkusebni="hudba">Zkušební zvuk v OBS</button>
+              </div>
+              <h2>Složka zvuku</h2>
+              <div class="formular siroky">
+                <div class="pole-s-tlacitkem">
+                  <label>Složka se zvukovými soubory (mimo repo)
+                    <input id="pole-zvuk-slozka" autocomplete="off" spellcheck="false">
+                  </label>
+                  <button type="button" id="zvuk-prohledat">Načíst znovu</button>
+                </div>
+                <small id="zvuk-slozka-stav" class="poznamka"></small>
+                <p class="ulozeni" id="zvuk-vysledek" aria-live="polite"></p>
+              </div>
+              <label class="prepinac-zap samostatny"><input type="checkbox" id="pole-zvuk-otevrit" role="switch"> <span>Otevřít Zvuk u stolu při startu Hubu</span></label>
+              <p class="poznamka">Hudba hraje výstup Hudba v OBS (zvuk na TV), ambient a efekty stránka Zvuk u stolu do BT reproduktoru. Postup v <code>reference/zvuk.md</code>.</p>
+            </section>
+
+            <section class="kategorie" id="nastaveni-vystupy" data-kategorie="vystupy" hidden>
+              <h2>Výstupy pro OBS</h2>
+              <p class="uvod">Adresy pro zdroje <em>Browser</em> v OBS. U každého zdroje nech vypnuté <em>Shutdown source when not visible</em> i <em>Refresh browser when scene becomes active</em>.</p>
+              <dl class="vystupy">
+                <dt>Místo</dt>
+                <dd><p class="adresa"><code id="adresa-misto">…</code> <button type="button" data-kopirovat="adresa-misto">Kopírovat adresu</button></p>
+                  <small>Scéna Místo: 1920 × 1080 přes celé plátno, medailon kalendáře nad ním.</small></dd>
+                <dt>Hudba</dt>
+                <dd><p class="adresa"><code id="adresa-hudba">…</code> <button type="button" data-kopirovat="adresa-hudba">Kopírovat adresu</button></p>
+                  <small>Zdroj <em>Hub – hudba</em>, 100 × 100, zapni <em>Control audio via OBS</em>. Přidej ho do každé scény jako existující zdroj, jinak hudba mimo jeho scénu ztichne.</small></dd>
+                <dt>Obchod</dt>
+                <dd><p class="adresa"><code id="adresa-cenik">…</code> <button type="button" data-kopirovat="adresa-cenik">Kopírovat adresu</button></p>
+                  <small>Scéna Obchod: obrázek interiéru a ceník v pravé třetině, 1920 × 1080.</small></dd>
+                <dt>Odpočet</dt>
+                <dd><p class="adresa"><code id="adresa-odpoctu">…</code> <button type="button" data-kopirovat="adresa-odpoctu">Kopírovat adresu</button></p>
+                  <small>Scéna Start: odpočet do začátku hry.</small></dd>
+                <dt>Rekapitulace</dt>
+                <dd><p class="adresa"><code id="adresa-rekapitulace">…</code> <button type="button" data-kopirovat="adresa-rekapitulace">Kopírovat adresu</button></p>
+                  <small>Scéna Start pod odpočtem: protočí dny od začátku kampaně po dnešek a ukáže veřejné události.</small></dd>
+                <dt>Malý medailon</dt>
+                <dd><p class="adresa"><code id="adresa-orloj-maly">…</code> <button type="button" data-kopirovat="adresa-orloj-maly">Kopírovat adresu</button></p>
+                  <small>Do rohu obrazu, 1000 × 270; lhůty se ukazují vlevo. <code>?zrcadlo=1</code> je dá doprava.</small></dd>
+                <dt>Velký orloj</dt>
+                <dd><p class="adresa"><code id="adresa-orloj-velky">…</code> <button type="button" data-kopirovat="adresa-orloj-velky">Kopírovat adresu</button></p>
+                  <small>Celý rok s cestou družiny, 1080 × 1080. <code>?pozadi=1</code> přidá tmavé pozadí.</small></dd>
+                <dt>Testovací výstup</dt>
+                <dd><p class="adresa"><code id="adresa-vystupu">…</code> <button type="button" data-kopirovat="adresa-vystupu">Kopírovat adresu</button></p>
+                  <small>Jen pro zkoušku: ukáže datum, místo a sezení a ověří, že živé změny dorazí do OBS.</small></dd>
+              </dl>
+            </section>
+
+            <section class="kategorie" id="nastaveni-hub" data-kategorie="hub" hidden>
+              <h2>Hub a domácí síť</h2>
+              <div class="formular">
+                <label class="kratke">Port
+                  <input id="pole-port" type="number" min="1024" max="65535">
+                </label>
+                <label class="prepinac-zap"><input id="pole-domaci-sit" type="checkbox" role="switch"> <span>Ovládání z jiného zařízení v domácí síti</span></label>
+                <div class="pole-s-tlacitkem">
+                  <label class="kratke">PIN pro domácí síť
+                    <input id="pole-pin" type="password" inputmode="numeric" autocomplete="new-password" placeholder="6–8 číslic">
+                  </label>
+                  <button type="button" id="pin-ulozit">Uložit PIN</button>
+                </div>
+                <p class="ulozeni" id="nastaveni-vysledek" aria-live="polite"></p>
+              </div>
+              <h2>Restart</h2>
+              <div class="server-blok">
+                <p class="poznamka" id="server-info"></p>
+                <button type="button" class="nebezpecne" id="tlacitko-restart">Restartovat Hub</button>
+              </div>
+            </section>
+          </div>
         </div>
       </section>
     </main>

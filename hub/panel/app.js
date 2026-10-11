@@ -521,6 +521,12 @@ function nahledMista(zobrazit, roleVObs) {
   const iniciativa = stav.prehled?.iniciativa?.odkaz;
   const cil = !zobrazit ? 'about:blank' : roleVObs === 'souboj' && iniciativa ? iniciativa : NAHLEDY[roleVObs] ?? NAHLEDY.misto;
   if (ramec.getAttribute('src') !== cil) ramec.setAttribute('src', cil);
+  // Při souboji leží v OBS pod Player View zdroj Hub – místo: náhled skládá stejné dvě vrstvy.
+  const podklad = $('#stul-nahled-podklad');
+  const sPodkladem = zobrazit && roleVObs === 'souboj' && Boolean(iniciativa);
+  const cilPodkladu = sPodkladem ? NAHLEDY.misto : 'about:blank';
+  if (podklad.getAttribute('src') !== cilPodkladu) podklad.setAttribute('src', cilPodkladu);
+  podklad.hidden = !sPodkladem;
   $('#nahled-zive').hidden = !roleVObs || !(NAHLEDY[roleVObs] || (roleVObs === 'souboj' && iniciativa));
 }
 new ResizeObserver(([zaznam]) => {

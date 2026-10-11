@@ -23,6 +23,7 @@ import { Scena } from './scena.js';
 import { Svetla, ROLE as ROLE_SVETEL } from './svetla.js';
 import { Hue } from './zarizeni/hue.js';
 import { Zvuk, TYPY_ZVUKU } from './zvuk.js';
+import { Iniciativa } from './iniciativa.js';
 import { createReadStream } from 'node:fs';
 import { nacistStyl, sestavPrompt, ZABERY } from './dilna.js';
 
@@ -153,6 +154,7 @@ export class Hub {
       mista: () => [...this.mista.mista.values()],
     });
     this.data.dalsiKontroly = () => this.zvuk.kontrola();
+    this.iniciativa = new Iniciativa({ cesty: this.c, obs: this.obs });
     this.sparovatHue = sparovatHue ?? ((v) => Hue.sparovat(v));
     this.casovacOdpoctu = null;
     this.server = null;
@@ -196,7 +198,11 @@ export class Hub {
     this.obs.on('stav', (s) => {
       this.vysilac.vyslat('obs', s);
       if (s.pripojeno) this.hlidatOdpocet();
+      // Po (opětovném) připojení OBS dostane poslední odkaz na Player View.
+      if (s.pripojeno && !this.obsBylPripojen) this.iniciativa.doObs().catch(() => {});
+      this.obsBylPripojen = s.pripojeno;
     });
+    this.iniciativa.on('stav', (s) => this.vysilac.vyslat('iniciativa', s));
     this.odpocet.on('stav', (s) => {
       this.vysilac.vyslat('odpocet', s);
       this.hlidatOdpocet();
@@ -233,6 +239,8 @@ export class Hub {
     await this.scena.nacist();
     await this.svetla.nacist();
     await this.zvuk.nacist();
+    await this.iniciativa.nacist();
+    if (this.obs.pripojeno) this.iniciativa.doObs().catch(() => {});
     await this.odpocet.nacist();
     this.vysilac.vyslat('odpocet', this.odpocet.verejny());
     this.vysilac.vyslat('verze', await otiskKodu([this.c.panel, this.c.vystupy, path.join(HUB_DIR, 'sdilene')]));
@@ -359,6 +367,7 @@ export class Hub {
       svetla: this.svetla.verejny(),
       zvuk: this.zvuk.stav(),
       obs: this.obs.verejnyStav(),
+      iniciativa: this.iniciativa.verejny(),
       git: this.git.stav,
       nastaveni: this.nastaveni.verejne(),
       prostredi: this.prostredi,
@@ -556,6 +565,10 @@ export class Hub {
       return poslatJson(res, 200, await mapa[akce]());
     }
     if (p === '/api/odpocet' && m === 'GET') return poslatJson(res, 200, this.odpocet.verejny());
+    if (p === '/api/iniciativa' && m === 'PUT') {
+      const telo = await nacistJson(req);
+      return poslatJson(res, 200, await this.iniciativa.nastavit(telo.odkaz));
+    }
     if ((p === '/api/souboj' || p === '/api/obs/souboj') && m === 'POST') {
       const telo = await nacistJson(req);
       return poslatJson(res, 200, await this.souboj(telo.zapnout !== false));

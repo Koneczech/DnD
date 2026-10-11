@@ -505,9 +505,11 @@ $('#stul-zalozky').addEventListener('keydown', (e) => {
 /** Živý náhled výstupu místa: iframe 1920 × 1080 zmenšený na šířku rámečku, jen dokud je panel vidět. */
 function nahledMista(zobrazit, roleVObs) {
   const ramec = $('#stul-nahled-ramec');
-  const cil = !zobrazit ? 'about:blank' : NAHLEDY[roleVObs] ?? NAHLEDY.misto;
+  // Souboj: náhled je Player View z Improved Initiative (bez CSS carouselu z OBS).
+  const iniciativa = stav.prehled?.iniciativa?.odkaz;
+  const cil = !zobrazit ? 'about:blank' : roleVObs === 'souboj' && iniciativa ? iniciativa : NAHLEDY[roleVObs] ?? NAHLEDY.misto;
   if (ramec.getAttribute('src') !== cil) ramec.setAttribute('src', cil);
-  $('#nahled-zive').hidden = !roleVObs || !NAHLEDY[roleVObs];
+  $('#nahled-zive').hidden = !roleVObs || !(NAHLEDY[roleVObs] || (roleVObs === 'souboj' && iniciativa));
 }
 new ResizeObserver(([zaznam]) => {
   const sirka = zaznam.contentRect.width;
@@ -674,6 +676,7 @@ function prekresli() {
   vykresliSvetla();
   vykresliSouboj();
   vykresliZvuk();
+  vykresliIniciativu();
 }
 
 async function nactiPrehled() {
@@ -705,6 +708,12 @@ function pripojitUdalosti() {
     obchody: aktualizuj('obchody'),
     mista: aktualizuj('mista'),
     server: aktualizuj('server'),
+    iniciativa: (data) => {
+      if (!stav.prehled) return;
+      stav.prehled.iniciativa = data;
+      vykresliIniciativu();
+      vykresliSceny();
+    },
     scena: (data) => {
       if (!stav.prehled) return;
       stav.prehled.scena = data;
@@ -1013,6 +1022,44 @@ function vykresliSouboj() {
 }
 
 $('#souboj-prepnout').addEventListener('click', () => $('#tlacitko-souboj').click());
+
+/* Player View: Improved Initiative dává pro každé setkání nový odkaz (otevřený bod 69). */
+function vykresliIniciativu() {
+  const i = stav.prehled?.iniciativa;
+  const pole = $('#iniciativa-pole');
+  if (document.activeElement !== pole) pole.value = i?.odkaz ?? '';
+  const el = $('#iniciativa-stav');
+  // Odmítnutý odkaz zůstane ohlášený, dokud DM nevloží platný.
+  el.className = stav.iniciativaChyba ? 'ulozeni chyba' : i?.chyba ? 'ulozeni varovani' : 'ulozeni';
+  el.textContent = stav.iniciativaChyba
+    ?? (!i?.odkaz ? 'Vlož odkaz na Player View: Hub ho dá do OBS i do náhledu.' : i.chyba ?? `V OBS: ${i.zdroje.join(', ')}`);
+}
+async function ulozitIniciativu(odkaz) {
+  try {
+    const r = await api('/api/iniciativa', { metoda: 'PUT', telo: { odkaz } });
+    stav.iniciativaChyba = null;
+    stav.prehled.iniciativa = r;
+    vykresliIniciativu();
+    vykresliSceny();
+    if (!r.chyba) toast('Player View je v OBS.');
+  } catch (chyba) {
+    stav.iniciativaChyba = chyba.message;
+    vykresliIniciativu();
+  }
+}
+// Enter i opuštění pole vyvolá change; odeslání formuláře jen zastavit, ať se neukládá dvakrát.
+$('#iniciativa-formular').addEventListener('submit', (e) => e.preventDefault());
+$('#iniciativa-pole').addEventListener('change', (e) => e.target.value.trim() && ulozitIniciativu(e.target.value));
+$('#iniciativa-schranka').addEventListener('click', async () => {
+  try {
+    const text = await navigator.clipboard.readText();
+    $('#iniciativa-pole').value = text.trim();
+    await ulozitIniciativu(text);
+  } catch {
+    toast('Schránku se nepodařilo přečíst. Vlož odkaz do pole ručně (Ctrl+V).', { chyba: true });
+    $('#iniciativa-pole').focus();
+  }
+});
 $('#tlacitko-souboj').addEventListener('click', async () => {
   const zapnout = stav.prehled?.scena?.rezim !== 'souboj';
   try {

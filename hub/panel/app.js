@@ -558,6 +558,8 @@ $('#zkontrolovat').addEventListener('click', async () => vykresliKontrolu(await 
 /* ---------- Nastavení ---------- */
 
 function vykresliNastaveni(n) {
+  // Stav přihlášení Improved Initiative závisí i na nastavení (relace vložená / odebraná).
+  queueMicrotask(vykresliIniciativu);
   if (!n) return;
   if (document.activeElement !== $('#pole-obs-url')) $('#pole-obs-url').value = n.obsUrl;
   $('#pole-obs-heslo').placeholder = n.obsHesloNastaveno ? 'Heslo je uložené. Vyplň jen při změně.' : 'Heslo z OBS';

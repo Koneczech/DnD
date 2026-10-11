@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import crypto from 'node:crypto';
-import { PruchodIniciativy, povolitPozadavek, hlavickyNaCil, hlavickyZpet, CIL } from '../server/iniciativa-pruchod.js';
+import { PruchodIniciativy, povolitPozadavek, hlavickyNaCil, hlavickyZpet, CIL, vlozitSkript, SKRIPT_NASTAVENI } from '../server/iniciativa-pruchod.js';
 import { hodnotaRelace } from '../server/nastaveni.js';
 
 const falesnaRelace = () => `s%3A${crypto.randomBytes(12).toString('hex')}.${crypto.randomBytes(8).toString('hex')}`;
@@ -48,6 +48,11 @@ test('průchod přidá relaci, odstraní cookie z odpovědi a nahlásí obnoveno
   const prijate = [];
   const cil = http.createServer((req, res) => {
     prijate.push({ cesta: req.url, cookie: req.headers.cookie, host: req.headers.host });
+    prijate.at(-1).kodovani = req.headers['accept-encoding'];
+    if (req.url === '/e/') {
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'set-cookie': `connect.sid=${obnovena}; Path=/` });
+      return res.end('<html><head><title>II</title></head><body>editor</body></html>');
+    }
     res.writeHead(200, { 'content-type': 'text/plain', 'set-cookie': `connect.sid=${obnovena}; Path=/` });
     res.end(req.url === '/my' ? '{}' : 'ok');
   });
@@ -61,19 +66,30 @@ test('průchod přidá relaci, odstraní cookie z odpovědi a nahlásí obnoveno
   const nove = [];
   pruchod.on('relace', (x) => nove.push(x));
 
-  const odpoved = await fetch(`http://127.0.0.1:${pruchod.port}/e/`);
+  const odpoved = await fetch(`http://127.0.0.1:${pruchod.port}/e/`, { headers: { 'accept-encoding': 'gzip' } });
   assert.equal(odpoved.status, 200);
-  assert.equal(await odpoved.text(), 'ok');
+  const html = await odpoved.text();
+  assert.ok(html.startsWith(`<html><head>${SKRIPT_NASTAVENI}<title>`), 'skript s nastavením je první v <head>');
+  assert.equal(prijate[0].kodovani, 'identity', 'editor průchod chce nekomprimovaný');
   assert.equal(odpoved.headers.get('set-cookie'), null, 'prohlížeč relaci nedostane');
   assert.equal(prijate[0].cookie, `connect.sid=${relace}`);
   assert.equal(prijate[0].host, CIL);
   assert.deepEqual(nove, [obnovena]);
 
+  const jine = await fetch(`http://127.0.0.1:${pruchod.port}/whatsnew/`);
+  assert.equal(await jine.text(), 'ok', 'ostatní odpovědi beze změny');
+
   const smazat = await fetch(`http://127.0.0.1:${pruchod.port}/my`, { method: 'DELETE' });
   assert.equal(smazat.status, 403);
-  assert.equal(prijate.length, 1, 'smazání účtu na server vůbec nedojde');
+  assert.equal(prijate.length, 2, 'smazání účtu na server vůbec nedojde');
 
   assert.equal(await pruchod.overit(), true);
   await pruchod.zastavit();
   await new Promise((r) => cil.close(r));
+});
+
+test('skript s nastavením se vloží jen do stránky s <head> a nic tajného neobsahuje', () => {
+  assert.equal(vlozitSkript('<p>bez hlavy</p>'), '<p>bez hlavy</p>');
+  assert.ok(vlozitSkript('<HEAD lang="en">x').startsWith('<HEAD lang="en"><script>'));
+  assert.doesNotMatch(SKRIPT_NASTAVENI, /connect\.sid/);
 });

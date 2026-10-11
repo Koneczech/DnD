@@ -544,7 +544,10 @@ export class Svetla extends EventEmitter {
       this.pulzBezi = false;
       clearTimeout(this.casovacPulzu);
       this.casovacPulzu = null;
-      for (const z of this.zarizeni.values()) clearInterval(z.prelivani);
+      for (const z of this.zarizeni.values()) {
+        clearInterval(z.prelivani);
+        z.pulzCeka = null; // čekající krok pulzu už nepošle; návrat ke scéně jde po tom, co je na cestě
+      }
       for (const z of this.zarizeni.values()) if (ROLE_PRI_HP.includes(z.role)) z.posledni = null;
       if (this.mistni.ridit) this.aplikovat({ prechodMs: Math.round(n.pozadi.nabeh_s * 1000) }).catch(() => {});
       else this.normal().catch(() => {}); // po zkoušce bez Řídit světla zpět na výchozí stav
@@ -553,13 +556,38 @@ export class Svetla extends EventEmitter {
   }
 
   /**
+   * Příkaz pulzu na WiZ: nejvýš jeden na cestě, další čeká jen ten poslední. WiZ čeká na odpověď
+   * lampy (často déle než krok 150 ms); bez toho by se příkazy hromadily ve frontě a lampa by
+   * pulzovala ještě dlouho po konci tahu.
+   */
+  poslatPulz(z, cil) {
+    if (z.pulzNaCeste) {
+      z.pulzCeka = cil;
+      return;
+    }
+    z.pulzNaCeste = true;
+    this.poslat(z, cil, 0)
+      .catch(() => {})
+      .finally(() => {
+        z.pulzNaCeste = false;
+        const dalsi = z.pulzCeka;
+        z.pulzCeka = null;
+        if (dalsi && this.pulzBezi) this.poslatPulz(z, dalsi);
+      });
+  }
+
+  /**
    * Plynulý přechod lampy: Hue dostane jeden příkaz s přechodem, WiZ přechod neumí,
    * proto ho Hub prolne sám po krocích 150 ms (plynulá změna, ne záblesk).
    */
   prelit(z, od, cil, ms) {
     clearInterval(z.prelivani);
-    if (z.typ === 'hue' || !od || ms < 300) {
+    if (z.typ === 'hue') {
       this.poslat(z, cil, ms).catch(() => {});
+      return;
+    }
+    if (!od || ms < 300) {
+      this.poslatPulz(z, cil);
       return;
     }
     const zacatek = Date.now();
@@ -568,7 +596,7 @@ export class Svetla extends EventEmitter {
       if (!this.pulzBezi) return clearInterval(z.prelivani);
       const t = Math.min(1, (Date.now() - zacatek) / ms);
       const e = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2; // pomalý začátek i konec
-      this.poslat(z, { zap: true, jas: smes(od.jas, cil.jas, e), rgb: od.rgb.map((c, i) => smes(c, cil.rgb[i], e)) }, 0).catch(() => {});
+      this.poslatPulz(z, { zap: true, jas: smes(od.jas, cil.jas, e), rgb: od.rgb.map((c, i) => smes(c, cil.rgb[i], e)) });
       if (t >= 1) clearInterval(z.prelivani);
     }, 150);
     z.prelivani.unref?.();

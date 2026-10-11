@@ -121,3 +121,31 @@ test('WiZ lampa se mezi fázemi přelévá po krocích, Hue jedním příkazem s
   svetla.pulzBezi = false;
   svetla.zastavit();
 });
+
+test('pomalá WiZ lampa: kroky pulzu se nehromadí a po konci pulzu nic nedobíhá', async () => {
+  const { Svetla } = await import('../server/svetla.js');
+  const os = await import('node:os');
+  const path = await import('node:path');
+  const prikazy = [];
+  const svetla = new Svetla({
+    cesty: { lokalniStav: path.join(os.tmpdir(), 'hub-hp-test3'), kampan: path.join(os.tmpdir(), 'hub-hp-neni') },
+    nastaveni: () => ({ SVETLA_LAMPA: 'wiz:10.0.0.9' }),
+    misto: () => null,
+    scena: () => ({ varianta: 'den', pocasi: [], intenzita: 0 }),
+    // Lampa odpovídá za 400 ms, krok přelévání je 150 ms.
+    ovladace: { wiz: () => ({ nastavit: async (cil) => { prikazy.push(cil); await new Promise((r) => setTimeout(r, 400)); }, stav: async () => ({}) }) },
+  });
+  svetla.sestavitZarizeni();
+  svetla.pulzBezi = true;
+  const z = [...svetla.zarizeni.values()][0];
+  svetla.prelit(z, { zap: true, jas: 100, rgb: [255, 0, 0] }, { zap: true, jas: 70, rgb: [255, 110, 0] }, 1500);
+  await new Promise((r) => setTimeout(r, 1700));
+  assert.ok(prikazy.length <= 6, `jen tolik příkazů, kolik lampa stihne (${prikazy.length})`);
+  svetla.pulzBezi = false;
+  clearInterval(z.prelivani);
+  z.pulzCeka = null;
+  const poKonci = prikazy.length;
+  await new Promise((r) => setTimeout(r, 900));
+  assert.ok(prikazy.length - poKonci <= 0, 'po konci pulzu už lampa nedostává staré kroky');
+  svetla.zastavit();
+});

@@ -825,3 +825,9 @@ main { padding: var(--m-4) var(--m-5) var(--m-5); }
 .vystupy-tabulka button { padding: var(--m-1) var(--m-3); font-size: var(--t-popisek); }
 #nastaveni-vystupy .uvod { margin-top: 0; max-width: none; }
 @media (max-width: 64rem) { .nastaveni-rozlozeni, .dve-karty:not([hidden]) { grid-template-columns: minmax(0, 1fr); } }
+
+/* Atribut hidden platí vždy: žádné pravidlo display (třída, ID) ho nesmí přebít. */
+[hidden] { display: none !important; }
+
+/* Skrytý prvek je skrytý vždy, i když mu třída dává display (oprava: hláška o OBS a řádek Bouřka zůstávaly vidět). */
+[hidden] { display: none !important; }

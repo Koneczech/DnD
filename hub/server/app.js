@@ -163,11 +163,12 @@ export class Hub {
       // Obraz pulzuje i s vypnutým Řídit světla; lampa jen s ním (hlídá Svetla).
       aktivni: () => this.scena.stav.rezim === 'souboj' && this.nastaveni.hodnoty.HP_SVETLA !== '0',
     });
-    this.sledovaniHp.on('zmena', (k) => {
-      this.svetla.nastavitKritickeHp(k);
+    this.sledovaniHp.on('zmena', (k) => this.svetla.nastavitKritickeHp(k));
+    this.svetla.on('kriticke-hp', (k) => {
       // Obraz tepe v rytmu lampy: délka cyklu = fáze A + B z Nastavení → Světla.
       const hp = this.svetla.mistni.hp;
       this.vysilac.vyslat('kriticke-hp', k ? { ...k, cyklus_s: hp.a.s + hp.b.s } : null);
+      this.zvuk.nastavitKritickeHp(Boolean(k));
     });
     this.sparovatHue = sparovatHue ?? ((v) => Hue.sparovat(v));
     this.casovacOdpoctu = null;

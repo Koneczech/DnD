@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <title>DM Hub — hudba</title>
   <style>
-    /* Hudba scény pro OBS (Blok 5). Browser Source s „Control audio via OBS“; nic se nekreslí,
+    /* Hudba scény pro OBS (Blok 5). Hraje, jen když je v Nastavení → Zvuk „Hudba hraje: v OBS“
+       (výchozí je reproduktor u stolu, rozhodnutí 67). Browser Source s „Control audio via OBS“; nic se nekreslí,
        zdroj může být malý a schovaný. Musí být v každé scéně (stejný zdroj přidaný jako existující),
        jinak OBS jeho zvuk mimo aktivní scénu nepouští. */
     html, body { margin: 0; background: transparent; overflow: hidden; }
@@ -22,6 +23,7 @@
 
     let hudba;
     let sbernice;
+    let tlumeni;
     let efekty;
     const p = new Prehravac({
       stranka: 'hudba',
@@ -29,13 +31,15 @@
         if (!s) return;
         p.nastavHlasitost(sbernice, s.ticho ? 0 : s.hlasitost.hudba);
         p.nastavHlasitost(efekty, s.ticho ? 0 : s.hlasitost.efekty);
-        hudba.nastavit(s.hudba ? [s.hudba] : [], s.prolnutiMs);
-        if (ladeni) vypis.textContent = `${new Date().toLocaleTimeString('cs')} ${s.hudba?.soubor ?? '(bez hudby)'}${s.ticho ? ' · ticho' : ''}`;
+        const tady = s.hudbaKde === 'obs';
+        hudba.nastavit(tady && s.hudba ? [s.hudba] : [], s.prolnutiMs);
+        tlumeni.nastavit(Boolean(s.tlumeni?.aktivni), s.tlumeni?.hz);
+        if (ladeni) vypis.textContent = `${new Date().toLocaleTimeString('cs')} ${!tady ? '(hudba hraje u stolu)' : s.hudba?.soubor ?? '(bez hudby)'}${s.ticho ? ' · ticho' : ''}${s.tlumeni?.aktivni ? ' · ucpané uši' : ''}`;
         setTimeout(() => p.hlasit(), 300);
       },
       priEfektu: (e) => (e.test ? p.test(p.ctx.destination) : p.efekt(e, efekty).catch((x) => p.zaznamenatChybu(String(x)))),
     });
-    sbernice = p.sbernice();
+    ({ g: sbernice, tlumeni } = p.sberniceSTlumenim());
     efekty = p.sbernice();
     hudba = new Vrstvy(p.ctx, sbernice, (t) => p.zaznamenatChybu(t));
     p.hraje = () => hudba.hraje();

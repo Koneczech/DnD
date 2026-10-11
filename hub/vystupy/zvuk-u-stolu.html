@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="/panel/styly.css">
   <link rel="icon" href="/panel/ikona.svg" type="image/svg+xml">
   <style>
-    /* Ambient a efekty pro BT reproduktor u stolu (Blok 5). Okno nech otevřené celou hru. */
+    /* Hudba, ambient a efekty pro BT reproduktor u stolu (Blok 5, rozhodnutí 67). Okno nech otevřené celou hru. */
     body { padding: 1.25rem 1.5rem; max-width: 46rem; }
     h1 { margin-top: 0; }
     .stav-zvuku { display: grid; gap: 0.35rem; margin: 1rem 0; padding: 0.8rem 1rem; border: 1px solid var(--linka); border-radius: var(--zaobleni); background: var(--deska); }
@@ -29,11 +29,13 @@
   </div>
 
   <h1>Zvuk u stolu</h1>
-  <p class="uvod">Ambient místa a počasí, hrom a ruční efekty pro reproduktor u stolu. Ovládá je panel Hubu; toto okno nech otevřené celou hru (klidně minimalizované).</p>
+  <p class="uvod">Hudba scény, ambient místa a počasí, hrom a ruční efekty pro reproduktor u stolu. Ovládá je panel Hubu; toto okno nech otevřené celou hru (klidně minimalizované).</p>
 
   <div class="stav-zvuku" aria-live="polite">
     <p id="stav-hraje">Čekám na Hub…</p>
+    <p id="stav-hudba">Hudba: čekám na Hub…</p>
     <p id="stav-ticho" class="ticho" hidden>Ticho: zvuk je ztlumený z panelu.</p>
+    <p id="stav-tlumeni" class="ticho" hidden>Málo HP: zvuk zní jako přes ucpané uši.</p>
     <p class="ulozeni chyba" id="stav-chyba" hidden></p>
   </div>
 
@@ -52,7 +54,11 @@
     const $ = (s) => document.querySelector(s);
     const KLIC = 'dmhub-reproduktor';
     let ambient;
+    let hudba;
     let sbernice;
+    let sberniceHudby;
+    let tlumeniHudby;
+    let tlumeniAmbientu;
     let efekty;
     let posledni = null;
 
@@ -62,26 +68,36 @@
         if (!s) return;
         posledni = s;
         p.nastavHlasitost(sbernice, s.ticho ? 0 : s.hlasitost.ambient);
+        p.nastavHlasitost(sberniceHudby, s.ticho ? 0 : s.hlasitost.hudba);
         p.nastavHlasitost(efekty, s.ticho ? 0 : s.hlasitost.efekty);
         ambient.nastavit(s.ambient, s.prolnutiMs);
+        hudba.nastavit(s.hudbaKde !== 'obs' && s.hudba ? [s.hudba] : [], s.prolnutiMs);
+        const t = s.tlumeni ?? {};
+        tlumeniHudby.nastavit(Boolean(t.aktivni), t.hz);
+        tlumeniAmbientu.nastavit(Boolean(t.aktivni) && t.rozsah === 'vse', t.hz);
         vykreslit();
         setTimeout(() => p.hlasit(), 300);
       },
       priEfektu: (e) => (e.test ? p.test(p.ctx.destination) : p.efekt(e, efekty).catch((x) => p.zaznamenatChybu(`Efekt ${e.soubor} nehraje: ${x.message ?? x}`))),
     });
-    sbernice = p.sbernice();
+    ({ g: sbernice, tlumeni: tlumeniAmbientu } = p.sberniceSTlumenim());
+    ({ g: sberniceHudby, tlumeni: tlumeniHudby } = p.sberniceSTlumenim());
     efekty = p.sbernice();
-    ambient = new Vrstvy(p.ctx, sbernice, (t) => {
+    const priChybe = (t) => {
       p.zaznamenatChybu(t);
       vykreslit();
-    });
-    p.hraje = () => ambient.hraje();
+    };
+    ambient = new Vrstvy(p.ctx, sbernice, priChybe);
+    hudba = new Vrstvy(p.ctx, sberniceHudby, priChybe);
+    p.hraje = () => [...hudba.hraje(), ...ambient.hraje()];
 
     function vykreslit() {
       const s = posledni;
       $('#odemknout').hidden = p.odemceno;
-      $('#stav-hraje').textContent = !s ? 'Čekám na Hub…' : s.ambient.length ? `Hraje: ${s.ambient.map((a) => `${a.soubor} (${Math.round(a.hlasitost * 100)} %)`).join(', ')}` : 'Teď nehraje žádný ambient.';
+      $('#stav-hraje').textContent = !s ? 'Čekám na Hub…' : s.ambient.length ? `Ambient: ${s.ambient.map((a) => `${a.soubor} (${Math.round(a.hlasitost * 100)} %)`).join(', ')}` : 'Teď nehraje žádný ambient.';
+      $('#stav-hudba').textContent = !s ? 'Hudba: čekám na Hub…' : s.hudbaKde === 'obs' ? 'Hudba hraje v OBS (Nastavení → Zvuk).' : `Hudba: ${s.hudba?.soubor ?? 'žádná'}`;
       $('#stav-ticho').hidden = !s?.ticho;
+      $('#stav-tlumeni').hidden = !s?.tlumeni?.aktivni;
       $('#stav-chyba').hidden = !p.chyba;
       $('#stav-chyba').textContent = p.chyba ?? '';
     }
@@ -90,7 +106,10 @@
     $('#tlacitko-odemknout').addEventListener('click', async () => {
       await p.odemknout();
       p.chyba = null;
-      if (posledni) ambient.nastavit(posledni.ambient, 300);
+      if (posledni) {
+        ambient.nastavit(posledni.ambient, 300);
+        hudba.nastavit(posledni.hudbaKde !== 'obs' && posledni.hudba ? [posledni.hudba] : [], 300);
+      }
       vykreslit();
     });
 

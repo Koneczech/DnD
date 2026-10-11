@@ -349,7 +349,7 @@
           </section>
           <section class="svetla-mista misto-panel" data-mz="zvuk" hidden aria-labelledby="misto-zvuk-nadpis">
             <h3 id="misto-zvuk-nadpis" class="vizualne-skryte">Zvuk</h3>
-            <p class="ulozeni" id="misto-zvuk-popis">Hudba hraje na TV, ambient u stolu. Soubory vybíráš ze složky zvuku (Nastavení → Zvuk). Noc bez vlastního zvuku hraje zvuk dne.</p>
+            <p class="ulozeni" id="misto-zvuk-popis">Hudba i ambient hrají u stolu. Soubory vybíráš ze složky zvuku (Nastavení → Zvuk). Noc bez vlastního zvuku hraje zvuk dne.</p>
             <div class="zvuk-mista" id="misto-zvuk"></div>
             <p class="ulozeni" id="misto-zvuk-vysledek" aria-live="polite"></p>
           </section>
@@ -557,8 +557,34 @@
               <ul class="kontrolni-stav" id="zvuk-stranky"></ul>
               <div class="tlacitka">
                 <button type="button" data-zkusebni="stul">Zkušební zvuk u stolu</button>
-                <button type="button" data-zkusebni="hudba">Zkušební zvuk v OBS</button>
+                <button type="button" data-zkusebni="hudba" id="zvuk-zkusebni-obs">Zkušební zvuk v OBS</button>
               </div>
+              <h2>Hudba a málo HP</h2>
+              <div class="formular siroky zvuk-volby">
+                <label>Hudba hraje
+                  <select id="zvuk-hudba-kde">
+                    <option value="stul">U stolu (reproduktor)</option>
+                    <option value="obs">V OBS (Hub – hudba)</option>
+                  </select>
+                </label>
+                <label>Ucpané uši při málo HP
+                  <select id="zvuk-tlumeni">
+                    <option value="hudba">Jen hudba</option>
+                    <option value="vse">Hudba i ambient</option>
+                    <option value="vypnuto">Vypnuto</option>
+                  </select>
+                </label>
+                <label>Útlum
+                  <select id="zvuk-tlumeni-hz">
+                    <option value="900">Slabý (900 Hz)</option>
+                    <option value="500">Střední (500 Hz)</option>
+                    <option value="300">Silný (300 Hz)</option>
+                  </select>
+                </label>
+                <button type="button" id="zvuk-tlumeni-zkusit">Vyzkoušet 12 s</button>
+              </div>
+              <p class="poznamka">Když je na tahu postava s málo HP, hudba nezeslábne, ale zní tupě, jako přes ucpané uši. Zkouška pustí i pulz lampy a kraje obrazu v OBS (stejně jako v Nastavení → Světla → Málo HP).</p>
+              <p class="ulozeni" id="zvuk-volby-vysledek" aria-live="polite"></p>
               <h2>Složka zvuku</h2>
               <div class="formular siroky">
                 <div class="pole-s-tlacitkem">
@@ -571,7 +597,7 @@
                 <p class="ulozeni" id="zvuk-vysledek" aria-live="polite"></p>
               </div>
               <label class="prepinac-zap samostatny"><input type="checkbox" id="pole-zvuk-otevrit" role="switch"> <span>Otevřít Zvuk u stolu při startu Hubu</span></label>
-              <p class="poznamka">Hudba hraje výstup Hudba v OBS (zvuk na TV), ambient a efekty stránka Zvuk u stolu do BT reproduktoru. Postup v <code>reference/zvuk.md</code>.</p>
+              <p class="poznamka" id="zvuk-poznamka">Hudba, ambient i efekty hraje stránka Zvuk u stolu do BT reproduktoru. Postup v <code>reference/zvuk.md</code>.</p>
             </section>
 
             <section class="kategorie" id="nastaveni-vystupy" data-kategorie="vystupy" hidden>

@@ -209,15 +209,34 @@ export class Zvuk extends EventEmitter {
     return slozitZvuk({ misto: s.misto ? this.misto(s.misto) : null, scena: s, vrstvy: this.vrstvy() });
   }
 
+  /**
+   * Skutečný soubor ve složce pro jméno z dat. Na příponě nezáleží: `dest.mp3` v datech najde
+   * i `dest.wav` nebo `dest.ogg` (Freesound dává WAV a Windows přípony skrývá). Velikost písmen také ne.
+   * @returns {string|null}
+   */
+  najit(jmeno) {
+    if (!jmeno) return null;
+    if (this.soubory.includes(jmeno)) return jmeno;
+    const kmen = (x) => x.slice(0, x.length - path.posix.extname(x).length).toLowerCase();
+    const k = kmen(jmeno);
+    const shody = this.soubory.filter((x) => kmen(x) === k);
+    if (!shody.length) return null;
+    // Víc souborů se stejným jménem: přednost má pořadí PRIPONY_ZVUKU (mp3, ogg …).
+    return shody.sort((a, b) => PRIPONY_ZVUKU.indexOf(path.posix.extname(a).toLowerCase()) - PRIPONY_ZVUKU.indexOf(path.posix.extname(b).toLowerCase()))[0];
+  }
+
   /** Pro stránky: co hrát a jak hlasitě. Soubory, které ve složce nejsou, se vynechají. */
   verejny() {
     const c = this.cil();
-    const je = (s) => this.soubory.includes(s);
+    const hudba = this.najit(c.hudba);
     return {
       ticho: this.mistni.ticho,
       hlasitost: { hudba: this.mistni.hudba, ambient: this.mistni.ambient, efekty: this.mistni.efekty },
-      hudba: c.hudba && je(c.hudba) ? { soubor: c.hudba, url: this.url(c.hudba) } : null,
-      ambient: c.ambient.filter((a) => je(a.soubor)).map((a) => ({ ...a, url: this.url(a.soubor) })),
+      hudba: hudba ? { soubor: hudba, url: this.url(hudba) } : null,
+      ambient: c.ambient
+        .map((a) => ({ ...a, soubor: this.najit(a.soubor) }))
+        .filter((a) => a.soubor)
+        .map((a) => ({ ...a, url: this.url(a.soubor) })),
       prolnutiMs: PROLNUTI_MS,
     };
   }
@@ -244,8 +263,8 @@ export class Zvuk extends EventEmitter {
       slozkaExistuje: this.slozkaExistuje,
       pocetSouboru: this.soubory.length,
       efekty: this.soubory.filter((s) => s.startsWith('efekty/')),
-      chybiTed: [c.hudba, ...c.ambient.map((a) => a.soubor), ...c.hrom].filter((s) => s && !this.soubory.includes(s)),
-      hrom: c.hrom.filter((s) => this.soubory.includes(s)),
+      chybiTed: [c.hudba, ...c.ambient.map((a) => a.soubor), ...c.hrom].filter((s) => s && !this.najit(s)),
+      hrom: c.hrom.map((s) => this.najit(s)).filter(Boolean),
       stranky,
     };
   }
@@ -312,14 +331,15 @@ export class Zvuk extends EventEmitter {
       return { ok: true, pripojeno: Boolean(this.stav().stranky[cil].pripojeno) };
     }
     const j = platneJmeno(soubor);
-    if (!j || !this.soubory.includes(j)) throw chyba('Zvuk ve složce není.', 404);
-    this.emit('efekt', { cil, soubor: j, url: this.url(j), hlasitost: 1 });
+    const f = j && this.najit(j);
+    if (!f) throw chyba('Zvuk ve složce není.', 404);
+    this.emit('efekt', { cil, soubor: f, url: this.url(f), hlasitost: 1 });
     return { ok: true };
   }
 
   /** Hrom po blesku (Blok 4, tabulka Blesky): zpoždění podle vzdálenosti, hlasitost a filtr. */
   hrom({ vzdalenost, hromZaMs }) {
-    const soubory = this.cil().hrom.filter((s) => this.soubory.includes(s));
+    const soubory = this.cil().hrom.map((s) => this.najit(s)).filter(Boolean);
     if (!soubory.length) return false;
     const soubor = soubory[Math.floor(this.nahodne() * soubory.length) % soubory.length];
     const v = HROM[vzdalenost] ?? HROM.blizko;
@@ -356,7 +376,7 @@ export class Zvuk extends EventEmitter {
       return [{ soubor: 'hub/.env', uroven: 'varovani', zprava: `Složka zvuku ${this.slozka} neexistuje. Nastav ji v Nastavení → Zvuk.` }];
     }
     return odkazy
-      .filter(([, s]) => !this.soubory.includes(s))
+      .filter(([, s]) => !this.najit(s))
       .map(([soubor, s]) => ({ soubor, uroven: 'varovani', zprava: `Zvuk „${s}“ není ve složce zvuku` }));
   }
 

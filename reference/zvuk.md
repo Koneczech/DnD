@@ -15,7 +15,7 @@ Zvukové soubory do veřejného repa nepatří (licence, rozhodnutí 63). `.giti
 
 1. Vytvoř složku `Dokumenty\DnD\audio` (výchozí), nebo jinou a zadej ji v **Nastavení → Zvuk**.
 2. Efekty pro tlačítka na U stolu (dveře, vlk, zvon …) dej do podsložky `efekty\`. Každý soubor tam je jedno tlačítko, popisek je jméno souboru.
-3. Formáty: **mp3** nebo **ogg** (wav jde taky, jen je velký). m4a v OBS nemusí hrát.
+3. Formáty: **mp3** nebo **ogg** (wav jde taky, jen je velký). m4a v OBS nemusí hrát. Na příponě v datech nezáleží: `dest.mp3` ve vrstvě najde i `dest.wav`.
 4. Hub složku prohledá každých 30 s. Hned to udělá tlačítko **Načíst složku znovu**.
 
 ### Soubory, které čekají vrstvy v `kampan/sceny/`

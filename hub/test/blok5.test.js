@@ -253,3 +253,27 @@ test('nastavení zvuku: složka musí být celá cesta, nová složka se hned na
     await t.zastavit();
   }
 });
+
+test('na příponě nezáleží: dest.mp3 v datech najde dest.wav, přednost má mp3', async () => {
+  const t = await spustitHub();
+  try {
+    await fs.rename(path.join(t.audio, 'les.mp3'), path.join(t.audio, 'les.WAV'));
+    await fs.rename(path.join(t.audio, 'hrom-1.mp3'), path.join(t.audio, 'hrom-1.wav'));
+    await t.volat('/api/zvuk/prohledat', { metoda: 'POST', telo: {} });
+    await t.volat('/api/scena/zobrazit', { metoda: 'POST', telo: { misto: 'les' } });
+    await t.volat('/api/scena', { metoda: 'PUT', telo: { pocasi: ['bourka'] } });
+    const r = await t.volat('/api/zvuk');
+    assert.deepEqual(r.data.ambient.map((a) => a.url), ['/audio/les.WAV', '/audio/bourka.mp3']);
+    assert.deepEqual(r.data.chybiTed, []);
+    assert.deepEqual(r.data.hrom, ['hrom-1.wav']);
+    assert.equal((await t.volat('/audio/les.WAV')).status, 200);
+    const k = await t.hub.data.zkontrolovat();
+    assert.equal(k.problemy.filter((p) => /les\.mp3|hrom-1/.test(p.zprava)).length, 0);
+    await fs.writeFile(path.join(t.audio, 'les.mp3'), 'mp3');
+    await t.volat('/api/zvuk/prohledat', { metoda: 'POST', telo: {} });
+    assert.equal(t.hub.zvuk.najit('les.mp3'), 'les.mp3');
+    assert.equal(t.hub.zvuk.najit('LES.ogg'), 'les.mp3');
+  } finally {
+    await t.zastavit();
+  }
+});

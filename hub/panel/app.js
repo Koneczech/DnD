@@ -81,7 +81,7 @@ function ukazObrazovku(jmeno) {
     history.replaceState(null, '', `#${jmeno}`);
   }
   // Kotvy z kontrolek v liště: Git → GitHub v Sezení, Světla → Nastavení → Světla.
-  const KOTVY = { 'prehled-github': 'prehled', 'nastaveni-svetla': 'nastaveni', 'nastaveni-zvuk': 'nastaveni' };
+  const KOTVY = { 'prehled-github': 'prehled', 'nastaveni-svetla': 'nastaveni', 'nastaveni-zvuk': 'nastaveni', 'nastaveni-obs': 'nastaveni', 'nastaveni-hub': 'nastaveni', 'nastaveni-vystupy': 'nastaveni', 'nastaveni-role': 'nastaveni' };
   const kotva = KOTVY[jmeno] ? jmeno : null;
   if (kotva) jmeno = KOTVY[jmeno];
   const cil = platne.includes(jmeno) ? jmeno : 'prehled';
@@ -92,10 +92,31 @@ function ukazObrazovku(jmeno) {
     if (a.dataset.obrazovka === cil) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   }
+  if (cil === 'nastaveni') ukazKategorii(KATEGORIE_KOTVY[kotva] ?? stav.nastaveniKat ?? 'obs', kotva);
   vykresliSceny();
-  if (kotva) document.getElementById(kotva)?.scrollIntoView({ block: 'start' });
+  if (kotva && cil !== 'nastaveni') document.getElementById(kotva)?.scrollIntoView({ block: 'start' });
 }
 window.addEventListener('hashchange', () => ukazObrazovku(location.hash.slice(1)));
+
+/* Nastavení po kategoriích: vlevo seznam, vpravo jen otevřená kategorie (rozhodnutí 65). */
+const KATEGORIE_KOTVY = {
+  'nastaveni-obs': 'obs', 'nastaveni-role': 'obs', 'nastaveni-svetla': 'svetla', 'nastaveni-zvuk': 'zvuk',
+  'nastaveni-vystupy': 'vystupy', 'nastaveni-hub': 'hub',
+};
+function ukazKategorii(k, kotva) {
+  stav.nastaveniKat = k;
+  for (const sekce of document.querySelectorAll('.kategorie')) sekce.hidden = sekce.dataset.kategorie !== k;
+  for (const a of document.querySelectorAll('.nastaveni-kategorie a')) {
+    if (a.dataset.kategorie === k) a.setAttribute('aria-current', 'page');
+    else a.removeAttribute('aria-current');
+  }
+  if (kotva === 'nastaveni-role') document.getElementById(kotva)?.scrollIntoView({ block: 'start' });
+}
+// Rozbalený Systém se zavře klikem mimo něj nebo po výběru kontrolky.
+document.addEventListener('click', (e) => {
+  const sys = $('#system');
+  if (sys.open && (!sys.contains(e.target) || e.target.closest('.kontrolky a'))) sys.open = false;
+});
 
 /* ---------- Stav kampaně (horní lišta, Družina na obrazovce Sezení) ---------- */
 
@@ -317,11 +338,20 @@ function vykresliKontrolky() {
   const zvukOk = sh?.pripojeno && ss?.pripojeno && ss.odemceno && sh.odemceno !== false && ss.vystup?.ok !== false && !sh.chyba && !ss.chyba;
   $('#svetlo-zvuk').dataset.stav = !zv ? 'ceka' : zvukOk ? 'ok' : sh?.pripojeno || ss?.pripojeno ? 'varovani' : 'chyba';
   $('#svetlo-zvuk').parentElement.title = !zv ? 'Zjišťuji' : [popisStrankyZvuku('Hudba v OBS', sh), popisStrankyZvuku('Zvuk u stolu', ss)].join('; ');
-  // Stav i slovy, nejen barvou (čtečka obrazovky, audit N12).
+  // Stav i slovy, nejen barvou (čtečka obrazovky, audit N12). Rozbalený Systém ukazuje popis u každé kontrolky.
+  const tecky = [];
   for (const k of ['server', 'obs', 'git', 'svetla', 'zvuk']) {
-    const li = $(`#svetlo-${k}`).parentElement;
-    li.setAttribute('aria-label', `${li.textContent.trim()}: ${li.title}`);
+    const svetlo = $(`#svetlo-${k}`);
+    const li = svetlo.parentElement;
+    li.querySelector('small').textContent = li.title;
+    li.setAttribute('aria-label', `${li.querySelector('.nazev').textContent}: ${li.title}`);
+    tecky.push(Object.assign(document.createElement('span'), { className: 'svetlo' }));
+    tecky.at(-1).dataset.stav = svetlo.dataset.stav;
   }
+  $('#system-tecky').replaceChildren(...tecky);
+  for (const t of document.querySelectorAll('.nastaveni-kategorie .svetlo[data-z]')) t.dataset.stav = $(`#svetlo-${t.dataset.z}`).dataset.stav;
+  const spatne = tecky.filter((t) => ['chyba', 'varovani'].includes(t.dataset.stav)).length;
+  $('#system-souhrn').setAttribute('aria-label', spatne ? `Stav systému: ${spatne} hlásí problém` : 'Stav systému: vše běží');
 }
 
 /* ---------- U stolu: dlaždice scén a ovládání podle role ---------- */
@@ -345,94 +375,114 @@ function roleScenyOBS(nazev) {
   return ROLE_SCEN.find(([, klic]) => n[klic] === nazev)?.[0] ?? null;
 }
 
+/** Náhled vpravo ukazuje výstup role, která je v OBS (bez OBS výstup místa). */
+const NAHLEDY = { misto: '/vystupy/misto.html', obchod: '/vystupy/obchod.html', start: '/vystupy/odpocet.html' };
+
+async function doObs(id) {
+  const klic = ROLE_SCEN.find(([r]) => r === id)?.[1];
+  const nazev = stav.prehled?.nastaveni?.[klic];
+  try {
+    // Role Souboj zahájí souboj celý (světla, hudba, zásobník), jako tlačítko Souboj v liště.
+    if (id === 'souboj') {
+      const v = await api('/api/souboj', { metoda: 'POST', telo: { zapnout: true } });
+      if (v.chybaObs) toast(v.chybaObs, { chyba: true });
+    } else await api('/api/obs/scena', { metoda: 'POST', telo: { nazev } });
+  } catch (e) {
+    toast(e.message, { chyba: true });
+  }
+}
+
 function vykresliSceny() {
   const o = stav.prehled?.obs;
   const popis = $('#obs-popis');
-  const seznam = $('#seznam-scen');
-  const stavEl = $('#stul-stav');
-  seznam.replaceChildren();
   const pripojeno = Boolean(o?.pripojeno);
   let pripojitTlacitko = null;
 
-  // Záložka s nastavením scény je nezávislá na tom, co je v OBS: DM si scénu nejdřív připraví
-  // v záložce a teprve pak ji dlaždicí nahoře přepne. Bez volby se otevře role scény, která je v OBS.
+  // Záložka s přípravou scény je nezávislá na tom, co je v OBS: DM si scénu připraví a přepne ji
+  // tlačítkem Do OBS (rozhodnutí 65). Bez volby se otevře role scény, která je v OBS.
   if (!stav.stulVyber) stav.stulVyber = (pripojeno && roleScenyOBS(o.aktualniScena)) || 'start';
   const role = PANELY.includes(stav.stulVyber) ? stav.stulVyber : 'start';
   const roleVObs = pripojeno ? roleScenyOBS(o.aktualniScena) : null;
 
-  if (!stav.prehled) {
-    popis.textContent = 'Čekám na server Hubu…';
-  } else if (!o?.nastaveno) {
-    popis.textContent = 'OBS ještě není nastavené. Zadej heslo k WebSocket serveru v Nastavení. Záložky níže fungují i bez OBS, jen se nepřepínají scény.';
-  } else if (!pripojeno) {
-    popis.textContent = `${o.chyba || 'OBS není připojené.'} Hub to zkouší znovu každých 5 sekund.`;
+  // Text nad řadou jen při potížích s OBS; když vše běží, nic nevysvětluje.
+  popis.hidden = pripojeno;
+  if (!stav.prehled) popis.textContent = 'Čekám na server Hubu…';
+  else if (!o?.nastaveno) popis.textContent = 'OBS není nastavené (Nastavení → OBS). Ovládání funguje, jen se nepřepínají scény.';
+  else if (!pripojeno) {
+    popis.textContent = `${o.chyba || 'OBS není připojené.'} Zkouším znovu každých 5 s.`;
     pripojitTlacitko = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Připojit teď' });
     pripojitTlacitko.addEventListener('click', () => api('/api/obs/pripojit', { metoda: 'POST', telo: {} }).catch(() => {}));
-  } else {
-    popis.textContent = 'Dlaždice přepínají scény v OBS. Pod nimi jsou záložky s nastavením scén: scénu si nejdřív připrav v záložce, pak ji přepni dlaždicí. Numpad v OBS funguje dál.';
+    popis.append(' ', pripojitTlacitko);
   }
 
-  // Dlaždice: jen přepnutí scény v OBS.
-  seznam.hidden = !pripojeno;
+  // Řada rolí: záložka (příprava) + Do OBS + štítek ŽIVĚ.
+  const rada = $('#stul-zalozky');
+  const souboj = stav.prehled?.scena?.rezim === 'souboj';
+  const karty = ROLE_SCEN.map(([id, klic, jmeno]) => {
+    const scena = stav.prehled?.nastaveni?.[klic];
+    const karta = document.createElement('div');
+    karta.className = 'role-karta';
+    if (id === role) karta.classList.add('vybrana');
+    if (id === roleVObs) karta.classList.add('v-obs');
+    const zal = document.createElement('button');
+    zal.type = 'button';
+    zal.className = 'role-zalozka';
+    zal.setAttribute('role', 'tab');
+    zal.id = `zalozka-${id}`;
+    zal.setAttribute('aria-controls', `stul-${id}`);
+    zal.setAttribute('aria-selected', String(id === role));
+    zal.tabIndex = id === role ? 0 : -1;
+    zal.append(Object.assign(document.createElement('span'), { textContent: jmeno }));
+    zal.append(Object.assign(document.createElement('small'), { textContent: podtitulRole(id, scena) }));
+    zal.addEventListener('click', () => {
+      stav.stulVyber = id;
+      vykresliSceny();
+    });
+    karta.append(zal);
+    if (id === roleVObs) {
+      karta.append(Object.assign(document.createElement('span'), { className: 'zive', textContent: id === 'souboj' && souboj ? 'Souboj' : 'Živě' }));
+    } else {
+      const doObsBtn = Object.assign(document.createElement('button'), { type: 'button', className: 'do-obs', textContent: 'Do OBS' });
+      doObsBtn.disabled = !pripojeno || !scena;
+      doObsBtn.title = !scena ? 'Role nemá scénu: přiřaď ji v Nastavení → Role scén v OBS' : !pripojeno ? 'OBS není připojené' : `Přepnout OBS na scénu ${scena}`;
+      doObsBtn.addEventListener('click', () => doObs(id));
+      karta.append(doObsBtn);
+    }
+    return karta;
+  });
+  // Scény bez role (Mapa, Pauza …): malá tlačítka na konci řady.
+  const dalsi = document.createElement('div');
+  dalsi.className = 'dalsi-sceny';
   if (pripojeno) {
-    for (const nazev of o.sceny) {
-      const b = document.createElement('button');
-      b.type = 'button';
-      const r = roleScenyOBS(nazev);
-      b.textContent = nazev;
-      b.setAttribute('aria-pressed', String(nazev === o.aktualniScena));
-      b.title = `Přepnout OBS na scénu ${nazev}${r ? ` (role ${ROLE_SCEN.find(([id]) => id === r)[2]})` : ''}`;
-      b.addEventListener('click', async () => {
-        try {
-          // Scéna role Souboj zahájí souboj celý (světla, zásobník), jako tlačítko Souboj v liště.
-          if (r === 'souboj' && stav.prehled?.scena?.rezim !== 'souboj') {
-            const v = await api('/api/souboj', { metoda: 'POST', telo: { zapnout: true } });
-            if (v.chybaObs) toast(v.chybaObs, { chyba: true });
-          } else await api('/api/obs/scena', { metoda: 'POST', telo: { nazev } });
-        } catch (e) {
-          popis.textContent = e.message;
-        }
-      });
-      seznam.append(b);
+    const bezRole = (o.sceny ?? []).filter((n) => !roleScenyOBS(n));
+    if (bezRole.length) dalsi.append(Object.assign(document.createElement('span'), { textContent: 'Další scény:' }));
+    for (const nazev of bezRole) {
+      const b = Object.assign(document.createElement('button'), { type: 'button', textContent: nazev, title: `Přepnout OBS na scénu ${nazev}` });
+      if (nazev === o.aktualniScena) {
+        b.setAttribute('aria-pressed', 'true');
+        b.classList.add('v-obs');
+      }
+      b.addEventListener('click', () => api('/api/obs/scena', { metoda: 'POST', telo: { nazev } }).catch((e) => toast(e.message, { chyba: true })));
+      dalsi.append(b);
     }
   }
-
-  // Záložky: nastavení scén podle role (Start, Místo, Obchod, Souboj).
-  const zalozky = $('#stul-zalozky');
-  zalozky.replaceChildren(
-    ...ROLE_SCEN.map(([id, klic, jmeno]) => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.setAttribute('role', 'tab');
-      b.id = `zalozka-${id}`;
-      b.setAttribute('aria-controls', `stul-${id}`);
-      b.setAttribute('aria-selected', String(id === role));
-      b.tabIndex = id === role ? 0 : -1;
-      const scena = stav.prehled?.nastaveni?.[klic];
-      b.append(Object.assign(document.createElement('span'), { textContent: jmeno }));
-      b.append(Object.assign(document.createElement('small'), { textContent: id === roleVObs ? '● v OBS' : scena ? `scéna ${scena}` : 'bez scény' }));
-      if (id === roleVObs) b.classList.add('v-obs');
-      b.addEventListener('click', () => {
-        stav.stulVyber = id;
-        vykresliSceny();
-      });
-      return b;
-    }),
-  );
-
-  // Stav „co je teď v OBS“.
-  const sc = stav.prehled?.scena;
-  let text = pripojeno ? `V OBS teď: ${o.aktualniScena || 'neznámá scéna'}` : 'OBS není připojené.';
-  if (pripojeno && roleVObs === 'misto' && sc?.misto) {
-    text += ` · ${sc.misto.nazev}${sc.ilustrace ? ` · ${sc.ilustrace.soubor}` : ''}`;
-    const pocasi = pocasiSeznam(sc.pocasi);
-    if (pocasi.length) text += ` · ${pocasi.map((x) => POCASI_TEXT[x] ?? x).join(' + ')} ${sc.intenzita}`;
-  }
-  stavEl.textContent = text;
-  if (pripojitTlacitko) stavEl.append(' ', pripojitTlacitko);
+  dalsi.append(Object.assign(document.createElement('a'), { href: '#nastaveni-role', textContent: 'Role scén…', className: 'odkaz-role' }));
+  rada.replaceChildren(...karty, dalsi);
 
   for (const id of PANELY) $(`#stul-${id}`).hidden = id !== role;
-  nahledMista(role === 'misto' && !$('#obrazovka-sceny').hidden);
+  vykresliSouboj();
+  nahledMista(!$('#obrazovka-sceny').hidden, roleVObs);
+}
+
+/** Podtitul role v řadě: co je připravené. */
+function podtitulRole(id, scena) {
+  if (!scena) return 'bez scény v OBS';
+  const p = stav.prehled;
+  if (id === 'misto') return p?.scena?.misto?.nazev ?? 'žádné místo';
+  if (id === 'obchod') return p?.obchody?.aktivni ? 'ceník v OBS' : 'ceník skrytý';
+  if (id === 'start') return p?.odpocet?.stav === 'bezi' ? 'odpočet běží' : p?.odpocet?.stav === 'zadny' ? 'bez odpočtu' : 'odpočet připraven';
+  if (id === 'souboj') return p?.scena?.rezim === 'souboj' ? 'souboj běží' : 'iniciativa';
+  return `scéna ${scena}`;
 }
 
 // Šipky vlevo/vpravo mezi záložkami (přístupnost, vzor ARIA tabs).
@@ -446,10 +496,11 @@ $('#stul-zalozky').addEventListener('keydown', (e) => {
 });
 
 /** Živý náhled výstupu místa: iframe 1920 × 1080 zmenšený na šířku rámečku, jen dokud je panel vidět. */
-function nahledMista(zobrazit) {
+function nahledMista(zobrazit, roleVObs) {
   const ramec = $('#stul-nahled-ramec');
-  const cil = zobrazit ? '/vystupy/misto.html' : 'about:blank';
+  const cil = !zobrazit ? 'about:blank' : NAHLEDY[roleVObs] ?? NAHLEDY.misto;
   if (ramec.getAttribute('src') !== cil) ramec.setAttribute('src', cil);
+  $('#nahled-zive').hidden = !roleVObs || !NAHLEDY[roleVObs];
 }
 new ResizeObserver(([zaznam]) => {
   const sirka = zaznam.contentRect.width;
@@ -491,14 +542,15 @@ $('#zkontrolovat').addEventListener('click', async () => vykresliKontrolu(await 
 
 function vykresliNastaveni(n) {
   if (!n) return;
-  $('#pole-obs-url').value = n.obsUrl;
+  if (document.activeElement !== $('#pole-obs-url')) $('#pole-obs-url').value = n.obsUrl;
   $('#pole-obs-heslo').placeholder = n.obsHesloNastaveno ? 'Heslo je uložené. Vyplň jen při změně.' : 'Heslo z OBS';
-  $('#pole-port').value = n.port;
+  if (document.activeElement !== $('#pole-port')) $('#pole-port').value = n.port;
   $('#pole-domaci-sit').checked = n.domaciSit;
   $('#pole-pin').placeholder = n.pinNastaven ? 'PIN je uložený. Vyplň jen při změně.' : '6–8 číslic';
   if (document.activeElement !== $('#pole-hue-bridge')) $('#pole-hue-bridge').value = n.hueBridge ?? '';
-  if (document.activeElement !== $('#pole-wiz')) {
+  {
     $('#pole-wiz').value = [n.svetlaHlavni, n.svetlaPozadi, n.svetlaLampa].join(',').split(',').filter((x) => x.startsWith('wiz:')).map((x) => x.slice(4)).join(', ');
+    vykresliWiz();
   }
   $('#pole-blesky').checked = n.blesky !== false;
   $('#hue-stav').textContent = !n.hueBridge
@@ -526,6 +578,27 @@ function vykresliVyberSouboje() {
   }
 }
 
+/** Prázdným rolím přiřadí scénu se stejným nebo podobným názvem (bez diakritiky, Souboj ~ Boj). */
+const PODOBNE_NAZVY = { scenaStart: ['start', 'zacatek', 'uvod'], scenaMisto: ['misto', 'mista', 'scena'], scenaObchod: ['obchod', 'cenik', 'shop'], scenaSouboj: ['souboj', 'boj', 'iniciativa', 'combat'] };
+const bezDiakritiky = (x) => x.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+$('#role-navrhnout').addEventListener('click', async () => {
+  const sceny = stav.prehled?.obs?.sceny ?? [];
+  if (!sceny.length) return toast('OBS není připojené: názvy scén neznám.', { chyba: true });
+  const n = stav.prehled?.nastaveni ?? {};
+  const telo = {};
+  for (const [klic, nazvy] of Object.entries(PODOBNE_NAZVY)) {
+    if (n[klic]) continue;
+    const scena = sceny.find((x) => nazvy.includes(bezDiakritiky(x))) ?? sceny.find((x) => nazvy.some((y) => bezDiakritiky(x).includes(y)));
+    if (scena) telo[klic] = scena;
+  }
+  if (!Object.keys(telo).length) return toast('Nic k navržení: role jsou přiřazené, nebo žádná scéna názvem nesedí.');
+  if (await ulozitNastaveni(telo, $('#role-navrhnout'))) {
+    vykresliVyberSouboje();
+    vykresliSceny();
+    toast(`Navrženo: ${Object.values(telo).join(', ')}. Zkontroluj a případně změň.`);
+  }
+});
+
 for (const select of document.querySelectorAll('.role-sceny select')) {
   select.addEventListener('change', async () => {
     try {
@@ -540,30 +613,40 @@ for (const select of document.querySelectorAll('.role-sceny select')) {
   });
 }
 
-$('#formular-nastaveni').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const f = new FormData(e.target);
-  const telo = {
-    obsUrl: f.get('obsUrl').trim(),
-    port: Number(f.get('port')),
-    domaciSit: f.get('domaciSit') === 'on',
-  };
-  if (f.get('obsHeslo')) telo.obsHeslo = f.get('obsHeslo');
-  if (f.get('pin')) telo.pin = f.get('pin');
-  const vysledek = $('#nastaveni-vysledek');
+/* Nastavení se ukládá samo (rozhodnutí 65): každé pole po změně, „Uloženo ✓“ u něj.
+   Heslo OBS a PIN mají vlastní tlačítko, ať se neuloží rozepsané. */
+async function ulozitNastaveni(telo, pole, { chybaDo } = {}) {
   try {
-    const odpoved = await api('/api/nastaveni', { metoda: 'PUT', telo });
-    $('#pole-obs-heslo').value = '';
-    $('#pole-pin').value = '';
-    vysledek.className = 'ulozeni';
-    vysledek.textContent = odpoved.potrebaRestartu
-      ? 'Nastavení uloženo. Změna portu nebo přístupu z domácí sítě se projeví po restartu Hubu (tlačítko níž).'
-      : `Nastavení uloženo v ${cas()}.`;
-    await nactiPrehled();
+    const r = await api('/api/nastaveni', { metoda: 'PUT', telo });
+    stav.prehled.nastaveni = r.nastaveni;
+    vykresliNastaveni(r.nastaveni);
+    if (pole) oznacUlozeno(pole);
+    if (r.potrebaRestartu) {
+      $('#nastaveni-vysledek').className = 'ulozeni';
+      $('#nastaveni-vysledek').textContent = 'Změna portu nebo přístupu z domácí sítě se projeví po restartu Hubu (níž).';
+    }
+    return r;
   } catch (chyba) {
-    vysledek.className = 'ulozeni chyba';
-    vysledek.textContent = `Neuloženo: ${chyba.message}`;
+    const kam = chybaDo ?? $('#nastaveni-vysledek');
+    kam.className = 'ulozeni chyba';
+    kam.textContent = `Neuloženo: ${chyba.message}`;
+    vykresliNastaveni(stav.prehled?.nastaveni);
+    return null;
   }
+}
+
+$('#pole-obs-url').addEventListener('change', (e) => ulozitNastaveni({ obsUrl: e.target.value.trim() }, e.target, { chybaDo: $('#napoveda-heslo') }));
+$('#obs-heslo-ulozit').addEventListener('click', async () => {
+  const pole = $('#pole-obs-heslo');
+  if (!pole.value) return pole.focus();
+  if (await ulozitNastaveni({ obsHeslo: pole.value }, pole, { chybaDo: $('#napoveda-heslo') })) pole.value = '';
+});
+$('#pole-port').addEventListener('change', (e) => ulozitNastaveni({ port: Number(e.target.value) }, e.target));
+$('#pole-domaci-sit').addEventListener('change', (e) => ulozitNastaveni({ domaciSit: e.target.checked }, e.target.closest('label')));
+$('#pin-ulozit').addEventListener('click', async () => {
+  const pole = $('#pole-pin');
+  if (!pole.value) return pole.focus();
+  if (await ulozitNastaveni({ pin: pole.value }, pole)) pole.value = '';
 });
 
 /* ---------- Data ze serveru ---------- */
@@ -672,9 +755,11 @@ function toast(text, { chyba = false } = {}) {
 
 function vykresliSezeni() {
   const s = stav.prehled?.sezeni;
+  // Odznak sezení v liště: zahajuje se na obrazovce Sezení (rozhodnutí 65).
   const b = $('#tlacitko-sezeni');
   b.dataset.bezi = String(Boolean(s?.bezi));
-  b.textContent = s?.bezi ? `Ukončit sezení ${s.cislo}` : 'Zahájit sezení';
+  const delka = s?.bezi ? delkaSezeni(s) : null;
+  b.querySelector('.text').textContent = !s || s.cislo == null ? '…' : s.bezi ? `Sezení ${s.cislo}${delka ? ` · ${delka}` : ''}` : 'Mimo sezení';
 }
 
 /* ---------- Obrazovka Sezení: před hrou kontrola, během hry poznámky ---------- */
@@ -702,7 +787,7 @@ function vykresliObrazovkuSezeni() {
   const delka = delkaSezeni(s);
   $('#sezeni-detail').textContent = bezi
     ? `${delka ? `Běží ${delka} h. ` : ''}Poznámky padají do ${s.soubor}.`
-    : 'Než hráči dorazí, projdi seznam níže a zahaj sezení. Odpočet do začátku nastavíš při zahájení.';
+    : 'Zahájení spustí čas sezení; odpočet do začátku nastavíš v dialogu.';
   const akce = $('#sezeni-akce');
   akce.textContent = bezi ? `Ukončit sezení ${s.cislo}` : `Zahájit sezení ${(s?.cislo ?? 0) + 1}`;
   akce.disabled = !p;
@@ -721,7 +806,7 @@ function vykresliObrazovkuSezeni() {
     const n = p.nastaveni ?? {};
     const chybiRole = ROLE_SCEN.filter(([, klic]) => !n[klic]).map(([, , jmeno]) => jmeno);
     k.push(chybiRole.length
-      ? polozkaKontroly('varovani', `Role scén bez přiřazené scény: ${chybiRole.join(', ')}.`, { text: 'U stolu → Role scén', odkaz: '#sceny' })
+      ? polozkaKontroly('varovani', `Role scén bez přiřazené scény: ${chybiRole.join(', ')}.`, { text: 'Nastavení → Role scén', odkaz: '#nastaveni-role' })
       : polozkaKontroly('ok', 'Role scén jsou přiřazené.'));
     const g = p.git;
     if (!g?.dostupny) k.push(polozkaKontroly('varovani', g?.chyba ?? 'Stav Gitu zjišťuji…'));
@@ -772,14 +857,29 @@ function vykresliObrazovkuSezeni() {
       if (chybi) k.push(polozkaKontroly('varovani', `Chybí zvukové soubory scén: ${chybi}.`, { text: 'Kontrola dat', odkaz: '#kontrola' }));
     }
     if (p.server?.restartNutny) k.push(polozkaKontroly('varovani', p.server.restartNutny, p.server.restartZPanelu ? { text: 'Restartovat Hub', klik: restartovatHub } : undefined));
-    $('#sezeni-kontrola').replaceChildren(...k);
+    // Nejdřív to, co je potřeba vyřešit; body v pořádku sbalené do jednoho řádku (rozhodnutí 65).
+    const PORADI = { chyba: 0, varovani: 1, info: 2, ok: 3 };
+    k.sort((x, y) => PORADI[x.dataset.uroven] - PORADI[y.dataset.uroven]);
+    // Řádky jen pro to, co je potřeba vyřešit; ostatní jako drobné štítky v jedné řadě (rozhodnutí 66).
+    const vporadku = k.filter((x) => x.dataset.uroven === 'ok');
+    const resit = k.filter((x) => ['chyba', 'varovani'].includes(x.dataset.uroven)).length;
+    const radky = k.filter((x) => ['chyba', 'varovani'].includes(x.dataset.uroven));
+    const stitky = k.filter((x) => ['info', 'ok'].includes(x.dataset.uroven));
+    for (const li of stitky) {
+      const t = li.querySelector('.text');
+      t.textContent = t.textContent.replace(/\.$/, '');
+    }
+    $('#sezeni-kontrola').replaceChildren(...radky);
+    $('#sezeni-kontrola').hidden = !radky.length;
+    $('#sezeni-v-poradku').replaceChildren(...stitky);
+    $('#sezeni-souhrn').textContent = resit ? `${resit} k vyřešení · ${vporadku.length} v pořádku` : 'Všechno je připravené.';
   }
 
   // Poznámky: během sezení z jeho souboru, mimo sezení z přípravy.
   const poznamky = s?.poznamky ?? [];
   $('#sezeni-poznamky-nadpis').textContent = bezi ? 'Poznámky ze stolu' : 'Poznámky mimo sezení';
   $('#sezeni-poznamky-popis').textContent = poznamky.length
-    ? `Zapisuješ je klávesou F2 nebo tlačítkem Poznámka. Ukládají se do ${s?.soubor ?? 'souboru sezení'}.`
+    ? `Ukládají se do ${s?.soubor ?? 'souboru sezení'}.`
     : 'Zatím žádné. Zapisuješ je klávesou F2 nebo tlačítkem Poznámka v horní liště.';
   $('#sezeni-poznamky').replaceChildren(
     ...[...poznamky].reverse().map((x) => {
@@ -797,6 +897,7 @@ $('#sezeni-akce').addEventListener('click', () => (stav.prehled?.sezeni?.bezi ? 
 setInterval(() => {
   if (!stav.prehled?.sezeni?.bezi) return;
   $('#lista-sezeni').textContent = textSezeni();
+  vykresliSezeni();
   vykresliObrazovkuSezeni();
 }, 30000);
 
@@ -891,7 +992,6 @@ $('#formular-ukoncit').addEventListener('submit', async (e) => {
   }
 });
 
-$('#tlacitko-sezeni').addEventListener('click', () => (stav.prehled?.sezeni?.bezi ? otevritUkoncit() : otevritZahajit()));
 
 /* ---------- Souboj ---------- */
 
@@ -900,8 +1000,12 @@ function vykresliSouboj() {
   const b = $('#tlacitko-souboj');
   b.querySelector('span').textContent = souboj ? 'Konec souboje' : 'Souboj';
   b.setAttribute('aria-pressed', String(souboj));
+  // Záložka Souboj na U stolu
+  $('#souboj-stav').textContent = souboj ? 'Souboj běží.' : 'Souboj neběží.';
+  $('#souboj-prepnout').textContent = souboj ? 'Konec souboje' : 'Zahájit souboj';
 }
 
+$('#souboj-prepnout').addEventListener('click', () => $('#tlacitko-souboj').click());
 $('#tlacitko-souboj').addEventListener('click', async () => {
   const zapnout = stav.prehled?.scena?.rezim !== 'souboj';
   try {
@@ -909,7 +1013,7 @@ $('#tlacitko-souboj').addEventListener('click', async () => {
     if (r.chybaObs) toast(r.chybaObs, { chyba: true });
   } catch (chyba) {
     toast(chyba.message, { chyba: true });
-    if (/není nastavená/.test(chyba.message)) location.hash = 'sceny';
+    if (/není nastavená/.test(chyba.message)) location.hash = 'nastaveni-role';
   }
 });
 
@@ -1001,29 +1105,52 @@ function vykresliOdpocet() {
     pauza: 'Pozastaveno. V OBS stojí na posledním čase.',
   };
   popis.textContent = texty[o?.stav ?? 'zadny'];
-  $('#odpocet-spustit').textContent = o?.stav === 'pauza' ? 'Pokračovat' : 'Spustit';
-  $('#odpocet-spustit').disabled = !o || o.stav === 'zadny' || o.stav === 'bezi';
-  $('#odpocet-pauza').disabled = o?.stav !== 'bezi' || zbyva === 0;
-  $('#odpocet-zrusit').disabled = !o || o.stav === 'zadny';
+  // Jedno ovládání podle stavu (rozhodnutí 66): bez odpočtu nebo připravený = čas + Spustit odpočet;
+  // běží nebo stojí = Pauza / Pokračovat a Zrušit. Doběhlý odpočet jde rovnou nastavit znovu.
+  const bezi = (o?.stav === 'bezi' && zbyva !== 0) || o?.stav === 'pauza';
+  $('#formular-odpocet').hidden = bezi;
+  $('#odpocet-bezi').hidden = !bezi;
+  $('#odpocet-spustit').hidden = o?.stav !== 'pauza';
+  $('#odpocet-pauza').hidden = o?.stav !== 'bezi';
+  for (const b of document.querySelectorAll('#odpocet-predvolby button')) b.setAttribute('aria-pressed', String(Number(b.dataset.minut) === stav.odpocetMinut));
   const pr = o?.prepnuti;
-  const scena = stav.prehled?.nastaveni?.scenaPoOdpoctu;
   $('#odpocet-prepnuti').className = pr && !pr.ok ? 'ulozeni varovani' : 'ulozeni';
   $('#odpocet-prepnuti').textContent = pr
     ? pr.ok ? `Po doběhnutí přepnuto na scénu „${pr.scena}“.` : pr.duvod
-    : scena ? `Po doběhnutí se OBS přepne na scénu „${scena}“.` : 'Po doběhnutí se scéna nepřepne.';
+    : ''; // kam se přepne, ukazuje výběr hned vedle
 }
 setInterval(() => {
   if (stav.prehled?.odpocet?.stav === 'bezi') vykresliOdpocet();
 }, 250);
 
+// Předvolba vyplní „za kolik minut“ a vymaže čas; čas vymaže předvolbu. Jedno Spustit připraví a spustí.
+$('#odpocet-predvolby').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-minut]');
+  if (!b) return;
+  const minut = Number(b.dataset.minut);
+  stav.odpocetMinut = stav.odpocetMinut === minut ? null : minut;
+  if (stav.odpocetMinut) $('#pole-odpocet-cas').value = '';
+  vykresliOdpocet();
+});
+$('#pole-odpocet-cas').addEventListener('input', () => {
+  stav.odpocetMinut = null;
+  vykresliOdpocet();
+});
 $('#formular-odpocet').addEventListener('submit', async (e) => {
   e.preventDefault();
   const cas = $('#pole-odpocet-cas').value.trim();
-  const minut = Number($('#pole-odpocet-minut').value);
+  const minut = stav.odpocetMinut;
+  const o = stav.prehled?.odpocet;
+  if (!cas && !minut && o?.stav !== 'pripraveny') {
+    toast('Zadej čas začátku nebo vyber, za kolik minut.', { chyba: true });
+    $('#pole-odpocet-cas').focus();
+    return;
+  }
   try {
-    await api('/api/odpocet/pripravit', { metoda: 'POST', telo: cas ? { cas } : { minut } });
+    if (cas || minut) await api('/api/odpocet/pripravit', { metoda: 'POST', telo: cas ? { cas } : { minut } });
+    await api('/api/odpocet/spustit', { metoda: 'POST', telo: {} });
     $('#pole-odpocet-cas').value = '';
-    $('#pole-odpocet-minut').value = '';
+    stav.odpocetMinut = null;
   } catch (chyba) {
     toast(chyba.message, { chyba: true });
   }
@@ -1162,7 +1289,7 @@ function radekUdalosti(u, dnes) {
   akce.className = 'akce-radku';
   const upravit = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Upravit' });
   upravit.addEventListener('click', () => otevritUdalost(u));
-  const smazat = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Smazat' });
+  const smazat = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Smazat', className: 'nebezpecne' });
   smazat.addEventListener('click', async () => {
     if (smazat.dataset.potvrd !== 'true') {
       smazat.dataset.potvrd = 'true';
@@ -1191,7 +1318,7 @@ function vykresliKalendar() {
   const dnes = k.dnes;
   $('#kalendar-datum').textContent = dnes ? Harptos.format(dnes) : 'Datum není zadané';
   $('#kalendar-svatek').textContent = dnes?.svatek ? `Svátek ${Harptos.popisSvatku(dnes)}.` : '';
-  for (const b of document.querySelectorAll('[data-posun], #kalendar-dalsi-den, #tlacitko-dalsi-den')) b.disabled = !dnes;
+  for (const b of document.querySelectorAll('[data-posun], #kalendar-dalsi-den, #sc-dalsi-den')) b.disabled = !dnes;
   if (JSON.stringify(dnes) !== JSON.stringify(posledniDnes) && !$('#formular-dnes').contains(document.activeElement)) {
     vyberDnes.set(dnes ?? k.zacatek ?? { rok: 1491, mesic: 'Hammer', den: 1 });
     posledniDnes = dnes;
@@ -1445,7 +1572,7 @@ $('#formular-den').addEventListener('submit', async (e) => {
     $('#den-chyba').textContent = chyba.message;
   }
 });
-$('#tlacitko-dalsi-den').addEventListener('click', otevritDalsiDen);
+$('#sc-dalsi-den').addEventListener('click', otevritDalsiDen);
 $('#kalendar-dalsi-den').addEventListener('click', otevritDalsiDen);
 
 /* ---------- Obchody ---------- */
@@ -1521,7 +1648,7 @@ function vykresliObchody() {
       obrazek.append(document.createElement('br'), doDilny);
       const akce = document.createElement('td');
       akce.className = 'akce-radku';
-      const smazat = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Smazat' });
+      const smazat = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Smazat', className: 'nebezpecne' });
       smazat.addEventListener('click', async () => {
         if (smazat.dataset.potvrd !== 'true') {
           smazat.dataset.potvrd = 'true';
@@ -1664,13 +1791,11 @@ function vykresliMista() {
     ...seznam.map((m) => {
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'karta-mista mala';
+      b.className = 'polozka-mista';
       b.setAttribute('aria-pressed', String(m.id === vybrane?.id));
       if (m.id === zive?.id) b.classList.add('v-obs');
-      const nahled = (m.ilustrace.find((il) => !il.skryta && il.ucel === 'scena') ?? m.ilustrace[0]);
-      if (nahled) b.style.backgroundImage = `url("${nahled.url}")`;
       b.append(Object.assign(document.createElement('span'), { textContent: m.nazev }));
-      if (m.id === zive?.id) b.append(Object.assign(document.createElement('small'), { textContent: 'v OBS' }));
+      if (m.id === zive?.id) b.append(Object.assign(document.createElement('span'), { className: 'zive', textContent: 'Živě' }));
       // Místo, které by teď v OBS dalo černo, je označené už na dlaždici (audit S6).
       if (!viditelneIlustrace(m, volby).length) {
         b.classList.add('bez-ilustrace');
@@ -1692,27 +1817,28 @@ function vykresliMista() {
     : !vybrane.ilustrace.length
       ? 'Místo zatím nemá žádnou ilustraci. Vytvoř ji v Ilustrační dílně.'
       : jeZive
-        ? 'Klikni na ilustraci a ukáže se v OBS. Odkrýt a Skrýt rozhoduje, co se do OBS vůbec dostane.'
+        ? 'Klik na ilustraci = do OBS. Šedé jsou skryté, do OBS nejdou.'
         : `V OBS je pořád ${zive ? zive.nazev : 'jiná scéna'}. Klikni na ilustraci a OBS přepne rovnou na ni.`;
   const ukazatMisto = $('#stul-misto-ukazat');
   ukazatMisto.hidden = !vybrane || jeZive;
   ukazatMisto.textContent = vybrane ? `Ukázat ${vybrane.nazev} v OBS (výchozí ilustrace)` : '';
-  $('#stul-ilustrace').replaceChildren(...(vybrane?.ilustrace ?? []).map((il) => kartaIlustrace(vybrane, il, s, jeZive, false)));
+  // Všechny ilustrace v jedné mřížce, skryté za odkrytými a ztlumené (rozhodnutí 66): odkrytí je u stolu
+  // běžná akce, nemá se schovávat za rozbalovací tlačítko.
+  const vsechny = vybrane?.ilustrace ?? [];
+  const serazene = [...vsechny.filter((il) => !il.skryta), ...vsechny.filter((il) => il.skryta)];
+  $('#stul-ilustrace').replaceChildren(...serazene.map((il) => kartaIlustrace(vybrane, il, s, jeZive, false)));
 
   $('#seznam-mist').replaceChildren(
     ...seznam.map((m) => {
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'karta-mista';
+      b.className = 'polozka-mista';
       b.setAttribute('aria-pressed', String(m.id === vybraneMisto));
       const odkryte = m.ilustrace.filter((il) => !il.skryta && il.ucel === 'scena');
-      const nahled = odkryte[0] ?? m.ilustrace[0];
-      if (nahled) b.style.backgroundImage = `url("${nahled.url}")`;
-      const popis = document.createElement('span');
-      popis.textContent = `${m.nazev}${s?.misto?.id === m.id ? ' · v OBS' : ''}`;
-      const pocet = document.createElement('small');
-      pocet.textContent = `${odkryte.length} odkrytých, ${m.ilustrace.length - odkryte.length} skrytých`;
-      b.append(popis, pocet);
+      b.append(Object.assign(document.createElement('span'), { textContent: m.nazev }));
+      const pocet = Object.assign(document.createElement('span'), { className: 'pocet-ilustraci', textContent: `${odkryte.length} / ${m.ilustrace.length - odkryte.length}` });
+      pocet.title = `${odkryte.length} odkrytých, ${m.ilustrace.length - odkryte.length} skrytých`;
+      b.append(pocet);
       b.addEventListener('click', () => {
         if (m.id !== vybraneMisto && stav.rozpracovano.has(`popis:${vybraneMisto}`)) {
           if (!confirm('Popis vzhledu není uložený. Přejít jinam a rozepsaný text zahodit?')) return;
@@ -1731,7 +1857,7 @@ function vykresliMista() {
   const vObs = s?.misto?.id === m.id;
   $('#misto-ukazat').textContent = vObs ? 'Znovu přepnout OBS na místo' : 'Ukázat v OBS';
   $('#misto-souhrn').textContent = m.ilustrace.length
-    ? `Klikni na odkrytou ilustraci a ukáže se v OBS. Skryté (šedé) do OBS nejdou, dokud je neodkryješ.`
+    ? 'Klikni na ilustraci a uprav ji vpravo. Šedé jsou skryté (do OBS nejdou).'
     : 'Místo zatím nemá žádnou ilustraci. Vytvoř ji v Ilustrační dílně.';
   vykresliSvetlaMista(m);
   vykresliZvukMista(m);
@@ -1741,7 +1867,87 @@ function vykresliMista() {
   // Nepřekresluj pod rukama, když DM právě píše stav nebo vybírá variantu (tlačítka nevadí).
   const aktivni = document.activeElement;
   if (mrizka.contains(aktivni) && ['INPUT', 'SELECT'].includes(aktivni.tagName)) return;
-  mrizka.replaceChildren(...m.ilustrace.map((il) => kartaIlustrace(m, il, s, vObs, true)));
+  // Příprava (rozhodnutí 66): karta jen vybírá, úpravy jsou v jednom panelu vpravo.
+  if (!m.ilustrace.some((il) => il.soubor === stav.mistoIlustrace)) stav.mistoIlustrace = m.ilustrace[0]?.soubor ?? null;
+  mrizka.replaceChildren(...m.ilustrace.map((il) => kartaPripravy(m, il, s, vObs)));
+  vykresliInspektor(m);
+}
+
+function kartaPripravy(m, il, s, vObs) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'karta-pripravy';
+  b.dataset.skryta = String(il.skryta);
+  b.setAttribute('aria-pressed', String(il.soubor === stav.mistoIlustrace));
+  const obr = Object.assign(document.createElement('span'), { className: 'obrazek' });
+  obr.style.backgroundImage = `url("${il.url}")`;
+  const jmeno = Object.assign(document.createElement('span'), { className: 'jmeno', textContent: il.soubor.replace(/\.[a-z0-9]+$/i, '') });
+  const stitky = Object.assign(document.createElement('span'), { className: 'stitky', textContent: `${il.skryta ? 'skrytá · ' : ''}${textIlustrace(il)}` });
+  b.append(obr, jmeno, stitky);
+  if (vObs && s?.ilustrace?.soubor === il.soubor) b.append(Object.assign(document.createElement('span'), { className: 'zive', textContent: 'Živě' }));
+  b.addEventListener('click', () => {
+    stav.mistoIlustrace = il.soubor;
+    vykresliMista();
+  });
+  return b;
+}
+
+/** Panel vybrané ilustrace: odkrytá, kdy se ukazuje, stav místa, zahodit. */
+function vykresliInspektor(m) {
+  const panel = $('#misto-inspektor');
+  if (panel.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;
+  const il = m.ilustrace.find((x) => x.soubor === stav.mistoIlustrace);
+  if (!il) {
+    panel.replaceChildren(Object.assign(document.createElement('p'), { className: 'ulozeni', textContent: 'Vyber ilustraci vlevo.' }));
+    return;
+  }
+  const nahled = Object.assign(document.createElement('div'), { className: 'inspektor-nahled' });
+  nahled.style.backgroundImage = `url("${il.url}")`;
+  const jmeno = Object.assign(document.createElement('p'), { className: 'inspektor-jmeno', textContent: il.soubor });
+
+  const odkryta = Object.assign(document.createElement('label'), { className: 'prepinac-zap' });
+  const sw = Object.assign(document.createElement('input'), { type: 'checkbox', checked: !il.skryta });
+  sw.setAttribute('role', 'switch');
+  sw.addEventListener('change', () => upravIlustraci(m.id, il.soubor, { skryta: !sw.checked }));
+  odkryta.append(sw, Object.assign(document.createElement('span'), { textContent: 'Odkrytá (může do OBS)' }));
+
+  const kdy = Object.assign(document.createElement('div'), { className: 'prepinac' });
+  kdy.append(Object.assign(document.createElement('span'), { textContent: 'Kdy se ukazuje' }));
+  const seg = Object.assign(document.createElement('div'), { className: 'segment' });
+  for (const [v, t] of [['', 'Vždy'], ['den', 'Den'], ['noc', 'Noc']]) {
+    const b = Object.assign(document.createElement('button'), { type: 'button', textContent: t });
+    b.setAttribute('aria-pressed', String((il.varianta ?? '') === v));
+    b.addEventListener('click', () => upravIlustraci(m.id, il.soubor, { varianta: v || null }));
+    seg.append(b);
+  }
+  kdy.append(seg);
+
+  // Stav místa: pole s nabídkou stavů, které už místo používá (⚠ návrh: výběr místo volného textu).
+  const stavy = [...new Set(m.ilustrace.map((x) => x.stav).filter(Boolean))];
+  const stavLabel = Object.assign(document.createElement('label'), { className: 'pole-stavu' });
+  stavLabel.append(Object.assign(document.createElement('span'), { textContent: 'Jen ve stavu místa' }));
+  const stavPole = Object.assign(document.createElement('input'), { value: il.stav ?? '', placeholder: 'kterýkoli (výchozí)' });
+  const seznamId = `stavy-${m.id}`;
+  stavPole.setAttribute('list', seznamId);
+  const datalist = Object.assign(document.createElement('datalist'), { id: seznamId });
+  datalist.append(...stavy.map((x) => new Option(x, x)));
+  stavPole.addEventListener('change', () => upravIlustraci(m.id, il.soubor, { stav: stavPole.value.trim() || null }));
+  stavLabel.append(stavPole, datalist);
+
+  const paticka = Object.assign(document.createElement('div'), { className: 'inspektor-paticka' });
+  paticka.append(Object.assign(document.createElement('span'), { className: 'ulozeni', textContent: il.prompt ? 'Má uložený prompt.' : 'Ukládá se samo.' }));
+  const zahodit = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Zahodit…', className: 'nebezpecne' });
+  zahodit.addEventListener('click', async () => {
+    if (!confirm(`Zahodit ilustraci ${il.soubor}? Soubor se smaže z místa.`)) return;
+    try {
+      await api(`/api/mista/${m.id}/ilustrace/${encodeURIComponent(il.soubor)}`, { metoda: 'DELETE' });
+      toast(`Zahozeno: ${il.soubor}`);
+    } catch (chyba) {
+      toast(chyba.message, { chyba: true });
+    }
+  });
+  paticka.append(zahodit);
+  panel.replaceChildren(nahled, jmeno, odkryta, kdy, stavLabel, paticka);
 }
 
 /**
@@ -1782,7 +1988,7 @@ function kartaIlustrace(m, il, s, vObs, sprava) {
   const stavPole = Object.assign(document.createElement('input'), { value: il.stav ?? '', placeholder: 'stav', title: 'Stav místa (např. po-pozaru); prázdné = výchozí' });
   stavPole.className = 'stav-ilustrace';
   stavPole.addEventListener('change', () => upravIlustraci(m.id, il.soubor, { stav: stavPole.value.trim() || null }));
-  const zahodit = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Zahodit' });
+  const zahodit = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Zahodit', className: 'nebezpecne' });
   zahodit.addEventListener('click', async () => {
     if (zahodit.dataset.potvrd !== 'true') {
       zahodit.dataset.potvrd = 'true';
@@ -2065,7 +2271,7 @@ for (const b of document.querySelectorAll('[data-kopirovat]')) {
   b.addEventListener('click', async () => {
     await navigator.clipboard?.writeText($(`#${b.dataset.kopirovat}`).textContent).catch(() => {});
     b.textContent = 'Zkopírováno';
-    setTimeout(() => (b.textContent = 'Kopírovat adresu'), 1500);
+    setTimeout(() => (b.textContent = 'Kopírovat'), 1500);
   });
 }
 
@@ -2118,6 +2324,8 @@ function vykresliSvetla() {
       : [polozkaKontroly('info', 'Žádné světlo není přiřazené k roli.')]),
   );
   for (const b of document.querySelectorAll('[data-test-role]')) b.disabled = !sv.zarizeni.some((z) => z.role === b.dataset.testRole);
+  vykresliHueSvetla();
+  vykresliWiz();
   const v = sv.vychozi ?? {};
   $('#svetla-vychozi').replaceChildren(
     'Platí, když místo světla nemá, pro Světla normál a po vypnutí Řídit světla. ',
@@ -2242,7 +2450,7 @@ function vykresliHueSvetla() {
       select.setAttribute('aria-label', `Role světla ${l.nazev}`);
       const td = document.createElement('td');
       td.append(select);
-      tr.append(Object.assign(document.createElement('td'), { textContent: `${l.nazev}${l.barevne ? '' : ' (jen bílá)'}` }), td);
+      tr.append(Object.assign(document.createElement('td'), { textContent: `${l.nazev}${l.barevne ? '' : ' (jen bílá)'}` }), td, bunkaStavu('hue', l.id));
       return tr;
     }),
   );
@@ -2261,32 +2469,77 @@ $('#hue-sparovat').addEventListener('click', async () => {
   }
 });
 
-$('#svetla-ulozit').addEventListener('click', async () => {
+/** Buňka se stavem zařízení z poslední kontroly světel (odpovídá / chyba / nepoužito). */
+function bunkaStavu(typ, id) {
+  const z = (stav.prehled?.svetla?.zarizeni ?? []).find((x) => x.typ === typ && x.id === id);
+  const td = Object.assign(document.createElement('td'), { className: 'stav-zarizeni' });
+  td.dataset.uroven = !z ? 'nic' : z.ok ? 'ok' : z.ok === false ? 'chyba' : 'info';
+  td.textContent = !z ? '—' : z.ok ? 'odpovídá' : z.ok === false ? z.chyba ?? 'neodpovídá' : 'zjišťuji';
+  return td;
+}
+
+/** WiZ lampy jako řádky s odebráním (rozhodnutí 66); skryté pole drží seznam pro uložení rolí. */
+function vykresliWiz() {
+  const ip = $('#pole-wiz').value.split(/[,\s]+/).map((x) => x.trim()).filter(Boolean);
+  $('#wiz-tabulka').hidden = !ip.length;
+  $('#wiz-seznam').replaceChildren(...ip.map((adresa) => {
+    const tr = document.createElement('tr');
+    const odebrat = Object.assign(document.createElement('button'), { type: 'button', className: 'tiche', textContent: '×', title: `Odebrat lampu ${adresa}` });
+    odebrat.setAttribute('aria-label', `Odebrat lampu ${adresa}`);
+    odebrat.addEventListener('click', () => zmenitWiz(ip.filter((x) => x !== adresa)));
+    const td = document.createElement('td');
+    td.append(odebrat);
+    tr.append(Object.assign(document.createElement('td'), { textContent: adresa }), bunkaStavu('wiz', adresa), td);
+    return tr;
+  }));
+}
+function zmenitWiz(seznam) {
+  $('#pole-wiz').value = seznam.join(', ');
+  vykresliWiz();
+  $('#pole-wiz').dispatchEvent(new Event('change'));
+}
+$('#wiz-pridat-formular').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const nova = $('#wiz-nova').value.trim();
+  if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(nova)) {
+    $('#svetla-vysledek').className = 'ulozeni chyba';
+    $('#svetla-vysledek').textContent = 'Zadej IP adresu lampy, např. 192.168.0.87.';
+    return;
+  }
+  const seznam = $('#pole-wiz').value.split(/[,\s]+/).filter(Boolean);
+  if (!seznam.includes(nova)) zmenitWiz([...seznam, nova]);
+  $('#wiz-nova').value = '';
+});
+
+/** Seznamy zařízení rolí z výběru Hue světel a pole WiZ lamp. */
+function seznamyRoli() {
   const role = { hlavni: [], pozadi: [], lampa: [] };
   const n = stav.prehled?.nastaveni ?? {};
   // Hue světla podle výběru; když se z bridge nenačetla, zůstanou uložená.
   if (stav.hueSvetla?.length) {
-    for (const s of document.querySelectorAll('#hue-svetla select')) if (s.value) role[s.value].push(`hue:${s.dataset.hue}`);
+    for (const v of document.querySelectorAll('#hue-svetla select')) if (v.value) role[v.value].push(`hue:${v.dataset.hue}`);
   } else {
     for (const [r, klic] of [['hlavni', 'svetlaHlavni'], ['pozadi', 'svetlaPozadi'], ['lampa', 'svetlaLampa']]) {
       role[r].push(...String(n[klic] ?? '').split(',').filter((x) => x.startsWith('hue:')));
     }
   }
   for (const ip of $('#pole-wiz').value.split(/[,\s]+/).map((x) => x.trim()).filter(Boolean)) role.lampa.push(`wiz:${ip}`);
-  const vysledek = $('#svetla-vysledek');
-  try {
-    const odpoved = await api('/api/nastaveni', {
-      metoda: 'PUT',
-      telo: { hueBridge: $('#pole-hue-bridge').value.trim(), svetlaHlavni: role.hlavni.join(','), svetlaPozadi: role.pozadi.join(','), svetlaLampa: role.lampa.join(','), blesky: $('#pole-blesky').checked },
-    });
-    stav.prehled.nastaveni = odpoved.nastaveni;
-    vysledek.className = 'ulozeni';
-    vysledek.textContent = `Světla uložena v ${cas()}. Ověřuji zařízení…`;
-    vykresliNastaveni(odpoved.nastaveni);
-  } catch (chyba) {
-    vysledek.className = 'ulozeni chyba';
-    vysledek.textContent = `Neuloženo: ${chyba.message}`;
+  return { svetlaHlavni: role.hlavni.join(','), svetlaPozadi: role.pozadi.join(','), svetlaLampa: role.lampa.join(',') };
+}
+$('#hue-svetla').addEventListener('change', (e) => {
+  if (e.target.matches('select')) ulozitNastaveni(seznamyRoli(), e.target, { chybaDo: $('#svetla-vysledek') });
+});
+$('#pole-wiz').addEventListener('change', () => ulozitNastaveni(seznamyRoli(), $('#wiz-tabulka'), { chybaDo: $('#svetla-vysledek') }));
+$('#pole-blesky').addEventListener('change', (e) => ulozitNastaveni({ blesky: e.target.checked }, e.target.closest('label'), { chybaDo: $('#svetla-vysledek') }));
+$('#pole-hue-bridge').addEventListener('change', async (e) => {
+  const n = stav.prehled?.nastaveni ?? {};
+  const nova = e.target.value.trim();
+  // Jiná adresa bridge zruší spárování (jiný klíč i certifikát): zeptat se.
+  if (n.hueSparovano && nova !== n.hueBridge && !confirm(`Změna adresy zruší spárování s bridgem ${n.hueBridge}. Pokračovat?`)) {
+    e.target.value = n.hueBridge;
+    return;
   }
+  await ulozitNastaveni({ hueBridge: nova }, e.target, { chybaDo: $('#hue-stav') });
 });
 
 for (const b of document.querySelectorAll('[data-test-role]')) {
@@ -2404,20 +2657,13 @@ for (const b of document.querySelectorAll('[data-zkusebni]')) {
   });
 }
 
-$('#zvuk-ulozit').addEventListener('click', async () => {
-  const vysledek = $('#zvuk-vysledek');
-  try {
-    const r = await api('/api/nastaveni', { metoda: 'PUT', telo: { zvukSlozka: $('#pole-zvuk-slozka').value.trim(), zvukOtevrit: $('#pole-zvuk-otevrit').checked } });
-    stav.prehled.nastaveni = r.nastaveni;
-    vysledek.className = 'ulozeni';
-    vysledek.textContent = `Uloženo v ${cas()}.`;
+$('#pole-zvuk-slozka').addEventListener('change', async (e) => {
+  if (await ulozitNastaveni({ zvukSlozka: e.target.value.trim() }, e.target, { chybaDo: $('#zvuk-vysledek') })) {
     await nactiPrehled();
     nactiZvukoveSoubory();
-  } catch (e) {
-    vysledek.className = 'ulozeni chyba';
-    vysledek.textContent = `Neuloženo: ${e.message}`;
   }
 });
+$('#pole-zvuk-otevrit').addEventListener('change', (e) => ulozitNastaveni({ zvukOtevrit: e.target.checked }, e.target.closest('label'), { chybaDo: $('#zvuk-vysledek') }));
 $('#zvuk-prohledat').addEventListener('click', async () => {
   try {
     stav.prehled.zvuk = await api('/api/zvuk/prohledat', { metoda: 'POST', telo: {} });
@@ -2454,7 +2700,8 @@ function vykresliZvukMista(m) {
   const kontejner = $('#misto-zvuk');
   if (kontejner.contains(document.activeElement)) return;
   const soubory = stav.zvukoveSoubory ?? [];
-  const bezEfektu = soubory.filter((x) => !x.startsWith('efekty/'));
+  // Hrom hraje Hub sám po blesku, do hudby ani ambientu místa nepatří (⚠ návrh).
+  const bezEfektu = soubory.filter((x) => !x.startsWith('efekty/') && !/^hrom/i.test(kmenZvuku(x)));
   kontejner.replaceChildren(
     ...['den', 'noc'].map((varianta) => {
       const radek = document.createElement('div');
@@ -2511,3 +2758,12 @@ function oznacUlozeno(pole) {
   casovaceZnacek.set(znacka, setTimeout(() => (znacka.dataset.ukazat = 'false'), 3000));
 }
 window.oznacUlozeno = oznacUlozeno;
+
+/* Místa: záložky v detailu místa (Ilustrace · Světla · Zvuk · Popis pro dílnu), rozhodnutí 65 */
+stav.mistoZalozka = 'ilustrace';
+function ukazMistoZalozku(z) {
+  stav.mistoZalozka = z;
+  for (const b of document.querySelectorAll('.misto-zalozky [data-mz]')) b.setAttribute('aria-selected', String(b.dataset.mz === z));
+  for (const p of document.querySelectorAll('.misto-panel')) p.hidden = p.dataset.mz !== z;
+}
+for (const b of document.querySelectorAll('.misto-zalozky [data-mz]')) b.addEventListener('click', () => ukazMistoZalozku(b.dataset.mz));

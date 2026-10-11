@@ -756,3 +756,38 @@ main { padding: var(--m-4) var(--m-5) var(--m-5); }
 @media (max-width: 64rem) { #obrazovka-prehled .dva-sloupce { grid-template-columns: minmax(0, 1fr); } }
 #sezeni-kontrola li > a { display: inline-block; padding: var(--m-1) var(--m-3); border: 1px solid var(--linka); border-radius: var(--zaobleni); background: var(--povrch-2); color: var(--text); text-decoration: none; font-size: var(--t-popisek); }
 #sezeni-kontrola li > a:hover { border-color: var(--mosaz-tlumena); }
+
+/* Místa: seznam vlevo, příprava uprostřed, vybraná ilustrace vpravo */
+.mista-rozlozeni { display: grid; grid-template-columns: 13rem minmax(0, 1fr); gap: var(--m-5); align-items: start; }
+.mista-rozlozeni .seznam-mist { display: flex; flex-direction: column; gap: 2px; padding: var(--m-2); }
+.pocet-ilustraci { color: var(--text-tlumeny); font-size: var(--t-stitek); font-variant-numeric: tabular-nums; }
+.mista-rozlozeni .misto-hlava { margin: 0 0 var(--m-3); flex-wrap: wrap; }
+.mista-rozlozeni .misto-hlava h2 { font-family: var(--pismo-svet); font-weight: 400; font-size: var(--t-svet-m); color: var(--akcent); }
+.misto-zalozky.segment { margin: 0; border-bottom: 1px solid var(--linka); }
+.misto-zalozky.segment button { border-radius: 0; margin: 0; border: 0; border-right: 1px solid var(--linka); color: var(--text); background: var(--povrch-2); padding: var(--m-1) var(--m-3); }
+.misto-zalozky.segment button:last-child { border-right: 0; }
+.misto-zalozky.segment button[aria-selected="true"] { background: var(--akcent); color: var(--povrch-0); font-weight: 600; }
+.misto-dilna { margin-left: auto; font-size: var(--t-popisek); }
+.misto-panel { padding-top: 0; }
+.misto-ilustrace-panel { display: grid; grid-template-columns: minmax(0, 1fr) 24rem; gap: var(--m-4); align-items: start; }
+.misto-ilustrace-panel[hidden] { display: none; }
+.misto-ilustrace-panel #misto-souhrn { margin: 0 0 var(--m-2); }
+.mrizka-pripravy { grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: var(--m-3); margin-top: 0; }
+.karta-pripravy { position: relative; display: grid; padding: 0; overflow: hidden; text-align: left; background: var(--povrch-1); border-radius: var(--zaobleni); }
+.karta-pripravy .obrazek { aspect-ratio: 16 / 9; background-size: cover; background-position: center; }
+.karta-pripravy[data-skryta="true"] { border-style: dashed; }
+.karta-pripravy[data-skryta="true"] .obrazek { filter: grayscale(1) brightness(0.45); }
+.karta-pripravy .jmeno { margin: var(--m-1) var(--m-3) 0; font-size: var(--t-popisek); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.karta-pripravy .stitky { margin: 0 var(--m-3) var(--m-2); color: var(--text-tlumeny); font-size: var(--t-stitek); }
+.karta-pripravy[data-skryta="true"] .stitky { color: var(--varovani); }
+.karta-pripravy[aria-pressed="true"] { border-color: var(--akcent); box-shadow: 0 0 0 1px var(--akcent); }
+.karta-pripravy .zive { position: absolute; left: var(--m-2); top: var(--m-2); }
+.inspektor { display: flex; flex-direction: column; gap: var(--m-3); padding: var(--m-3) var(--m-4); }
+.inspektor-nahled { aspect-ratio: 16 / 9; border-radius: var(--zaobleni); background-size: cover; background-position: center; }
+.inspektor-jmeno { margin: 0; font-weight: 600; word-break: break-all; }
+.inspektor .prepinac > span, .pole-stavu > span { color: var(--text-tlumeny); font-size: var(--t-popisek); }
+.pole-stavu { display: grid; gap: var(--m-1); }
+.inspektor-paticka { display: flex; align-items: center; justify-content: space-between; gap: var(--m-3); padding-top: var(--m-3); border-top: 1px solid var(--linka); }
+.inspektor-paticka .ulozeni { margin: 0; min-height: 0; }
+.mista-rozlozeni .svetla-mista > .ulozeni:first-of-type, #misto-zvuk-popis { max-width: 46rem; margin-top: 0; }
+@media (max-width: 64rem) { .mista-rozlozeni, .misto-ilustrace-panel { grid-template-columns: minmax(0, 1fr); } }

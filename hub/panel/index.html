@@ -297,30 +297,34 @@
       </section>
 
       <section id="obrazovka-mista" class="obrazovka" hidden>
-        <h1>Místa</h1>
-        <p class="uvod">Příprava míst pro hru. Živé ovládání je na obrazovce <a href="#sceny">U stolu</a>.</p>
-
-        <div class="seznam-mist" id="seznam-mist"></div>
+        <h1 class="vizualne-skryte">Místa</h1>
+        <!-- Rozložení v2 (rozhodnutí 66): vlevo místa, uprostřed příprava vybraného místa. -->
+        <div class="mista-rozlozeni">
+        <nav class="karta seznam-mist" id="seznam-mist" aria-label="Místa"></nav>
 
         <div id="misto-detail" hidden>
           <div class="misto-hlava">
             <h2 id="misto-nazev"></h2>
-            <button type="button" id="misto-ukazat">Ukázat v OBS</button>
+            <div class="misto-zalozky segment" role="tablist" aria-label="Příprava místa">
+              <button type="button" role="tab" data-mz="ilustrace" aria-selected="true">Ilustrace</button>
+              <button type="button" role="tab" data-mz="svetla" aria-selected="false">Světla</button>
+              <button type="button" role="tab" data-mz="zvuk" aria-selected="false">Zvuk</button>
+              <button type="button" role="tab" data-mz="popis" aria-selected="false">Popis pro dílnu</button>
+            </div>
+            <button type="button" class="tiche" id="misto-ukazat">Ukázat v OBS</button>
+            <a href="#dilna" class="misto-dilna" id="misto-do-dilny">Nová ilustrace v dílně →</a>
           </div>
-          <div class="misto-zalozky" role="tablist" aria-label="Příprava místa">
-            <button type="button" role="tab" data-mz="ilustrace" aria-selected="true">Ilustrace</button>
-            <button type="button" role="tab" data-mz="svetla" aria-selected="false">Světla</button>
-            <button type="button" role="tab" data-mz="zvuk" aria-selected="false">Zvuk</button>
-            <button type="button" role="tab" data-mz="popis" aria-selected="false">Popis pro dílnu</button>
-          </div>
-          <div class="misto-panel" data-mz="ilustrace">
-          <p class="ulozeni" id="misto-souhrn"></p>
-          <div class="ilustrace" id="misto-ilustrace"></div>
+          <div class="misto-panel misto-ilustrace-panel" data-mz="ilustrace">
+            <div>
+              <p class="ulozeni" id="misto-souhrn"></p>
+              <div class="ilustrace mrizka-pripravy" id="misto-ilustrace"></div>
+            </div>
+            <aside class="karta inspektor" id="misto-inspektor" aria-label="Vybraná ilustrace"></aside>
           </div>
           <div class="misto-panel popis-obrazu" data-mz="popis" hidden>
             <p class="uvod">Anglický popis vzhledu místa; dílna ho vkládá do promptů.</p>
             <textarea id="misto-popis" rows="3" placeholder="např. a rough bandit camp in a pine forest clearing near the Long Road, tents, a palisade of sharpened stakes…"></textarea>
-            <div class="tlacitka"><button type="button" id="misto-popis-ulozit">Uložit popis</button> <a href="#dilna" id="misto-do-dilny">Nová ilustrace v dílně →</a></div>
+            <div class="tlacitka"><button type="button" id="misto-popis-ulozit">Uložit popis</button></div>
           </div>
           <section class="svetla-mista misto-panel" data-mz="svetla" hidden aria-labelledby="misto-svetla-nadpis">
             <h3 id="misto-svetla-nadpis" class="vizualne-skryte">Světla</h3>
@@ -338,6 +342,7 @@
             <div class="zvuk-mista" id="misto-zvuk"></div>
             <p class="ulozeni" id="misto-zvuk-vysledek" aria-live="polite"></p>
           </section>
+        </div>
         </div>
       </section>
 

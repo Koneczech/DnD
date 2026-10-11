@@ -1810,16 +1810,13 @@ function vykresliMista() {
     ...seznam.map((m) => {
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'karta-mista';
+      b.className = 'polozka-mista';
       b.setAttribute('aria-pressed', String(m.id === vybraneMisto));
       const odkryte = m.ilustrace.filter((il) => !il.skryta && il.ucel === 'scena');
-      const nahled = odkryte[0] ?? m.ilustrace[0];
-      if (nahled) b.style.backgroundImage = `url("${nahled.url}")`;
-      const popis = document.createElement('span');
-      popis.textContent = `${m.nazev}${s?.misto?.id === m.id ? ' · v OBS' : ''}`;
-      const pocet = document.createElement('small');
-      pocet.textContent = `${odkryte.length} odkrytých, ${m.ilustrace.length - odkryte.length} skrytých`;
-      b.append(popis, pocet);
+      b.append(Object.assign(document.createElement('span'), { textContent: m.nazev }));
+      const pocet = Object.assign(document.createElement('span'), { className: 'pocet-ilustraci', textContent: `${odkryte.length} / ${m.ilustrace.length - odkryte.length}` });
+      pocet.title = `${odkryte.length} odkrytých, ${m.ilustrace.length - odkryte.length} skrytých`;
+      b.append(pocet);
       b.addEventListener('click', () => {
         if (m.id !== vybraneMisto && stav.rozpracovano.has(`popis:${vybraneMisto}`)) {
           if (!confirm('Popis vzhledu není uložený. Přejít jinam a rozepsaný text zahodit?')) return;
@@ -1838,7 +1835,7 @@ function vykresliMista() {
   const vObs = s?.misto?.id === m.id;
   $('#misto-ukazat').textContent = vObs ? 'Znovu přepnout OBS na místo' : 'Ukázat v OBS';
   $('#misto-souhrn').textContent = m.ilustrace.length
-    ? `Klikni na odkrytou ilustraci a ukáže se v OBS. Skryté (šedé) do OBS nejdou, dokud je neodkryješ.`
+    ? 'Klikni na ilustraci a uprav ji vpravo. Šedé jsou skryté (do OBS nejdou).'
     : 'Místo zatím nemá žádnou ilustraci. Vytvoř ji v Ilustrační dílně.';
   vykresliSvetlaMista(m);
   vykresliZvukMista(m);
@@ -1848,7 +1845,87 @@ function vykresliMista() {
   // Nepřekresluj pod rukama, když DM právě píše stav nebo vybírá variantu (tlačítka nevadí).
   const aktivni = document.activeElement;
   if (mrizka.contains(aktivni) && ['INPUT', 'SELECT'].includes(aktivni.tagName)) return;
-  mrizka.replaceChildren(...m.ilustrace.map((il) => kartaIlustrace(m, il, s, vObs, true)));
+  // Příprava (rozhodnutí 66): karta jen vybírá, úpravy jsou v jednom panelu vpravo.
+  if (!m.ilustrace.some((il) => il.soubor === stav.mistoIlustrace)) stav.mistoIlustrace = m.ilustrace[0]?.soubor ?? null;
+  mrizka.replaceChildren(...m.ilustrace.map((il) => kartaPripravy(m, il, s, vObs)));
+  vykresliInspektor(m);
+}
+
+function kartaPripravy(m, il, s, vObs) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'karta-pripravy';
+  b.dataset.skryta = String(il.skryta);
+  b.setAttribute('aria-pressed', String(il.soubor === stav.mistoIlustrace));
+  const obr = Object.assign(document.createElement('span'), { className: 'obrazek' });
+  obr.style.backgroundImage = `url("${il.url}")`;
+  const jmeno = Object.assign(document.createElement('span'), { className: 'jmeno', textContent: il.soubor.replace(/\.[a-z0-9]+$/i, '') });
+  const stitky = Object.assign(document.createElement('span'), { className: 'stitky', textContent: `${il.skryta ? 'skrytá · ' : ''}${textIlustrace(il)}` });
+  b.append(obr, jmeno, stitky);
+  if (vObs && s?.ilustrace?.soubor === il.soubor) b.append(Object.assign(document.createElement('span'), { className: 'zive', textContent: 'Živě' }));
+  b.addEventListener('click', () => {
+    stav.mistoIlustrace = il.soubor;
+    vykresliMista();
+  });
+  return b;
+}
+
+/** Panel vybrané ilustrace: odkrytá, kdy se ukazuje, stav místa, zahodit. */
+function vykresliInspektor(m) {
+  const panel = $('#misto-inspektor');
+  if (panel.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;
+  const il = m.ilustrace.find((x) => x.soubor === stav.mistoIlustrace);
+  if (!il) {
+    panel.replaceChildren(Object.assign(document.createElement('p'), { className: 'ulozeni', textContent: 'Vyber ilustraci vlevo.' }));
+    return;
+  }
+  const nahled = Object.assign(document.createElement('div'), { className: 'inspektor-nahled' });
+  nahled.style.backgroundImage = `url("${il.url}")`;
+  const jmeno = Object.assign(document.createElement('p'), { className: 'inspektor-jmeno', textContent: il.soubor });
+
+  const odkryta = Object.assign(document.createElement('label'), { className: 'prepinac-zap' });
+  const sw = Object.assign(document.createElement('input'), { type: 'checkbox', checked: !il.skryta });
+  sw.setAttribute('role', 'switch');
+  sw.addEventListener('change', () => upravIlustraci(m.id, il.soubor, { skryta: !sw.checked }));
+  odkryta.append(sw, Object.assign(document.createElement('span'), { textContent: 'Odkrytá (může do OBS)' }));
+
+  const kdy = Object.assign(document.createElement('div'), { className: 'prepinac' });
+  kdy.append(Object.assign(document.createElement('span'), { textContent: 'Kdy se ukazuje' }));
+  const seg = Object.assign(document.createElement('div'), { className: 'segment' });
+  for (const [v, t] of [['', 'Vždy'], ['den', 'Den'], ['noc', 'Noc']]) {
+    const b = Object.assign(document.createElement('button'), { type: 'button', textContent: t });
+    b.setAttribute('aria-pressed', String((il.varianta ?? '') === v));
+    b.addEventListener('click', () => upravIlustraci(m.id, il.soubor, { varianta: v || null }));
+    seg.append(b);
+  }
+  kdy.append(seg);
+
+  // Stav místa: pole s nabídkou stavů, které už místo používá (⚠ návrh: výběr místo volného textu).
+  const stavy = [...new Set(m.ilustrace.map((x) => x.stav).filter(Boolean))];
+  const stavLabel = Object.assign(document.createElement('label'), { className: 'pole-stavu' });
+  stavLabel.append(Object.assign(document.createElement('span'), { textContent: 'Jen ve stavu místa' }));
+  const stavPole = Object.assign(document.createElement('input'), { value: il.stav ?? '', placeholder: 'kterýkoli (výchozí)' });
+  const seznamId = `stavy-${m.id}`;
+  stavPole.setAttribute('list', seznamId);
+  const datalist = Object.assign(document.createElement('datalist'), { id: seznamId });
+  datalist.append(...stavy.map((x) => new Option(x, x)));
+  stavPole.addEventListener('change', () => upravIlustraci(m.id, il.soubor, { stav: stavPole.value.trim() || null }));
+  stavLabel.append(stavPole, datalist);
+
+  const paticka = Object.assign(document.createElement('div'), { className: 'inspektor-paticka' });
+  paticka.append(Object.assign(document.createElement('span'), { className: 'ulozeni', textContent: il.prompt ? 'Má uložený prompt.' : 'Ukládá se samo.' }));
+  const zahodit = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Zahodit…', className: 'nebezpecne' });
+  zahodit.addEventListener('click', async () => {
+    if (!confirm(`Zahodit ilustraci ${il.soubor}? Soubor se smaže z místa.`)) return;
+    try {
+      await api(`/api/mista/${m.id}/ilustrace/${encodeURIComponent(il.soubor)}`, { metoda: 'DELETE' });
+      toast(`Zahozeno: ${il.soubor}`);
+    } catch (chyba) {
+      toast(chyba.message, { chyba: true });
+    }
+  });
+  paticka.append(zahodit);
+  panel.replaceChildren(nahled, jmeno, odkryta, kdy, stavLabel, paticka);
 }
 
 /**
@@ -2557,7 +2634,8 @@ function vykresliZvukMista(m) {
   const kontejner = $('#misto-zvuk');
   if (kontejner.contains(document.activeElement)) return;
   const soubory = stav.zvukoveSoubory ?? [];
-  const bezEfektu = soubory.filter((x) => !x.startsWith('efekty/'));
+  // Hrom hraje Hub sám po blesku, do hudby ani ambientu místa nepatří (⚠ návrh).
+  const bezEfektu = soubory.filter((x) => !x.startsWith('efekty/') && !/^hrom/i.test(kmenZvuku(x)));
   kontejner.replaceChildren(
     ...['den', 'noc'].map((varianta) => {
       const radek = document.createElement('div');

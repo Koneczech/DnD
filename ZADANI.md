@@ -29,7 +29,7 @@ Verze 1 převede do repa kánon, kalendář, obchody, postavy a ilustrace míst.
 
 ## Potvrzená rozhodnutí
 
-Rozhodnutí 1–12 potvrdil DM 2. 10. 2026. Rozhodnutí 13–24 vzešla z první oponentury zadání, 25–32 z oponentury postupu výroby; DM je přijal týž den. Rozhodnutí 39–42 potvrdil DM 3. 10. 2026 (akceptace Bloku 1b a start Bloku 2). Rozhodnutí 33–38 potvrdil DM 2. 10. 2026 při kontrole ⚠ návrhů Bloku 0. Rozhodnutí 55–64 (světla a zvuk) potvrdil DM 10. 10. 2026; podobu přepínače Řídit světla (59) a zvukových výstupů s BT reproduktorem (62) navrhl Claude a ověří ji akceptace Bloků 4 a 5. Nepotvrzené návrhy jsou výslovně označené a shrnuté v Otevřených bodech.
+Rozhodnutí 1–12 potvrdil DM 2. 10. 2026. Rozhodnutí 13–24 vzešla z první oponentury zadání, 25–32 z oponentury postupu výroby; DM je přijal týž den. Rozhodnutí 39–42 potvrdil DM 3. 10. 2026 (akceptace Bloku 1b a start Bloku 2). Rozhodnutí 33–38 potvrdil DM 2. 10. 2026 při kontrole ⚠ návrhů Bloku 0. Rozhodnutí 55–64 (světla a zvuk) potvrdil DM 10. 10. 2026, rozhodnutí 65 (audit UI) 11. 10. 2026; podobu přepínače Řídit světla (59) a zvukových výstupů s BT reproduktorem (62) navrhl Claude a ověří ji akceptace Bloků 4 a 5. Nepotvrzené návrhy jsou výslovně označené a shrnuté v Otevřených bodech.
 
 | # | Rozhodnutí | Důsledek |
 | --- | --- | --- |
@@ -97,6 +97,7 @@ Rozhodnutí 1–12 potvrdil DM 2. 10. 2026. Rozhodnutí 13–24 vzešla z první
 | 62 | Zvuk: hudba na TV, ambient a efekty na BT reproduktoru u stolu | Obojí hrají stránky Hubu přes Web Audio (bezešvé smyčky, prolínání, víc vrstev naráz). **Hudba**: výstup `vystupy/hudba.html` jako Browser Source v OBS, zvuk jde s obrazem na TV. **Ambient a efekty**: stránka `zvuk-u-stolu.html`, kterou otevře spouštěč v okně prohlížeče; Windows posílá zvuk prohlížeče do Bluetooth reproduktoru (nastavení „výstup podle aplikace“). Google Home Mini a Cast odpadají: bez síťového portu, bez latence 1–2 s, bez omezení na jeden stream |
 | 63 | Zvukové soubory nejsou ve veřejném repu | Licence hudby a ambientu zveřejnění nepovolují a soubory jsou velké. Složka `audio/` leží vedle repa (cesta v `hub/.env`, výchozí `Documents\DnD\audio`), Hub ji servíruje jen na localhostu. Data scén odkazují jménem souboru, Kontrola dat ohlásí chybějící soubor |
 | 64 | Bezpečnost světel | Blesky nejvýš 3 záblesky za sekundu (hranice fotosenzitivity) a vypínač Blesky v Nastavení. Hlavní světlo má podlahu jasu a strop sytosti. Světla normál vrátí výchozí stav |
+| 65 | Uspořádání panelu podle auditu UI (11. 10. 2026) | Mění rozhodnutí 44 a 52 a otevřený bod 58. **Role scén** jsou v Nastavení → OBS a scény. **U stolu**: jedna řada rolí (záložka připraví, tlačítko Do OBS přepne, štítek ŽIVĚ), lišta podmínek, pravý sloupec Živě (náhled, světla, zvuk, efekty). **Horní lišta**: Souboj, Ticho, Poznámka, Další den, odznak sezení a jedna kontrolka Systém; Zahájit sezení jen na obrazovce Sezení. **Nastavení** má kategorie a ukládá se samo (heslo OBS a PIN tlačítkem). Vizuální systém a návrh obrazovek: dokument Audit ovládání panelu (Fáze 1) a plátno Nové uspořádání panelu; přestavba v pěti částech (`ui-1` až `ui-5`) |
 
 ## Architektura
 

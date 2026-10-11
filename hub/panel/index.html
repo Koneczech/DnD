@@ -54,6 +54,8 @@
 
       <section id="obrazovka-prehled" class="obrazovka">
         <h1>Sezení</h1>
+        <div class="dva-sloupce">
+          <div class="hlavni-sloupec">
         <div class="sezeni-hlavicka">
           <div>
             <p class="sezeni-stav" id="sezeni-stav">…</p>
@@ -63,7 +65,7 @@
         </div>
 
         <div id="sezeni-pred">
-          <h2>Před hrou</h2>
+          <div class="sekce-hlava"><h2>Před hrou</h2><span class="ulozeni" id="sezeni-souhrn"></span></div>
           <ul class="kontrolni-stav" id="sezeni-kontrola"></ul>
         </div>
 
@@ -71,11 +73,14 @@
         <p class="uvod" id="sezeni-poznamky-popis">Zapisuješ je klávesou F2 nebo tlačítkem Poznámka v horní liště, ukládají se s časem do souboru sezení.</p>
         <ol class="poznamky" id="sezeni-poznamky"></ol>
 
-        <h2>Družina</h2>
+          </div>
+          <aside class="bocni-sloupec">
+          <section class="karta bocni-karta" aria-labelledby="druzina-nadpis">
+        <h2 id="druzina-nadpis">Družina</h2>
         <form id="formular-stav" class="formular" autocomplete="off">
           <label>Kde je družina
             <input name="misto" id="pole-misto" placeholder="např. Longsaddle">
-            <small>Ukazuje se v horní liště a ukládá se samo. Datum měníš v <a href="#kalendar">Kalendáři</a>.</small>
+            <small>V horní liště, ukládá se samo. Datum je v <a href="#kalendar">Kalendáři</a>.</small>
           </label>
           <details class="oprava">
             <summary>Opravit číslo posledního sezení</summary>
@@ -87,14 +92,19 @@
         </form>
         <p class="ulozeni" id="stav-ulozeni" aria-live="polite"></p>
 
+          </section>
+          <section class="karta bocni-karta" aria-labelledby="prehled-github">
         <h2 id="prehled-github">GitHub</h2>
         <p id="git-popis" class="uvod"></p>
         <div class="tlacitka">
-          <button type="button" id="git-ulozit">Uložit do GitHubu</button>
-          <button type="button" id="git-zkontrolovat">Zkontrolovat změny na GitHubu</button>
+          <button type="button" id="git-ulozit">Uložit</button>
+          <button type="button" id="git-zkontrolovat">Zkontrolovat</button>
           <button type="button" id="git-stahnout" hidden>Stáhnout změny</button>
         </div>
         <p class="ulozeni" id="git-vysledek" aria-live="polite"></p>
+          </section>
+          </aside>
+        </div>
       </section>
 
       <section id="obrazovka-sceny" class="obrazovka" hidden>
@@ -228,7 +238,7 @@
 
       <section id="obrazovka-kalendar" class="obrazovka" hidden>
         <h1>Kalendář</h1>
-        <p class="uvod">Dnešní datum žije v <code>kampan/stav.md</code>, události v <code>kampan/kalendar/udalosti.yaml</code>. Každá změna je v OBS do sekundy.</p>
+        <p class="uvod">Dnešní datum a události kampaně; každá změna je v OBS do sekundy.</p>
 
         <div class="kalendar-dnes">
           <p class="kalendar-datum" id="kalendar-datum">…</p>
@@ -282,25 +292,32 @@
 
       <section id="obrazovka-mista" class="obrazovka" hidden>
         <h1>Místa</h1>
-        <p class="uvod">Příprava míst: ilustrace, odkrytí a skrytí, popis vzhledu pro prompty, nová ilustrace z dílny. Živé ovládání (místo, počasí, intenzita) je na obrazovce <a href="#sceny">U stolu</a>.</p>
+        <p class="uvod">Příprava míst pro hru. Živé ovládání je na obrazovce <a href="#sceny">U stolu</a>.</p>
 
-        <h2>Místa</h2>
         <div class="seznam-mist" id="seznam-mist"></div>
 
         <div id="misto-detail" hidden>
           <div class="misto-hlava">
             <h2 id="misto-nazev"></h2>
-            <button type="button" class="hlavni" id="misto-ukazat">Ukázat v OBS</button>
+            <button type="button" id="misto-ukazat">Ukázat v OBS</button>
           </div>
+          <div class="misto-zalozky" role="tablist" aria-label="Příprava místa">
+            <button type="button" role="tab" data-mz="ilustrace" aria-selected="true">Ilustrace</button>
+            <button type="button" role="tab" data-mz="svetla" aria-selected="false">Světla</button>
+            <button type="button" role="tab" data-mz="zvuk" aria-selected="false">Zvuk</button>
+            <button type="button" role="tab" data-mz="popis" aria-selected="false">Popis pro dílnu</button>
+          </div>
+          <div class="misto-panel" data-mz="ilustrace">
           <p class="ulozeni" id="misto-souhrn"></p>
           <div class="ilustrace" id="misto-ilustrace"></div>
-          <details class="popis-obrazu">
-            <summary>Popis vzhledu pro prompty dílny (anglicky)</summary>
+          </div>
+          <div class="misto-panel popis-obrazu" data-mz="popis" hidden>
+            <p class="uvod">Anglický popis vzhledu místa; dílna ho vkládá do promptů.</p>
             <textarea id="misto-popis" rows="3" placeholder="např. a rough bandit camp in a pine forest clearing near the Long Road, tents, a palisade of sharpened stakes…"></textarea>
             <div class="tlacitka"><button type="button" id="misto-popis-ulozit">Uložit popis</button> <a href="#dilna" id="misto-do-dilny">Nová ilustrace v dílně →</a></div>
-          </details>
-          <section class="svetla-mista" aria-labelledby="misto-svetla-nadpis">
-            <h3 id="misto-svetla-nadpis">Světla</h3>
+          </div>
+          <section class="svetla-mista misto-panel" data-mz="svetla" hidden aria-labelledby="misto-svetla-nadpis">
+            <h3 id="misto-svetla-nadpis" class="vizualne-skryte">Světla</h3>
             <p class="ulozeni">Nastav světla ručně v aplikacích Hue a WiZ a klikni na Zachytit. Hub uloží stav všech rolí do hlavičky místa; bez zachycení platí výchozí stav, noc bez vlastních světel vezme den s polovičním jasem.</p>
             <dl class="svetla-varianty" id="misto-svetla"></dl>
             <div class="tlacitka">
@@ -309,8 +326,8 @@
             </div>
             <p class="ulozeni" id="misto-svetla-vysledek" aria-live="polite"></p>
           </section>
-          <section class="svetla-mista" aria-labelledby="misto-zvuk-nadpis">
-            <h3 id="misto-zvuk-nadpis">Zvuk</h3>
+          <section class="svetla-mista misto-panel" data-mz="zvuk" hidden aria-labelledby="misto-zvuk-nadpis">
+            <h3 id="misto-zvuk-nadpis" class="vizualne-skryte">Zvuk</h3>
             <p class="ulozeni" id="misto-zvuk-popis">Hudba hraje na TV, ambient u stolu. Soubory vybíráš ze složky zvuku (Nastavení → Zvuk). Noc bez vlastního zvuku hraje zvuk dne.</p>
             <div class="zvuk-mista" id="misto-zvuk"></div>
             <p class="ulozeni" id="misto-zvuk-vysledek" aria-live="polite"></p>
@@ -320,7 +337,7 @@
 
       <section id="obrazovka-obchody" class="obrazovka" hidden>
         <h1>Obchody</h1>
-        <p class="uvod">Příprava obchodů: sortiment vylosuj v generátoru a ulož do Hubu, obrázek interiéru vytvoř v Ilustrační dílně. U stolu pak sortiment jen ukazuješ v OBS (U stolu → Obchod).</p>
+        <p class="uvod">Sortimenty z generátoru a obrázky obchodů. Ve hře je ukazuješ na U stolu → Obchod.</p>
         <div class="tlacitka"><a class="tlacitko hlavni" href="/nastroje/generator.html" target="_blank" rel="noopener">Otevřít generátor obchodů</a></div>
         <h2>Uložené sortimenty</h2>
         <p class="uvod" id="sprava-sortimenty-prazdno">Zatím žádné. Ulož první z generátoru.</p>
@@ -333,7 +350,7 @@
 
       <section id="obrazovka-dilna" class="obrazovka" hidden>
         <h1>Ilustrační dílna</h1>
-        <p class="uvod">Tři kroky od nápadu k obrázku v OBS: prompt pro ChatGPT, import s ořezem na 16:9 a zvětšením na 1920 × 1080, pak odkrytí na obrazovce Místa. Bez Affinity a bez práce v OBS.</p>
+        <p class="uvod">Od promptu k ilustraci v OBS ve třech krocích.</p>
 
         <h2>1. Prompt</h2>
         <form id="dilna-formular" class="formular radek" autocomplete="off">

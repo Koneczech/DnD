@@ -840,7 +840,29 @@ function vykresliObrazovkuSezeni() {
       if (chybi) k.push(polozkaKontroly('varovani', `Chybí zvukové soubory scén: ${chybi}.`, { text: 'Kontrola dat', odkaz: '#kontrola' }));
     }
     if (p.server?.restartNutny) k.push(polozkaKontroly('varovani', p.server.restartNutny, p.server.restartZPanelu ? { text: 'Restartovat Hub', klik: restartovatHub } : undefined));
-    $('#sezeni-kontrola').replaceChildren(...k);
+    // Nejdřív to, co je potřeba vyřešit; body v pořádku sbalené do jednoho řádku (rozhodnutí 65).
+    const PORADI = { chyba: 0, varovani: 1, info: 2, ok: 3 };
+    k.sort((x, y) => PORADI[x.dataset.uroven] - PORADI[y.dataset.uroven]);
+    const vporadku = k.filter((x) => x.dataset.uroven === 'ok');
+    const resit = k.filter((x) => ['chyba', 'varovani'].includes(x.dataset.uroven)).length;
+    const radky = k.filter((x) => x.dataset.uroven !== 'ok');
+    if (vporadku.length) {
+      const li = document.createElement('li');
+      li.className = 'v-poradku';
+      const d = document.createElement('details');
+      d.open = stav.sezeniOkOtevrene === true;
+      d.addEventListener('toggle', () => (stav.sezeniOkOtevrene = d.open));
+      const sum = document.createElement('summary');
+      sum.append(Object.assign(document.createElement('span'), { className: 'stav-ikona' }), `${vporadku.length} v pořádku`);
+      const ul = Object.assign(document.createElement('ul'), { className: 'kontrolni-stav' });
+      ul.append(...vporadku);
+      d.append(sum, ul);
+      li.append(d);
+      li.dataset.uroven = 'ok';
+      radky.push(li);
+    }
+    $('#sezeni-kontrola').replaceChildren(...radky);
+    $('#sezeni-souhrn').textContent = resit ? `${resit} k vyřešení · ${vporadku.length} v pořádku` : 'Všechno je připravené.';
   }
 
   // Poznámky: během sezení z jeho souboru, mimo sezení z přípravy.
@@ -1234,7 +1256,7 @@ function radekUdalosti(u, dnes) {
   akce.className = 'akce-radku';
   const upravit = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Upravit' });
   upravit.addEventListener('click', () => otevritUdalost(u));
-  const smazat = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Smazat' });
+  const smazat = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Smazat', className: 'nebezpecne' });
   smazat.addEventListener('click', async () => {
     if (smazat.dataset.potvrd !== 'true') {
       smazat.dataset.potvrd = 'true';
@@ -1593,7 +1615,7 @@ function vykresliObchody() {
       obrazek.append(document.createElement('br'), doDilny);
       const akce = document.createElement('td');
       akce.className = 'akce-radku';
-      const smazat = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Smazat' });
+      const smazat = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Smazat', className: 'nebezpecne' });
       smazat.addEventListener('click', async () => {
         if (smazat.dataset.potvrd !== 'true') {
           smazat.dataset.potvrd = 'true';
@@ -1863,7 +1885,7 @@ function kartaIlustrace(m, il, s, vObs, sprava) {
   const stavPole = Object.assign(document.createElement('input'), { value: il.stav ?? '', placeholder: 'stav', title: 'Stav místa (např. po-pozaru); prázdné = výchozí' });
   stavPole.className = 'stav-ilustrace';
   stavPole.addEventListener('change', () => upravIlustraci(m.id, il.soubor, { stav: stavPole.value.trim() || null }));
-  const zahodit = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Zahodit' });
+  const zahodit = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Zahodit', className: 'nebezpecne' });
   zahodit.addEventListener('click', async () => {
     if (zahodit.dataset.potvrd !== 'true') {
       zahodit.dataset.potvrd = 'true';
@@ -2592,3 +2614,12 @@ function oznacUlozeno(pole) {
   casovaceZnacek.set(znacka, setTimeout(() => (znacka.dataset.ukazat = 'false'), 3000));
 }
 window.oznacUlozeno = oznacUlozeno;
+
+/* Místa: záložky v detailu místa (Ilustrace · Světla · Zvuk · Popis pro dílnu), rozhodnutí 65 */
+stav.mistoZalozka = 'ilustrace';
+function ukazMistoZalozku(z) {
+  stav.mistoZalozka = z;
+  for (const b of document.querySelectorAll('.misto-zalozky [data-mz]')) b.setAttribute('aria-selected', String(b.dataset.mz === z));
+  for (const p of document.querySelectorAll('.misto-panel')) p.hidden = p.dataset.mz !== z;
+}
+for (const b of document.querySelectorAll('.misto-zalozky [data-mz]')) b.addEventListener('click', () => ukazMistoZalozku(b.dataset.mz));

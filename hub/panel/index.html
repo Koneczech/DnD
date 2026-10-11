@@ -187,7 +187,6 @@
               <div class="karta souboj-karta">
                 <p class="souboj-stav" id="souboj-stav">Souboj neběží.</p>
                 <p class="ulozeni" id="souboj-popis" title="Souboj přepne OBS na scénu s iniciativou, světla na bojová a hudbu na bojovou. Ambient počasí nechá. Konec souboje vrátí scénu i světla přesně tam, kde byly.">Přepne OBS na iniciativu, světla a hudbu na bojové; konec vrátí, co bylo.</p>
-                <a class="tlacitko tiche" id="iniciativa-okno" href="https://improvedinitiative.app/e/" target="improved-initiative" rel="noopener">Otevřít v záložce ↗</a>
                 <button type="button" class="hlavni" id="souboj-prepnout">Zahájit souboj</button>
                 <form class="iniciativa-odkaz" id="iniciativa-formular" autocomplete="off">
                   <label for="iniciativa-pole">Player View</label>
@@ -196,9 +195,11 @@
                   <p class="ulozeni" id="iniciativa-stav" aria-live="polite"></p>
                 </form>
               </div>
-              <!-- Improved Initiative přímo v panelu (otevřený bod 68). Načte se při prvním otevření záložky
-                   a zůstává načtený, ať přepínání záložek neztratí rozehrané setkání. -->
-              <iframe class="iniciativa" id="iniciativa-ramec" title="Improved Initiative" allow="clipboard-write"></iframe>
+              <!-- Improved Initiative ve vlastní záložce (otevřený bod 68): vložený do panelu se nepřihlásí k Epic účtu. -->
+              <div class="karta iniciativa-otevrit">
+                <button type="button" id="iniciativa-okno" class="velke">Otevřít Improved Initiative <kbd>F4</kbd></button>
+                <p class="ulozeni">Otevře tvou přihlášenou záložku, nebo ji přenese do popředí, když už je otevřená. Zpátky do Hubu: Alt+Tab nebo záložka Hubu.</p>
+              </div>
             </div>
           </div>
 

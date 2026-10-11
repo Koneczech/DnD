@@ -359,7 +359,7 @@ function vykresliKontrolky() {
 // Role scén v OBS. Dlaždice ukazuje ovládání té role, kterou má přiřazenou v tabulce Role scén.
 const ROLE_SCEN = [['start', 'scenaStart', 'Start'], ['misto', 'scenaMisto', 'Místo'], ['obchod', 'scenaObchod', 'Obchod'], ['souboj', 'scenaSouboj', 'Souboj']];
 const PANELY = ['start', 'misto', 'obchod', 'souboj'];
-/** Improved Initiative (Epic): tracker iniciativy zůstává jeho (rozhodnutí 6), Hub ho jen ukazuje v záložce Souboj. */
+/** Improved Initiative (Epic): tracker zůstává jeho (rozhodnutí 6); Hub ho otevírá ve vlastní záložce. */
 const ADRESA_INICIATIVY = 'https://improvedinitiative.app/e/';
 
 const POCASI_TEXT = { dest: 'déšť', snih: 'sníh', mlha: 'mlha', bourka: 'bouřka' };
@@ -473,10 +473,6 @@ function vykresliSceny() {
   rada.replaceChildren(...karty, dalsi);
 
   for (const id of PANELY) $(`#stul-${id}`).hidden = id !== role;
-  // Improved Initiative se načte až při prvním otevření záložky Souboj a pak už zůstane načtený.
-  if (role === 'souboj' && !$('#obrazovka-sceny').hidden && !$('#iniciativa-ramec').getAttribute('src')) {
-    $('#iniciativa-ramec').setAttribute('src', ADRESA_INICIATIVY);
-  }
   vykresliSouboj();
   nahledMista(!$('#obrazovka-sceny').hidden, roleVObs);
 }
@@ -1120,7 +1116,30 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault();
     otevritPoznamku();
   }
+  if (e.key === 'F4') {
+    e.preventDefault();
+    otevritIniciativu();
+  }
 });
+
+/* Pojmenované okno: první klik ho otevře, další ho jen přenese do popředí (stav setkání se neztratí). */
+let oknoIniciativy = null;
+function otevritIniciativu() {
+  if (!oknoIniciativy || oknoIniciativy.closed) {
+    // Po obnovení panelu Hub o okně neví: prázdné jméno okno najde, ale nenačte znovu (souboj se nepřeruší).
+    oknoIniciativy = window.open('', 'improved-initiative');
+    if (!oknoIniciativy) return toast('Prohlížeč zablokoval otevření okna. Povol pro Hub vyskakovací okna.', { chyba: true });
+    let prazdne = false;
+    try {
+      prazdne = oknoIniciativy.location.href === 'about:blank'; // cizí stránka (Improved Initiative) sem nepustí
+    } catch {
+      prazdne = false;
+    }
+    if (prazdne) oknoIniciativy.location.href = ADRESA_INICIATIVY;
+  }
+  oknoIniciativy.focus();
+}
+$('#iniciativa-okno').addEventListener('click', otevritIniciativu);
 
 /* ---------- Odpočet ---------- */
 

@@ -57,7 +57,7 @@ code { font-family: Consolas, "Cascadia Mono", monospace; font-size: 0.9em; colo
 /* Horní lišta: stav kampaně je to, co DM u stolu potřebuje vidět vždy */
 .lista {
   display: grid;
-  grid-template-columns: minmax(16rem, 1fr) auto auto;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--m-5);
   padding: var(--m-3) var(--m-5);
@@ -80,7 +80,7 @@ code { font-family: Consolas, "Cascadia Mono", monospace; font-size: 0.9em; colo
 .kampan-detail { color: var(--mlha); font-size: var(--t-text); }
 .kampan-detail span:not([hidden]) + span::before { content: ", "; }
 
-.akce { display: flex; gap: var(--m-2); flex-wrap: wrap; }
+.akce { display: flex; gap: var(--m-2); flex-wrap: wrap; justify-content: flex-end; }
 
 button {
   font: inherit;
@@ -550,3 +550,26 @@ button:has(> .ik) { display: inline-flex; align-items: center; gap: var(--m-2); 
 /* Přepínač pro živé zapnuto / vypnuto (Řídit světla, Střídat, Blesky …) */
 .prepinac-zap { font-weight: 400; }
 #svetla-lista .prepinac-zap { font-weight: 600; }
+
+/* ---------- Horní lišta: odznak sezení a Systém (rozhodnutí 65) ---------- */
+.odznak-sezeni { display: inline-flex; align-items: center; gap: var(--m-2); padding: var(--m-1) var(--m-3); border-radius: 999px; background: var(--povrch-2); color: var(--text-tlumeny); text-decoration: none; font-size: var(--t-popisek); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.odznak-sezeni .tecka { width: 8px; height: 8px; border-radius: 50%; background: var(--text-tlumeny); }
+.odznak-sezeni[data-bezi="true"] { color: var(--text); }
+.odznak-sezeni[data-bezi="true"] .tecka { background: var(--ok); }
+.odznak-sezeni:hover { color: var(--text); }
+.system { position: relative; }
+.system > summary { list-style: none; display: inline-flex; align-items: center; gap: var(--m-3); padding: var(--m-2) var(--m-3); border: 1px solid var(--linka); border-radius: var(--zaobleni); color: var(--text-tlumeny); font-size: var(--t-popisek); cursor: pointer; }
+.system > summary::-webkit-details-marker { display: none; }
+.system > summary:hover, .system[open] > summary { color: var(--text); border-color: var(--mosaz-tlumena); }
+.system .tecky { display: inline-flex; gap: 6px; align-items: center; }
+.system .tecky .svetlo { width: 8px; height: 8px; }
+.system .kontrolky { position: absolute; right: 0; top: calc(100% + var(--m-2)); z-index: 20; flex-direction: column; gap: 0; width: 26rem; max-width: calc(100vw - 2rem); padding: var(--m-2); background: var(--povrch-1); border: 1px solid var(--linka); border-radius: var(--zaobleni-karta); box-shadow: 0 12px 32px rgb(0 0 0 / 0.45); }
+.system .kontrolky li a { display: grid; grid-template-columns: auto auto 1fr; align-items: baseline; column-gap: var(--m-3); padding: var(--m-2) var(--m-3); color: var(--text); }
+.system .kontrolky li a .svetlo { align-self: center; }
+.system .kontrolky small { grid-column: 3; color: var(--text-tlumeny); font-size: var(--t-popisek); }
+.system .kontrolky .nazev { font-weight: 600; }
+@media (max-width: 64rem) {
+  .lista { grid-template-columns: auto auto 1fr; }
+  .lista .akce { grid-column: 1 / -1; justify-content: flex-start; grid-row: 2; }
+}
+.lista .system { justify-self: end; }

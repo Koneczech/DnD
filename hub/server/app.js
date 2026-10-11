@@ -247,17 +247,18 @@ export class Hub {
     this.vysilac.vyslat('verze', await otiskKodu([this.c.panel, this.c.vystupy, path.join(HUB_DIR, 'sdilene')]));
     await this.hlidac.spustit();
 
-    this.server = http.createServer((req, res) => this.obsluha(req, res));
-    this.server.on('upgrade', (req, socket, head) => this.upgrade(req, socket, head));
     const host = this.nastaveni.domaciSit ? '0.0.0.0' : '127.0.0.1';
     const port = this.portPrepis ?? this.nastaveni.port;
+    // Průchod k Improved Initiative startuje dřív než panel: první přehled ho už musí znát,
+    // jinak by se vložený Improved Initiative načetl napřímo bez přihlášení (port 0 = testy, volný port).
+    this.portPruchodu = port ? port + 1 : 0;
+    await this.zajistitPruchod();
+    this.server = http.createServer((req, res) => this.obsluha(req, res));
+    this.server.on('upgrade', (req, socket, head) => this.upgrade(req, socket, head));
     await new Promise((resolve, reject) => {
       this.server.once('error', reject);
       this.server.listen(port, host, resolve);
     });
-
-    this.portPruchodu = this.server.address().port + 1;
-    await this.zajistitPruchod();
 
     // Pomalé věci až po startu, aby se panel otevřel hned.
     this.prostredi.hook = await nainstalovatHook(this.c.koren).catch(() => 'chyba');
@@ -1035,6 +1036,8 @@ export class Hub {
       });
       try {
         await p.spustit();
+        if (!p.port) p.port = p.server.address().port;
+        this.portPruchodu = p.port;
         this.pruchod = p;
         this.pruchodChyba = null;
         // Každých 5 min: platnost přihlášení a změna vlastního Encounter ID v účtu.

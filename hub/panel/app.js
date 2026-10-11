@@ -361,9 +361,13 @@ const ROLE_SCEN = [['start', 'scenaStart', 'Start'], ['misto', 'scenaMisto', 'M�
 const PANELY = ['start', 'misto', 'obchod', 'souboj'];
 /** Improved Initiative: tracker zůstává jeho (rozhodnutí 6). Hub ho ukazuje v záložce Souboj, s Epic účtem ve vlastní záložce (F4). */
 const ADRESA_INICIATIVY = 'https://improvedinitiative.app/e/';
+/** Kam vložený Improved Initiative míří: s vloženým přihlášením jen přes průchod, nikdy napřímo. */
 function adresaVlozeneIniciativy() {
   const pr = stav.prehled?.iniciativa?.pruchod;
-  return pr ? `http://${location.hostname}:${pr.port}/e/` : ADRESA_INICIATIVY;
+  if (pr) return `http://${location.hostname}:${pr.port}/e/`;
+  // Přihlášení je vložené, ale průchod ještě není znát: radši počkat, než načíst nepřihlášenou variantu.
+  if (stav.prehled?.nastaveni?.iiRelaceNastavena) return null;
+  return ADRESA_INICIATIVY;
 }
 
 const POCASI_TEXT = { dest: 'déšť', snih: 'sníh', mlha: 'mlha', bourka: 'bouřka' };
@@ -481,7 +485,7 @@ function vykresliSceny() {
   // S vloženým přihlášením jde přes průchod Hubu (přihlášený Epic), jinak přímo (bez Epicu).
   const ramec = $('#iniciativa-ramec');
   const adresaRamce = adresaVlozeneIniciativy();
-  if (role === 'souboj' && !$('#obrazovka-sceny').hidden && ramec.dataset.adresa !== adresaRamce) {
+  if (role === 'souboj' && !$('#obrazovka-sceny').hidden && adresaRamce && ramec.dataset.adresa !== adresaRamce) {
     ramec.dataset.adresa = adresaRamce;
     ramec.setAttribute('src', adresaRamce);
   }

@@ -653,3 +653,24 @@ button:has(> .ik) { display: inline-flex; align-items: center; gap: var(--m-2); 
 .formular .ulozeno-znacka, .pole-s-tlacitkem .ulozeno-znacka { align-self: center; }
 .kategorie .formular label { color: var(--text-tlumeny); }
 .ulozeni:empty { min-height: 0; margin: 0; }
+
+/* ---------- Sezení a Místa (rozhodnutí 65) ---------- */
+.dva-sloupce { display: flex; flex-wrap: wrap; gap: var(--m-5); align-items: flex-start; }
+.hlavni-sloupec { flex: 999 1 32rem; min-width: 0; }
+.bocni-sloupec { flex: 1 1 18rem; max-width: 24rem; display: flex; flex-direction: column; gap: var(--m-3); margin-top: var(--m-4); }
+.bocni-karta { padding: var(--m-4); }
+.bocni-karta h2 { margin: 0 0 var(--m-3); font-size: var(--t-karta); }
+.bocni-karta .formular { max-width: none; }
+.bocni-karta .tlacitka { margin-top: var(--m-3); }
+.bocni-karta .uvod { margin: 0; font-size: var(--t-popisek); }
+.hlavni-sloupec .sekce-hlava { margin-top: var(--m-5); }
+#sezeni-souhrn { min-height: 0; }
+.kontrolni-stav li.v-poradku { display: block; padding: 0; background: transparent; }
+.v-poradku summary { display: flex; align-items: center; gap: var(--m-3); padding: var(--m-2) var(--m-3); color: var(--text-tlumeny); cursor: pointer; background: var(--povrch-1); border-radius: var(--zaobleni); }
+.v-poradku summary .stav-ikona { background: var(--ok); }
+.v-poradku .kontrolni-stav { margin-top: var(--m-1); }
+.misto-zalozky { display: flex; gap: var(--m-1); margin-top: var(--m-4); border-bottom: 1px solid var(--linka); }
+.misto-zalozky button { background: transparent; border: 1px solid transparent; border-bottom: 0; border-radius: var(--zaobleni) var(--zaobleni) 0 0; margin-bottom: -1px; padding: var(--m-2) var(--m-4); color: var(--text-tlumeny); }
+.misto-zalozky button[aria-selected="true"] { background: var(--povrch-1); border-color: var(--linka); color: var(--akcent); }
+.misto-panel { padding-top: var(--m-3); }
+.misto-panel.svetla-mista { margin-top: 0; }

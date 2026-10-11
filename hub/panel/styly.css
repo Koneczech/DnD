@@ -848,3 +848,5 @@ main { padding: var(--m-4) var(--m-5) var(--m-5); }
 .hp-nastaveni .cislo-kratke { width: 4.5rem; padding: var(--m-1) var(--m-2); }
 .hp-nastaveni .segment { grid-column: span 3; justify-self: start; }
 .hp-nastaveni .segment button { padding: var(--m-1) var(--m-3); }
+.hp-nastaveni .hp-prechod { grid-column: span 3; }
+.hp-nastaveni .hp-prechod small { color: var(--text-tlumeny); }

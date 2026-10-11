@@ -2675,6 +2675,7 @@ function vykresliHpNastaveni(n) {
     $(`#hp-${f}-jas`).value = d.jas;
     $(`#hp-${f}-s`).value = d.s;
   }
+  $('#hp-prechod').value = n.prechod_s;
   // Jen intenzita: fáze B má barvu fáze A, mění se jen jas.
   $('#hp-b-barva').disabled = n.rezim === 'intenzita';
 }
@@ -2696,6 +2697,7 @@ $('#hp-rezim').addEventListener('click', (e) => {
   if (b) ulozitHp({ rezim: b.dataset.v }, b);
 });
 $('#hp-nastaveni').addEventListener('change', (e) => {
+  if (e.target.id === 'hp-prechod') return ulozitHp({ prechod_s: Number(e.target.value) }, e.target);
   const m = e.target.id.match(/^hp-(a|b|poz)-(barva|jas|s)$/);
   if (!m) return;
   const [, f, co] = m;

@@ -29,6 +29,7 @@ export const MAX_ZABLESKU_ZA_S = 3;
  */
 export const VYCHOZI_HP = Object.freeze({
   rezim: 'barvy',
+  prechod_s: 1.5, // jak dlouho se lampa přelévá z jedné fáze do druhé (nejvýš délka fáze)
   a: { rgb: [255, 0, 0], jas: 100, s: 3 },
   b: { rgb: [255, 110, 0], jas: 70, s: 1 },
   pozadi: { rgb: [255, 0, 0], jas: 100, nabeh_s: 3 },
@@ -56,6 +57,7 @@ export function normalizujHp(z, puvodni = VYCHOZI_HP) {
     if (!['barvy', 'intenzita'].includes(z.rezim)) throw chyba('Režim lampy je barvy, nebo intenzita.');
     v.rezim = z.rezim;
   }
+  v.prechod_s = cislo(z.prechod_s, 0, 30, 'Přechod lampy (s)') ?? v.prechod_s ?? VYCHOZI_HP.prechod_s;
   for (const f of ['a', 'b']) {
     if (!z[f]) continue;
     v[f] = {
@@ -521,13 +523,16 @@ export class Svetla extends EventEmitter {
       const nabeh = Math.round(n.pozadi.nabeh_s * 1000);
       Promise.all(zarizeniRole('pozadi').map((z) => this.poslat(z, { zap: true, jas: n.pozadi.jas, rgb: n.pozadi.rgb }, nabeh))).catch(() => {});
       let faze = 'a';
+      let predchozi = null;
       const krok = () => {
         if (!this.pulzBezi) return;
         const f = n[faze];
         const cil = { zap: true, jas: f.jas, rgb: n.rezim === 'intenzita' ? n.a.rgb : f.rgb };
         const ms = Math.round(f.s * 1000);
-        // Přechod zabere nejvýš 60 % fáze (a nejvýš 1,5 s), zbytek barva drží.
-        Promise.all(zarizeniRole('lampa').map((z) => this.poslat(z, cil, Math.min(1500, Math.round(ms * 0.6))))).catch(() => {});
+        // Na začátku fáze se lampa plynule přelije do její barvy (Přechod, nejvýš celá fáze), pak barvu drží.
+        const prechod = predchozi ? Math.min(ms, Math.round(n.prechod_s * 1000)) : 0;
+        for (const z of zarizeniRole('lampa')) this.prelit(z, predchozi, cil, prechod);
+        predchozi = cil;
         faze = faze === 'a' ? 'b' : 'a';
         this.casovacPulzu = setTimeout(krok, ms);
         this.casovacPulzu.unref?.();
@@ -537,11 +542,34 @@ export class Svetla extends EventEmitter {
       this.pulzBezi = false;
       clearTimeout(this.casovacPulzu);
       this.casovacPulzu = null;
+      for (const z of this.zarizeni.values()) clearInterval(z.prelivani);
       for (const z of this.zarizeni.values()) if (ROLE_PRI_HP.includes(z.role)) z.posledni = null;
       if (this.mistni.ridit) this.aplikovat({ prechodMs: Math.round(n.pozadi.nabeh_s * 1000) }).catch(() => {});
       else this.normal().catch(() => {}); // po zkoušce bez Řídit světla zpět na výchozí stav
     }
     this.oznam();
+  }
+
+  /**
+   * Plynulý přechod lampy: Hue dostane jeden příkaz s přechodem, WiZ přechod neumí,
+   * proto ho Hub prolne sám po krocích 150 ms (plynulá změna, ne záblesk).
+   */
+  prelit(z, od, cil, ms) {
+    clearInterval(z.prelivani);
+    if (z.typ === 'hue' || !od || ms < 300) {
+      this.poslat(z, cil, ms).catch(() => {});
+      return;
+    }
+    const zacatek = Date.now();
+    const smes = (a, b, t) => Math.round(a + (b - a) * t);
+    z.prelivani = setInterval(() => {
+      if (!this.pulzBezi) return clearInterval(z.prelivani);
+      const t = Math.min(1, (Date.now() - zacatek) / ms);
+      const e = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2; // pomalý začátek i konec
+      this.poslat(z, { zap: true, jas: smes(od.jas, cil.jas, e), rgb: od.rgb.map((c, i) => smes(c, cil.rgb[i], e)) }, 0).catch(() => {});
+      if (t >= 1) clearInterval(z.prelivani);
+    }, 150);
+    z.prelivani.unref?.();
   }
 
   /** Uloží nastavení málo HP (Nastavení → Světla). Běžící pulz se rozjede s novými hodnotami. */

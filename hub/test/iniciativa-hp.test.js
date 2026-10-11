@@ -91,3 +91,33 @@ test('nastavení málo HP: kontrola hodnot a nejkratší fáze', async () => {
   assert.throws(() => normalizujHp({ a: { rgb: [300, 0, 0] } }), /barva/);
   assert.throws(() => normalizujHp({ rezim: 'disko' }), /Režim/);
 });
+
+test('WiZ lampa se mezi fázemi přelévá po krocích, Hue jedním příkazem s přechodem', async () => {
+  const { Svetla } = await import('../server/svetla.js');
+  const os = await import('node:os');
+  const path = await import('node:path');
+  const wizPrikazy = [];
+  const huePrikazy = [];
+  const svetla = new Svetla({
+    cesty: { lokalniStav: path.join(os.tmpdir(), 'hub-hp-test2'), kampan: path.join(os.tmpdir(), 'hub-hp-neni') },
+    nastaveni: () => ({ SVETLA_LAMPA: 'wiz:10.0.0.9' }),
+    misto: () => null,
+    scena: () => ({ varianta: 'den', pocasi: [], intenzita: 0 }),
+    ovladace: { wiz: () => ({ nastavit: async (cil) => wizPrikazy.push(cil), stav: async () => ({}) }) },
+  });
+  svetla.sestavitZarizeni();
+  svetla.pulzBezi = true;
+  const z = [...svetla.zarizeni.values()][0];
+  svetla.prelit(z, { zap: true, jas: 100, rgb: [255, 0, 0] }, { zap: true, jas: 70, rgb: [255, 110, 0] }, 600);
+  await new Promise((r) => setTimeout(r, 800));
+  assert.ok(wizPrikazy.length >= 3, `víc kroků (${wizPrikazy.length})`);
+  const zelene = wizPrikazy.map((p) => p.rgb[1]);
+  assert.deepEqual(zelene, [...zelene].sort((a, b) => a - b), 'barva jde jedním směrem, bez skoků zpět');
+  assert.deepEqual(wizPrikazy.at(-1).rgb, [255, 110, 0], 'skončí přesně v cílové barvě');
+  const hue = { typ: 'hue', id: 'x', ovladac: { nastavit: async (id, cil, ms) => huePrikazy.push(ms) } };
+  svetla.prelit(hue, { zap: true, jas: 100, rgb: [255, 0, 0] }, { zap: true, jas: 70, rgb: [255, 110, 0] }, 1500);
+  await new Promise((r) => setTimeout(r, 20));
+  assert.deepEqual(huePrikazy, [1500]);
+  svetla.pulzBezi = false;
+  svetla.zastavit();
+});

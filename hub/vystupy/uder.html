@@ -1,0 +1,725 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <title>DM Hub — zásah</title>
+  <link rel="stylesheet" href="/sdilene/pisma/alegreya.css">
+  <style>
+    /* Výstup pro OBS Browser Source nad Improved Initiative ve scéně Boj (otevřený bod 75).
+       Průhledné pozadí; když se nic neděje, není vidět nic. Velikost 1920 × 1080, rozměry jsou ve vh,
+       takže sedí i jiné rozlišení.
+
+       ?zkouska  tlačítka a přepínač zobrazení HP, bez Improved Initiative (otevři v prohlížeči)
+       ?stav     v rohu ukáže, co Hub vidí (spojení, souboj, nastavení HP v Player View)
+       ?tempo=2  animace dvakrát pomaleji (ladění)                                              */
+    :root {
+      /* Paleta carouselu (vlastní CSS Player View) */
+      --papir: #ece2e2;
+      --inkoust: #1a1614;
+      --zlata: #a8823c;
+      --akcent: #a83f2b;
+      --zelena: #8fcf6e;
+
+      --karta-v: 54vh;   /* výška karty; šířka = výška × 0,72 jako v carouselu */
+      --odstup: 21vw;    /* vzdálenost karty útočníka a cíle od středu */
+    }
+
+    html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+    body { font-family: 'Alegreya', Georgia, serif; color: var(--inkoust); }
+
+    #jeviste { position: fixed; inset: 0; pointer-events: none; }
+    #zaclona {
+      position: absolute; inset: 0; opacity: 0;
+      background: radial-gradient(ellipse 70% 80% at 50% 50%, rgba(12, 9, 8, 0.45) 0%, rgba(12, 9, 8, 0.82) 100%);
+    }
+    #scena { position: absolute; inset: 0; }
+
+    /* --- Karta: stejná skladba jako v carouselu ------------------------------------------
+       1em = 1 % výšky karty, takže menší karty u plošného zásahu se zmenší celé. */
+    .karta {
+      --h: var(--karta-v);
+      position: absolute; left: calc(50% + var(--x, 0px)); top: 50%;
+      width: calc(var(--h) * 0.72); height: var(--h);
+      margin-left: calc(var(--h) * -0.36); margin-top: calc(var(--h) * -0.5);
+      font-size: calc(var(--h) * 0.01);
+      opacity: 0;
+    }
+    .pohyb { position: absolute; inset: 0; transform-origin: 50% 85%; }
+    .tvar {
+      position: absolute; inset: 0; overflow: hidden;
+      background: var(--papir);
+      border-radius: 0.9em;
+      box-shadow: 0 0 0 0.45em rgba(168, 130, 60, 0.75), 0 4em 9em rgba(0, 0, 0, 0.65);
+    }
+    .tvar img {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; object-position: 50% 100%;
+    }
+    .karta:not(.hrac) .tvar img { filter: saturate(0.9); }
+    .iniciala {
+      position: absolute; inset: 0; display: grid; place-items: center;
+      font-size: 40em; color: rgba(168, 130, 60, 0.35); font-weight: 500;
+    }
+    .rastr {
+      position: absolute; inset: 0; opacity: 0.12; mix-blend-mode: multiply;
+      background-image: radial-gradient(rgba(26, 22, 20, 0.9) 0.11em, transparent 0.15em);
+      background-size: 0.7em 0.7em;
+    }
+    .tvar::after {
+      /* zlaté rohové kování; u útočníka červené a delší (jako postava na tahu) */
+      content: ''; position: absolute; inset: 1.6em; pointer-events: none;
+      --c: var(--zlata); --l: 6em; --t: 0.55em;
+      background:
+        linear-gradient(var(--c), var(--c)) left top / var(--l) var(--t),
+        linear-gradient(var(--c), var(--c)) left top / var(--t) var(--l),
+        linear-gradient(var(--c), var(--c)) right top / var(--l) var(--t),
+        linear-gradient(var(--c), var(--c)) right top / var(--t) var(--l),
+        linear-gradient(var(--c), var(--c)) left bottom / var(--l) var(--t),
+        linear-gradient(var(--c), var(--c)) left bottom / var(--t) var(--l),
+        linear-gradient(var(--c), var(--c)) right bottom / var(--l) var(--t),
+        linear-gradient(var(--c), var(--c)) right bottom / var(--t) var(--l);
+      background-repeat: no-repeat;
+    }
+    .karta.utocnik .tvar::after { --c: var(--akcent); --l: 9em; }
+    .zablesk, .zare { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+    .zare {
+      mix-blend-mode: screen;
+      background: radial-gradient(circle at 50% 72%, rgba(214, 255, 170, 0.85), rgba(143, 207, 110, 0.35) 45%, transparent 72%);
+    }
+
+    .iniciativa {
+      position: absolute; left: -3em; top: -3em; width: 12em; height: 12em;
+      display: grid; place-items: center; border-radius: 50%;
+      background: var(--inkoust); color: var(--papir);
+      border: 0.7em solid var(--zlata);
+      font-size: 1em; box-shadow: 0 1em 2.5em rgba(0, 0, 0, 0.55);
+    }
+    .iniciativa span { font-size: 5.6em; font-weight: 500; line-height: 1; font-variant-numeric: lining-nums; }
+    .karta.utocnik .iniciativa { background: var(--akcent); border-color: #f0d9a8; }
+
+    .jmeno {
+      position: absolute; left: 50%; bottom: 11%; transform: translateX(-50%);
+      width: max-content; max-width: 118%; box-sizing: border-box;
+      padding: 0.9em 3.6em 1.2em; text-align: center;
+      background: var(--inkoust); color: var(--papir);
+      border-top: 0.55em solid var(--zlata); border-bottom: 0.55em solid var(--zlata);
+      box-shadow: 0 1.2em 3em rgba(0, 0, 0, 0.5);
+    }
+    .jmeno span {
+      display: block; font-size: 6.6em; line-height: 1.05; font-weight: 500;
+      font-variant-caps: small-caps; letter-spacing: 0.03em;
+    }
+    .karta.utocnik .jmeno { background: var(--akcent); }
+
+    .hp {
+      position: absolute; right: -2.6em; bottom: -2.6em; min-width: 14em; height: 9em;
+      box-sizing: border-box; padding: 0 2.6em; border-radius: 4.5em;
+      display: grid; place-items: center;
+      background: var(--hp-barva, var(--inkoust)); color: #fff4e6;
+      border: 0.6em solid var(--zlata); box-shadow: 0 1em 2.5em rgba(0, 0, 0, 0.55);
+    }
+    .hp span { font-size: 5em; font-weight: 500; font-variant-numeric: tabular-nums lining-nums; line-height: 1; }
+
+    /* --- Stopa úderu, jiskry, číslo, razítko ------------------------------------------- */
+    .stopa { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+    .stopa path, .stopa circle, .stopa line { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .stopa .srp-zar { fill: #b3301f; stroke: none; filter: drop-shadow(0 0 2.4em rgba(192, 57, 43, 0.95)); }
+    .stopa .srp-stred { fill: #f6d7a7; stroke: none; }
+    .stopa .srp-jadro { fill: #fff; stroke: none; }
+    .stopa .trn-zar { stroke: #3f6b22; filter: drop-shadow(0 0 2em rgba(120, 190, 80, 0.9)); }
+    .stopa .trn { stroke: #b9e58a; }
+    .stopa .osten { fill: #d6f2ae; stroke: #2f5419; stroke-width: 0.35; filter: drop-shadow(0 0 0.8em rgba(120, 190, 80, 0.9)); }
+    .stopa .vlna { stroke: #ecc977; filter: drop-shadow(0 0 1.6em rgba(236, 201, 119, 0.9)); transform-box: fill-box; transform-origin: center; }
+    .stopa .hvezda { fill: #fff; stroke: none; filter: drop-shadow(0 0 1.4em rgba(255, 220, 160, 1)); transform-box: fill-box; transform-origin: center; }
+    .jiskra {
+      position: absolute; left: 50%; top: 45%; width: 4em; height: 0.6em; margin: -0.3em 0 0 -2em;
+      border-radius: 0.3em; background: linear-gradient(90deg, rgba(255, 236, 190, 0), #ffe9b8 60%, #fff);
+    }
+    .jiskra.list { background: linear-gradient(90deg, rgba(185, 229, 138, 0), #b9e58a 60%, #eaffd6); height: 0.9em; }
+    .plus {
+      position: absolute; bottom: 12%; font-size: 7em; font-weight: 500; line-height: 1;
+      color: #eaffd6; text-shadow: 0 0 0.3em rgba(143, 207, 110, 1);
+    }
+    .cislo {
+      /* em tady = 1 % výšky karty; velikost písma až na span, jinak by top počítal z ní */
+      position: absolute; left: 50%; top: -14em; transform: translateX(-50%);
+      white-space: nowrap; opacity: 0;
+    }
+    .cislo span {
+      display: block; font-size: 22em; font-weight: 500; line-height: 1; font-variant-numeric: lining-nums;
+      color: #fff1e0;
+      text-shadow: 0 0.04em 0 #5c1d12, 0 0 0.12em rgba(192, 57, 43, 1), 0 0 0.3em rgba(192, 57, 43, 0.8);
+    }
+    .cislo.leceni span { color: #f1ffe6; text-shadow: 0 0.04em 0 #23401a, 0 0 0.12em rgba(120, 190, 80, 1), 0 0 0.3em rgba(120, 190, 80, 0.8); }
+    .razitko {
+      position: absolute; left: 50%; top: 42%; opacity: 0;
+      padding: 0.8em 3em 1.1em; white-space: nowrap;
+      color: var(--akcent); background: rgba(236, 226, 226, 0.92);
+      border: 1em double var(--akcent);
+      transform: translate(-50%, -50%) rotate(-12deg);
+    }
+    .razitko span { font-size: 9em; font-weight: 500; font-variant-caps: small-caps; letter-spacing: 0.05em; line-height: 1; }
+    .razitko.zpet { color: #2f5a1e; border-color: #4f8a32; }
+    .vice {
+      position: absolute; right: -4em; top: -4em; padding: 1.2em 2.4em;
+      background: var(--akcent); color: #fff4e6; border: 0.5em solid #f0d9a8; border-radius: 4em;
+    }
+    .vice span { font-size: 5.5em; font-weight: 500; }
+
+    /* --- Stav (?stav) a zkouška (?zkouska) --------------------------------------------- */
+    #stav {
+      position: fixed; left: 1.5vh; top: 1.5vh; max-width: 60vw; display: none;
+      padding: 0.8vh 1.4vh; border-radius: 0.8vh;
+      background: rgba(26, 22, 20, 0.88); color: #ece4d3; font-size: 1.9vh; line-height: 1.45;
+      border: 1px solid rgba(168, 130, 60, 0.6);
+    }
+    #stav b { color: #e3c27f; font-weight: 500; }
+    #stav .chyba { color: #f0a090; }
+    body.diag #stav { display: block; }
+
+    #zkouska {
+      position: fixed; left: 50%; bottom: 1.5vh; transform: translateX(-50%);
+      display: none; width: min(96vw, 1180px); box-sizing: border-box;
+      padding: 12px 14px; border-radius: 10px;
+      background: rgba(26, 22, 20, 0.92); color: #ece4d3; border: 1px solid rgba(168, 130, 60, 0.6);
+      font-size: 15px; pointer-events: auto;
+    }
+    body.zkouska #zkouska { display: block; }
+    #zkouska .radek { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-bottom: 8px; }
+    #zkouska label { display: inline-flex; gap: 6px; align-items: center; }
+    #zkouska select, #zkouska button {
+      font: inherit; color: #ece4d3; background: #2c2621; border: 1px solid #6a5f5c; border-radius: 6px; padding: 5px 9px;
+    }
+    #zkouska button { cursor: pointer; border-color: var(--zlata); }
+    #zkouska button:hover { background: #3a322b; }
+    #zkouska button.hlavni { background: var(--akcent); border-color: #f0d9a8; }
+    #zkouska .tymy { display: flex; flex-wrap: wrap; gap: 6px; font-size: 13px; color: #c9bba8; }
+    #zkouska .tymy span { padding: 2px 7px; border-radius: 5px; background: #2c2621; }
+    #zkouska .tymy span.natahu { background: var(--akcent); color: #fff; }
+    #vysledek { margin: 0; color: #e3c27f; min-height: 1.3em; }
+  </style>
+</head>
+<body>
+  <div id="jeviste"><div id="zaclona"></div><div id="scena"></div></div>
+  <div id="stav"></div>
+
+  <div id="zkouska">
+    <div class="radek">
+      <label>Na tahu <select id="z-utocnik"></select></label>
+      <label>Cíl <select id="z-cil"></select></label>
+      <label>Animace <select id="z-styl"></select></label>
+      <label><input type="checkbox" id="z-zlovlk"> Alba ve vlčí podobě</label>
+    </div>
+    <div class="radek">
+      <button class="hlavni" data-akce="zasah">Zásah</button>
+      <button data-akce="plosny">Plošný zásah</button>
+      <button data-akce="leceni">Léčení</button>
+      <button data-akce="kzemi">K zemi</button>
+      <button data-akce="dalsi">Další na tahu</button>
+      <button data-akce="obnovit">Obnovit HP</button>
+      <label>HP nestvůr <select id="z-nestvury"></select></label>
+      <label>HP hráčů <select id="z-hraci"></select></label>
+      <label>Tempo <select id="z-tempo"><option value="1">normální</option><option value="2">pomalu</option><option value="4">velmi pomalu</option></select></label>
+    </div>
+    <div class="radek tymy" id="z-tymy"></div>
+    <p id="vysledek">Zkouška bez Improved Initiative: hodnoty HP jsou vymyšlené.</p>
+  </div>
+
+  <script type="module">
+    import { odebirat } from '/sdilene/zive.js';
+    import { predNacist } from '/sdilene/vystup.js';
+    import { zjistitUdery, simulovatPlayerView, REZIMY_HP, ROZPOZNANI } from '/sdilene/udery.js';
+
+    // Animace podle útočníka (⚠ návrh, otevřený bod 75). První shoda vyhrává; jméno se porovná
+    // po slovech bez diakritiky a velikosti písmen, tag podle Improved Initiative.
+    const STYLY = [
+      { tag: 'zlovlk', styl: 'drapy' },
+      { jmeno: 'tusker', styl: 'sek-tezky' },
+      { jmeno: 'leta', styl: 'bodnuti' },
+      { jmeno: 'koudur', styl: 'zvuk' },
+      { jmeno: 'alba', styl: 'trny' },
+    ];
+    const VYCHOZI_STYL = 'sek';
+    const NAZVY_STYLU = { sek: 'sek', 'sek-tezky': 'těžký sek', bodnuti: 'bodnutí', drapy: 'drápy', trny: 'trny', zvuk: 'zvuk' };
+    const NEJVIC_KARET = 5;  // víc cílů plošného zásahu ukáže odznak +N
+    const STARI_MS = 5000;   // starší zprávu (po znovupřipojení) výstup nepřehraje
+
+    const parametry = new URLSearchParams(location.search);
+    const zkouska = parametry.has('zkouska');
+    let TEMPO = Math.min(4, Math.max(0.25, Number(parametry.get('tempo')) || 1));
+    if (zkouska) document.body.classList.add('zkouska', 'diag');
+    if (parametry.has('stav')) document.body.classList.add('diag');
+
+    const jeviste = document.getElementById('jeviste');
+    const zaclona = document.getElementById('zaclona');
+    const scena = document.getElementById('scena');
+
+    const slova = (text) => String(text ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+    function stylUtocnika(utocnik, vynuceny) {
+      if (vynuceny) return vynuceny;
+      if (!utocnik) return VYCHOZI_STYL;
+      const s = slova(utocnik.jmeno);
+      const shoda = STYLY.find((x) => (x.tag && utocnik.tagy?.includes(x.tag)) || (x.jmeno && s.includes(x.jmeno)));
+      return shoda ? shoda.styl : VYCHOZI_STYL;
+    }
+
+    // --- Pomůcky ------------------------------------------------------------------------
+    const ms = (x) => x * TEMPO;
+    const cekej = (x) => new Promise((r) => setTimeout(r, ms(x)));
+    const nahodne = (a, b) => a + Math.random() * (b - a);
+    function el(tag, trida, rodic, text) {
+      const e = document.createElement(tag);
+      if (trida) e.className = trida;
+      if (text !== undefined) {
+        const s = document.createElement('span');
+        s.textContent = text;
+        e.append(s);
+      }
+      rodic?.append(e);
+      return e;
+    }
+    const SVG = 'http://www.w3.org/2000/svg';
+    function svg(tag, atributy, rodic) {
+      const e = document.createElementNS(SVG, tag);
+      for (const [k, v] of Object.entries(atributy)) e.setAttribute(k, v);
+      rodic?.append(e);
+      return e;
+    }
+    function anim(prvek, snimky, trvani, volby = {}) {
+      return prvek.animate(snimky, { duration: ms(trvani), easing: 'ease-out', fill: 'both', ...volby, delay: ms(volby.delay ?? 0) });
+    }
+    const hotovo = (a) => a.finished.catch(() => {});
+    const textHp = (hp) => (hp.docasne ? `${hp.hp}+${hp.docasne}/${hp.max}` : `${hp.hp}/${hp.max}`);
+
+    // --- Karta ---------------------------------------------------------------------------
+    function vytvoritKartu(k, { x, meritko = 1, utocnik = false, hpPred = null }) {
+      const karta = el('div', `karta${k.hrac ? ' hrac' : ''}${utocnik ? ' utocnik' : ''}`, scena);
+      karta.style.setProperty('--x', x);
+      karta.style.setProperty('--h', `calc(var(--karta-v) * ${meritko})`);
+      const pohyb = el('div', 'pohyb', karta);
+      const tvar = el('div', 'tvar', pohyb);
+      if (k.obrazek) {
+        const img = el('img', '', tvar);
+        img.alt = '';
+        img.src = k.obrazek;
+        img.onerror = () => { img.remove(); el('div', 'iniciala', tvar, (k.jmeno || '?').slice(0, 1)); };
+      } else el('div', 'iniciala', tvar, (k.jmeno || '?').slice(0, 1));
+      el('div', 'rastr', tvar);
+      const zablesk = el('div', 'zablesk', tvar);
+      const zare = el('div', 'zare', tvar);
+      if (Number.isFinite(k.iniciativa)) el('div', 'iniciativa', pohyb, String(k.iniciativa));
+      el('div', 'jmeno', pohyb, k.jmeno);
+      let hp = null;
+      if (k.hp) {
+        hp = el('div', 'hp', pohyb, hpPred ?? textHp(k.hp));
+        if (k.barvaHp) hp.style.setProperty('--hp-barva', k.barvaHp);
+      }
+      const stopa = svg('svg', { class: 'stopa', viewBox: '0 0 72 100', preserveAspectRatio: 'none' }, pohyb);
+      return { karta, pohyb, tvar, zablesk, zare, hp, stopa, k };
+    }
+
+    // --- Stopy úderů (souřadnice v kartě 72 × 100) ---------------------------------------
+    let cisloMasky = 0;
+
+    /**
+     * Srpek čepele: tenké konce, široký střed. Odkrývá ho maska, která se kreslí podél křivky
+     * od P1 k P2, takže sek „projede“ kartou. C je řídicí bod křivky (prohnutí seku).
+     * Čočka = souměrný tvar (bodnutí), jinak srpek vyboulený na jednu stranu.
+     */
+    function srp(stopa, [x1, y1], [cx, cy], [x2, y2], sirka, zpozdeni, trvani, cocka = false) {
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const d = Math.hypot(dx, dy) || 1;
+      const nx = -dy / d;
+      const ny = dx / d;
+      // Kvadratická křivka se od spojnice vyboulí o polovinu posunu řídicího bodu.
+      const tvar = (w) => `M ${x1} ${y1} Q ${cx + nx * w * 2} ${cy + ny * w * 2} ${x2} ${y2} `
+        + `Q ${cx - nx * w * (cocka ? 2 : 0.5)} ${cy - ny * w * (cocka ? 2 : 0.5)} ${x1} ${y1} Z`;
+      const id = `srp${++cisloMasky}`;
+      const maska = svg('mask', { id, maskUnits: 'userSpaceOnUse', x: -80, y: -80, width: 232, height: 260 }, stopa);
+      const tah = svg('path', {
+        d: `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`, stroke: '#fff', 'stroke-width': sirka * 7,
+        pathLength: '1', 'stroke-dasharray': '1 2', 'stroke-dashoffset': '1',
+      }, maska);
+      const g = svg('g', { mask: `url(#${id})` }, stopa);
+      svg('path', { d: tvar(sirka * 1.3), class: 'srp-zar' }, g);
+      svg('path', { d: tvar(sirka * 0.8), class: 'srp-stred' }, g);
+      svg('path', { d: tvar(sirka * 0.34), class: 'srp-jadro' }, g);
+      anim(tah, [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], trvani, { delay: zpozdeni, easing: 'cubic-bezier(.2,.7,.2,1)' });
+      anim(g, [{ opacity: 1 }, { opacity: 0 }], 600, { delay: zpozdeni + trvani + 160, easing: 'ease-in' });
+    }
+
+    /** Šlahoun trnů: tah po křivce s ostny střídavě na obě strany, zelená záře. */
+    function sahoun(stopa, d, tloustka, zpozdeni, trvani) {
+      const g = svg('g', {}, stopa);
+      let osa = null;
+      for (const [trida, w] of [['trn-zar', tloustka * 1.6], ['trn', tloustka * 0.55]]) {
+        const p = svg('path', { d, class: trida, pathLength: '1', 'stroke-width': w, 'stroke-dasharray': '1 2', 'stroke-dashoffset': '1' }, g);
+        anim(p, [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], trvani, { delay: zpozdeni, easing: 'linear' });
+        osa ??= p;
+      }
+      const delka = osa.getTotalLength();
+      const pocet = Math.max(4, Math.round(delka / 9));
+      for (let k = 1; k <= pocet; k++) {
+        const kde = (delka * k) / (pocet + 1);
+        const a = osa.getPointAtLength(kde);
+        const b = osa.getPointAtLength(Math.min(delka, kde + 0.5));
+        const t = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+        const [tx, ty] = [(b.x - a.x) / t, (b.y - a.y) / t];
+        const strana = k % 2 ? 1 : -1;
+        const [nx, ny] = [-ty * strana, tx * strana];
+        const zaklad = tloustka * 0.55;
+        const spicka = tloustka * 1.5;
+        const body = [
+          [a.x - tx * zaklad, a.y - ty * zaklad],
+          [a.x + tx * zaklad, a.y + ty * zaklad],
+          [a.x + nx * spicka - tx * zaklad * 0.8, a.y + ny * spicka - ty * zaklad * 0.8],
+        ];
+        const o = svg('polygon', { points: body.map((x) => x.map((v) => v.toFixed(2)).join(',')).join(' '), class: 'osten' }, g);
+        anim(o, [{ opacity: 0 }, { opacity: 1 }], 60, { delay: zpozdeni + (trvani * k) / (pocet + 1) });
+      }
+      anim(g, [{ opacity: 1 }, { opacity: 0 }], 650, { delay: zpozdeni + trvani + 160, easing: 'ease-in' });
+    }
+
+    function hvezda(stopa, x, y, zpozdeni) {
+      const r = 6;
+      const body = [[x, y - r], [x + r * 0.22, y - r * 0.22], [x + r, y], [x + r * 0.22, y + r * 0.22], [x, y + r], [x - r * 0.22, y + r * 0.22], [x - r, y], [x - r * 0.22, y - r * 0.22]];
+      const h = svg('polygon', { points: body.map((b) => b.join(',')).join(' '), class: 'hvezda' }, stopa);
+      anim(h, [{ transform: 'scale(0)', opacity: 1 }, { transform: 'scale(1.3)', opacity: 1, offset: 0.35 }, { transform: 'scale(0.6)', opacity: 0 }], 360, { delay: zpozdeni });
+    }
+
+    /** Nakreslí stopu úderu přes kartu cíle. Vrací, jak silně se má zatřást (0–2). */
+    function stopaUderu(cil, styl) {
+      const s = cil.stopa;
+      switch (styl) {
+        case 'sek-tezky':
+          srp(s, [88, -8], [44, 40], [-14, 110], 5.2, 0, 130);
+          srp(s, [90, 24], [64, 52], [28, 100], 2.6, 70, 110);
+          return 2;
+        case 'bodnuti':
+          [[36, 34], [46, 52], [33, 68]].forEach(([x, y], i) => {
+            srp(s, [x - 54, y + 7], [x - 27, y + 3.5], [x, y], 1.5, i * 85, 70, true);
+            hvezda(s, x, y, i * 85 + 60);
+          });
+          return 1;
+        case 'drapy':
+          [-11, 0, 11].forEach((dx, i) => srp(s, [66 + dx, 4], [46 + dx, 46], [12 + dx, 94], 2.3, i * 45, 120));
+          return 1;
+        case 'trny':
+          sahoun(s, 'M -14 24 C 14 6, 26 52, 46 40 S 70 70, 86 58', 2.4, 0, 170);
+          sahoun(s, 'M -10 78 C 18 92, 30 54, 50 66 S 74 46, 88 30', 2.0, 60, 170);
+          return 1;
+        case 'zvuk':
+          [0, 1, 2].forEach((i) => {
+            const c = svg('circle', { cx: 36, cy: 50, r: 14, class: 'vlna', 'stroke-width': 1.8 }, s);
+            anim(c, [{ transform: 'scale(0.25)', opacity: 1 }, { transform: 'scale(2.4)', opacity: 0 }], 520, { delay: i * 95, easing: 'cubic-bezier(.1,.6,.3,1)' });
+          });
+          return 1;
+        default:
+          srp(s, [82, -2], [42, 42], [-8, 106], 3.4, 0, 120);
+          return 1;
+      }
+    }
+
+    function jiskry(cil, pocet, listi = false) {
+      for (let i = 0; i < pocet; i++) {
+        const j = el('div', `jiskra${listi ? ' list' : ''}`, cil.pohyb);
+        const uhel = nahodne(0, 360);
+        const delka = nahodne(14, 34);
+        anim(j, [
+          { transform: `rotate(${uhel}deg) translateX(0) scaleX(0.4)`, opacity: 1 },
+          { transform: `rotate(${uhel}deg) translateX(${delka}em) scaleX(1)`, opacity: 0 },
+        ], nahodne(280, 420), { easing: 'cubic-bezier(.1,.7,.3,1)' });
+      }
+    }
+
+    function zatrast(sila) {
+      if (!sila) return;
+      const a = sila > 1 ? 1.6 : 0.8;
+      const snimky = [0, -1, 0.8, -0.6, 0.4, -0.2, 0].map((f, i) => ({ transform: `translate(${(f * a * (i % 2 ? 1 : -1)).toFixed(2)}vh, ${(f * a).toFixed(2)}vh)` }));
+      anim(scena, snimky, sila > 1 ? 360 : 260, { easing: 'linear', fill: 'none' });
+    }
+
+    function ukazatCislo(cil, druh, o, zpozdeni) {
+      if (!Number.isFinite(o) || o <= 0) return;
+      const c = el('div', `cislo${druh === 'leceni' ? ' leceni' : ''}`, cil.karta, druh === 'leceni' ? `+${o}` : `−${o}`);
+      anim(c, [
+        { transform: 'translate(-50%, 35%) scale(0.4)', opacity: 0 },
+        { transform: 'translate(-50%, -10%) scale(1.2)', opacity: 1, offset: 0.25 },
+        { transform: 'translate(-50%, -22%) scale(1)', opacity: 1, offset: 0.75 },
+        { transform: 'translate(-50%, -50%) scale(1)', opacity: 0 },
+      ], 1250, { delay: zpozdeni, easing: 'ease-out' });
+    }
+
+    function razitko(cil, text, zpet, zpozdeni) {
+      const r = el('div', `razitko${zpet ? ' zpet' : ''}`, cil.karta, text);
+      return anim(r, [
+        { transform: 'translate(-50%, -50%) rotate(-12deg) scale(2.4)', opacity: 0 },
+        { transform: 'translate(-50%, -50%) rotate(-12deg) scale(0.94)', opacity: 1, offset: 0.7 },
+        { transform: 'translate(-50%, -50%) rotate(-12deg) scale(1)', opacity: 1 },
+      ], 220, { delay: zpozdeni, easing: 'ease-in' });
+    }
+
+    // --- Jedna animace ---------------------------------------------------------------------
+    async function prehrat(u, vynucenyStyl) {
+      scena.replaceChildren();
+      const cile = u.cile.slice(0, NEJVIC_KARET);
+      const zbytek = u.cile.length - cile.length;
+      const leceni = cile.every((c) => c.druh === 'leceni');
+      const styl = stylUtocnika(u.utocnik, vynucenyStyl);
+      const n = cile.length;
+      const meritko = n <= 1 ? 1 : n === 2 ? 0.8 : n === 3 ? 0.66 : 0.56;
+      const stredCilu = u.utocnik ? 'var(--odstup)' : '0px';
+      const krok = 0.72 * 54 * meritko * 0.9; // vh: karty cílů se trochu překrývají
+
+      const obrazky = [u.utocnik, ...cile].filter(Boolean).map((k) => k.obrazek).filter(Boolean);
+      await Promise.race([Promise.all(obrazky.map(predNacist)), new Promise((r) => setTimeout(r, 700))]);
+
+      const utocnik = u.utocnik ? vytvoritKartu(u.utocnik, { x: 'calc(-1 * var(--odstup))', utocnik: true }) : null;
+      const karty = cile.map((c, i) => {
+        const posun = (i - (n - 1) / 2) * krok;
+        const hpPred = c.hp && Number.isFinite(c.o)
+          ? textHp({ ...c.hp, hp: c.druh === 'zasah' ? Math.min(c.hp.max, c.hp.hp + c.o) : Math.max(0, c.hp.hp - c.o) })
+          : null;
+        const karta = vytvoritKartu(c, { x: `calc(${stredCilu} + ${posun.toFixed(2)}vh)`, meritko, hpPred });
+        karta.karta.style.zIndex = String(10 + i);
+        return karta;
+      });
+      if (zbytek > 0 && karty.length) el('div', 'vice', karty[karty.length - 1].karta, `+${zbytek}`);
+
+      // Nástup
+      anim(zaclona, [{ opacity: 0 }, { opacity: 1 }], 220);
+      if (utocnik) anim(utocnik.karta, [{ transform: 'translateX(-30vw) rotate(-8deg)', opacity: 0 }, { transform: 'translateX(0) rotate(-3deg)', opacity: 1 }], 260, { easing: 'cubic-bezier(.2,.8,.2,1)' });
+      karty.forEach((k, i) => anim(k.karta, [
+        { transform: 'translateX(30vw) rotate(8deg)', opacity: 0 },
+        { transform: `translateX(0) rotate(${(3 + (i - (n - 1) / 2) * 3).toFixed(1)}deg)`, opacity: 1 },
+      ], 260, { delay: 40 * i, easing: 'cubic-bezier(.2,.8,.2,1)' }));
+      await cekej(300);
+
+      // Nápřah a výpad útočníka (léčitel se jen rozzáří, bard vykřikne)
+      if (utocnik) {
+        if (leceni) {
+          anim(utocnik.zare, [{ opacity: 0 }, { opacity: 0.9 }, { opacity: 0 }], 700, { fill: 'none' });
+          anim(utocnik.pohyb, [{ transform: 'none' }, { transform: 'translateY(-3em) scale(1.03)' }, { transform: 'none' }], 700, { fill: 'none' });
+          await cekej(220);
+        } else if (styl === 'zvuk') {
+          anim(utocnik.pohyb, [{ transform: 'none' }, { transform: 'scale(1.07)' }, { transform: 'scale(0.98)' }, { transform: 'none' }], 420, { fill: 'none' });
+          await cekej(160);
+        } else {
+          anim(utocnik.pohyb, [
+            { transform: 'none' },
+            { transform: 'translateX(-2.5vw) rotate(-4deg) scale(1.03)', offset: 0.45 },
+            { transform: 'translateX(6vw) rotate(3deg) scale(1.04)', offset: 0.62, easing: 'ease-out' },
+            { transform: 'none' },
+          ], 620, { fill: 'none', easing: 'ease-in' });
+          await cekej(380);
+        }
+      }
+
+      // Dopad
+      let sila = 0;
+      karty.forEach((k, i) => {
+        const zpozdeni = i * 70;
+        const c = k.k;
+        if (c.druh === 'leceni') {
+          anim(k.zare, [{ opacity: 0 }, { opacity: 1, offset: 0.3 }, { opacity: 0 }], 1000, { delay: zpozdeni, fill: 'none' });
+          for (let j = 0; j < 9; j++) {
+            const p = el('div', 'plus', k.pohyb, '+');
+            p.style.left = `${nahodne(12, 82)}%`;
+            anim(p, [{ transform: 'translateY(0) scale(0.6)', opacity: 0 }, { transform: 'translateY(calc(var(--h) * -0.18)) scale(1)', opacity: 1, offset: 0.4 }, { transform: 'translateY(calc(var(--h) * -0.45)) scale(0.8)', opacity: 0 }],
+              nahodne(800, 1100), { delay: zpozdeni + j * 45 });
+          }
+          jiskry(k, 8, true);
+        } else {
+          setTimeout(() => {
+            sila = Math.max(sila, stopaUderu(k, styl));
+            anim(k.zablesk, [
+              { opacity: 0, background: '#fff' }, { opacity: 0.9, background: '#fff', offset: 0.15 },
+              { opacity: 0.55, background: '#a83f2b', offset: 0.45 }, { opacity: 0, background: '#a83f2b' },
+            ], 520, { fill: 'none' });
+            anim(k.pohyb, [
+              { transform: 'none' }, { transform: 'translateX(2.2vw) rotate(7deg)', offset: 0.25 },
+              { transform: 'translateX(-0.4vw) rotate(-1.5deg)', offset: 0.65 }, { transform: 'none' },
+            ], 460, { fill: 'none' });
+            jiskry(k, styl === 'trny' ? 10 : styl === 'sek-tezky' ? 18 : 12, styl === 'trny');
+          }, ms(zpozdeni + (styl === 'bodnuti' ? 60 : 90)));
+        }
+        if (k.hp) setTimeout(() => { k.hp.firstChild.textContent = textHp(c.hp); }, ms(zpozdeni + 160));
+        ukazatCislo(k, c.druh, c.o, zpozdeni + 120);
+      });
+      await cekej(130);
+      zatrast(leceni ? 0 : Math.max(sila, styl === 'sek-tezky' ? 2 : 1));
+
+      // Pád a vstání
+      let konec = 1150;
+      const padli = karty.filter((k) => k.k.padl || k.k.vstal);
+      if (padli.length) {
+        await cekej(420);
+        padli.forEach((k, i) => {
+          if (k.k.padl) {
+            anim(k.pohyb, [{ transform: 'none', filter: 'none' }, { transform: 'translateY(5em) rotate(9deg)', filter: 'grayscale(1) brightness(0.55)' }], 420, { delay: i * 80, easing: 'ease-in' });
+            razitko(k, 'K zemi!', false, 200 + i * 80);
+          } else {
+            razitko(k, 'Zpět v boji!', true, 150 + i * 80);
+          }
+        });
+        setTimeout(() => zatrast(1), ms(420));
+        konec = 1050;
+      }
+      await cekej(konec);
+
+      // Odchod
+      const odchod = [utocnik, ...karty].filter(Boolean).map((k) => anim(k.karta, [{ opacity: 1 }, { opacity: 0 }], 320, { easing: 'ease-in', composite: 'replace' }));
+      anim(zaclona, [{ opacity: 1 }, { opacity: 0 }], 360);
+      await Promise.all(odchod.map(hotovo));
+      scena.replaceChildren();
+    }
+
+    // --- Fronta: zprávy jdou po sobě, starší po znovupřipojení se nepřehrají ----------------
+    const fronta = [];
+    let hraje = false;
+    let posledniCas = 0;
+    function prijmout(u, vynucenyStyl) {
+      if (!u || !Array.isArray(u.cile) || !u.cile.length) return;
+      const cas = Number(u.cas) || 0;
+      if (cas <= posledniCas) return;
+      posledniCas = cas;
+      if (Date.now() - cas > STARI_MS) return;
+      fronta.push([u, vynucenyStyl]);
+      if (fronta.length > 3) fronta.splice(0, fronta.length - 3);
+      if (!hraje) dalsi();
+    }
+    async function dalsi() {
+      hraje = true;
+      while (fronta.length) {
+        const [u, styl] = fronta.shift();
+        const puvodni = TEMPO;
+        if (fronta.length) TEMPO = puvodni * 0.7; // něco čeká: zkrátit
+        try {
+          await prehrat(u, styl);
+        } catch (e) {
+          console.warn('Animace zásahu selhala', e);
+          scena.replaceChildren();
+        }
+        TEMPO = puvodni;
+      }
+      hraje = false;
+    }
+
+    // --- Spojení s Hubem a co Hub vidí ------------------------------------------------------
+    const stavEl = document.getElementById('stav');
+    let spojeni = false;
+    let stavHubu = null;
+    function popisRezimu(r) {
+      if (!r) return 'zatím nevím';
+      return `<b>${r.rezim}</b> (${r.zdroj}): ${ROZPOZNANI[r.rezim] ?? '?'}`;
+    }
+    function vykreslitStav() {
+      const s = stavHubu;
+      const radky = [`Hub: ${spojeni ? '<b>připojeno</b>' : 'odpojeno'} · ${s?.souboj ? '<b>souboj, čtu Player View</b>' : 'mimo souboj (Player View se nečte)'}`];
+      if (s?.rezim) radky.push(`HP nestvůr: ${popisRezimu(s.rezim.nestvury)}`, `HP hráčů: ${popisRezimu(s.rezim.hraci)}`);
+      if (s?.chyba) radky.push(`<span class="chyba">${s.chyba.replace(/[<>&]/g, '')}</span>`);
+      stavEl.innerHTML = radky.join('<br>');
+    }
+    vykreslitStav();
+    odebirat(['uder', 'uder-stav'], (udalost, data) => {
+      if (udalost === 'uder') prijmout(data);
+      else {
+        stavHubu = data;
+        vykreslitStav();
+      }
+    }, { priStavu: (pripojeno) => { spojeni = pripojeno; vykreslitStav(); } });
+
+    // --- Zkouška bez Improved Initiative ---------------------------------------------------
+    if (zkouska) {
+      const REPO = 'https://raw.githubusercontent.com/Koneczech/DnD/main/';
+      // Zkušební hodnoty, ne statistiky postav: jen aby bylo co ubírat.
+      const VYCHOZI = [
+        { id: 'leta', jmeno: 'Leta Quickfinger', max: 24, hrac: true, iniciativa: 19, obrazek: `${REPO}Leta.png` },
+        { id: 'b1', jmeno: 'Bandita', max: 11, iniciativa: 16, obrazek: `${REPO}monsters/bandit.png` },
+        { id: 'tusker', jmeno: 'Tusker Treestone', max: 30, hrac: true, iniciativa: 14, obrazek: `${REPO}Tusker.png` },
+        { id: 'kap', jmeno: 'Kapitán banditů', max: 40, iniciativa: 13, obrazek: `${REPO}monsters/bandit-captain.png` },
+        { id: 'alba', jmeno: 'Alba', max: 22, hrac: true, iniciativa: 11, obrazek: `${REPO}Alba.png` },
+        { id: 'hlidac', jmeno: 'Hlídač kruhu', max: 16, iniciativa: 9, obrazek: `${REPO}monsters/hlidac-kruhu.png` },
+        { id: 'koudur', jmeno: 'Koudur Hardbeard', max: 26, hrac: true, iniciativa: 7, obrazek: `${REPO}Koudur.png` },
+      ];
+      const bojovnici = VYCHOZI.map((b) => ({ ...b, hp: b.max, tagy: [] }));
+      let naTahu = 'leta';
+      let kolo = 1;
+      let cislo = 0;
+      const $ = (id) => document.getElementById(id);
+      const vyplnit = (select, polozky) => { select.replaceChildren(...polozky.map(([v, t]) => Object.assign(document.createElement('option'), { value: v, textContent: t }))); };
+
+      vyplnit($('z-utocnik'), bojovnici.map((b) => [b.id, b.jmeno]));
+      vyplnit($('z-cil'), bojovnici.map((b) => [b.id, b.jmeno]));
+      $('z-cil').value = 'b1';
+      vyplnit($('z-styl'), [['', 'podle útočníka'], ...Object.entries(NAZVY_STYLU)]);
+      vyplnit($('z-nestvury'), REZIMY_HP.map((r) => [r, r]));
+      vyplnit($('z-hraci'), REZIMY_HP.map((r) => [r, r]));
+      $('z-nestvury').value = 'Colored Label';
+      $('z-hraci').value = 'Actual HP';
+      $('z-tempo').value = String(TEMPO);
+
+      const stavSetkani = () => ({
+        encounterState: {
+          ActiveCombatantId: naTahu,
+          RoundCounter: kolo,
+          Combatants: bojovnici.map((b) => simulovatPlayerView(b, b.hrac ? $('z-hraci').value : $('z-nestvury').value)),
+        },
+      });
+      const najit = (id) => bojovnici.find((b) => b.id === id);
+      const kostka = (a, b) => Math.floor(nahodne(a, b + 1));
+
+      function tymy() {
+        $('z-tymy').replaceChildren(...bojovnici.map((b) => {
+          const s = document.createElement('span');
+          s.textContent = `${b.jmeno.split(' ')[0]} ${b.hp}/${b.max}`;
+          if (b.id === naTahu) s.className = 'natahu';
+          return s;
+        }));
+      }
+
+      function provest(zmena) {
+        const pred = stavSetkani();
+        zmena();
+        tymy();
+        const u = zjistitUdery(pred, stavSetkani());
+        const vysledek = $('vysledek');
+        if (!u) {
+          const rezim = najit($('z-cil').value)?.hrac ? $('z-hraci').value : $('z-nestvury').value;
+          vysledek.textContent = `Nerozpoznáno. ${rezim}: ${ROZPOZNANI[rezim]}.`;
+          return;
+        }
+        const popis = u.cile.map((c) => {
+          const kolik = Number.isFinite(c.o) ? `${c.druh === 'leceni' ? '+' : '−'}${c.o}` : (c.druh === 'leceni' ? 'léčení bez čísla' : 'zásah bez čísla');
+          return `${c.jmeno} ${kolik}${c.padl ? ' (k zemi)' : ''}${c.vstal ? ' (zpět v boji)' : ''}`;
+        }).join(', ');
+        vysledek.textContent = `Rozpoznáno: ${u.utocnik ? `${u.utocnik.jmeno} (${NAZVY_STYLU[stylUtocnika(u.utocnik, $('z-styl').value)]}) → ` : ''}${popis}`;
+        prijmout({ ...u, cislo: ++cislo, cas: Math.max(Date.now(), posledniCas + 1) }, $('z-styl').value || undefined);
+      }
+
+      const nepratele = (id) => bojovnici.filter((b) => b.hrac !== najit(id).hrac && b.hp > 0);
+      const AKCE = {
+        zasah: () => provest(() => { const c = najit($('z-cil').value); c.hp = Math.max(0, c.hp - kostka(3, 10)); }),
+        plosny: () => provest(() => nepratele(naTahu).slice(0, 4).forEach((c) => { c.hp = Math.max(0, c.hp - kostka(4, 9)); })),
+        leceni: () => provest(() => { const c = najit($('z-cil').value); c.hp = Math.min(c.max, c.hp + kostka(4, 9)); }),
+        kzemi: () => provest(() => { najit($('z-cil').value).hp = 0; }),
+        dalsi: () => {
+          const i = bojovnici.findIndex((b) => b.id === naTahu);
+          if (i === bojovnici.length - 1) kolo++;
+          naTahu = bojovnici[(i + 1) % bojovnici.length].id;
+          $('z-utocnik').value = naTahu;
+          tymy();
+          $('vysledek').textContent = `Na tahu: ${najit(naTahu).jmeno}.`;
+        },
+        obnovit: () => { bojovnici.forEach((b) => { b.hp = b.max; }); tymy(); $('vysledek').textContent = 'HP obnovené (bez animace).'; },
+      };
+      document.querySelectorAll('#zkouska [data-akce]').forEach((b) => b.addEventListener('click', () => AKCE[b.dataset.akce]()));
+      $('z-utocnik').addEventListener('change', (e) => { naTahu = e.target.value; tymy(); });
+      $('z-zlovlk').addEventListener('change', (e) => { najit('alba').tagy = e.target.checked ? ['zlovlk'] : []; });
+      $('z-tempo').addEventListener('change', (e) => { TEMPO = Number(e.target.value) || 1; });
+      tymy();
+    }
+  </script>
+</body>
+</html>

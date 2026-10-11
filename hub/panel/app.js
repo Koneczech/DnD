@@ -359,6 +359,9 @@ function vykresliKontrolky() {
 // Role scén v OBS. Dlaždice ukazuje ovládání té role, kterou má přiřazenou v tabulce Role scén.
 const ROLE_SCEN = [['start', 'scenaStart', 'Start'], ['misto', 'scenaMisto', 'Místo'], ['obchod', 'scenaObchod', 'Obchod'], ['souboj', 'scenaSouboj', 'Souboj']];
 const PANELY = ['start', 'misto', 'obchod', 'souboj'];
+/** Improved Initiative (Epic): tracker iniciativy zůstává jeho (rozhodnutí 6), Hub ho jen ukazuje v záložce Souboj. */
+const ADRESA_INICIATIVY = 'https://improvedinitiative.app/e/';
+
 const POCASI_TEXT = { dest: 'déšť', snih: 'sníh', mlha: 'mlha', bourka: 'bouřka' };
 const NAZVY_ROLI = { hlavni: 'Hlavní', pozadi: 'Pozadí', lampa: 'Lampa' };
 /** Počasí scény jako seznam efektů (starší server posílal jeden řetězec). */
@@ -470,6 +473,10 @@ function vykresliSceny() {
   rada.replaceChildren(...karty, dalsi);
 
   for (const id of PANELY) $(`#stul-${id}`).hidden = id !== role;
+  // Improved Initiative se načte až při prvním otevření záložky Souboj a pak už zůstane načtený.
+  if (role === 'souboj' && !$('#obrazovka-sceny').hidden && !$('#iniciativa-ramec').getAttribute('src')) {
+    $('#iniciativa-ramec').setAttribute('src', ADRESA_INICIATIVY);
+  }
   vykresliSouboj();
   nahledMista(!$('#obrazovka-sceny').hidden, roleVObs);
 }

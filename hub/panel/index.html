@@ -186,9 +186,13 @@
               <h2 class="vizualne-skryte">Souboj</h2>
               <div class="karta souboj-karta">
                 <p class="souboj-stav" id="souboj-stav">Souboj neběží.</p>
-                <p class="ulozeni" id="souboj-popis">Souboj přepne OBS na scénu s iniciativou z Improved Initiative, světla na bojová a hudbu na bojovou. Ambient počasí nechá. Konec souboje vrátí scénu i světla přesně tam, kde byly.</p>
+                <p class="ulozeni" id="souboj-popis" title="Souboj přepne OBS na scénu s iniciativou, světla na bojová a hudbu na bojovou. Ambient počasí nechá. Konec souboje vrátí scénu i světla přesně tam, kde byly.">Přepne OBS na iniciativu, světla a hudbu na bojové; konec vrátí, co bylo.</p>
+                <a class="tlacitko tiche" id="iniciativa-okno" href="https://improvedinitiative.app/e/" target="improved-initiative" rel="noopener">Otevřít v záložce ↗</a>
                 <button type="button" class="hlavni" id="souboj-prepnout">Zahájit souboj</button>
               </div>
+              <!-- Improved Initiative přímo v panelu (otevřený bod 68). Načte se při prvním otevření záložky
+                   a zůstává načtený, ať přepínání záložek neztratí rozehrané setkání. -->
+              <iframe class="iniciativa" id="iniciativa-ramec" title="Improved Initiative" allow="clipboard-write"></iframe>
             </div>
           </div>
 

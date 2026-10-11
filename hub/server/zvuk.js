@@ -1,5 +1,5 @@
-// Zvuk scény (Blok 5, rozhodnutí 62 a 63): hudba na TV (výstup hudba.html v OBS) a ambient
-// s efekty u stolu (stránka zvuk-u-stolu.html, BT reproduktor). Server jen rozhoduje, CO hraje;
+// Zvuk scény (Blok 5, rozhodnutí 62, 63 a 67): hudba, ambient a efekty hrají z reproduktoru u stolu
+// (stránka zvuk-u-stolu.html); hudba může hrát i v OBS (výstup hudba.html), když to DM přepne. Server jen rozhoduje, CO hraje;
 // přehrávají stránky přes Web Audio. Soubory leží ve složce mimo repo a jdou jen přes localhost.
 //
 // Data kampaně: `zvuk.den` / `zvuk.noc` v hlavičce místa, `zvuk` ve vrstvách kampan/sceny/
@@ -36,6 +36,11 @@ export const HROM = Object.freeze({
 /** Stránka se hlásí každých 5 s; po 12 s bez hlášení je odpojená. */
 export const PLATNOST_HLASENI_MS = 12000;
 export const STRANKY = Object.freeze(['hudba', 'stul']);
+/** Kde hraje hudba: z reproduktoru u stolu (výchozí, rozhodnutí 67), nebo v OBS. */
+export const HUDBA_KDE = Object.freeze(['stul', 'obs']);
+/** Ucpané uši při málo HP (otevřený bod 73): co se tlumí a jak silně (dolní propust v Hz). */
+export const TLUMENI = Object.freeze(['hudba', 'vse', 'vypnuto']);
+export const TLUMENI_HZ = Object.freeze({ min: 200, max: 2000, vychozi: 500 });
 const MAX_SOUBORU = 3000;
 
 const chyba = (zprava, status = 400) => Object.assign(new Error(zprava), { status });
@@ -129,7 +134,8 @@ export class Zvuk extends EventEmitter {
     this.hodiny = hodiny;
     this.nahodne = nahodne;
     this.soubor = path.join(cesty.lokalniStav, 'zvuk.json');
-    this.mistni = { ticho: false, hudba: 0.8, ambient: 0.8, efekty: 1 };
+    this.mistni = { ticho: false, hudba: 0.8, ambient: 0.8, efekty: 1, hudbaKde: 'stul', tlumeni: 'hudba', tlumeniHz: TLUMENI_HZ.vychozi };
+    this.kritickeHp = false; // postava na tahu s málo HP (i zkouška z Nastavení → Světla)
     this.hlaseni = {}; // stranka → { ...hlášení, cas }
     this.soubory = []; // jména ve složce (relativní, s lomítky)
     this.slozkaExistuje = false;
@@ -148,6 +154,9 @@ export class Zvuk extends EventEmitter {
       const d = JSON.parse(await fs.readFile(this.soubor, 'utf8'));
       for (const k of ['hudba', 'ambient', 'efekty']) if (Number.isFinite(d[k])) this.mistni[k] = Math.max(0, Math.min(1, d[k]));
       this.mistni.ticho = d.ticho === true;
+      if (HUDBA_KDE.includes(d.hudbaKde)) this.mistni.hudbaKde = d.hudbaKde;
+      if (TLUMENI.includes(d.tlumeni)) this.mistni.tlumeni = d.tlumeni;
+      if (Number.isFinite(d.tlumeniHz)) this.mistni.tlumeniHz = Math.max(TLUMENI_HZ.min, Math.min(TLUMENI_HZ.max, Math.round(d.tlumeniHz)));
     } catch {
       /* první spuštění */
     }
@@ -238,6 +247,13 @@ export class Zvuk extends EventEmitter {
         .filter((a) => a.soubor)
         .map((a) => ({ ...a, url: this.url(a.soubor) })),
       prolnutiMs: PROLNUTI_MS,
+      hudbaKde: this.mistni.hudbaKde,
+      // Ucpané uši: stránky prolnou dolní propust na sběrnici hudby (a ambientu při „vse“).
+      tlumeni: {
+        aktivni: this.kritickeHp && this.mistni.tlumeni !== 'vypnuto',
+        rozsah: this.mistni.tlumeni,
+        hz: this.mistni.tlumeniHz,
+      },
     };
   }
 
@@ -266,6 +282,8 @@ export class Zvuk extends EventEmitter {
       chybiTed: [c.hudba, ...c.ambient.map((a) => a.soubor), ...c.hrom].filter((s) => s && !this.najit(s)),
       hrom: c.hrom.map((s) => this.najit(s)).filter(Boolean),
       stranky,
+      // Stránka Hudba v OBS je potřeba, jen když hudba hraje v OBS.
+      potrebne: this.mistni.hudbaKde === 'obs' ? ['hudba', 'stul'] : ['stul'],
     };
   }
 
@@ -292,10 +310,29 @@ export class Zvuk extends EventEmitter {
     this.oznam();
   }
 
+  /** Postava na tahu s málo HP (nebo zkouška): hudba zní jako přes ucpané uši. */
+  nastavitKritickeHp(ano) {
+    this.kritickeHp = Boolean(ano);
+    this.oznam();
+  }
+
   async nastavit(z) {
     if ('ticho' in z) {
       if (typeof z.ticho !== 'boolean') throw chyba('Ticho je zapnuto, nebo vypnuto.');
       this.mistni.ticho = z.ticho;
+    }
+    if ('hudbaKde' in z) {
+      if (!HUDBA_KDE.includes(z.hudbaKde)) throw chyba('Hudba hraje u stolu, nebo v OBS.');
+      this.mistni.hudbaKde = z.hudbaKde;
+    }
+    if ('tlumeni' in z) {
+      if (!TLUMENI.includes(z.tlumeni)) throw chyba('Tlumení je hudba, vše, nebo vypnuto.');
+      this.mistni.tlumeni = z.tlumeni;
+    }
+    if ('tlumeniHz' in z) {
+      const n = Number(z.tlumeniHz);
+      if (!Number.isFinite(n) || n < TLUMENI_HZ.min || n > TLUMENI_HZ.max) throw chyba(`Útlum je ${TLUMENI_HZ.min} až ${TLUMENI_HZ.max} Hz.`);
+      this.mistni.tlumeniHz = Math.round(n);
     }
     for (const k of ['hudba', 'ambient', 'efekty']) {
       if (!(k in z)) continue;

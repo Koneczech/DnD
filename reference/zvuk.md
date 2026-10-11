@@ -1,13 +1,15 @@
-# Zvuk u stolu a hudba na TV (Blok 5)
+# Zvuk u stolu (Blok 5)
 
-Hub pouští dvě věci:
+Všechen zvuk hraje stránka `vystupy/zvuk-u-stolu.html` do BT reproduktoru u stolu (rozhodnutí 67):
 
 | Co | Kudy | Kam |
 | --- | --- | --- |
-| **Hudba** scény | výstup `vystupy/hudba.html` jako zdroj *Browser* v OBS | TV (přes monitorování zvuku v OBS) |
-| **Ambient** místa a počasí, **hrom**, **efekty** | stránka `vystupy/zvuk-u-stolu.html` v okně prohlížeče | BT reproduktor u stolu |
+| **Hudba** scény, **ambient** místa a počasí, **hrom**, **efekty** | stránka `vystupy/zvuk-u-stolu.html` v okně prohlížeče | BT reproduktor u stolu |
+| **Hudba** (jen když ji přepneš) | výstup `vystupy/hudba.html` jako zdroj *Browser* v OBS | TV přes monitorování zvuku v OBS |
 
-Co hraje, určuje panel (místo, Den/Noc, počasí, souboj, Ticho). Stránky to jen plynule prolnou.
+Co hraje, určuje panel (místo, Den/Noc, počasí, souboj, Ticho). Stránky to jen plynule prolnou. Kde hraje hudba, přepneš v **Nastavení → Zvuk → Hudba hraje**.
+
+**Ucpané uši při málo HP**: když je na tahu postava s 25 % HP a méně, hudba nezeslábne, ale zní tupě, jako přes ucpané uši (dolní propust, otevřený bod 73). V **Nastavení → Zvuk → Hudba a málo HP** zvolíš, jestli se tlumí jen hudba, nebo i ambient, a jak silně. **Vyzkoušet 12 s** pustí tlumení spolu s pulzem lampy.
 
 ## 1. Složka zvuku (jednou)
 
@@ -30,7 +32,11 @@ Zvukové soubory do veřejného repa nepatří (licence, rozhodnutí 63). `.giti
 
 Jména můžeš změnit přímo v `kampan/sceny/…yaml`. Hudbu a ambient míst vybíráš v **Místa → místo → Zvuk**. Chybějící soubor ohlásí Kontrola dat a Sezení → Před hrou. Scéna pak hraje bez něj.
 
-## 2. Hudba v OBS (jednou)
+## 2. Hudba v OBS (jen když hudba hraje v OBS)
+
+Výchozí je hudba z reproduktoru u stolu a tuhle část můžeš přeskočit. Zdroj `Hub – hudba` pak v OBS nic nepouští, klidně ho smaž.
+
+Když OBS „nic nehraje“ ani se zkušebním zvukem, je to skoro vždy monitorování: se zaškrtnutým *Control audio via OBS* jde zvuk jen do mixu OBS (do streamu a nahrávky) a z reproduktorů ho uslyšíš, jen když má zdroj zapnuté monitorování (bod 4).
 
 1. V OBS přidej zdroj **Browser** jménem `Hub – hudba` s adresou z **Nastavení → Výstupy pro OBS → Hudba** (`http://localhost:7420/vystupy/hudba.html`), velikost 100 × 100.
 2. Zaškrtni **Control audio via OBS**. Nech vypnuté *Shutdown source when not visible* i *Refresh browser when scene becomes active*.
@@ -48,7 +54,7 @@ Jména můžeš změnit přímo v `kampan/sceny/…yaml`. Hudbu a ambient míst 
 5. **Zkušební zvuk** zahraje tři tóny z vybraného reproduktoru, i když je zapnuté Ticho.
 6. Okno nech otevřené celou hru (klidně minimalizované).
 
-Když se reproduktor odpojí (vybije se, je mimo dosah), stránka hraje dál na výchozí zařízení, kontrolka **Zvuk** v liště zežloutne a Sezení to napíše. Po připojení se zvuk vrátí sám. Hudba v OBS i světla běží dál.
+Když se reproduktor odpojí (vybije se, je mimo dosah), stránka hraje dál na výchozí zařízení, kontrolka **Zvuk** v liště zežloutne a Sezení to napíše. Po připojení se zvuk vrátí sám. Světla běží dál.
 
 ## 4. Příprava souborů
 

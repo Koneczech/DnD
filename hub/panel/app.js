@@ -335,9 +335,12 @@ function vykresliKontrolky() {
     : `${sv.ridit ? 'Hub řídí světla' : 'Hub na světla nesahá (Řídit světla je vypnuté)'}. ${zar.map((z) => `${NAZVY_ROLI[z.role]} ${z.typ === 'hue' ? 'Hue' : `WiZ ${z.id}`}: ${z.ok ? 'odpovídá' : z.ok === false ? z.chyba ?? 'neodpovídá' : 'zjišťuji'}`).join('; ')}`;
   const zv = p?.zvuk;
   const [sh, ss] = [zv?.stranky?.hudba, zv?.stranky?.stul];
-  const zvukOk = sh?.pripojeno && ss?.pripojeno && ss.odemceno && sh.odemceno !== false && ss.vystup?.ok !== false && !sh.chyba && !ss.chyba;
-  $('#svetlo-zvuk').dataset.stav = !zv ? 'ceka' : zvukOk ? 'ok' : sh?.pripojeno || ss?.pripojeno ? 'varovani' : 'chyba';
-  $('#svetlo-zvuk').parentElement.title = !zv ? 'Zjišťuji' : [popisStrankyZvuku('Hudba v OBS', sh), popisStrankyZvuku('Zvuk u stolu', ss)].join('; ');
+  // Stránka Hudba v OBS se počítá, jen když hudba hraje v OBS (rozhodnutí 67).
+  const hudbaVObs = zv?.hudbaKde === 'obs';
+  const hudbaOk = !hudbaVObs || (sh?.pripojeno && sh.odemceno !== false && !sh.chyba);
+  const zvukOk = hudbaOk && ss?.pripojeno && ss.odemceno && ss.vystup?.ok !== false && !ss.chyba;
+  $('#svetlo-zvuk').dataset.stav = !zv ? 'ceka' : zvukOk ? 'ok' : (hudbaVObs && sh?.pripojeno) || ss?.pripojeno ? 'varovani' : 'chyba';
+  $('#svetlo-zvuk').parentElement.title = !zv ? 'Zjišťuji' : [...(hudbaVObs ? [popisStrankyZvuku('Hudba v OBS', sh)] : []), popisStrankyZvuku('Zvuk u stolu', ss)].join('; ');
   // Stav i slovy, nejen barvou (čtečka obrazovky, audit N12). Rozbalený Systém ukazuje popis u každé kontrolky.
   const tecky = [];
   for (const k of ['server', 'obs', 'git', 'svetla', 'zvuk']) {
@@ -880,9 +883,11 @@ function vykresliObrazovkuSezeni() {
     if (zv) {
       const sh = zv.stranky?.hudba;
       const ss = zv.stranky?.stul;
-      k.push(sh?.pripojeno
-        ? polozkaKontroly(sh.chyba ? 'varovani' : 'ok', sh.chyba ? `Hudba v OBS: ${sh.chyba}` : 'Hudba v OBS je připojená.')
-        : polozkaKontroly('varovani', 'Hudba v OBS není připojená (zdroj Hub – hudba).', { text: 'Adresa výstupu', odkaz: '#nastaveni-zvuk' }));
+      if (zv.hudbaKde === 'obs') {
+        k.push(sh?.pripojeno
+          ? polozkaKontroly(sh.chyba ? 'varovani' : 'ok', sh.chyba ? `Hudba v OBS: ${sh.chyba}` : 'Hudba v OBS je připojená.')
+          : polozkaKontroly('varovani', 'Hudba v OBS není připojená (zdroj Hub – hudba).', { text: 'Adresa výstupu', odkaz: '#nastaveni-zvuk' }));
+      }
       k.push(!ss?.pripojeno
         ? polozkaKontroly('varovani', 'Zvuk u stolu není otevřený.', { text: 'Otevřít', klik: otevritZvukUStolu })
         : !ss.odemceno
@@ -2803,8 +2808,21 @@ function vykresliZvuk() {
 
   // Nastavení → Zvuk
   $('#zvuk-slozka-stav').textContent = `${z.slozkaNastavena ? '' : 'Nevyplněno = výchozí '}${z.slozka}: ${z.slozkaExistuje ? `${z.pocetSouboru} zvukových souborů` : 'složka neexistuje'}. Efekty pro tlačítka U stolu dej do podsložky efekty.`;
+  const hudbaVObs = z.hudbaKde === 'obs';
+  for (const [id, hodnota] of [['#zvuk-hudba-kde', z.hudbaKde ?? 'stul'], ['#zvuk-tlumeni', z.tlumeni?.rozsah ?? 'hudba'], ['#zvuk-tlumeni-hz', String(z.tlumeni?.hz ?? 500)]]) {
+    const select = $(id);
+    if (document.activeElement === select) continue;
+    // Útlum nastavený jinak než nabídka (ručně v zvuk.json): ukáže se jako vlastní položka.
+    if (![...select.options].some((o) => o.value === hodnota)) select.append(new Option(`${hodnota} Hz`, hodnota));
+    select.value = hodnota;
+  }
+  $('#zvuk-tlumeni-hz').disabled = z.tlumeni?.rozsah === 'vypnuto';
+  $('#zvuk-zkusebni-obs').hidden = !hudbaVObs;
+  $('#zvuk-poznamka').firstChild.textContent = hudbaVObs
+    ? 'Hudba hraje výstup Hudba v OBS (zvuk na TV), ambient a efekty stránka Zvuk u stolu do BT reproduktoru. Postup v '
+    : 'Hudba, ambient i efekty hraje stránka Zvuk u stolu do BT reproduktoru. Postup v ';
   $('#zvuk-stranky').replaceChildren(
-    ...[['Hudba v OBS', z.stranky.hudba], ['Zvuk u stolu', z.stranky.stul]].map(([nazev, x]) =>
+    ...[...(hudbaVObs ? [['Hudba v OBS', z.stranky.hudba]] : []), ['Zvuk u stolu', z.stranky.stul]].map(([nazev, x]) =>
       polozkaKontroly(x?.pripojeno && x.odemceno !== false && !x.chyba && x.vystup?.ok !== false ? 'ok' : x?.pripojeno ? 'varovani' : 'chyba', popisStrankyZvuku(nazev, x))),
   );
 }
@@ -2822,6 +2840,27 @@ $('#tlacitko-ticho').addEventListener('click', async () => {
   try {
     stav.prehled.zvuk = await api('/api/zvuk', { metoda: 'PUT', telo: { ticho: !stav.prehled?.zvuk?.ticho } });
     vykresliZvuk();
+  } catch (e) {
+    toast(e.message, { chyba: true });
+  }
+});
+
+async function ulozitZvuk(telo) {
+  try {
+    stav.prehled.zvuk = await api('/api/zvuk', { metoda: 'PUT', telo });
+    vykresliZvuk();
+    $('#zvuk-volby-vysledek').textContent = 'Uloženo.';
+  } catch (e) {
+    $('#zvuk-volby-vysledek').textContent = e.message;
+  }
+}
+$('#zvuk-hudba-kde').addEventListener('change', (e) => ulozitZvuk({ hudbaKde: e.target.value }));
+$('#zvuk-tlumeni').addEventListener('change', (e) => ulozitZvuk({ tlumeni: e.target.value }));
+$('#zvuk-tlumeni-hz').addEventListener('change', (e) => ulozitZvuk({ tlumeniHz: Number(e.target.value) }));
+$('#zvuk-tlumeni-zkusit').addEventListener('click', async () => {
+  try {
+    await api('/api/svetla/hp/zkouska', { metoda: 'POST', telo: {} });
+    toast(stav.prehled?.zvuk?.stranky?.stul?.pripojeno ? 'Na 12 s ucpané uši (a pulz lampy). Slyšíš rozdíl?' : 'Zvuk u stolu není otevřený, tlumení nemá kdo zahrát.', { chyba: !stav.prehled?.zvuk?.stranky?.stul?.pripojeno });
   } catch (e) {
     toast(e.message, { chyba: true });
   }
@@ -2924,7 +2963,7 @@ function vykresliZvukMista(m) {
     }),
   );
   $('#misto-zvuk-popis').textContent = soubory.length
-    ? 'Hudba hraje na TV, ambient u stolu. Noc bez vlastního zvuku hraje zvuk dne.'
+    ? `Hudba hraje ${stav.prehled?.zvuk?.hudbaKde === 'obs' ? 'v OBS' : 'u stolu'}, ambient u stolu. Noc bez vlastního zvuku hraje zvuk dne.`
     : 'Ve složce zvuku zatím nic není. Nastav ji v Nastavení → Zvuk a nahraj do ní soubory (mp3, ogg, wav).';
 }
 

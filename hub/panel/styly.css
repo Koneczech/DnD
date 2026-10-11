@@ -524,6 +524,10 @@ details.oprava summary { cursor: pointer; color: var(--mlha); font-size: var(--t
 .zvuk-efekty:empty { display: none; }
 #tlacitko-ticho[aria-pressed="true"] { background: var(--jantar); border-color: var(--jantar); color: var(--noc); }
 .zvuk-mista { display: grid; gap: var(--m-2); margin: var(--m-2) 0; }
+.zvuk-volby select { width: 100%; }
+.zvuk-volby button { white-space: nowrap; }
+.zvuk-volby { display: grid; grid-template-columns: repeat(3, minmax(10rem, 14rem)) auto; gap: var(--m-3); align-items: end; }
+@media (max-width: 900px) { .zvuk-volby { grid-template-columns: 1fr; } }
 .zvuk-radek { display: flex; flex-wrap: wrap; align-items: end; gap: var(--m-2) var(--m-3); }
 .zvuk-radek > strong { min-width: 2.5rem; align-self: center; }
 .zvuk-radek label { display: grid; gap: var(--m-1); color: var(--mlha); font-size: var(--t-popisek); }

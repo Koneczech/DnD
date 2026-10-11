@@ -1,5 +1,5 @@
-// Přehrávač zvuku pro výstupy Hubu (Blok 5): hudba v OBS (hudba.html) a ambient s efekty u stolu
-// (zvuk-u-stolu.html). Server říká, co má hrát; tady se to plynule prolne přes Web Audio.
+// Přehrávač zvuku pro výstupy Hubu (Blok 5): hudba, ambient a efekty u stolu (zvuk-u-stolu.html),
+// hudba případně v OBS (hudba.html). Server říká, co má hrát; tady se to plynule prolne přes Web Audio.
 //
 // Smyčky hrají dva prvky <audio> střídavě: kousek před koncem se druhý spustí od začátku a oba
 // se prolnou. Smyčka tak nemá šev ani u MP3 (kodér přidává na začátek a konec ticho) a dlouhé
@@ -142,6 +142,57 @@ export class Vrstvy {
 }
 
 /**
+ * Ucpané uši (málo HP, otevřený bod 73): dvě dolní propusti za sebou (strmý ořez výšek), mírně
+ * zesílené basy a vyrovnání hlasitosti. Hudba nezní tišeji, ale tupě a „zpoza zdi“.
+ * Bez tlumení je propust na 20 kHz a nic nemění.
+ */
+export class Tlumeni {
+  static OTEVRENO_HZ = 20000;
+  static NABEH_S = 1.2;
+  static DOZNENI_S = 2;
+
+  constructor(ctx) {
+    this.ctx = ctx;
+    this.vstup = ctx.createGain();
+    this.propusti = [0, 1].map(() => {
+      const f = ctx.createBiquadFilter();
+      f.type = 'lowpass';
+      f.frequency.value = Tlumeni.OTEVRENO_HZ;
+      f.Q.value = 0.7;
+      return f;
+    });
+    this.basy = ctx.createBiquadFilter();
+    this.basy.type = 'lowshelf';
+    this.basy.frequency.value = 180;
+    this.basy.gain.value = 0;
+    this.vyrovnani = ctx.createGain();
+    this.vystup = this.vyrovnani;
+    this.vstup.connect(this.propusti[0]).connect(this.propusti[1]).connect(this.basy).connect(this.vyrovnani);
+    this.aktivni = false;
+  }
+
+  /** Plynule zapne nebo vypne tlumení; `hz` = kde propust řeže (nižší = ucpanější). */
+  nastavit(aktivni, hz = 500) {
+    const cilHz = aktivni ? Math.max(100, hz) : Tlumeni.OTEVRENO_HZ;
+    if (aktivni === this.aktivni && this.hz === cilHz) return;
+    this.aktivni = aktivni;
+    this.hz = cilHz;
+    const t = this.ctx.currentTime;
+    const d = aktivni ? Tlumeni.NABEH_S : Tlumeni.DOZNENI_S;
+    const plynule = (param, cil, exp) => {
+      param.cancelScheduledValues(t);
+      param.setValueAtTime(param.value, t);
+      if (exp) param.exponentialRampToValueAtTime(cil, t + d);
+      else param.linearRampToValueAtTime(cil, t + d);
+    };
+    for (const f of this.propusti) plynule(f.frequency, cilHz, true);
+    plynule(this.basy.gain, aktivni ? 5 : 0, false);
+    // Ořez výšek ubere hlasitost; vyrovnání ji vrátí (čím nižší propust, tím víc).
+    plynule(this.vyrovnani.gain, aktivni ? Math.min(1.6, 1 + 250 / cilHz) : 1, false);
+  }
+}
+
+/**
  * Základ obou stránek: AudioContext, sběrnice s hlasitostí (Ticho), odemčení zvuku, hlášení
  * serveru a živé změny.
  */
@@ -168,6 +219,16 @@ export class Prehravac {
     g.gain.value = 0;
     g.connect(this.ctx.destination);
     return g;
+  }
+
+  /** Sběrnice s ucpanýma ušima: hlasitost → tlumení → výstup. */
+  sberniceSTlumenim() {
+    const g = this.ctx.createGain();
+    g.gain.value = 0;
+    const tlumeni = new Tlumeni(this.ctx);
+    g.connect(tlumeni.vstup);
+    tlumeni.vystup.connect(this.ctx.destination);
+    return { g, tlumeni };
   }
 
   /** Plynulá změna hlasitosti sběrnice (Ticho do 1 s). */

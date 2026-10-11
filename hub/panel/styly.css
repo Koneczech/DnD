@@ -830,8 +830,7 @@ main { padding: var(--m-4) var(--m-5) var(--m-5); }
 .souboj-karta { flex-direction: row; flex-wrap: wrap; align-items: center; gap: var(--m-2) var(--m-4); max-width: none; padding: var(--m-3) var(--m-4); margin-bottom: var(--m-3); }
 .souboj-karta .souboj-stav { font-size: var(--t-sekce); }
 .souboj-karta #souboj-popis { flex: 1 1 20rem; margin: 0; min-height: 0; }
-.iniciativa-otevrit { display: flex; flex-wrap: wrap; align-items: center; gap: var(--m-2) var(--m-4); padding: var(--m-4); }
-.iniciativa-otevrit .ulozeni { margin: 0; min-height: 0; }
+.iniciativa { display: block; width: 100%; height: calc(100vh - 25rem); min-height: 26rem; border: 1px solid var(--linka); border-radius: var(--zaobleni-karta); background: #fff; }
 .iniciativa-odkaz { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: var(--m-2) var(--m-3); padding-top: var(--m-2); border-top: 1px solid var(--linka); }
 .iniciativa-odkaz label { color: var(--text-tlumeny); font-size: var(--t-popisek); }
 .iniciativa-odkaz input { flex: 1 1 22rem; padding: var(--m-1) var(--m-3); font-size: var(--t-popisek); }

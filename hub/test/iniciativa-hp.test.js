@@ -49,10 +49,11 @@ test('lampa pulzuje do červena jen s Řídit světla a pak se vrátí ke scén�
   const os = await import('node:os');
   const path = await import('node:path');
   const prikazy = [];
-  const wiz = () => ({ nastavit: async (cil) => prikazy.push(cil), stav: async () => ({}) });
+  const pozadi = [];
+  const wiz = ({ adresa }) => ({ nastavit: async (cil) => (adresa === '10.0.0.8' ? pozadi : prikazy).push(cil), stav: async () => ({}) });
   const svetla = new Svetla({
     cesty: { lokalniStav: path.join(os.tmpdir(), 'hub-hp-test'), kampan: path.join(os.tmpdir(), 'hub-hp-neni') },
-    nastaveni: () => ({ SVETLA_LAMPA: 'wiz:10.0.0.9' }),
+    nastaveni: () => ({ SVETLA_LAMPA: 'wiz:10.0.0.9', SVETLA_POZADI: 'wiz:10.0.0.8' }),
     misto: () => null,
     scena: () => ({ varianta: 'den', pocasi: [], intenzita: 0, rezim: 'souboj' }),
     ovladace: { wiz },
@@ -64,14 +65,16 @@ test('lampa pulzuje do červena jen s Řídit světla a pak se vrátí ke scén�
   svetla.nastavitKritickeHp(null);
   svetla.nastavitKritickeHp({ jmeno: 'Leta', hp: 4, max: 24 });
   await new Promise((r) => setTimeout(r, 20));
-  assert.deepEqual(prikazy.at(-1).rgb, [210, 24, 12], 'nádech do červena');
+  assert.deepEqual(prikazy.at(-1).rgb, [255, 0, 0], 'lampa začne červenou');
+  assert.deepEqual(pozadi.at(-1).rgb, [255, 0, 0], 'pozadí červeně');
   assert.equal(svetla.verejny().kritickeHp.jmeno, 'Leta');
   const pred = prikazy.length;
   await svetla.aplikovat();
   assert.equal(prikazy.length, pred, 'scéna lampu během pulzu nepřepíše');
   svetla.nastavitKritickeHp(null);
   await svetla.fronta;
-  assert.notDeepEqual(prikazy.at(-1).rgb, [140, 12, 6], 'po tahu lampa zpět ke scéně');
+  assert.notDeepEqual(prikazy.at(-1).rgb, [255, 0, 0], 'po tahu lampa zpět ke scéně');
+  assert.notDeepEqual(pozadi.at(-1).rgb, [255, 0, 0], 'po tahu pozadí zpět ke scéně');
   assert.equal(svetla.verejny().kritickeHp, null);
   svetla.zastavit();
 });

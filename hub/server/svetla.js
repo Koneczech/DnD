@@ -21,6 +21,14 @@ export const PODLAHA_JASU = 15;
 export const STROP_SYTOSTI = 0.45;
 /** Blesky nejvýš 3 záblesky za sekundu (hranice fotosenzitivity). */
 export const MAX_ZABLESKU_ZA_S = 3;
+/* Málo HP (otevřený bod 72): sytá červená ↔ žlutá na lampě, pozadí červeně. Čisté barvy bez bílé,
+   ať lampa nejde do růžova. */
+export const HP_LAMPA_CERVENA = Object.freeze({ zap: true, jas: 90, rgb: [255, 0, 0] });
+export const HP_LAMPA_ZLUTA = Object.freeze({ zap: true, jas: 75, rgb: [255, 190, 0] });
+export const HP_POZADI = Object.freeze({ zap: true, jas: 55, rgb: [255, 0, 0] });
+export const HP_KROK_MS = 2000;
+export const HP_PRECHOD_POZADI_MS = 3000;
+const ROLE_PRI_HP = ['lampa', 'pozadi'];
 /** Útlum při intenzitě 0–3 (stejně jako ztmavení obrazu). */
 const UTLUM = [1, 0.85, 0.7, 0.55];
 /** Průměrný odstup blesků v sekundách podle intenzity. */
@@ -264,8 +272,8 @@ export class Svetla extends EventEmitter {
       if (!this.mistni.ridit && !vynutit) return;
       await Promise.all(
         [...this.zarizeni.values()].map(async (z) => {
-          // Lampa, která pulzuje kvůli HP, scénu neposlouchá, dokud tah postavy neskončí.
-          if (this.casovacPulzu && z.role === 'lampa' && !vynutit) return;
+          // Lampa a pozadí při málo HP scénu neposlouchají, dokud tah postavy neskončí.
+          if (this.casovacPulzu && ROLE_PRI_HP.includes(z.role) && !vynutit) return;
           const cil = cile[z.role];
           const json = JSON.stringify(cil);
           if (!vynutit && z.posledni === json && z.ok) return;
@@ -447,28 +455,30 @@ export class Svetla extends EventEmitter {
   /* ---------- Světla podle HP (otevřený bod 72) ---------- */
 
   /**
-   * Postava hráče na tahu s málo HP (nebo null): lampa u stolu pomalu pulzuje do červena,
-   * jeden nádech za 2 s (hluboko pod hranicí 3 záblesků za sekundu). Jen s Řídit světla a zapnutým vypínačem.
+   * Postava hráče na tahu s málo HP (nebo null): lampa u stolu pomalu pulzuje mezi červenou a žlutou
+   * (jedna změna za 2 s, celý cyklus 4 s, hluboko pod hranicí 3 záblesků za sekundu) a pozadí se za 3 s
+   * rozsvítí červeně. Po konci tahu se obě role za 3 s vrátí ke scéně. Jen s Řídit světla a zapnutým vypínačem.
    */
   nastavitKritickeHp(kriticke) {
     this.kritickeHp = kriticke ?? null;
     const pulzovat = Boolean(this.kritickeHp) && this.mistni.ridit && this.hpSvetlaZapnute;
+    const zarizeniRole = (role) => [...this.zarizeni.values()].filter((z) => z.role === role && z.ovladac);
     if (pulzovat && !this.casovacPulzu) {
-      let nadech = true;
+      Promise.all(zarizeniRole('pozadi').map((z) => this.poslat(z, HP_POZADI, HP_PRECHOD_POZADI_MS))).catch(() => {});
+      let cervena = true;
       const krok = () => {
-        const lampy = [...this.zarizeni.values()].filter((z) => z.role === 'lampa' && z.ovladac);
-        const cil = nadech ? { zap: true, jas: 80, rgb: [210, 24, 12] } : { zap: true, jas: 18, rgb: [140, 12, 6] };
-        nadech = !nadech;
-        Promise.all(lampy.map((z) => this.poslat(z, cil, 900))).catch(() => {});
+        const cil = cervena ? HP_LAMPA_CERVENA : HP_LAMPA_ZLUTA;
+        cervena = !cervena;
+        Promise.all(zarizeniRole('lampa').map((z) => this.poslat(z, cil, HP_KROK_MS - 200))).catch(() => {});
       };
       krok();
-      this.casovacPulzu = setInterval(krok, 1000);
+      this.casovacPulzu = setInterval(krok, HP_KROK_MS);
       this.casovacPulzu.unref?.();
     } else if (!pulzovat && this.casovacPulzu) {
       clearInterval(this.casovacPulzu);
       this.casovacPulzu = null;
-      for (const z of this.zarizeni.values()) if (z.role === 'lampa') z.posledni = null;
-      if (this.mistni.ridit) this.aplikovat().catch(() => {});
+      for (const z of this.zarizeni.values()) if (ROLE_PRI_HP.includes(z.role)) z.posledni = null;
+      if (this.mistni.ridit) this.aplikovat({ prechodMs: HP_PRECHOD_POZADI_MS }).catch(() => {});
     }
     this.oznam();
   }

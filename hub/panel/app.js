@@ -2432,7 +2432,7 @@ function vykresliSvetla() {
   ridit.disabled = !sv.nastaveno;
   const spatne = sv.zarizeni.filter((z) => z.ok === false);
   $('#svetla-popis').textContent = sv.kritickeHp
-    ? `${sv.kritickeHp.jmeno} na ${sv.kritickeHp.hp}/${sv.kritickeHp.max} HP: lampa pulzuje do červena.`
+    ? `${sv.kritickeHp.jmeno} na ${sv.kritickeHp.hp}/${sv.kritickeHp.max} HP: lampa pulzuje, pozadí červené.`
     : !sv.nastaveno
     ? 'Světla nejsou nastavená. Přiřaď je v Nastavení → Světla.'
     : !sv.ridit

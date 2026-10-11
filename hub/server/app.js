@@ -637,7 +637,7 @@ export class Hub {
     let chybaObs = null;
     if (zapnout) {
       scenaObs = this.nastaveni.hodnoty.OBS_SCENA_SOUBOJ || null;
-      if (!scenaObs) throw Object.assign(new Error('Scéna pro souboj není nastavená. Přiřaď ji na obrazovce U stolu v tabulce Role scén.'), { status: 409 });
+      if (!scenaObs) throw Object.assign(new Error('Scéna pro souboj není nastavená. Přiřaď ji v Nastavení → Role scén v OBS.'), { status: 409 });
       const predtim = this.scena.stav.rezim === 'souboj' ? undefined : this.obs.aktualniScena ?? null;
       if (predtim !== undefined) this.scena.zahajitSouboj({ obsScena: predtim === scenaObs ? null : predtim });
     } else {
@@ -901,7 +901,7 @@ export class Hub {
       let chybaObs = null;
       if (id && prepnout) {
         scena = this.nastaveni.hodnoty.OBS_SCENA_OBCHOD || null;
-        if (!scena) chybaObs = 'Scéna obchodu není nastavená, OBS nepřepnul. Přiřaď ji na obrazovce U stolu v tabulce Role scén.';
+        if (!scena) chybaObs = 'Scéna obchodu není nastavená, OBS nepřepnul. Přiřaď ji v Nastavení → Role scén v OBS.';
         else {
           try {
             await this.obs.prepnoutScenu(scena);

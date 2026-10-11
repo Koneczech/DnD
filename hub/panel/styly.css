@@ -501,9 +501,10 @@ details.oprava summary { cursor: pointer; color: var(--mlha); font-size: var(--t
 .prepinac-zap input:checked::after { transform: translateX(1.2rem); }
 .prepinac-zap input:disabled { opacity: 0.5; cursor: not-allowed; }
 .prepinac-zap input:focus-visible { outline: 2px solid var(--jantar); outline-offset: 2px; }
-#sc-bourka-radek { grid-template-columns: auto; }
-#sc-bourka-radek > .segment { margin-right: var(--m-2); }
-#sc-blesk { justify-self: start; }
+#sc-bourka-radek { grid-template-columns: auto auto; align-items: center; column-gap: var(--m-2); }
+#sc-bourka-radek > span { grid-column: 1 / -1; }
+#sc-bourka-radek > .segment { margin-right: 0; }
+#sc-blesk { justify-self: start; padding: var(--m-2) var(--m-3); }
 #tlacitko-souboj[aria-pressed="true"] { background: var(--rez); border-color: var(--rez); color: var(--kost); }
 .svetla-mista { margin-top: var(--m-4); }
 .svetla-varianty { display: grid; grid-template-columns: max-content 1fr; gap: var(--m-1) var(--m-4); margin: var(--m-2) 0; }
@@ -573,3 +574,61 @@ button:has(> .ik) { display: inline-flex; align-items: center; gap: var(--m-2); 
   .lista .akce { grid-column: 1 / -1; justify-content: flex-start; grid-row: 2; }
 }
 .lista .system { justify-self: end; }
+
+/* ---------- U stolu: řada rolí, příprava a pravý sloupec Živě (rozhodnutí 65) ---------- */
+.stul-hlava { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--m-2) var(--m-5); margin-bottom: var(--m-4); }
+.stul-hlava h1 { margin: 0; }
+.stul-hlava .stul-stav { margin: 0; color: var(--text-tlumeny); font-size: var(--t-popisek); }
+.stul-hlava .stul-stav[data-pripojeno="false"] { color: var(--chyba); }
+#obs-popis { margin: 0 0 var(--m-4); }
+.stul-role { display: flex; flex-wrap: wrap; align-items: stretch; gap: var(--m-2); margin-bottom: var(--m-5); }
+.role-karta { display: flex; align-items: center; gap: var(--m-3); padding: var(--m-2) var(--m-2) var(--m-2) 0; background: var(--povrch-1); border: 1px solid var(--linka); border-radius: var(--zaobleni-karta); }
+.role-karta.vybrana { border-color: var(--akcent); background: var(--povrch-2); }
+.role-zalozka { display: flex; flex-direction: column; align-items: flex-start; gap: 0; background: transparent; border: 0; padding: var(--m-1) var(--m-2) var(--m-1) var(--m-4); text-align: left; min-width: 9rem; }
+.role-zalozka span { font-weight: 600; }
+.role-zalozka small { color: var(--text-tlumeny); font-size: var(--t-popisek); }
+.role-karta.vybrana .role-zalozka span { color: var(--akcent); }
+.role-zalozka:hover:not(:disabled) { border: 0; }
+.role-karta:hover { border-color: var(--mosaz-tlumena); }
+.role-karta.vybrana:hover { border-color: var(--akcent); }
+.do-obs { padding: var(--m-1) var(--m-3); font-size: var(--t-popisek); }
+.role-karta .zive { margin-right: var(--m-2); }
+.dalsi-sceny { display: flex; flex-wrap: wrap; align-items: center; gap: var(--m-2); margin-left: auto; color: var(--text-tlumeny); font-size: var(--t-popisek); }
+.dalsi-sceny button { padding: var(--m-1) var(--m-3); font-size: var(--t-popisek); }
+.dalsi-sceny button.v-obs { border-color: var(--zive); color: var(--text); }
+.dalsi-sceny .odkaz-role { color: var(--text-tlumeny); }
+
+.stul-rozlozeni { display: flex; flex-wrap: wrap; gap: var(--m-5); align-items: flex-start; }
+.stul-priprava { flex: 999 1 32rem; min-width: 0; }
+.stul-zive { flex: 1 1 20rem; max-width: 26rem; display: flex; flex-direction: column; gap: var(--m-3); position: sticky; top: 0; }
+.stul-panel, .stul-zalozky ~ .stul-panel { margin-top: 0; padding-top: 0; border-top: 0; }
+.stul-panel .stitek-skupiny { margin-top: var(--m-5); }
+.podminky { padding: var(--m-3) var(--m-4); }
+.podminky .prepinace { gap: var(--m-3) var(--m-5); }
+.stul-ilustrace-hlava { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--m-2) var(--m-4); }
+.stul-ilustrace-hlava .stitek-skupiny { margin-bottom: 0; }
+.stridani { display: flex; align-items: center; gap: var(--m-2); color: var(--text-tlumeny); font-size: var(--t-popisek); }
+.stul-vyber { margin-top: var(--m-1); }
+#stul-skryte-prepinac { margin-top: var(--m-3); padding-left: 0; }
+#stul-ilustrace-skryte { margin-top: var(--m-2); }
+
+.zive-nahled { overflow: hidden; }
+.zive-nahled .stul-nahled { border: 0; border-radius: 0; }
+.zive-nahled .stul-nahled .zive { position: absolute; left: var(--m-3); top: var(--m-3); }
+.zive-popis { display: flex; align-items: center; gap: var(--m-2); padding: var(--m-3) var(--m-4); }
+.zive-popis .scena-stav { flex: 1; min-width: 0; }
+.zive-popis .scena-nazev { font-size: var(--t-sekce); }
+.zive-popis button { padding: var(--m-1) var(--m-2); }
+.zive-karta { display: flex; flex-direction: column; align-items: flex-start; gap: var(--m-2); padding: var(--m-3) var(--m-4); }
+.zive-karta .stitek-skupiny { margin: 0; }
+.zive-karta .ulozeni { margin: 0; min-height: 0; }
+.zive-karta .posuvnik-zvuku { display: grid; grid-template-columns: 4.5rem 1fr 3rem; width: 100%; font-weight: 400; }
+.zive-karta .posuvnik-zvuku input { width: 100%; }
+.zive-karta .zvuk-efekty button { padding: var(--m-1) var(--m-3); font-size: var(--t-popisek); }
+.souboj-karta { display: flex; flex-direction: column; align-items: flex-start; gap: var(--m-2); padding: var(--m-4) var(--m-5); max-width: 40rem; }
+.souboj-stav { margin: 0; font-family: var(--pismo-svet); font-size: var(--t-svet-m); color: var(--akcent); }
+@media (max-width: 64rem) { .stul-zive { position: static; max-width: none; } }
+
+.zive[hidden] { display: none; }
+.prepinac { align-content: start; justify-items: start; }
+.role-karta { flex: 0 1 auto; }

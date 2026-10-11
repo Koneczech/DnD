@@ -159,6 +159,8 @@ export class Svetla extends EventEmitter {
     this.casovacBlesku = null;
     this.casovacOpakovani = null;
     this.fronta = Promise.resolve();
+    this.kritickeHp = null; // postava na tahu s málo HP: lampa pulzuje (otevřený bod 72)
+    this.casovacPulzu = null;
   }
 
   async nacist() {
@@ -227,11 +229,17 @@ export class Svetla extends EventEmitter {
     return this.nastaveni().BLESKY !== '0';
   }
 
+  get hpSvetlaZapnute() {
+    return this.nastaveni().HP_SVETLA !== '0';
+  }
+
   verejny() {
     const n = this.nastaveni();
     return {
       ridit: this.mistni.ridit,
       blesky: this.bleskyZapnute,
+      hpSvetla: this.hpSvetlaZapnute,
+      kritickeHp: this.casovacPulzu ? this.kritickeHp : null,
       nastaveno: this.zarizeni.size > 0,
       hue: { bridge: n.HUE_BRIDGE || '', sparovano: Boolean(n.HUE_KLIC) },
       zarizeni: [...this.zarizeni.values()].map(({ klic, role, typ, id, ok, chyba: c }) => ({ klic, role, typ, id, ok, chyba: c })),
@@ -256,6 +264,8 @@ export class Svetla extends EventEmitter {
       if (!this.mistni.ridit && !vynutit) return;
       await Promise.all(
         [...this.zarizeni.values()].map(async (z) => {
+          // Lampa, která pulzuje kvůli HP, scénu neposlouchá, dokud tah postavy neskončí.
+          if (this.casovacPulzu && z.role === 'lampa' && !vynutit) return;
           const cil = cile[z.role];
           const json = JSON.stringify(cil);
           if (!vynutit && z.posledni === json && z.ok) return;
@@ -434,12 +444,42 @@ export class Svetla extends EventEmitter {
     return { blesk: true };
   }
 
+  /* ---------- Světla podle HP (otevřený bod 72) ---------- */
+
+  /**
+   * Postava hráče na tahu s málo HP (nebo null): lampa u stolu pomalu pulzuje do červena,
+   * jeden nádech za 2 s (hluboko pod hranicí 3 záblesků za sekundu). Jen s Řídit světla a zapnutým vypínačem.
+   */
+  nastavitKritickeHp(kriticke) {
+    this.kritickeHp = kriticke ?? null;
+    const pulzovat = Boolean(this.kritickeHp) && this.mistni.ridit && this.hpSvetlaZapnute;
+    if (pulzovat && !this.casovacPulzu) {
+      let nadech = true;
+      const krok = () => {
+        const lampy = [...this.zarizeni.values()].filter((z) => z.role === 'lampa' && z.ovladac);
+        const cil = nadech ? { zap: true, jas: 80, rgb: [210, 24, 12] } : { zap: true, jas: 18, rgb: [140, 12, 6] };
+        nadech = !nadech;
+        Promise.all(lampy.map((z) => this.poslat(z, cil, 900))).catch(() => {});
+      };
+      krok();
+      this.casovacPulzu = setInterval(krok, 1000);
+      this.casovacPulzu.unref?.();
+    } else if (!pulzovat && this.casovacPulzu) {
+      clearInterval(this.casovacPulzu);
+      this.casovacPulzu = null;
+      for (const z of this.zarizeni.values()) if (z.role === 'lampa') z.posledni = null;
+      if (this.mistni.ridit) this.aplikovat().catch(() => {});
+    }
+    this.oznam();
+  }
+
   /** Zachytit světla do místa: hodnoty rolí pro uložení do hlavičky (zápis dělá Mista). */
   async zachytitProMisto() {
     return this.precistZarizeni();
   }
 
   zastavit() {
+    clearInterval(this.casovacPulzu);
     clearTimeout(this.casovacBlesku);
     clearInterval(this.casovacOpakovani);
   }

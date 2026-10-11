@@ -1,0 +1,77 @@
+// Světla podle HP: rozpoznání postavy na tahu s málo HP a pulzování lampy.
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { rozebratHp, kritickaPostava, idSetkani, SledovaniHp } from '../server/iniciativa-hp.js';
+
+const setkani = (aktivni, lide) => ({
+  encounterState: {
+    ActiveCombatantId: aktivni,
+    Combatants: lide.map(([Id, Name, HPDisplay, IsPlayerCharacter]) => ({ Id, Name, HPDisplay, IsPlayerCharacter })),
+  },
+});
+
+test('HP z Player View: čísla, dočasné HP jako polštář, slovní popis se nepočítá', () => {
+  assert.deepEqual(rozebratHp('16/24'), { hp: 16, max: 24 });
+  assert.deepEqual(rozebratHp('3+5/24'), { hp: 8, max: 24 });
+  assert.deepEqual(rozebratHp('-2/24'), { hp: -2, max: 24 });
+  assert.equal(rozebratHp("<span class='healthyHP'>Healthy</span>"), null);
+  assert.equal(idSetkani('https://improvedinitiative.app/p/sxda8g8n'), 'sxda8g8n');
+});
+
+test('kritická je jen postava hráče na tahu s 25 % a méně', () => {
+  const lide = [['a', 'Leta', '6/24', true], ['b', 'Goblin', '1/7', false], ['c', 'Alba', '13/18', true]];
+  assert.deepEqual(kritickaPostava(setkani('a', lide)), { jmeno: 'Leta', hp: 6, max: 24 });
+  assert.equal(kritickaPostava(setkani('b', lide)), null, 'netvor ne');
+  assert.equal(kritickaPostava(setkani('c', lide)), null, 'dost HP');
+  assert.equal(kritickaPostava(setkani('a', [['a', 'Leta', '7/24', true]])), null, '29 % ne');
+  assert.deepEqual(kritickaPostava(setkani('a', [['a', 'Leta', '0/24', true]])), { jmeno: 'Leta', hp: 0, max: 24 }, 'i v bezvědomí');
+});
+
+test('sledování ohlásí jen změnu a mimo souboj nic nečte', async () => {
+  let stav = setkani('a', [['a', 'Leta', '20/24', true]]);
+  let souboj = true;
+  let cteni = 0;
+  const s = new SledovaniHp({ odkaz: () => 'https://improvedinitiative.app/p/x1', aktivni: () => souboj, nacist: async () => { cteni++; return stav; } });
+  const zmeny = [];
+  s.on('zmena', (k) => zmeny.push(k));
+  await s.krok();
+  stav = setkani('a', [['a', 'Leta', '4/24', true]]);
+  await s.krok();
+  await s.krok();
+  souboj = false;
+  await s.krok();
+  assert.deepEqual(zmeny, [{ jmeno: 'Leta', hp: 4, max: 24 }, null]);
+  assert.equal(cteni, 3, 'mimo souboj se Player View nečte');
+});
+
+test('lampa pulzuje do červena jen s Řídit světla a pak se vrátí ke scéně', async () => {
+  const { Svetla } = await import('../server/svetla.js');
+  const os = await import('node:os');
+  const path = await import('node:path');
+  const prikazy = [];
+  const wiz = () => ({ nastavit: async (cil) => prikazy.push(cil), stav: async () => ({}) });
+  const svetla = new Svetla({
+    cesty: { lokalniStav: path.join(os.tmpdir(), 'hub-hp-test'), kampan: path.join(os.tmpdir(), 'hub-hp-neni') },
+    nastaveni: () => ({ SVETLA_LAMPA: 'wiz:10.0.0.9' }),
+    misto: () => null,
+    scena: () => ({ varianta: 'den', pocasi: [], intenzita: 0, rezim: 'souboj' }),
+    ovladace: { wiz },
+  });
+  svetla.sestavitZarizeni();
+  svetla.nastavitKritickeHp({ jmeno: 'Leta', hp: 4, max: 24 });
+  assert.equal(prikazy.length, 0, 'bez Řídit světla lampa nepulzuje');
+  svetla.mistni.ridit = true;
+  svetla.nastavitKritickeHp(null);
+  svetla.nastavitKritickeHp({ jmeno: 'Leta', hp: 4, max: 24 });
+  await new Promise((r) => setTimeout(r, 20));
+  assert.deepEqual(prikazy.at(-1).rgb, [210, 24, 12], 'nádech do červena');
+  assert.equal(svetla.verejny().kritickeHp.jmeno, 'Leta');
+  const pred = prikazy.length;
+  await svetla.aplikovat();
+  assert.equal(prikazy.length, pred, 'scéna lampu během pulzu nepřepíše');
+  svetla.nastavitKritickeHp(null);
+  await svetla.fronta;
+  assert.notDeepEqual(prikazy.at(-1).rgb, [140, 12, 6], 'po tahu lampa zpět ke scéně');
+  assert.equal(svetla.verejny().kritickeHp, null);
+  svetla.zastavit();
+});

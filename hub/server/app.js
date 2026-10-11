@@ -25,6 +25,7 @@ import { Hue } from './zarizeni/hue.js';
 import { Zvuk, TYPY_ZVUKU } from './zvuk.js';
 import { Iniciativa } from './iniciativa.js';
 import { PruchodIniciativy } from './iniciativa-pruchod.js';
+import { SledovaniHp } from './iniciativa-hp.js';
 import { createReadStream } from 'node:fs';
 import { nacistStyl, sestavPrompt, ZABERY } from './dilna.js';
 
@@ -156,6 +157,16 @@ export class Hub {
     });
     this.data.dalsiKontroly = () => this.zvuk.kontrola();
     this.iniciativa = new Iniciativa({ cesty: this.c, obs: this.obs });
+    // Světla podle HP (otevřený bod 72): Player View se čte jen během souboje se zapnutým vypínačem.
+    this.sledovaniHp = new SledovaniHp({
+      odkaz: () => this.iniciativa.odkaz,
+      // Obraz pulzuje i s vypnutým Řídit světla; lampa jen s ním (hlídá Svetla).
+      aktivni: () => this.scena.stav.rezim === 'souboj' && this.nastaveni.hodnoty.HP_SVETLA !== '0',
+    });
+    this.sledovaniHp.on('zmena', (k) => {
+      this.svetla.nastavitKritickeHp(k);
+      this.vysilac.vyslat('kriticke-hp', k);
+    });
     this.sparovatHue = sparovatHue ?? ((v) => Hue.sparovat(v));
     this.casovacOdpoctu = null;
     this.server = null;
@@ -241,6 +252,7 @@ export class Hub {
     await this.svetla.nacist();
     await this.zvuk.nacist();
     await this.iniciativa.nacist();
+    this.sledovaniHp.spustit();
     if (this.obs.pripojeno) this.iniciativa.doObs().catch(() => {});
     await this.odpocet.nacist();
     this.vysilac.vyslat('odpocet', this.odpocet.verejny());
@@ -1054,6 +1066,7 @@ export class Hub {
   async zastavit() {
     clearTimeout(this.casovacOdpoctu);
     clearInterval(this.casovacPruchodu);
+    this.sledovaniHp.zastavit();
     await this.pruchod?.zastavit();
     this.scena.zastavit();
     this.svetla.zastavit();

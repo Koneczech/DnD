@@ -582,6 +582,7 @@ function vykresliNastaveni(n) {
     vykresliWiz();
   }
   $('#pole-blesky').checked = n.blesky !== false;
+  $('#pole-hp-svetla').checked = n.hpSvetla !== false;
   $('#hue-stav').textContent = !n.hueBridge
     ? 'Zadej IP adresu bridge, stiskni na něm kulaté tlačítko a do 30 s klikni na Spárovat.'
     : n.hueSparovano ? `Bridge ${n.hueBridge} je spárovaný.` : `Bridge ${n.hueBridge} zatím není spárovaný: stiskni na něm kulaté tlačítko a do 30 s klikni na Spárovat.`;
@@ -2430,7 +2431,9 @@ function vykresliSvetla() {
   ridit.checked = sv.ridit;
   ridit.disabled = !sv.nastaveno;
   const spatne = sv.zarizeni.filter((z) => z.ok === false);
-  $('#svetla-popis').textContent = !sv.nastaveno
+  $('#svetla-popis').textContent = sv.kritickeHp
+    ? `${sv.kritickeHp.jmeno} na ${sv.kritickeHp.hp}/${sv.kritickeHp.max} HP: lampa pulzuje do červena.`
+    : !sv.nastaveno
     ? 'Světla nejsou nastavená. Přiřaď je v Nastavení → Světla.'
     : !sv.ridit
       ? 'Hub na světla nesahá. Zapni, a světla budou sledovat místo, denní dobu, počasí i souboj.'
@@ -2655,6 +2658,7 @@ $('#hue-svetla').addEventListener('change', (e) => {
   if (e.target.matches('select')) ulozitNastaveni(seznamyRoli(), e.target, { chybaDo: $('#svetla-vysledek') });
 });
 $('#pole-wiz').addEventListener('change', () => ulozitNastaveni(seznamyRoli(), $('#wiz-tabulka'), { chybaDo: $('#svetla-vysledek') }));
+$('#pole-hp-svetla').addEventListener('change', (e) => ulozitNastaveni({ hpSvetla: e.target.checked }, e.target.closest('label'), { chybaDo: $('#svetla-vysledek') }));
 $('#pole-blesky').addEventListener('change', (e) => ulozitNastaveni({ blesky: e.target.checked }, e.target.closest('label'), { chybaDo: $('#svetla-vysledek') }));
 $('#pole-hue-bridge').addEventListener('change', async (e) => {
   const n = stav.prehled?.nastaveni ?? {};

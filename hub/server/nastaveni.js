@@ -25,6 +25,7 @@ export const VYCHOZI = Object.freeze({
   ZVUK_SLOZKA: '',
   ZVUK_OTEVRIT: '1',
   II_RELACE: '',
+  HP_SVETLA: '1',
 });
 
 /** Klíče, jejichž hodnoty jsou tajné: nikdy neopustí server a hook je hlídá v commitech. */
@@ -118,6 +119,7 @@ export class Nastaveni {
       svetlaPozadi: this.hodnoty.SVETLA_POZADI || '',
       svetlaLampa: this.hodnoty.SVETLA_LAMPA || '',
       blesky: this.hodnoty.BLESKY !== '0',
+      hpSvetla: this.hodnoty.HP_SVETLA !== '0',
       // Zvuk (Blok 5): složka mimo repo, prázdná = Dokumenty\DnD\audio.
       zvukSlozka: this.hodnoty.ZVUK_SLOZKA || '',
       zvukOtevrit: this.hodnoty.ZVUK_OTEVRIT !== '0',
@@ -182,6 +184,7 @@ export class Nastaveni {
       nove[klic] = seznam.join(',');
     }
     if (z.blesky !== undefined) nove.BLESKY = z.blesky ? '1' : '0';
+    if (z.hpSvetla !== undefined) nove.HP_SVETLA = z.hpSvetla ? '1' : '0';
     if (z.zvukSlozka !== undefined) {
       const s = String(z.zvukSlozka).trim().replace(/^"(.*)"$/, '$1');
       if (s && (!path.isAbsolute(s) || s.length > 400 || /[\0\r\n]/.test(s))) {

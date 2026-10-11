@@ -11,24 +11,27 @@
   <header class="lista">
     <a class="kampan" href="#kalendar" title="Otevřít Kalendář" aria-live="polite">
       <p class="kampan-datum" id="lista-datum">…</p>
-      <p class="kampan-detail"><span id="lista-misto"></span><span id="lista-sezeni"></span></p>
+      <p class="kampan-detail"><span id="lista-misto"></span><span id="lista-sezeni" hidden></span></p>
     </a>
+    <a class="odznak-sezeni" id="tlacitko-sezeni" href="#prehled" title="Obrazovka Sezení: zahájení, kontrola před hrou, poznámky"><span class="tecka"></span><span class="text">Mimo sezení</span></a>
 
     <nav class="akce" aria-label="Akce sezení">
-      <button type="button" id="tlacitko-sezeni">Zahájit sezení</button>
       <button type="button" id="tlacitko-souboj" aria-pressed="false" title="Přepne OBS na scénu s iniciativou a světla na bojová; Konec souboje vrátí, co bylo před ním"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 17.5 3 6V3h3l11.5 11.5"/><path d="m13 19 6-6M16 16l4 4M19 21l2-2"/></svg><span>Souboj</span></button>
       <button type="button" id="tlacitko-ticho" aria-pressed="false" title="Ztlumí hudbu i ambient; druhé stisknutí je vrátí"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg><span>Ticho</span></button>
       <button type="button" id="tlacitko-poznamka" title="Klávesa F2"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span>Poznámka</span> <kbd>F2</kbd></button>
       <button type="button" id="tlacitko-dalsi-den" title="Posune kalendář o den a ukáže připomínky"><svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span>Další den</span></button>
     </nav>
 
-    <ul class="kontrolky" aria-label="Stav systému">
-      <li><a href="#nastaveni"><span class="svetlo" id="svetlo-server" data-stav="ceka"></span>Server</a></li>
-      <li><a href="#nastaveni"><span class="svetlo" id="svetlo-obs" data-stav="ceka"></span>OBS</a></li>
-      <li><a href="#prehled-github"><span class="svetlo" id="svetlo-git" data-stav="ceka"></span>Git</a></li>
-      <li><a href="#nastaveni-svetla"><span class="svetlo" id="svetlo-svetla" data-stav="ceka"></span>Světla</a></li>
-      <li><a href="#nastaveni-zvuk"><span class="svetlo" id="svetlo-zvuk" data-stav="ceka"></span>Zvuk</a></li>
-    </ul>
+    <details class="system" id="system">
+      <summary id="system-souhrn" aria-label="Stav systému"><span class="tecky" id="system-tecky" aria-hidden="true"></span>Systém</summary>
+      <ul class="kontrolky" aria-label="Stav systému">
+        <li><a href="#nastaveni-hub"><span class="svetlo" id="svetlo-server" data-stav="ceka"></span><span class="nazev">Server</span><small></small></a></li>
+        <li><a href="#nastaveni-obs"><span class="svetlo" id="svetlo-obs" data-stav="ceka"></span><span class="nazev">OBS</span><small></small></a></li>
+        <li><a href="#prehled-github"><span class="svetlo" id="svetlo-git" data-stav="ceka"></span><span class="nazev">Git</span><small></small></a></li>
+        <li><a href="#nastaveni-svetla"><span class="svetlo" id="svetlo-svetla" data-stav="ceka"></span><span class="nazev">Světla</span><small></small></a></li>
+        <li><a href="#nastaveni-zvuk"><span class="svetlo" id="svetlo-zvuk" data-stav="ceka"></span><span class="nazev">Zvuk</span><small></small></a></li>
+      </ul>
+    </details>
   </header>
 
   <div class="rozvrzeni">
@@ -393,7 +396,7 @@
         <h1>Nastavení</h1>
         <p class="uvod" id="nastaveni-uvod">Nastavení se ukládá do <code>hub/.env</code> na tomto počítači. Do Gitu se nikdy nedostane.</p>
         <form id="formular-nastaveni" class="formular" autocomplete="off">
-          <fieldset>
+          <fieldset id="nastaveni-obs">
             <legend>OBS</legend>
             <label>Adresa WebSocket serveru
               <input name="obsUrl" id="pole-obs-url" placeholder="ws://127.0.0.1:4455">
@@ -515,7 +518,7 @@
             <small>Jen pro zkoušku: ukáže datum, místo a sezení a ověří, že živé změny dorazí do OBS.</small></dd>
         </dl>
 
-        <h2>Hub</h2>
+        <h2 id="nastaveni-hub">Hub</h2>
         <div class="server-blok">
           <p class="poznamka" id="server-info"></p>
           <button type="button" id="tlacitko-restart">Restartovat Hub</button>

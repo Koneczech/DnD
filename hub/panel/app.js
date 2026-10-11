@@ -81,7 +81,7 @@ function ukazObrazovku(jmeno) {
     history.replaceState(null, '', `#${jmeno}`);
   }
   // Kotvy z kontrolek v liště: Git → GitHub v Sezení, Světla → Nastavení → Světla.
-  const KOTVY = { 'prehled-github': 'prehled', 'nastaveni-svetla': 'nastaveni', 'nastaveni-zvuk': 'nastaveni' };
+  const KOTVY = { 'prehled-github': 'prehled', 'nastaveni-svetla': 'nastaveni', 'nastaveni-zvuk': 'nastaveni', 'nastaveni-obs': 'nastaveni', 'nastaveni-hub': 'nastaveni', 'nastaveni-vystupy': 'nastaveni' };
   const kotva = KOTVY[jmeno] ? jmeno : null;
   if (kotva) jmeno = KOTVY[jmeno];
   const cil = platne.includes(jmeno) ? jmeno : 'prehled';
@@ -96,6 +96,11 @@ function ukazObrazovku(jmeno) {
   if (kotva) document.getElementById(kotva)?.scrollIntoView({ block: 'start' });
 }
 window.addEventListener('hashchange', () => ukazObrazovku(location.hash.slice(1)));
+// Rozbalený Systém se zavře klikem mimo něj nebo po výběru kontrolky.
+document.addEventListener('click', (e) => {
+  const sys = $('#system');
+  if (sys.open && (!sys.contains(e.target) || e.target.closest('.kontrolky a'))) sys.open = false;
+});
 
 /* ---------- Stav kampaně (horní lišta, Družina na obrazovce Sezení) ---------- */
 
@@ -317,11 +322,19 @@ function vykresliKontrolky() {
   const zvukOk = sh?.pripojeno && ss?.pripojeno && ss.odemceno && sh.odemceno !== false && ss.vystup?.ok !== false && !sh.chyba && !ss.chyba;
   $('#svetlo-zvuk').dataset.stav = !zv ? 'ceka' : zvukOk ? 'ok' : sh?.pripojeno || ss?.pripojeno ? 'varovani' : 'chyba';
   $('#svetlo-zvuk').parentElement.title = !zv ? 'Zjišťuji' : [popisStrankyZvuku('Hudba v OBS', sh), popisStrankyZvuku('Zvuk u stolu', ss)].join('; ');
-  // Stav i slovy, nejen barvou (čtečka obrazovky, audit N12).
+  // Stav i slovy, nejen barvou (čtečka obrazovky, audit N12). Rozbalený Systém ukazuje popis u každé kontrolky.
+  const tecky = [];
   for (const k of ['server', 'obs', 'git', 'svetla', 'zvuk']) {
-    const li = $(`#svetlo-${k}`).parentElement;
-    li.setAttribute('aria-label', `${li.textContent.trim()}: ${li.title}`);
+    const svetlo = $(`#svetlo-${k}`);
+    const li = svetlo.parentElement;
+    li.querySelector('small').textContent = li.title;
+    li.setAttribute('aria-label', `${li.querySelector('.nazev').textContent}: ${li.title}`);
+    tecky.push(Object.assign(document.createElement('span'), { className: 'svetlo' }));
+    tecky.at(-1).dataset.stav = svetlo.dataset.stav;
   }
+  $('#system-tecky').replaceChildren(...tecky);
+  const spatne = tecky.filter((t) => ['chyba', 'varovani'].includes(t.dataset.stav)).length;
+  $('#system-souhrn').setAttribute('aria-label', spatne ? `Stav systému: ${spatne} hlásí problém` : 'Stav systému: vše běží');
 }
 
 /* ---------- U stolu: dlaždice scén a ovládání podle role ---------- */
@@ -672,9 +685,11 @@ function toast(text, { chyba = false } = {}) {
 
 function vykresliSezeni() {
   const s = stav.prehled?.sezeni;
+  // Odznak sezení v liště: zahajuje se na obrazovce Sezení (rozhodnutí 65).
   const b = $('#tlacitko-sezeni');
   b.dataset.bezi = String(Boolean(s?.bezi));
-  b.textContent = s?.bezi ? `Ukončit sezení ${s.cislo}` : 'Zahájit sezení';
+  const delka = s?.bezi ? delkaSezeni(s) : null;
+  b.querySelector('.text').textContent = !s || s.cislo == null ? '…' : s.bezi ? `Sezení ${s.cislo}${delka ? ` · ${delka}` : ''}` : 'Mimo sezení';
 }
 
 /* ---------- Obrazovka Sezení: před hrou kontrola, během hry poznámky ---------- */
@@ -797,6 +812,7 @@ $('#sezeni-akce').addEventListener('click', () => (stav.prehled?.sezeni?.bezi ? 
 setInterval(() => {
   if (!stav.prehled?.sezeni?.bezi) return;
   $('#lista-sezeni').textContent = textSezeni();
+  vykresliSezeni();
   vykresliObrazovkuSezeni();
 }, 30000);
 
@@ -891,7 +907,6 @@ $('#formular-ukoncit').addEventListener('submit', async (e) => {
   }
 });
 
-$('#tlacitko-sezeni').addEventListener('click', () => (stav.prehled?.sezeni?.bezi ? otevritUkoncit() : otevritZahajit()));
 
 /* ---------- Souboj ---------- */
 

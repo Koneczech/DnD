@@ -165,7 +165,9 @@ export class Hub {
     });
     this.sledovaniHp.on('zmena', (k) => {
       this.svetla.nastavitKritickeHp(k);
-      this.vysilac.vyslat('kriticke-hp', k);
+      // Obraz tepe v rytmu lampy: délka cyklu = fáze A + B z Nastavení → Světla.
+      const hp = this.svetla.mistni.hp;
+      this.vysilac.vyslat('kriticke-hp', k ? { ...k, cyklus_s: hp.a.s + hp.b.s } : null);
     });
     this.sparovatHue = sparovatHue ?? ((v) => Hue.sparovat(v));
     this.casovacOdpoctu = null;
@@ -779,6 +781,11 @@ export class Hub {
     if (p === '/api/svetla/blesk' && m === 'POST') {
       const { vzdalenost } = await nacistJson(req);
       return s.blesk({ vzdalenost: vzdalenost || undefined });
+    }
+    if (p === '/api/svetla/hp' && m === 'PUT') return s.nastavitHp(await nacistJson(req));
+    if (p === '/api/svetla/hp/zkouska' && m === 'POST') {
+      await nacistJson(req);
+      return s.zkusitHp();
     }
     if (p === '/api/svetla/test' && m === 'POST') {
       const { role } = await nacistJson(req);

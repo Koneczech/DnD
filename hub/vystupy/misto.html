@@ -9,10 +9,10 @@
        Všechny přechody se prolínají za 1 s; skryté ilustrace sem server vůbec neposílá. */
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
     #obraz, .vrstva, #nalada, #vineta, #pocasi, .mlha, #bourka, #blesk, #hp { position: absolute; inset: 0; }
-    /* Málo HP postavy na tahu (otevřený bod 72): kraje pomalu tepou do červena, stejně jako lampa (2 s nádech). */
-    #hp { z-index: 4; pointer-events: none; opacity: 0; transition: opacity 0.8s ease;
-      background: radial-gradient(ellipse 75% 70% at 50% 50%, rgba(150, 10, 4, 0) 45%, rgba(170, 14, 6, 0.55) 80%, rgba(120, 6, 2, 0.85) 100%); }
-    #hp.bije { opacity: 1; animation: hp-tep 2s ease-in-out infinite; }
+    /* Málo HP postavy na tahu (otevřený bod 72): kraje pomalu tepou do červena ve stejném rytmu jako lampa (cyklus 4 s). */
+    #hp { z-index: 4; pointer-events: none; opacity: 0; transition: opacity 3s ease;
+      background: radial-gradient(ellipse 75% 70% at 50% 50%, rgba(180, 0, 0, 0) 45%, rgba(200, 0, 0, 0.55) 80%, rgba(140, 0, 0, 0.85) 100%); }
+    #hp.bije { opacity: 1; animation: hp-tep 4s ease-in-out infinite; }
     @keyframes hp-tep { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
     @media (prefers-reduced-motion: reduce) { #hp.bije { animation: none; opacity: 0.8; } }
     /* Pořadí vrstev: obraz < mlha < déšť/sníh < ztmavení < vinětace. Obraz má vlastní kontext skládání,
@@ -265,7 +265,9 @@
     odebirat(['blesk'], (_, data) => zablesknout(data));
     // Málo HP: stav posílá server (událost kriticke-hp: {jmeno, hp, max} nebo null).
     odebirat(['kriticke-hp'], (_, data) => {
-      document.getElementById('hp').classList.toggle('bije', Boolean(data));
+      const hp = document.getElementById('hp');
+      if (data?.cyklus_s) hp.style.animationDuration = `${Math.max(1, data.cyklus_s)}s`;
+      hp.classList.toggle('bije', Boolean(data));
       zapsat(data ? `málo HP: ${data.jmeno} ${data.hp}/${data.max}` : 'HP v pořádku');
     });
   </script>

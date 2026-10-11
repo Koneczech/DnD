@@ -21,6 +21,60 @@ export const PODLAHA_JASU = 15;
 export const STROP_SYTOSTI = 0.45;
 /** Blesky nejvýš 3 záblesky za sekundu (hranice fotosenzitivity). */
 export const MAX_ZABLESKU_ZA_S = 3;
+/*
+ * Málo HP (otevřený bod 72): nastavení v Nastavení → Světla, uložené v hub/.stav/svetla.json.
+ * Lampa: režim „barvy“ (fáze A a B mají vlastní barvu, jas a délku) nebo „intenzita“ (barva A,
+ * mění se jen jas). Čisté barvy bez bílé, ať lampa nejde do růžova; místo žluté teplá oranžová,
+ * žlutá je na WiZ zelenkavá. Pozadí jednou barvou s náběhem.
+ */
+export const VYCHOZI_HP = Object.freeze({
+  rezim: 'barvy',
+  prechod_s: 1.5, // jak dlouho se lampa přelévá z jedné fáze do druhé (nejvýš délka fáze)
+  a: { rgb: [255, 0, 0], jas: 100, s: 3 },
+  b: { rgb: [255, 110, 0], jas: 70, s: 1 },
+  pozadi: { rgb: [255, 0, 0], jas: 100, nabeh_s: 3 },
+});
+/** Nejkratší fáze: 0,5 s = nejvýš 2 změny za sekundu, pod hranicí 3 záblesků (rozhodnutí 64). */
+export const HP_NEJKRATSI_S = 0.5;
+const ROLE_PRI_HP = ['lampa', 'pozadi'];
+
+/** Ověří a doplní nastavení málo HP; chybu ohlásí srozumitelně. */
+export function normalizujHp(z, puvodni = VYCHOZI_HP) {
+  const v = structuredClone({ ...VYCHOZI_HP, ...puvodni });
+  if (!z || typeof z !== 'object') return v;
+  const barva = (x, kde) => {
+    if (x === undefined) return undefined;
+    if (!Array.isArray(x) || x.length !== 3 || x.some((c) => !Number.isInteger(c) || c < 0 || c > 255)) throw chyba(`${kde}: barva je [r, g, b] 0–255.`);
+    return x;
+  };
+  const cislo = (x, od, do_, kde) => {
+    if (x === undefined) return undefined;
+    const n = Number(x);
+    if (!Number.isFinite(n) || n < od || n > do_) throw chyba(`${kde} musí být ${od}–${do_}.`);
+    return n;
+  };
+  if (z.rezim !== undefined) {
+    if (!['barvy', 'intenzita'].includes(z.rezim)) throw chyba('Režim lampy je barvy, nebo intenzita.');
+    v.rezim = z.rezim;
+  }
+  v.prechod_s = cislo(z.prechod_s, 0, 30, 'Přechod lampy (s)') ?? v.prechod_s ?? VYCHOZI_HP.prechod_s;
+  for (const f of ['a', 'b']) {
+    if (!z[f]) continue;
+    v[f] = {
+      rgb: barva(z[f].rgb, `Lampa ${f.toUpperCase()}`) ?? v[f].rgb,
+      jas: cislo(z[f].jas, 1, 100, `Jas lampy ${f.toUpperCase()}`) ?? v[f].jas,
+      s: cislo(z[f].s, HP_NEJKRATSI_S, 30, `Délka fáze ${f.toUpperCase()} (s)`) ?? v[f].s,
+    };
+  }
+  if (z.pozadi) {
+    v.pozadi = {
+      rgb: barva(z.pozadi.rgb, 'Pozadí') ?? v.pozadi.rgb,
+      jas: cislo(z.pozadi.jas, 1, 100, 'Jas pozadí') ?? v.pozadi.jas,
+      nabeh_s: cislo(z.pozadi.nabeh_s, 0, 30, 'Náběh pozadí (s)') ?? v.pozadi.nabeh_s,
+    };
+  }
+  return v;
+}
 /** Útlum při intenzitě 0–3 (stejně jako ztmavení obrazu). */
 const UTLUM = [1, 0.85, 0.7, 0.55];
 /** Průměrný odstup blesků v sekundách podle intenzity. */
@@ -151,7 +205,7 @@ export class Svetla extends EventEmitter {
     this.nahodne = nahodne;
     this.opakovaniMs = opakovaniMs;
     this.soubor = path.join(cesty.lokalniStav, 'svetla.json');
-    this.mistni = { ridit: false, vychozi: { ...VYCHOZI_SVETLA } };
+    this.mistni = { ridit: false, vychozi: { ...VYCHOZI_SVETLA }, hp: normalizujHp() };
     this.vrstvy = { pocasi: {}, rezim: {} };
     this.chybyVrstev = [];
     this.zarizeni = new Map(); // klic → { klic, role, typ, ovladac, id, ok, chyba, posledni }
@@ -166,7 +220,13 @@ export class Svetla extends EventEmitter {
   async nacist() {
     try {
       const d = JSON.parse(await fs.readFile(this.soubor, 'utf8'));
-      this.mistni = { ridit: d.ridit === true, vychozi: { ...VYCHOZI_SVETLA, ...(d.vychozi ?? {}) } };
+      let hp = normalizujHp();
+      try {
+        hp = normalizujHp(d.hp);
+      } catch {
+        /* poškozené nastavení málo HP: výchozí */
+      }
+      this.mistni = { ridit: d.ridit === true, vychozi: { ...VYCHOZI_SVETLA, ...(d.vychozi ?? {}) }, hp };
     } catch {
       /* první spuštění: výchozí hodnoty */
     }
@@ -239,7 +299,8 @@ export class Svetla extends EventEmitter {
       ridit: this.mistni.ridit,
       blesky: this.bleskyZapnute,
       hpSvetla: this.hpSvetlaZapnute,
-      kritickeHp: this.casovacPulzu ? this.kritickeHp : null,
+      kritickeHp: this.pulzBezi ? this.kritickeHp : null,
+      hpNastaveni: this.mistni.hp,
       nastaveno: this.zarizeni.size > 0,
       hue: { bridge: n.HUE_BRIDGE || '', sparovano: Boolean(n.HUE_KLIC) },
       zarizeni: [...this.zarizeni.values()].map(({ klic, role, typ, id, ok, chyba: c }) => ({ klic, role, typ, id, ok, chyba: c })),
@@ -264,8 +325,8 @@ export class Svetla extends EventEmitter {
       if (!this.mistni.ridit && !vynutit) return;
       await Promise.all(
         [...this.zarizeni.values()].map(async (z) => {
-          // Lampa, která pulzuje kvůli HP, scénu neposlouchá, dokud tah postavy neskončí.
-          if (this.casovacPulzu && z.role === 'lampa' && !vynutit) return;
+          // Lampa a pozadí při málo HP scénu neposlouchají, dokud tah postavy neskončí.
+          if (this.pulzBezi && ROLE_PRI_HP.includes(z.role) && !vynutit) return;
           const cil = cile[z.role];
           const json = JSON.stringify(cil);
           if (!vynutit && z.posledni === json && z.ok) return;
@@ -447,30 +508,96 @@ export class Svetla extends EventEmitter {
   /* ---------- Světla podle HP (otevřený bod 72) ---------- */
 
   /**
-   * Postava hráče na tahu s málo HP (nebo null): lampa u stolu pomalu pulzuje do červena,
-   * jeden nádech za 2 s (hluboko pod hranicí 3 záblesků za sekundu). Jen s Řídit světla a zapnutým vypínačem.
+   * Postava hráče na tahu s málo HP (nebo null): lampa střídá fázi A a B (barvy, nebo jen jas)
+   * podle Nastavení → Světla → Málo HP, pozadí se rozsvítí jednou barvou s náběhem. Po konci tahu se
+   * obě role vrátí ke scéně se stejným náběhem. Jen s Řídit světla a zapnutým vypínačem;
+   * `vynutit` = zkouška z Nastavení (i bez souboje a bez Řídit světla).
    */
-  nastavitKritickeHp(kriticke) {
+  nastavitKritickeHp(kriticke, { vynutit = false } = {}) {
     this.kritickeHp = kriticke ?? null;
-    const pulzovat = Boolean(this.kritickeHp) && this.mistni.ridit && this.hpSvetlaZapnute;
-    if (pulzovat && !this.casovacPulzu) {
-      let nadech = true;
+    const pulzovat = Boolean(this.kritickeHp) && (vynutit || (this.mistni.ridit && this.hpSvetlaZapnute));
+    const zarizeniRole = (role) => [...this.zarizeni.values()].filter((z) => z.role === role && z.ovladac);
+    const n = this.mistni.hp;
+    if (pulzovat && !this.pulzBezi) {
+      this.pulzBezi = true;
+      const nabeh = Math.round(n.pozadi.nabeh_s * 1000);
+      Promise.all(zarizeniRole('pozadi').map((z) => this.poslat(z, { zap: true, jas: n.pozadi.jas, rgb: n.pozadi.rgb }, nabeh))).catch(() => {});
+      let faze = 'a';
+      let predchozi = null;
       const krok = () => {
-        const lampy = [...this.zarizeni.values()].filter((z) => z.role === 'lampa' && z.ovladac);
-        const cil = nadech ? { zap: true, jas: 80, rgb: [210, 24, 12] } : { zap: true, jas: 18, rgb: [140, 12, 6] };
-        nadech = !nadech;
-        Promise.all(lampy.map((z) => this.poslat(z, cil, 900))).catch(() => {});
+        if (!this.pulzBezi) return;
+        const f = n[faze];
+        const cil = { zap: true, jas: f.jas, rgb: n.rezim === 'intenzita' ? n.a.rgb : f.rgb };
+        const ms = Math.round(f.s * 1000);
+        // Na začátku fáze se lampa plynule přelije do její barvy (Přechod, nejvýš celá fáze), pak barvu drží.
+        const prechod = predchozi ? Math.min(ms, Math.round(n.prechod_s * 1000)) : 0;
+        for (const z of zarizeniRole('lampa')) this.prelit(z, predchozi, cil, prechod);
+        predchozi = cil;
+        faze = faze === 'a' ? 'b' : 'a';
+        this.casovacPulzu = setTimeout(krok, ms);
+        this.casovacPulzu.unref?.();
       };
       krok();
-      this.casovacPulzu = setInterval(krok, 1000);
-      this.casovacPulzu.unref?.();
-    } else if (!pulzovat && this.casovacPulzu) {
-      clearInterval(this.casovacPulzu);
+    } else if (!pulzovat && this.pulzBezi) {
+      this.pulzBezi = false;
+      clearTimeout(this.casovacPulzu);
       this.casovacPulzu = null;
-      for (const z of this.zarizeni.values()) if (z.role === 'lampa') z.posledni = null;
-      if (this.mistni.ridit) this.aplikovat().catch(() => {});
+      for (const z of this.zarizeni.values()) clearInterval(z.prelivani);
+      for (const z of this.zarizeni.values()) if (ROLE_PRI_HP.includes(z.role)) z.posledni = null;
+      if (this.mistni.ridit) this.aplikovat({ prechodMs: Math.round(n.pozadi.nabeh_s * 1000) }).catch(() => {});
+      else this.normal().catch(() => {}); // po zkoušce bez Řídit světla zpět na výchozí stav
     }
     this.oznam();
+  }
+
+  /**
+   * Plynulý přechod lampy: Hue dostane jeden příkaz s přechodem, WiZ přechod neumí,
+   * proto ho Hub prolne sám po krocích 150 ms (plynulá změna, ne záblesk).
+   */
+  prelit(z, od, cil, ms) {
+    clearInterval(z.prelivani);
+    if (z.typ === 'hue' || !od || ms < 300) {
+      this.poslat(z, cil, ms).catch(() => {});
+      return;
+    }
+    const zacatek = Date.now();
+    const smes = (a, b, t) => Math.round(a + (b - a) * t);
+    z.prelivani = setInterval(() => {
+      if (!this.pulzBezi) return clearInterval(z.prelivani);
+      const t = Math.min(1, (Date.now() - zacatek) / ms);
+      const e = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2; // pomalý začátek i konec
+      this.poslat(z, { zap: true, jas: smes(od.jas, cil.jas, e), rgb: od.rgb.map((c, i) => smes(c, cil.rgb[i], e)) }, 0).catch(() => {});
+      if (t >= 1) clearInterval(z.prelivani);
+    }, 150);
+    z.prelivani.unref?.();
+  }
+
+  /** Uloží nastavení málo HP (Nastavení → Světla). Běžící pulz se rozjede s novými hodnotami. */
+  async nastavitHp(z) {
+    this.mistni.hp = normalizujHp(z, this.mistni.hp);
+    await this.ulozitMistni();
+    if (this.pulzBezi) {
+      const k = this.kritickeHp;
+      const vynutit = this.zkouskaHp;
+      this.pulzBezi = false;
+      clearTimeout(this.casovacPulzu);
+      this.nastavitKritickeHp(k, { vynutit });
+    }
+    this.oznam();
+    return this.verejny();
+  }
+
+  /** Zkouška z Nastavení: pulz na 12 s i bez souboje. */
+  zkusitHp() {
+    this.zkouskaHp = true;
+    this.nastavitKritickeHp({ jmeno: 'Zkouška', hp: 1, max: 4 }, { vynutit: true });
+    clearTimeout(this.casovacZkouskyHp);
+    this.casovacZkouskyHp = setTimeout(() => {
+      this.zkouskaHp = false;
+      this.nastavitKritickeHp(null);
+    }, 12000);
+    this.casovacZkouskyHp.unref?.();
+    return this.verejny();
   }
 
   /** Zachytit světla do místa: hodnoty rolí pro uložení do hlavičky (zápis dělá Mista). */
@@ -479,7 +606,9 @@ export class Svetla extends EventEmitter {
   }
 
   zastavit() {
-    clearInterval(this.casovacPulzu);
+    this.pulzBezi = false;
+    clearTimeout(this.casovacPulzu);
+    clearTimeout(this.casovacZkouskyHp);
     clearTimeout(this.casovacBlesku);
     clearInterval(this.casovacOpakovani);
   }

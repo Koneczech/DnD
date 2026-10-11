@@ -2431,8 +2431,9 @@ function vykresliSvetla() {
   ridit.checked = sv.ridit;
   ridit.disabled = !sv.nastaveno;
   const spatne = sv.zarizeni.filter((z) => z.ok === false);
+  vykresliHpNastaveni(sv.hpNastaveni);
   $('#svetla-popis').textContent = sv.kritickeHp
-    ? `${sv.kritickeHp.jmeno} na ${sv.kritickeHp.hp}/${sv.kritickeHp.max} HP: lampa pulzuje do červena.`
+    ? `${sv.kritickeHp.jmeno} na ${sv.kritickeHp.hp}/${sv.kritickeHp.max} HP: lampa pulzuje, pozadí červené.`
     : !sv.nastaveno
     ? 'Světla nejsou nastavená. Přiřaď je v Nastavení → Světla.'
     : !sv.ridit
@@ -2658,6 +2659,62 @@ $('#hue-svetla').addEventListener('change', (e) => {
   if (e.target.matches('select')) ulozitNastaveni(seznamyRoli(), e.target, { chybaDo: $('#svetla-vysledek') });
 });
 $('#pole-wiz').addEventListener('change', () => ulozitNastaveni(seznamyRoli(), $('#wiz-tabulka'), { chybaDo: $('#svetla-vysledek') }));
+/* Málo HP: barvy, jas a délky fází (Nastavení → Světla). Ukládá se po změně pole. */
+function naHex(rgb) {
+  return `#${rgb.map((c) => c.toString(16).padStart(2, '0')).join('')}`;
+}
+function zHex(hex) {
+  return [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+}
+function vykresliHpNastaveni(n) {
+  // Nepřepisovat pole, do kterého DM právě píše (tlačítka režimu nevadí).
+  if (!n || ($('#hp-nastaveni').contains(document.activeElement) && document.activeElement.tagName === 'INPUT')) return;
+  for (const b of document.querySelectorAll('#hp-rezim button')) b.setAttribute('aria-pressed', String(b.dataset.v === n.rezim));
+  for (const [f, d] of [['a', n.a], ['b', n.b], ['poz', { ...n.pozadi, s: n.pozadi.nabeh_s }]]) {
+    $(`#hp-${f}-barva`).value = naHex(d.rgb);
+    $(`#hp-${f}-jas`).value = d.jas;
+    $(`#hp-${f}-s`).value = d.s;
+  }
+  $('#hp-prechod').value = n.prechod_s;
+  // Jen intenzita: fáze B má barvu fáze A, mění se jen jas.
+  $('#hp-b-barva').disabled = n.rezim === 'intenzita';
+}
+async function ulozitHp(zmena, pole) {
+  try {
+    const sv = await api('/api/svetla/hp', { metoda: 'PUT', telo: zmena });
+    stav.prehled.svetla = sv;
+    vykresliHpNastaveni(sv.hpNastaveni);
+    if (pole) oznacUlozeno(pole);
+    $('#hp-vysledek').className = 'ulozeni';
+    $('#hp-vysledek').textContent = '';
+  } catch (chyba) {
+    $('#hp-vysledek').className = 'ulozeni chyba';
+    $('#hp-vysledek').textContent = `Neuloženo: ${chyba.message}`;
+  }
+}
+$('#hp-rezim').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-v]');
+  if (b) ulozitHp({ rezim: b.dataset.v }, b);
+});
+$('#hp-nastaveni').addEventListener('change', (e) => {
+  if (e.target.id === 'hp-prechod') return ulozitHp({ prechod_s: Number(e.target.value) }, e.target);
+  const m = e.target.id.match(/^hp-(a|b|poz)-(barva|jas|s)$/);
+  if (!m) return;
+  const [, f, co] = m;
+  const hodnota = co === 'barva' ? zHex(e.target.value) : Number(e.target.value);
+  const klic = co === 'barva' ? 'rgb' : f === 'poz' && co === 's' ? 'nabeh_s' : co;
+  ulozitHp({ [f === 'poz' ? 'pozadi' : f]: { [klic]: hodnota } }, e.target);
+});
+$('#hp-zkusit').addEventListener('click', async () => {
+  try {
+    await api('/api/svetla/hp/zkouska', { metoda: 'POST', telo: {} });
+    $('#hp-vysledek').className = 'ulozeni';
+    $('#hp-vysledek').textContent = 'Pulz běží 12 s, pak se světla vrátí.';
+  } catch (chyba) {
+    toast(chyba.message, { chyba: true });
+  }
+});
+
 $('#pole-hp-svetla').addEventListener('change', (e) => ulozitNastaveni({ hpSvetla: e.target.checked }, e.target.closest('label'), { chybaDo: $('#svetla-vysledek') }));
 $('#pole-blesky').addEventListener('change', (e) => ulozitNastaveni({ blesky: e.target.checked }, e.target.closest('label'), { chybaDo: $('#svetla-vysledek') }));
 $('#pole-hue-bridge').addEventListener('change', async (e) => {

@@ -54,7 +54,7 @@ test('průchod přidá relaci, odstraní cookie z odpovědi a nahlásí obnoveno
       return res.end('<html><head><title>II</title></head><body>editor</body></html>');
     }
     res.writeHead(200, { 'content-type': 'text/plain', 'set-cookie': `connect.sid=${obnovena}; Path=/` });
-    res.end(req.url === '/my' ? '{}' : 'ok');
+    res.end(req.url === '/my' ? JSON.stringify({ settings: { PlayerView: { CustomEncounterId: 'krkavci' } } }) : 'ok');
   });
   await new Promise((r) => cil.listen(0, '127.0.0.1', r));
   const portCile = cil.address().port;
@@ -83,7 +83,9 @@ test('průchod přidá relaci, odstraní cookie z odpovědi a nahlásí obnoveno
   assert.equal(smazat.status, 403);
   assert.equal(prijate.length, 2, 'smazání účtu na server vůbec nedojde');
 
+  const id = new Promise((ok) => pruchod.once('encounter', ok));
   assert.equal(await pruchod.overit(), true);
+  assert.equal(await id, 'krkavci', 'vlastní Encounter ID z účtu');
   await pruchod.zastavit();
   await new Promise((r) => cil.close(r));
 });

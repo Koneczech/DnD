@@ -1028,11 +1028,17 @@ export class Hub {
       // Server poslal obnovenou relaci: uložit, ať vydrží další 4 týdny.
       p.on('relace', (nova) => this.nastaveni.ulozit({ iiRelace: nova }).catch(() => {}));
       p.on('stav', () => this.vysilac.vyslat('iniciativa', this.stavIniciativy()));
+      // Vlastní Encounter ID z účtu = stálý odkaz na Player View: Hub ho dosadí do OBS i náhledu sám.
+      p.on('encounter', (id) => {
+        const odkaz = `https://improvedinitiative.app/p/${id}`;
+        if (this.iniciativa.odkaz !== odkaz) this.iniciativa.nastavit(odkaz).catch(() => {});
+      });
       try {
         await p.spustit();
         this.pruchod = p;
         this.pruchodChyba = null;
-        this.casovacPruchodu = setInterval(() => p.overit().catch(() => {}), 30 * 60000);
+        // Každých 5 min: platnost přihlášení a změna vlastního Encounter ID v účtu.
+        this.casovacPruchodu = setInterval(() => p.overit().catch(() => {}), 5 * 60000);
         this.casovacPruchodu.unref?.();
       } catch (e) {
         this.pruchodChyba = `Průchod k Improved Initiative se nespustil na portu ${this.portPruchodu}: ${e.message}`;

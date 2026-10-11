@@ -173,7 +173,10 @@ export class PruchodIniciativy extends EventEmitter {
     socket.on('error', zavrit);
   }
 
-  /** Je relace platná? /my vrací 403 bez přihlášení (účet s úložištěm Epic). */
+  /**
+   * Je relace platná? /my vrací 403 bez přihlášení (účet s úložištěm Epic). Z účtu si vezme i vlastní
+   * Encounter ID (událost 'encounter'): s ním má Player View stálý odkaz a Hub ho dosadí do OBS sám.
+   */
   async overit() {
     if (!this.relace()) {
       this.prihlasen = null;
@@ -185,8 +188,21 @@ export class PruchodIniciativy extends EventEmitter {
         host: CIL, port: 443, servername: CIL, method: 'GET', path: '/my',
         headers: { host: CIL, cookie: `${COOKIE}=${this.relace()}`, accept: 'application/json' },
       }, (odpoved) => {
-        odpoved.resume();
-        ok(odpoved.statusCode === 200);
+        if (odpoved.statusCode !== 200) {
+          odpoved.resume();
+          return ok(false);
+        }
+        const casti = [];
+        odpoved.on('data', (c) => casti.push(c));
+        odpoved.on('end', () => {
+          try {
+            const id = JSON.parse(Buffer.concat(casti).toString('utf8'))?.settings?.PlayerView?.CustomEncounterId;
+            if (typeof id === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(id)) this.emit('encounter', id);
+          } catch {
+            /* tělo bez nastavení: přihlášení platí, ID nevíme */
+          }
+          ok(true);
+        });
       });
       r.setTimeout(8000, () => r.destroy(new Error('čas vypršel')));
       r.on('error', () => ok(null));

@@ -527,7 +527,24 @@
               <small class="poznamka">Nejvýš 3 záblesky za sekundu. Vypnuté = nebliká obraz ani světla.</small>
               <h2>Málo HP</h2>
               <label class="prepinac-zap"><input type="checkbox" id="pole-hp-svetla" role="switch"> <span>Pulzovat při málo HP</span></label>
-              <small class="poznamka">Když je při souboji na tahu postava hráče s 25 % HP a méně, lampa u stolu pomalu pulzuje mezi červenou a žlutou (cyklus 4 s), pozadí se za 3 s rozsvítí červeně a kraje obrazu v OBS tepou ve stejném rytmu. HP čte Hub z Player View.</small>
+              <small class="poznamka">Při souboji, když je na tahu postava hráče s 25 % HP a méně. HP čte Hub z Player View; kraje obrazu v OBS tepou s lampou.</small>
+              <div class="hp-nastaveni" id="hp-nastaveni">
+                <span class="hp-faze">Lampa</span>
+                <div class="segment" id="hp-rezim" role="group" aria-label="Jak lampa pulzuje"><button type="button" data-v="barvy">Dvě barvy</button><button type="button" data-v="intenzita">Jen intenzita</button></div>
+                <span class="hp-faze">Fáze A</span>
+                <input type="color" id="hp-a-barva" aria-label="Fáze A: barva">
+                <label><input type="number" id="hp-a-jas" min="1" max="100" class="cislo-kratke"> %</label>
+                <label><input type="number" id="hp-a-s" min="0.5" max="30" step="0.5" class="cislo-kratke"> s</label>
+                <span class="hp-faze">Fáze B</span>
+                <input type="color" id="hp-b-barva" aria-label="Fáze B: barva">
+                <label><input type="number" id="hp-b-jas" min="1" max="100" class="cislo-kratke"> %</label>
+                <label><input type="number" id="hp-b-s" min="0.5" max="30" step="0.5" class="cislo-kratke"> s</label>
+                <span class="hp-faze">Pozadí, náběh</span>
+                <input type="color" id="hp-poz-barva" aria-label="Pozadí: barva">
+                <label><input type="number" id="hp-poz-jas" min="1" max="100" class="cislo-kratke"> %</label>
+                <label><input type="number" id="hp-poz-s" min="0" max="30" step="0.5" class="cislo-kratke"> s</label>
+              </div>
+              <div class="tlacitka"><button type="button" id="hp-zkusit" title="Pustí pulz na 12 s i bez souboje">Vyzkoušet 12 s</button><span class="ulozeni" id="hp-vysledek" aria-live="polite"></span></div>
               <p class="ulozeni chyba" id="svetla-chyby-vrstev" hidden></p>
               <p class="poznamka">Role: <strong>hlavní</strong> = herna (nízká sytost kvůli čtení), <strong>pozadí</strong> = vedlejší místnost, <strong>lampa</strong> = u stolu.</p>
               </div>

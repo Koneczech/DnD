@@ -265,7 +265,9 @@
     odebirat(['blesk'], (_, data) => zablesknout(data));
     // Málo HP: stav posílá server (událost kriticke-hp: {jmeno, hp, max} nebo null).
     odebirat(['kriticke-hp'], (_, data) => {
-      document.getElementById('hp').classList.toggle('bije', Boolean(data));
+      const hp = document.getElementById('hp');
+      if (data?.cyklus_s) hp.style.animationDuration = `${Math.max(1, data.cyklus_s)}s`;
+      hp.classList.toggle('bije', Boolean(data));
       zapsat(data ? `málo HP: ${data.jmeno} ${data.hp}/${data.max}` : 'HP v pořádku');
     });
   </script>

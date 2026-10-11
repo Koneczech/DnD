@@ -78,3 +78,16 @@ test('lampa pulzuje do červena jen s Řídit světla a pak se vrátí ke scén�
   assert.equal(svetla.verejny().kritickeHp, null);
   svetla.zastavit();
 });
+
+test('nastavení málo HP: kontrola hodnot a nejkratší fáze', async () => {
+  const { normalizujHp, VYCHOZI_HP } = await import('../server/svetla.js');
+  assert.deepEqual(normalizujHp(), structuredClone(VYCHOZI_HP));
+  const v = normalizujHp({ rezim: 'intenzita', a: { jas: 90 }, pozadi: { rgb: [200, 0, 0] } });
+  assert.equal(v.rezim, 'intenzita');
+  assert.equal(v.a.jas, 90);
+  assert.deepEqual(v.a.rgb, [255, 0, 0], 'nezadané zůstává');
+  assert.deepEqual(v.pozadi.rgb, [200, 0, 0]);
+  assert.throws(() => normalizujHp({ b: { s: 0.2 } }), /0.5–30/, 'rychleji než 2 změny za sekundu ne');
+  assert.throws(() => normalizujHp({ a: { rgb: [300, 0, 0] } }), /barva/);
+  assert.throws(() => normalizujHp({ rezim: 'disko' }), /Režim/);
+});

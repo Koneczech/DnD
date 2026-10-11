@@ -839,3 +839,12 @@ main { padding: var(--m-4) var(--m-5) var(--m-5); }
 
 /* Skrytý prvek je skrytý vždy, i když mu třída dává display (oprava: hláška o OBS a řádek Bouřka zůstávaly vidět). */
 [hidden] { display: none !important; }
+/* Nastavení málo HP: fáze lampy a pozadí v mřížce */
+.hp-nastaveni { display: grid; grid-template-columns: 5rem auto auto auto; align-items: center; justify-content: start; gap: var(--m-2) var(--m-3); }
+.hp-nastaveni .hp-faze { color: var(--text-tlumeny); font-size: var(--t-popisek); }
+.hp-nastaveni label { display: inline-flex; align-items: center; gap: var(--m-1); color: var(--text-tlumeny); font-size: var(--t-popisek); }
+.hp-nastaveni input[type="color"] { width: 3rem; height: 2rem; padding: 2px; }
+.hp-nastaveni input[type="color"]:disabled { opacity: 0.35; }
+.hp-nastaveni .cislo-kratke { width: 4.5rem; padding: var(--m-1) var(--m-2); }
+.hp-nastaveni .segment { grid-column: span 3; justify-self: start; }
+.hp-nastaveni .segment button { padding: var(--m-1) var(--m-3); }

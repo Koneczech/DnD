@@ -548,8 +548,9 @@ function vykresliNastaveni(n) {
   $('#pole-domaci-sit').checked = n.domaciSit;
   $('#pole-pin').placeholder = n.pinNastaven ? 'PIN je uložený. Vyplň jen při změně.' : '6–8 číslic';
   if (document.activeElement !== $('#pole-hue-bridge')) $('#pole-hue-bridge').value = n.hueBridge ?? '';
-  if (document.activeElement !== $('#pole-wiz')) {
+  {
     $('#pole-wiz').value = [n.svetlaHlavni, n.svetlaPozadi, n.svetlaLampa].join(',').split(',').filter((x) => x.startsWith('wiz:')).map((x) => x.slice(4)).join(', ');
+    vykresliWiz();
   }
   $('#pole-blesky').checked = n.blesky !== false;
   $('#hue-stav').textContent = !n.hueBridge
@@ -576,6 +577,27 @@ function vykresliVyberSouboje() {
     select.value = ulozena;
   }
 }
+
+/** Prázdným rolím přiřadí scénu se stejným nebo podobným názvem (bez diakritiky, Souboj ~ Boj). */
+const PODOBNE_NAZVY = { scenaStart: ['start', 'zacatek', 'uvod'], scenaMisto: ['misto', 'mista', 'scena'], scenaObchod: ['obchod', 'cenik', 'shop'], scenaSouboj: ['souboj', 'boj', 'iniciativa', 'combat'] };
+const bezDiakritiky = (x) => x.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+$('#role-navrhnout').addEventListener('click', async () => {
+  const sceny = stav.prehled?.obs?.sceny ?? [];
+  if (!sceny.length) return toast('OBS není připojené: názvy scén neznám.', { chyba: true });
+  const n = stav.prehled?.nastaveni ?? {};
+  const telo = {};
+  for (const [klic, nazvy] of Object.entries(PODOBNE_NAZVY)) {
+    if (n[klic]) continue;
+    const scena = sceny.find((x) => nazvy.includes(bezDiakritiky(x))) ?? sceny.find((x) => nazvy.some((y) => bezDiakritiky(x).includes(y)));
+    if (scena) telo[klic] = scena;
+  }
+  if (!Object.keys(telo).length) return toast('Nic k navržení: role jsou přiřazené, nebo žádná scéna názvem nesedí.');
+  if (await ulozitNastaveni(telo, $('#role-navrhnout'))) {
+    vykresliVyberSouboje();
+    vykresliSceny();
+    toast(`Navrženo: ${Object.values(telo).join(', ')}. Zkontroluj a případně změň.`);
+  }
+});
 
 for (const select of document.querySelectorAll('.role-sceny select')) {
   select.addEventListener('change', async () => {
@@ -2249,7 +2271,7 @@ for (const b of document.querySelectorAll('[data-kopirovat]')) {
   b.addEventListener('click', async () => {
     await navigator.clipboard?.writeText($(`#${b.dataset.kopirovat}`).textContent).catch(() => {});
     b.textContent = 'Zkopírováno';
-    setTimeout(() => (b.textContent = 'Kopírovat adresu'), 1500);
+    setTimeout(() => (b.textContent = 'Kopírovat'), 1500);
   });
 }
 
@@ -2302,6 +2324,8 @@ function vykresliSvetla() {
       : [polozkaKontroly('info', 'Žádné světlo není přiřazené k roli.')]),
   );
   for (const b of document.querySelectorAll('[data-test-role]')) b.disabled = !sv.zarizeni.some((z) => z.role === b.dataset.testRole);
+  vykresliHueSvetla();
+  vykresliWiz();
   const v = sv.vychozi ?? {};
   $('#svetla-vychozi').replaceChildren(
     'Platí, když místo světla nemá, pro Světla normál a po vypnutí Řídit světla. ',
@@ -2426,7 +2450,7 @@ function vykresliHueSvetla() {
       select.setAttribute('aria-label', `Role světla ${l.nazev}`);
       const td = document.createElement('td');
       td.append(select);
-      tr.append(Object.assign(document.createElement('td'), { textContent: `${l.nazev}${l.barevne ? '' : ' (jen bílá)'}` }), td);
+      tr.append(Object.assign(document.createElement('td'), { textContent: `${l.nazev}${l.barevne ? '' : ' (jen bílá)'}` }), td, bunkaStavu('hue', l.id));
       return tr;
     }),
   );
@@ -2443,6 +2467,48 @@ $('#hue-sparovat').addEventListener('click', async () => {
   } catch (chyba) {
     $('#hue-stav').textContent = chyba.message;
   }
+});
+
+/** Buňka se stavem zařízení z poslední kontroly světel (odpovídá / chyba / nepoužito). */
+function bunkaStavu(typ, id) {
+  const z = (stav.prehled?.svetla?.zarizeni ?? []).find((x) => x.typ === typ && x.id === id);
+  const td = Object.assign(document.createElement('td'), { className: 'stav-zarizeni' });
+  td.dataset.uroven = !z ? 'nic' : z.ok ? 'ok' : z.ok === false ? 'chyba' : 'info';
+  td.textContent = !z ? '—' : z.ok ? 'odpovídá' : z.ok === false ? z.chyba ?? 'neodpovídá' : 'zjišťuji';
+  return td;
+}
+
+/** WiZ lampy jako řádky s odebráním (rozhodnutí 66); skryté pole drží seznam pro uložení rolí. */
+function vykresliWiz() {
+  const ip = $('#pole-wiz').value.split(/[,\s]+/).map((x) => x.trim()).filter(Boolean);
+  $('#wiz-tabulka').hidden = !ip.length;
+  $('#wiz-seznam').replaceChildren(...ip.map((adresa) => {
+    const tr = document.createElement('tr');
+    const odebrat = Object.assign(document.createElement('button'), { type: 'button', className: 'tiche', textContent: '×', title: `Odebrat lampu ${adresa}` });
+    odebrat.setAttribute('aria-label', `Odebrat lampu ${adresa}`);
+    odebrat.addEventListener('click', () => zmenitWiz(ip.filter((x) => x !== adresa)));
+    const td = document.createElement('td');
+    td.append(odebrat);
+    tr.append(Object.assign(document.createElement('td'), { textContent: adresa }), bunkaStavu('wiz', adresa), td);
+    return tr;
+  }));
+}
+function zmenitWiz(seznam) {
+  $('#pole-wiz').value = seznam.join(', ');
+  vykresliWiz();
+  $('#pole-wiz').dispatchEvent(new Event('change'));
+}
+$('#wiz-pridat-formular').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const nova = $('#wiz-nova').value.trim();
+  if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(nova)) {
+    $('#svetla-vysledek').className = 'ulozeni chyba';
+    $('#svetla-vysledek').textContent = 'Zadej IP adresu lampy, např. 192.168.0.87.';
+    return;
+  }
+  const seznam = $('#pole-wiz').value.split(/[,\s]+/).filter(Boolean);
+  if (!seznam.includes(nova)) zmenitWiz([...seznam, nova]);
+  $('#wiz-nova').value = '';
 });
 
 /** Seznamy zařízení rolí z výběru Hue světel a pole WiZ lamp. */
@@ -2463,7 +2529,7 @@ function seznamyRoli() {
 $('#hue-svetla').addEventListener('change', (e) => {
   if (e.target.matches('select')) ulozitNastaveni(seznamyRoli(), e.target, { chybaDo: $('#svetla-vysledek') });
 });
-$('#pole-wiz').addEventListener('change', (e) => ulozitNastaveni(seznamyRoli(), e.target, { chybaDo: $('#svetla-vysledek') }));
+$('#pole-wiz').addEventListener('change', () => ulozitNastaveni(seznamyRoli(), $('#wiz-tabulka'), { chybaDo: $('#svetla-vysledek') }));
 $('#pole-blesky').addEventListener('change', (e) => ulozitNastaveni({ blesky: e.target.checked }, e.target.closest('label'), { chybaDo: $('#svetla-vysledek') }));
 $('#pole-hue-bridge').addEventListener('change', async (e) => {
   const n = stav.prehled?.nastaveni ?? {};

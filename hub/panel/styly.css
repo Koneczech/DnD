@@ -791,3 +791,37 @@ main { padding: var(--m-4) var(--m-5) var(--m-5); }
 .inspektor-paticka .ulozeni { margin: 0; min-height: 0; }
 .mista-rozlozeni .svetla-mista > .ulozeni:first-of-type, #misto-zvuk-popis { max-width: 46rem; margin-top: 0; }
 @media (max-width: 64rem) { .mista-rozlozeni, .misto-ilustrace-panel { grid-template-columns: minmax(0, 1fr); } }
+
+/* Nastavení: kategorie na celou šířku, karty vedle sebe */
+.nastaveni-rozlozeni { display: grid; grid-template-columns: 14rem minmax(0, 1fr); gap: var(--m-5); }
+.nastaveni-kategorie { max-width: none; }
+.nastaveni-kategorie .poznamka { margin: var(--m-4) var(--m-3) 0; }
+.nastaveni-obsah { max-width: none; }
+.dve-karty:not([hidden]) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--m-4); align-items: start; }
+.dve-karty.siroka-leva:not([hidden]) { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+.karta-nastaveni { display: flex; flex-direction: column; gap: var(--m-3); padding: var(--m-4) var(--m-5); }
+.karta-nastaveni h2 { margin: var(--m-2) 0 0; }
+.karta-nastaveni > h2:first-child, .karta-nastaveni > .sekce-hlava:first-child { margin-top: 0; }
+.karta-nastaveni .sekce-hlava { margin: 0; }
+.karta-nastaveni .formular { max-width: none; }
+.karta-nastaveni .tlacitka { margin-top: 0; }
+.karta-nastaveni .poznamka, .karta-nastaveni .ulozeni { margin: 0; }
+.role-sceny td small { color: var(--text-tlumeny); }
+.role-sceny select { min-width: 14rem; }
+.tabulka-svetel { margin: 0; }
+.tabulka-svetel[hidden] { display: none; }
+.stav-zarizeni { font-size: var(--t-popisek); }
+.stav-zarizeni[data-uroven="ok"] { color: var(--ok); }
+.stav-zarizeni[data-uroven="chyba"] { color: var(--chyba); }
+.stav-zarizeni[data-uroven="info"], .stav-zarizeni[data-uroven="nic"] { color: var(--text-tlumeny); }
+.zkouska-roli { display: flex; flex-wrap: wrap; align-items: center; gap: var(--m-2); color: var(--text-tlumeny); font-size: var(--t-popisek); }
+.zkouska-roli button { padding: var(--m-1) var(--m-3); font-size: var(--t-popisek); }
+#hue-stav { flex-basis: 100%; margin: 0; }
+.vystupy-tabulka { margin: 0; }
+.vystupy-tabulka th[scope="row"] { white-space: nowrap; font-weight: 600; color: var(--text); }
+.vystupy-tabulka td:nth-child(2) { white-space: nowrap; }
+.vystupy-tabulka code { font-size: var(--t-stitek); }
+.vystupy-tabulka td small { color: var(--text-tlumeny); }
+.vystupy-tabulka button { padding: var(--m-1) var(--m-3); font-size: var(--t-popisek); }
+#nastaveni-vystupy .uvod { margin-top: 0; max-width: none; }
+@media (max-width: 64rem) { .nastaveni-rozlozeni, .dve-karty:not([hidden]) { grid-template-columns: minmax(0, 1fr); } }

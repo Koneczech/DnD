@@ -29,6 +29,8 @@ Zvukové soubory do veřejného repa nepatří (licence, rozhodnutí 63). `.giti
 | `bourka.mp3` | ambient při bouřce | déšť a vítr, bez hromů |
 | `hrom-1.mp3`, `hrom-2.mp3`, `hrom-3.mp3` | po každém blesku jeden náhodně | krátké (2–8 s); vzdálený Hub ztiší a utlumí |
 | `souboj.mp3` | hudba v souboji | nahradí hudbu místa |
+| `vitezstvi.mp3` | vítězná fanfára při Konci souboje | jednou, hudba uhne |
+| `tahy/tusker.mp3`, `tahy/koudur.mp3`, `tahy/leta.mp3`, `tahy/alba.mp3`, `tahy/malk.mp3`, `tahy/nepritel.mp3` | zvuky na tah (`kampan/zvuky.yaml`) | krátké, do 2 s |
 
 Jména můžeš změnit přímo v `kampan/sceny/…yaml`. Hudbu a ambient míst vybíráš v **Místa → místo → Zvuk**. Chybějící soubor ohlásí Kontrola dat a Sezení → Před hrou. Scéna pak hraje bez něj.
 
@@ -56,14 +58,74 @@ Když OBS „nic nehraje“ ani se zkušebním zvukem, je to skoro vždy monitor
 
 Když se reproduktor odpojí (vybije se, je mimo dosah), stránka hraje dál na výchozí zařízení, kontrolka **Zvuk** v liště zežloutne a Sezení to napíše. Po připojení se zvuk vrátí sám. Světla běží dál.
 
-## 4. Příprava souborů
+## 4. Soundboard a zvuky na tahu
+
+Soundboard je na **U stolu** ve sloupci Ve hře teď pod posuvníky. Hraje do stejného reproduktoru jako zbytek zvuku.
+
+### Složky
+
+| Složka ve složce zvuku | Co to je | Jak se chová |
+| --- | --- | --- |
+| `jednorazove\<kategorie>\` | jednorázové zvuky (šplouchnutí, výkřik, vytí) | klik = jedno přehrání, hudba na chvíli uhne |
+| `smycky\<kategorie>\` | delší smyčky (poplašný zvon, oheň, řeka) | klik zapne, další klik vypne; náběh a doběh 1,5 s |
+| `tahy\` | zvuky na tah v souboji | hraje je Hub sám |
+| `efekty\` | původní ruční efekty | jako jednorázové, kategorie „efekty“ |
+
+Podsložka = kategorie v Knihovně (`jednorazove\boj\`, `jednorazove\zvirata\` …). **Varianty**: `mec-1.mp3`, `mec-2.mp3`, `mec-3.mp3` jsou jedno tlačítko „Mec“. Hub zahraje náhodnou variantu (nikdy dvakrát stejnou za sebou) a pokaždé trochu jinou výškou a hlasitostí.
+
+### Připnutí k místu a klávesy
+
+1. **Knihovna…** v kartě Soundboard ukáže všechny zvuky s hledáním.
+2. **☆** připne zvuk k místu, které je ve scéně. Připnuté zvuky jsou pak na U stolu přímo pod rukou, pořadí = klávesy **1–9**.
+3. Klávesa **0** (nebo **Zastavit smyčky**) vypne všechny zapnuté smyčky. Ticho ztlumí všechno jako dřív.
+4. Klávesy nefungují při psaní do pole a v otevřeném dialogu.
+5. Soundboard funguje i z iPadu přes domácí síť. Zvuk hraje dál PC u stolu.
+
+### Popisky a smyčky s koncem: `kampan/zvuky.yaml`
+
+Bez zápisu je popisek jméno souboru (bez háčků a čárek). Hezčí popisek a automatický konec smyčky:
+
+```yaml
+zvuky:
+  smycky/poplasny-zvon: { nazev: Poplašný zvon, limit_s: 20 }
+  jednorazove/boj/vykrik: { nazev: Výkřik }
+```
+
+### Zvuky na tahu
+
+Během souboje Hub každou sekundu čte Player View z Improved Initiative. Když se změní, kdo je na tahu, zahraje krátký zvuk podle `kampan/zvuky.yaml`:
+
+```yaml
+tahy:
+  postavy:
+    Tusker: tahy/tusker
+    Alba:
+      vychozi: tahy/alba
+      podle_tagu:
+        Vlk: zvirata/vlk-vyti      # Divoká podoba
+  tagy:
+    Unconscious: tahy/srdce        # kdokoli na tahu s tímto tagem
+  nepratele: tahy/nepritel         # jeden společný zvuk pro ostatní bytosti
+```
+
+- Jméno se hledá podle začátku: `Alba` najde i „Alba Nox“.
+- **Albiny podoby**: když se Alba promění, přidej jí v Improved Initiative tag s názvem podoby (třeba „Vlk“). Tag musí být viditelný pro hráče: skryté tagy Player View neposílá.
+- Pořadí: tag postavy → tag pro kohokoli → výchozí zvuk postavy → společný zvuk nepřátel. Postava hráče bez zápisu zůstane potichu.
+- Vypínač **Zvuky tahů** je v záložce Souboj. **Jen postavy hráčů** (bez zvuku nepřátel) je v Nastavení → Zvuk.
+- Chybějící zvuky z mapy ohlásí Kontrola dat.
+
+### Vítězná fanfára
+
+**Konec souboje** zahraje `vitezstvi.mp3` (`zvuk.konec` v `kampan/sceny/rezim/souboj.yaml`). Při útěku nebo prohře použij v záložce Souboj **Konec bez fanfáry**.
+
+## 5. Příprava souborů
 
 - **Smyčky**: Hub dlouhé soubory (8 s a víc) na konci prolne se začátkem (3 s), takže šev neslyšíš ani u MP3. Nejlépe znějí smyčky, které nemají na konci vyznění do ticha. U krátkých souborů do 8 s smyčka jen začne znovu.
 - **Hlasitost**: srovnej soubory na podobnou hlasitost (Audacity: *Efekty → Hlasitost a komprese → Normalizace hlasitosti*, cíl −16 LUFS pro hudbu, −20 LUFS pro ambient). Jemně pak dolaďuješ posuvníky Hudba a Ambient na U stolu.
 - **Hrom**: krátké soubory bez ticha na začátku, jinak přijde pozdě po blesku.
 - **Délka**: ambient 2–10 minut stačí. Dlouhé soubory Hub nenačítá celé do paměti.
 
-## 5. Zdroje (licence ověř u každého souboru)
+## 6. Zdroje (licence ověř u každého souboru)
 
 | Zdroj | Na co | Licence |
 | --- | --- | --- |

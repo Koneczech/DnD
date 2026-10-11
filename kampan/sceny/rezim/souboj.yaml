@@ -3,4 +3,5 @@ svetla:
   hlavni: { barva: [255, 90, 60], jas: 45 }
   lampa: { wiz_scena: fireplace, rychlost: 80 }
 obs_role: souboj
-zvuk: { hudba: souboj.mp3 }
+# konec: vítězná fanfára při Konci souboje (tlačítko Konec bez fanfáry ji vynechá)
+zvuk: { hudba: souboj.mp3, konec: vitezstvi.mp3 }

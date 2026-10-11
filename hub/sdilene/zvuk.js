@@ -221,14 +221,30 @@ export class Prehravac {
     return g;
   }
 
-  /** Sběrnice s ucpanýma ušima: hlasitost → tlumení → výstup. */
+  /** Sběrnice s ucpanýma ušima: hlasitost → tlumení → uhnutí → výstup. */
   sberniceSTlumenim() {
     const g = this.ctx.createGain();
     g.gain.value = 0;
     const tlumeni = new Tlumeni(this.ctx);
+    const uhyb = this.ctx.createGain();
     g.connect(tlumeni.vstup);
-    tlumeni.vystup.connect(this.ctx.destination);
-    return { g, tlumeni };
+    tlumeni.vystup.connect(uhyb).connect(this.ctx.destination);
+    return { g, tlumeni, uhyb };
+  }
+
+  /**
+   * Hudba krátce uhne jednorázovému zvuku (soundboard, fanfára): −6 dB za 80 ms, drží po dobu zvuku
+   * (nejvýš 1,5 s) a za 0,6 s se vrátí. Výkřik tak prořízne i bojovou hudbu.
+   */
+  uhnout(uhyb, delkaS = 1) {
+    if (!uhyb) return;
+    const t = this.ctx.currentTime;
+    const drzet = Math.min(1.5, Math.max(0.3, delkaS));
+    uhyb.gain.cancelScheduledValues(t);
+    uhyb.gain.setValueAtTime(uhyb.gain.value, t);
+    uhyb.gain.linearRampToValueAtTime(0.5, t + 0.08);
+    uhyb.gain.setValueAtTime(0.5, t + 0.08 + drzet);
+    uhyb.gain.linearRampToValueAtTime(1, t + 0.68 + drzet);
   }
 
   /** Plynulá změna hlasitosti sběrnice (Ticho do 1 s). */
@@ -253,8 +269,12 @@ export class Prehravac {
     this.hlasit();
   }
 
-  /** Jednorázový zvuk přes ostatní (hrom, ruční efekt). Krátké soubory se dekódují a drží v paměti. */
-  async efekt({ url, hlasitost = 1, filtr = null }, cil) {
+  /**
+   * Jednorázový zvuk přes ostatní (hrom, ruční efekt, soundboard). Krátké soubory se dekódují a drží
+   * v paměti. `obmena`: drobně jiná výška (±5 %) a hlasitost, aby opakovaný zvuk nezněl jako stroj.
+   * @returns {Promise<number>} délka zvuku v sekundách
+   */
+  async efekt({ url, hlasitost = 1, filtr = null, obmena = false }, cil) {
     let buffer = this.buffery.get(url);
     if (!buffer) {
       const data = await (await fetch(url)).arrayBuffer();
@@ -265,7 +285,8 @@ export class Prehravac {
     const zdroj = this.ctx.createBufferSource();
     zdroj.buffer = buffer;
     const g = this.ctx.createGain();
-    g.gain.value = hlasitost;
+    g.gain.value = obmena ? hlasitost * (0.85 + Math.random() * 0.15) : hlasitost;
+    if (obmena) zdroj.playbackRate.value = 0.95 + Math.random() * 0.1;
     let uzel = zdroj;
     if (filtr === 'daleko') {
       // Vzdálený hrom duní: dolní propust uřízne praskání.
@@ -276,6 +297,7 @@ export class Prehravac {
     }
     uzel.connect(g).connect(cil);
     zdroj.start();
+    return buffer.duration / zdroj.playbackRate.value;
   }
 
   /** Zkušební tón bez souboru: tři stoupající tóny. */

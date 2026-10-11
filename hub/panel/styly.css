@@ -836,3 +836,6 @@ main { padding: var(--m-4) var(--m-5) var(--m-5); }
 .iniciativa-odkaz input { flex: 1 1 22rem; padding: var(--m-1) var(--m-3); font-size: var(--t-popisek); }
 .iniciativa-odkaz button { padding: var(--m-1) var(--m-3); font-size: var(--t-popisek); }
 .iniciativa-odkaz .ulozeni { flex-basis: 100%; margin: 0; min-height: 0; }
+
+/* Skrytý prvek je skrytý vždy, i když mu třída dává display (oprava: hláška o OBS a řádek Bouřka zůstávaly vidět). */
+[hidden] { display: none !important; }

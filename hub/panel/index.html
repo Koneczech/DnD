@@ -583,6 +583,18 @@
                 </div>
                 <p class="ulozeni" id="nastaveni-vysledek" aria-live="polite"></p>
               </div>
+              <h2>Improved Initiative s Epic účtem</h2>
+              <div class="formular">
+                <p class="ulozeni" id="ii-stav" aria-live="polite"></p>
+                <div class="pole-s-tlacitkem">
+                  <label>Přihlášení (hodnota cookie <code>connect.sid</code>)
+                    <input id="pole-ii-relace" type="password" autocomplete="off" spellcheck="false" placeholder="s%3A…">
+                  </label>
+                  <button type="button" id="ii-relace-ulozit">Uložit přihlášení</button>
+                  <button type="button" class="tiche" id="ii-relace-smazat" hidden>Odebrat</button>
+                </div>
+                <small class="poznamka">V Edgi se přihlas na <code>improvedinitiative.app</code>, stiskni F12 → Aplikace → Soubory cookie → <code>https://improvedinitiative.app</code> a zkopíruj hodnotu <code>connect.sid</code>. Platí asi 4 týdny. Je to jako heslo: zůstane jen v <code>hub/.env</code> na tomto počítači.</small>
+              </div>
               <h2>Restart</h2>
               <div class="server-blok">
                 <p class="poznamka" id="server-info"></p>

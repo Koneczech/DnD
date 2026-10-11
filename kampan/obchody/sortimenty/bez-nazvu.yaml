@@ -1,0 +1,50 @@
+# Sortiment obchodu z generátoru (Hub, obrazovka Obchody). Ceny v měďácích: 1 zl = 100 md, 1 st = 10 md.
+
+verze: 1
+obchod:
+  nazev: Bez názvu
+  typ: chram
+  lokalita: urban
+  mesto: null
+  podtitul: null
+meta:
+  vygenerovano: 2026-10-10T09:55:58.741Z
+  seed: 568070405
+  generator: generator.html v1
+polozky:
+  - nazev: Flakónek
+    cena_md: 100
+    mnozstvi: null
+    jadro: true
+  - nazev: Flétna
+    cena_md: 200
+    mnozstvi: null
+    jadro: true
+  - nazev: Léčivý lektvar
+    cena_md: 5000
+    mnozstvi: null
+    jadro: true
+  - nazev: Olej (baňka)
+    cena_md: 10
+    mnozstvi: null
+    jadro: true
+  - nazev: Pochodeň
+    cena_md: 1
+    mnozstvi: null
+    jadro: true
+  - nazev: Přikrývka
+    cena_md: 50
+    mnozstvi: null
+    jadro: true
+  - nazev: Svíčka
+    cena_md: 1
+    mnozstvi: null
+    jadro: true
+  - nazev: Vodní měch
+    cena_md: 20
+    mnozstvi: null
+    jadro: true
+  - nazev: Zvonek
+    cena_md: 100
+    mnozstvi: null
+    jadro: false

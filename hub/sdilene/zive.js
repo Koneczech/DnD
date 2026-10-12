@@ -4,6 +4,22 @@
 // server nejvýš 6 běžných spojení. Trvalá spojení SSE je vyčerpala a nové obrázky se pak
 // nenačetly (audit K1). WebSocket se do tohoto limitu nepočítá.
 
+// Chyby stránky (panel, výstupy v OBS) jdou do záznamu Hubu (otevřený bod 84): v OBS konzoli nikdo nevidí.
+if (!globalThis.__dmhubChyby) {
+  globalThis.__dmhubChyby = true;
+  let pocet = 0;
+  const nahlasit = (zprava) => {
+    if (++pocet > 20) return; // zacyklená chyba nesmí zahltit záznam
+    fetch('/api/zaznam', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ zdroj: location.pathname.split('/').pop() || 'panel', zprava: String(zprava).slice(0, 400) }),
+    }).catch(() => {});
+  };
+  addEventListener('error', (e) => nahlasit(`${e.message} (${(e.filename ?? '').split('/').pop()}:${e.lineno ?? ''})`));
+  addEventListener('unhandledrejection', (e) => nahlasit(`Neošetřená chyba: ${e.reason?.message ?? e.reason}`));
+}
+
 /**
  * Odebírá události z Hubu. Při výpadku drží poslední stav a za 1 s se připojí znovu.
  * @param {string[]|null} udalosti jména událostí, null = všechny (panel)

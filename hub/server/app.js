@@ -28,6 +28,7 @@ import { PruchodIniciativy } from './iniciativa-pruchod.js';
 import { SledovaniHp } from './iniciativa-hp.js';
 import { CteniPlayerView } from './iniciativa-cteni.js';
 import { Udery } from './udery.js';
+import { Zaznam } from './zaznam.js';
 import { createReadStream } from 'node:fs';
 import { nacistStyl, sestavPrompt, ZABERY } from './dilna.js';
 
@@ -159,6 +160,8 @@ export class Hub {
     });
     this.data.dalsiKontroly = () => this.zvuk.kontrola();
     this.iniciativa = new Iniciativa({ cesty: this.c, obs: this.obs });
+    // Záznam událostí (otevřený bod 84): co se dělo a co selhalo, i do hub/.stav/zaznam/.
+    this.zaznam = new Zaznam({ slozka: path.join(this.c.lokalniStav, 'zaznam') });
     // Player View se čte jen během souboje, jednou za sekundu pro celý Hub (otevřený bod 75).
     this.cteniPlayerView = new CteniPlayerView({
       odkaz: () => this.iniciativa.odkaz,
@@ -200,6 +203,68 @@ export class Hub {
     return { spusteno: this.spusteno, pid: process.pid, restartNutny: this.restartNutny, restartZPanelu: Boolean(this.restartovat) };
   }
 
+  /**
+   * Záznam událostí (otevřený bod 84): poslouchá části Hubu a zapisuje změny a chyby. Stavy, které se
+   * hlásí opakovaně (stránky zvuku, OBS, světla), se zapisují jen při změně.
+   */
+  pripojitZaznam() {
+    const z = this.zaznam;
+    z.posluchac = (polozka) => this.vysilac.vyslat('zaznam', polozka);
+    const puvodni = z.zapsat.bind(z);
+    z.zapsat = (...a) => {
+      const p = puvodni(...a);
+      z.posluchac?.(p);
+      return p;
+    };
+    this.scena.on('stav', (s) => {
+      const pocasi = (s.pocasi ?? []).join('+') || 'bez počasí';
+      z.zmena('scena', 'scena', 'info', `${s.misto?.nazev ?? 'bez místa'} · ${s.varianta} · ${s.rezim} · ${pocasi}${s.pocasi?.length ? ` ${s.intenzita}` : ''}${s.stav ? ` · stav ${s.stav}` : ''}`);
+    });
+    this.obs.on('stav', (s) => {
+      z.zmena('obs', 'obs', s.pripojeno ? 'info' : s.nastaveno ? 'varovani' : 'info', s.pripojeno ? `OBS připojené, scéna ${s.aktualniScena ?? '?'}` : `OBS nepřipojené${s.chyba ? `: ${s.chyba}` : ''}`);
+    });
+    this.zvuk.on('zvuk', (v) => {
+      const amb = v.ambient.map((a) => `${a.soubor} ${Math.round(a.hlasitost * 100)} %`).join(', ') || 'žádný';
+      z.zmena('zvuk-co', 'zvuk', 'info', `Hraje: hudba ${v.hudba?.soubor ?? 'žádná'} (${v.hudbaKde}) · ambient ${amb}${v.smycky?.length ? ` · smyčky ${v.smycky.map((x) => x.soubor).join(', ')}` : ''}${v.ticho ? ' · TICHO' : ''}${v.tlumeni?.aktivni ? ' · ucpané uši' : ''}`);
+    });
+    this.zvuk.on('stav', (s) => {
+      for (const [nazev, x] of Object.entries(s.stranky ?? {})) {
+        if (!s.potrebne?.includes(nazev) && !x.pripojeno) continue;
+        const popis = !x.pripojeno ? 'neotevřená' : x.odemceno === false ? 'čeká na kliknutí' : `hraje ${x.hraje?.join(', ') || 'nic'}${x.vystup ? ` do ${x.vystup.nazev}${x.vystup.ok === false ? ' (ODPOJENÝ)' : ''}` : ''}`;
+        z.zmena(`stranka-${nazev}`, 'stranka', 'info', `Zvuk ${nazev === 'stul' ? 'u stolu' : 'v OBS'}: ${popis}`);
+        const klicChyby = `stranka-${nazev}-chyba`;
+        if (x.chyba) z.zmena(klicChyby, 'stranka', 'chyba', `Zvuk ${nazev === 'stul' ? 'u stolu' : 'v OBS'}: ${x.chyba}`);
+        else if (z.posledni.has(klicChyby)) {
+          z.posledni.delete(klicChyby);
+          z.info('stranka', `Zvuk ${nazev === 'stul' ? 'u stolu' : 'v OBS'}: chyba pominula`);
+        }
+      }
+      if (s.chybiTed?.length) z.zmena('zvuk-chybi', 'zvuk', 'varovani', `Ve složce zvuku chybí: ${s.chybiTed.join(', ')}`);
+      else z.zmena('zvuk-chybi', 'zvuk', 'info', 'Všechny soubory scény ve složce jsou');
+    });
+    this.zvuk.on('efekt', (e) => {
+      if (!e.test) z.info('zvuk', `Efekt ${e.soubor ?? ''}${e.cil === 'hudba' ? ' (OBS)' : ''}`);
+    });
+    this.svetla.on('stav', (s) => {
+      for (const d of s.zarizeni ?? []) {
+        z.zmena(`svetlo-${d.klic}`, 'svetla', d.ok === false ? 'chyba' : 'info', `${d.role} ${d.typ === 'hue' ? 'Hue' : `WiZ ${d.id}`}: ${d.ok === false ? d.chyba ?? 'neodpovídá' : d.ok ? 'odpovídá' : 'zjišťuji'}`);
+      }
+      z.zmena('svetla-rizeni', 'svetla', 'info', `Řídit světla: ${s.ridit ? 'ano' : 'ne'}`);
+    });
+    this.svetla.on('kriticke-hp', (k) => z.zmena('kriticke-hp', 'svetla', 'info', k ? `Málo HP: ${k.jmeno} ${k.hp}/${k.max}` : 'Málo HP: konec'));
+    this.svetla.on('blesk', (b) => z.info('svetla', `Blesk (${b.vzdalenost})`));
+    this.cteniPlayerView.on('chyba', (t) => z.zmena('pv-chyba', 'iniciativa', t ? 'varovani' : 'info', t ?? 'Player View se čte bez chyby'));
+    this.udery.on('uder', (u) => z.info('iniciativa', `Zásah: ${u.utocnik?.jmeno ?? '?'} → ${u.cile.map((c) => `${c.jmeno} ${c.druh === 'leceni' ? '+' : '−'}${c.o ?? (Number.isFinite(c.podil) ? `${Math.round(c.podil * 100)} %` : '?')}${c.padl ? ' (k zemi)' : ''}`).join(', ')}`));
+    this.sledovaniHp.on('tah', (k) => z.info('iniciativa', `Na tahu: ${k.jmeno}${k.tagy.length ? ` [${k.tagy.join(', ')}]` : ''}`));
+    this.iniciativa.on('stav', () => {
+      const i = this.stavIniciativy();
+      z.zmena('ii-odkaz', 'iniciativa', i.chyba ? 'varovani' : 'info', `Player View ${i.odkaz ?? 'bez odkazu'}${i.chyba ? `: ${i.chyba}` : ''}`);
+      const p = i.pruchod;
+      if (p) z.zmena('ii-ucet', 'iniciativa', p.prihlasen === false || (p.ucet && (!p.ucet.encounterId || !p.ucet.portrety)) ? 'varovani' : 'info', `Epic účet: ${p.prihlasen === true ? 'přihlášen' : p.prihlasen === false ? 'NEPŘIHLÁŠEN' : 'ověřuji'}${p.ucet ? `, Encounter ID ${p.ucet.encounterId ?? 'CHYBÍ'}, portréty ${p.ucet.portrety ? 'ano' : 'NE'}` : ''}`);
+    });
+    this.odpocet.on('stav', (s) => z.zmena('odpocet', 'odpocet', 'info', `Odpočet: ${s.stav}${s.konec ? ` do ${s.konec}` : ''}`));
+  }
+
   /** Po Stáhnout nebo Sloučit: změnil se kód Hubu? Pak běží starý server a je potřeba restart (audit S2). */
   oznacitZmenyKodu(soubory) {
     const kod = soubory.filter((f) => f.startsWith('hub/') && !f.startsWith('hub/test/'));
@@ -213,6 +278,9 @@ export class Hub {
   async spustit() {
     await this.nastaveni.nacist();
     await fs.mkdir(this.c.lokalniStav, { recursive: true });
+    this.zaznam.info('hub', 'Hub se spouští', { pid: process.pid, node: process.version });
+    this.zaznam.uklidit().catch(() => {});
+    this.pripojitZaznam();
 
     this.zapisovac.on('odlozeno', () => this.vyslatStav());
     this.zapisovac.on('dokonceno', () => this.vyslatStav());
@@ -490,6 +558,7 @@ export class Hub {
       return await this.staticky(req, res, url);
     } catch (e) {
       const status = e.status || 500;
+      if (status >= 500) this.zaznam?.chyba('http', `${req.method} ${String(req.url).split('?')[0]}: ${e.message}`);
       if (!res.headersSent) poslatJson(res, status, { chyba: e.message, ...(e.kod ? { kod: e.kod } : {}) });
       else res.end();
     }
@@ -612,6 +681,21 @@ export class Hub {
       return poslatJson(res, 200, await mapa[akce]());
     }
     if (p === '/api/odpocet' && m === 'GET') return poslatJson(res, 200, this.odpocet.verejny());
+    if (p === '/api/zaznam' && m === 'GET') {
+      const n = Number(url.searchParams.get('n')) || 300;
+      const od = Number(url.searchParams.get('od')) || 0;
+      return poslatJson(res, 200, { polozky: this.zaznam.vypis({ n, od, jenProblemy: url.searchParams.get('problemy') === '1' }) });
+    }
+    if (p === '/api/zaznam/text' && m === 'GET') {
+      res.writeHead(200, { ...HLAVICKY_BEZPECNOSTI, 'Content-Type': 'text/plain; charset=utf-8', 'Content-Disposition': `attachment; filename="dm-hub-zaznam-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}.txt"` });
+      return res.end(this.zaznam.text());
+    }
+    if (p === '/api/zaznam' && m === 'POST') {
+      // Chyba ze stránky (panel, výstup v OBS): zdroj je jméno stránky, nic dalšího se nepřebírá.
+      const telo = await nacistJson(req);
+      this.zaznam.chyba('stranka', `${String(telo.zdroj ?? '?').slice(0, 40)}: ${String(telo.zprava ?? '').slice(0, 400)}`);
+      return poslatJson(res, 200, { ok: true });
+    }
     if (p === '/api/iniciativa/overit' && m === 'POST') {
       await nacistJson(req);
       await this.pruchod?.overit();
@@ -623,7 +707,9 @@ export class Hub {
     }
     if ((p === '/api/souboj' || p === '/api/obs/souboj') && m === 'POST') {
       const telo = await nacistJson(req);
-      return poslatJson(res, 200, await this.souboj(telo.zapnout !== false, { fanfara: telo.fanfara !== false }));
+      const v = await this.souboj(telo.zapnout !== false, { fanfara: telo.fanfara !== false });
+      this.zaznam[v.chybaObs ? 'varovani' : 'info']('souboj', `${telo.zapnout !== false ? 'Souboj začal' : `Konec souboje${telo.fanfara === false ? ' bez fanfáry' : ''}`}${v.chybaObs ? `: ${v.chybaObs}` : ''}`);
+      return poslatJson(res, 200, v);
     }
     if (p.startsWith('/api/zvuk')) {
       const v = await this.apiZvuk(req, m, p, url);

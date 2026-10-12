@@ -149,3 +149,39 @@ test('pomalá WiZ lampa: kroky pulzu se nehromadí a po konci pulzu nic nedobíh
   assert.ok(prikazy.length - poKonci <= 0, 'po konci pulzu už lampa nedostává staré kroky');
   svetla.zastavit();
 });
+
+test('odpočet: světla se z aktuálního stavu přelévají do výchozího a po konci je převezme scéna', async () => {
+  const { Svetla } = await import('../server/svetla.js');
+  const os = await import('node:os');
+  const path = await import('node:path');
+  const prikazy = [];
+  const svetla = new Svetla({
+    cesty: { lokalniStav: path.join(os.tmpdir(), 'hub-nabeh-test'), kampan: path.join(os.tmpdir(), 'hub-hp-neni') },
+    nastaveni: () => ({ SVETLA_LAMPA: 'wiz:10.0.0.9' }),
+    misto: () => null,
+    scena: () => ({ varianta: 'den', pocasi: [], intenzita: 0 }),
+    ovladace: { wiz: () => ({ nastavit: async (cil) => prikazy.push(cil), stav: async () => ({ zap: true, jas: 100, rgb: [255, 255, 255] }) }) },
+  });
+  svetla.sestavitZarizeni();
+  svetla.mistni.ridit = true;
+  svetla.mistni.vychozi = { ...svetla.mistni.vychozi, lampa: { barva: [255, 120, 40], jas: 30 } };
+  svetla.odpocet({ stav: 'bezi', konec: new Date(Date.now() + 3200).toISOString() });
+  await new Promise((r) => setTimeout(r, 1200));
+  assert.ok(svetla.nabeh, 'přelévání běží');
+  await svetla.aplikovat({ cile: { lampa: { zap: true, jas: 90, rgb: [0, 0, 255] } } });
+  assert.ok(!prikazy.some((p) => p.rgb[2] === 255 && p.rgb[0] === 0), 'scéna během odpočtu světla nepřebije');
+  const jasy = prikazy.map((p) => p.jas);
+  assert.ok(jasy.length >= 2 && jasy[0] > jasy.at(-1), `jas plynule klesá (${jasy})`);
+  await new Promise((r) => setTimeout(r, 3000));
+  assert.equal(svetla.nabeh, null, 'po konci odpočtu skončí');
+  assert.ok(prikazy.some((p) => p.jas === 30 && p.rgb[0] === 255 && p.rgb[1] === 120), 'doběhne přesně do výchozího stavu');
+  // Pauza zastaví, zrušení vrátí scénu.
+  svetla.odpocet({ stav: 'bezi', konec: new Date(Date.now() + 10000).toISOString() });
+  await new Promise((r) => setTimeout(r, 300));
+  svetla.odpocet({ stav: 'pauza', konec: null });
+  assert.equal(svetla.nabeh, null);
+  svetla.mistni.nabehStartu = false;
+  svetla.odpocet({ stav: 'bezi', konec: new Date(Date.now() + 10000).toISOString() });
+  assert.equal(svetla.nabeh, null, 'vypnutý přepínač: nic');
+  svetla.zastavit();
+});

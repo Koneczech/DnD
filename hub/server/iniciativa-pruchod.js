@@ -82,6 +82,9 @@ export class PruchodIniciativy extends EventEmitter {
     this.pripojit = pripojit;
     this.server = null;
     this.prihlasen = null; // true / false / null (nezjištěno)
+    // Nastavení Player View v účtu (otevřený bod 78): bez vlastního Encounter ID se Player View v OBS
+    // přestane hýbat, bez portrétů karty nemají ilustrace. Panel na to upozorní.
+    this.ucet = null; // { encounterId, portrety }
   }
 
   spustit() {
@@ -94,6 +97,7 @@ export class PruchodIniciativy extends EventEmitter {
   }
 
   zastavit() {
+    clearTimeout(this.casovacOvereni);
     return new Promise((ok) => (this.server ? this.server.close(() => ok()) : ok()));
   }
 
@@ -127,6 +131,12 @@ export class PruchodIniciativy extends EventEmitter {
     }, (odpoved) => {
       const { hlavicky, novaRelace } = hlavickyZpet(odpoved.headers, req.headers.host);
       if (novaRelace && novaRelace !== this.relace()) this.emit('relace', novaRelace);
+      // Editor uložil nastavení nebo data účtu: hned zkontrolovat, co teď platí pro Player View.
+      if (req.method !== 'GET' && /^\/my\b/.test(String(req.url)) && (odpoved.statusCode ?? 500) < 300) {
+        clearTimeout(this.casovacOvereni);
+        this.casovacOvereni = setTimeout(() => this.overit().catch(() => {}), 1500);
+        this.casovacOvereni.unref?.();
+      }
       const html = /text\/html/i.test(String(odpoved.headers['content-type'] ?? ''));
       if (!editor || !html || odpoved.headers['content-encoding']) {
         res.writeHead(odpoved.statusCode ?? 502, hlavicky);
@@ -196,8 +206,11 @@ export class PruchodIniciativy extends EventEmitter {
         odpoved.on('data', (c) => casti.push(c));
         odpoved.on('end', () => {
           try {
-            const id = JSON.parse(Buffer.concat(casti).toString('utf8'))?.settings?.PlayerView?.CustomEncounterId;
-            if (typeof id === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(id)) this.emit('encounter', id);
+            const pv = JSON.parse(Buffer.concat(casti).toString('utf8'))?.settings?.PlayerView;
+            const id = pv?.CustomEncounterId;
+            const platne = typeof id === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(id);
+            this.ucet = pv ? { encounterId: platne ? id : null, portrety: pv.DisplayPortraits === true } : null;
+            if (platne) this.emit('encounter', id);
           } catch {
             /* tělo bez nastavení: přihlášení platí, ID nevíme */
           }

@@ -196,6 +196,7 @@
                   <input id="iniciativa-pole" type="url" placeholder="https://improvedinitiative.app/p/…" spellcheck="false">
                   <button type="button" id="iniciativa-schranka" title="Vloží odkaz ze schránky a pošle ho do OBS">Vložit ze schránky</button>
                   <p class="ulozeni" id="iniciativa-stav" aria-live="polite"></p>
+                  <p class="ulozeni chyba" id="iniciativa-ucet" aria-live="polite" hidden></p>
                 </form>
               </div>
               <!-- Improved Initiative přímo v panelu (otevřený bod 68), bez Epic účtu: data má vlastní, uložená v prohlížeči
@@ -530,6 +531,8 @@
                 <button type="button" id="svetla-zachytit-vychozi" title="Nastav světla v aplikacích Hue a WiZ, pak klikni">Zachytit současný stav</button>
                 <button type="button" id="svetla-normal-nastaveni">Světla normál</button>
               </div>
+              <label class="prepinac-zap"><input type="checkbox" id="pole-nabeh-startu" role="switch"> <span>Při odpočtu do začátku hry pomalu přejít do výchozího stavu</span></label>
+              <small class="poznamka">Jen s Řídit světla. Světla se od toho, jak právě svítí, plynule přelévají a doběhnou s odpočtem; pak je převezme scéna. Pauza přelévání zastaví, zrušení vrátí scénu.</small>
               <h2>Bouřka</h2>
               <label class="prepinac-zap"><input type="checkbox" id="pole-blesky" role="switch"> <span>Blesky při bouřce</span></label>
               <small class="poznamka">Nejvýš 3 záblesky za sekundu. Vypnuté = nebliká obraz ani světla.</small>

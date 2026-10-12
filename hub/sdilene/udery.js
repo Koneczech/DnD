@@ -75,7 +75,7 @@ export function mistniObrazek(url) {
  * Podoby postav podle tagu v Improved Initiative (otevřený bod 74): stejný obrázek, jaký ukazuje
  * carousel přes vlastní CSS.
  */
-export const PODOBY = { zlovlk: '/kampan/postavy/alba/zlovlk.png' };
+export const PODOBY = { zlovlk: '/kampan/postavy/alba/zlovlk.png', medved: '/kampan/postavy/alba/medved.png' };
 
 const tagy = (c) => (c?.Tags ?? []).map((t) => String(t?.Text ?? '').trim().toLowerCase()).filter(Boolean);
 

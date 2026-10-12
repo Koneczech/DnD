@@ -95,22 +95,38 @@ export class SledovaniHp extends EventEmitter {
 /** Stav Player View (veřejný, bez přihlášení). Čte ho i animace zásahu (iniciativa-cteni.js). */
 export function nacistPlayerView(id) {
   return new Promise((ok, chyba) => {
+    let hotovo = false;
+    const konec = (fn, x) => {
+      if (hotovo) return;
+      hotovo = true;
+      clearTimeout(pojistka);
+      fn(x);
+    };
+    // Pojistka: spojení přerušené uprostřed odpovědi nemusí vyvolat ani 'end', ani 'error'.
+    // Bez ní by čekání nikdy neskončilo a čtení Player View by se zastavilo do restartu Hubu.
+    const pojistka = setTimeout(() => {
+      r.destroy();
+      konec(chyba, new Error('čas vypršel'));
+    }, 6000);
     const r = https.get({ host: 'improvedinitiative.app', path: `/playerviews/${encodeURIComponent(id)}`, headers: { accept: 'application/json' } }, (odpoved) => {
       if (odpoved.statusCode !== 200) {
         odpoved.resume();
-        return chyba(new Error(`Player View odpověděl ${odpoved.statusCode}`));
+        return konec(chyba, new Error(`Player View odpověděl ${odpoved.statusCode}`));
       }
       const casti = [];
       odpoved.on('data', (c) => casti.push(c));
+      odpoved.on('error', (e) => konec(chyba, e));
+      odpoved.on('aborted', () => konec(chyba, new Error('spojení přerušeno')));
+      odpoved.on('close', () => konec(chyba, new Error('spojení se zavřelo')));
       odpoved.on('end', () => {
         try {
-          ok(JSON.parse(Buffer.concat(casti).toString('utf8')));
+          konec(ok, JSON.parse(Buffer.concat(casti).toString('utf8')));
         } catch (e) {
-          chyba(e);
+          konec(chyba, e);
         }
       });
     });
     r.setTimeout(5000, () => r.destroy(new Error('čas vypršel')));
-    r.on('error', chyba);
+    r.on('error', (e) => konec(chyba, e));
   });
 }

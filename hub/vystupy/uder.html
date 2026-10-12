@@ -262,7 +262,11 @@
     const VYCHOZI_STYL = 'sek';
     const NAZVY_STYLU = { sek: 'sek', 'sek-tezky': 'těžký sek', bodnuti: 'bodnutí', drapy: 'drápy', trny: 'trny', zvuk: 'zvuk' };
     const NEJVIC_KARET = 5;  // víc cílů plošného zásahu ukáže odznak +N
-    const VELKY_ZASAH = 10;  // zásah za tolik HP a víc je výraznější a delší (⚠ návrh, otevřený bod 79)
+    // Velký zásah je výraznější a delší (⚠ návrh, otevřené body 79 a 81): aspoň VELKY_ZASAH HP,
+    // nebo aspoň VELKY_PODIL maxima HP cíle. Podíl jde poznat i u nestvůr s Colored Label (z barvy),
+    // takže hráči HP nestvůr nevidí, a velký zásah do nich přesto poznáme.
+    const VELKY_ZASAH = 10;
+    const VELKY_PODIL = 0.33;
     const STARI_MS = 5000;   // starší zprávu (po znovupřipojení) výstup nepřehraje
 
     const parametry = new URLSearchParams(location.search);
@@ -648,7 +652,7 @@
 
       // Dopad
       let sila = 0;
-      const jeVelky = (c) => c.druh === 'zasah' && Number.isFinite(c.o) && c.o >= VELKY_ZASAH;
+      const jeVelky = (c) => c.druh === 'zasah' && ((Number.isFinite(c.o) && c.o >= VELKY_ZASAH) || (Number.isFinite(c.podil) && c.podil >= VELKY_PODIL));
       const velky = karty.some((k) => jeVelky(k.k));
       if (velky) {
         // Krátké zastavení před dopadem a rudý záblesk přes celý obraz.
@@ -841,7 +845,8 @@
           return;
         }
         const popis = u.cile.map((c) => {
-          const kolik = Number.isFinite(c.o) ? `${c.druh === 'leceni' ? '+' : '−'}${c.o}` : (c.druh === 'leceni' ? 'léčení bez čísla' : 'zásah bez čísla');
+          const podil = Number.isFinite(c.podil) ? ` (${Math.round(c.podil * 100)} % HP)` : '';
+          const kolik = (Number.isFinite(c.o) ? `${c.druh === 'leceni' ? '+' : '−'}${c.o}` : (c.druh === 'leceni' ? 'léčení bez čísla' : 'zásah bez čísla')) + podil;
           return `${c.jmeno} ${kolik}${c.padl ? ' (k zemi)' : ''}${c.vstal ? ' (zpět v boji)' : ''}`;
         }).join(', ');
         vysledek.textContent = `Rozpoznáno: ${u.utocnik ? `${u.utocnik.jmeno} (${NAZVY_STYLU[stylUtocnika(u.utocnik, $('z-styl').value)]}) → ` : ''}${popis}`;
@@ -853,7 +858,8 @@
         zasah: () => provest(() => { const c = najit($('z-cil').value); c.hp = Math.max(0, c.hp - kostka(3, 10)); }),
         plosny: () => provest(() => nepratele(naTahu).slice(0, 4).forEach((c) => { c.hp = Math.max(0, c.hp - kostka(4, 9)); })),
         leceni: () => provest(() => { const c = najit($('z-cil').value); c.hp = Math.min(c.max, c.hp + kostka(4, 9)); }),
-        velky: () => provest(() => { const c = najit($('z-cil').value); c.hp = Math.max(0, c.hp - kostka(VELKY_ZASAH, VELKY_ZASAH + 8)); }),
+        // Velký zásah: aspoň 10 HP a zároveň aspoň třetina maxima, aby ho šlo poznat v každém režimu HP.
+        velky: () => provest(() => { const c = najit($('z-cil').value); const z = Math.max(VELKY_ZASAH, Math.ceil(c.max * VELKY_PODIL)); c.hp = Math.max(0, c.hp - kostka(z, z + 6)); }),
         kzemi: () => provest(() => { najit($('z-cil').value).hp = 0; }),
         dalsi: () => {
           const i = bojovnici.findIndex((b) => b.id === naTahu);

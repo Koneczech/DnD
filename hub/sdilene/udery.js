@@ -10,7 +10,7 @@ export const REZIMY_HP = ['Actual HP', 'Colored Label', 'Monochrome Label', 'Dam
 export const ROZPOZNANI = {
   'Actual HP': 'každý zásah i s číslem',
   'Damage Taken': 'každý zásah i s číslem',
-  'Colored Label': 'každý zásah, bez čísla',
+  'Colored Label': 'každý zásah, bez čísla; velký zásah podle podílu HP',
   'Monochrome Label': 'jen přechody Healthy / Hurt / Bloodied / Defeated',
   'Hide All': 'nic, zásahy nejdou poznat',
 };
@@ -127,10 +127,17 @@ export function zjistitUdery(stary, novy) {
     const rozdil = mc.hodnota - mp.hodnota;
     if (!rozdil) continue;
     const presne = mc.druh === 'cisla' || mc.druh === 'ztrata';
+    // Podíl maxima HP, který zásah ubral (nebo léčení vrátilo). U Colored Label ho prozradí zelená
+    // složka barvy (⌊HP / max × 170⌋), i když Player View číslo neukazuje: velký zásah jde poznat
+    // i u nestvůr, aniž by hráči viděli jejich HP (otevřený bod 81).
+    const podil = mc.druh === 'cisla' && mc.max ? Math.abs(rozdil) / mc.max
+      : mc.druh === 'barva' ? Math.abs(rozdil) / 170
+        : null;
     cile.push({
       ...karta(c),
       druh: rozdil < 0 ? 'zasah' : 'leceni',
       o: presne ? Math.abs(rozdil) : null,
+      podil: podil === null ? null : Math.round(podil * 100) / 100,
       padl: padly(c, mc) && !padly(p, mp),
       vstal: padly(p, mp) && !padly(c, mc),
     });

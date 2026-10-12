@@ -2697,6 +2697,11 @@ function vykresliHpNastaveni(n) {
     $(`#hp-${f}-s`).value = d.s;
   }
   $('#hp-prechod').value = n.prechod_s;
+  const hl = n.hlavni ?? { zap: false, rgb: [255, 0, 0], jas: 60 };
+  $('#hp-hl-barva').value = naHex(hl.rgb);
+  $('#hp-hl-jas').value = hl.jas;
+  $('#hp-hl-zap').checked = hl.zap;
+  $('#hp-hl-barva').disabled = $('#hp-hl-jas').disabled = !hl.zap;
   // Jen intenzita: fáze B má barvu fáze A, mění se jen jas.
   $('#hp-b-barva').disabled = n.rezim === 'intenzita';
 }
@@ -2723,6 +2728,9 @@ $('#hp-rezim').addEventListener('click', (e) => {
 });
 $('#hp-nastaveni').addEventListener('change', (e) => {
   if (e.target.id === 'hp-prechod') return ulozitHp({ prechod_s: Number(e.target.value) }, e.target);
+  if (e.target.id === 'hp-hl-zap') return ulozitHp({ hlavni: { zap: e.target.checked } }, e.target);
+  if (e.target.id === 'hp-hl-barva') return ulozitHp({ hlavni: { rgb: zHex(e.target.value) } }, e.target);
+  if (e.target.id === 'hp-hl-jas') return ulozitHp({ hlavni: { jas: Number(e.target.value) } }, e.target);
   const m = e.target.id.match(/^hp-(a|b|poz)-(barva|jas|s)$/);
   if (!m) return;
   const [, f, co] = m;

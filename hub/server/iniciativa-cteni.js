@@ -8,12 +8,13 @@ export const INTERVAL_CTENI_MS = 1000;
 
 /** Události: 'stav' (id setkání, stav Player View; null, null = souboj skončil), 'chyba' (text nebo null). */
 export class CteniPlayerView extends EventEmitter {
-  constructor({ odkaz, aktivni, intervalMs = INTERVAL_CTENI_MS, nacist = nacistPlayerView }) {
+  constructor({ odkaz, aktivni, intervalMs = INTERVAL_CTENI_MS, nacist = nacistPlayerView, limitMs = 8000 }) {
     super();
     this.odkaz = odkaz; // () => odkaz na Player View
     this.aktivni = aktivni; // () => běží souboj
     this.intervalMs = intervalMs;
     this.nacist = nacist;
+    this.limitMs = limitMs;
     this.id = null;
     this.stav = null;
     this.chyba = null;
@@ -50,7 +51,14 @@ export class CteniPlayerView extends EventEmitter {
         return;
       }
       try {
-        const stav = await this.nacist(id);
+        // I vlastní nacist (testy, jiná cesta) má nejvýš 8 s; zaseknuté čtení nesmí zastavit další kroky.
+        let casovac;
+        const stav = await Promise.race([
+          this.nacist(id),
+          new Promise((_, ne) => {
+            casovac = setTimeout(() => ne(new Error('čas vypršel')), this.limitMs);
+          }),
+        ]).finally(() => clearTimeout(casovac));
         this.id = id;
         this.stav = stav;
         this.nastavitChybu(null);

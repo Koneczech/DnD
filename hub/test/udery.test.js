@@ -167,3 +167,21 @@ test('jedno čtení Player View: jen v souboji, při výpadku drží poslední s
   assert.equal(cteni, 3, 'mimo souboj se Player View nečte');
   assert.equal(await c.posledni(), null);
 });
+
+test('čtení Player View: zaseknutý dotaz nezastaví další čtení', async () => {
+  const { CteniPlayerView } = await import('../server/iniciativa-cteni.js');
+  let volani = 0;
+  const c = new CteniPlayerView({
+    odkaz: () => 'https://improvedinitiative.app/p/x1',
+    aktivni: () => true,
+    limitMs: 100,
+    nacist: () => (++volani === 1 ? new Promise(() => {}) : Promise.resolve({ encounterState: { Combatants: [] } })),
+  });
+  const chyby = [];
+  c.on('chyba', (t) => t && chyby.push(t));
+  await c.krok();
+  assert.match(chyby[0], /čas vypršel/);
+  await c.krok();
+  assert.equal(volani, 2);
+  assert.ok(c.stav, 'druhé čtení prošlo');
+});

@@ -266,7 +266,7 @@
     // nebo aspoň VELKY_PODIL maxima HP cíle. Podíl jde poznat i u nestvůr s Colored Label (z barvy),
     // takže hráči HP nestvůr nevidí, a velký zásah do nich přesto poznáme.
     const VELKY_ZASAH = 10;
-    const VELKY_PODIL = 0.5;
+    const VELKY_PODIL = 0.33;
     const STARI_MS = 5000;   // starší zprávu (po znovupřipojení) výstup nepřehraje
 
     const parametry = new URLSearchParams(location.search);
@@ -858,7 +858,7 @@
         zasah: () => provest(() => { const c = najit($('z-cil').value); c.hp = Math.max(0, c.hp - kostka(3, 10)); }),
         plosny: () => provest(() => nepratele(naTahu).slice(0, 4).forEach((c) => { c.hp = Math.max(0, c.hp - kostka(4, 9)); })),
         leceni: () => provest(() => { const c = najit($('z-cil').value); c.hp = Math.min(c.max, c.hp + kostka(4, 9)); }),
-        // Velký zásah: aspoň 10 HP a zároveň aspoň polovina maxima, aby ho šlo poznat v každém režimu HP.
+        // Velký zásah: aspoň 10 HP a zároveň aspoň třetina maxima, aby ho šlo poznat v každém režimu HP.
         velky: () => provest(() => { const c = najit($('z-cil').value); const z = Math.max(VELKY_ZASAH, Math.ceil(c.max * VELKY_PODIL)); c.hp = Math.max(0, c.hp - kostka(z, z + 6)); }),
         kzemi: () => provest(() => { najit($('z-cil').value).hp = 0; }),
         dalsi: () => {

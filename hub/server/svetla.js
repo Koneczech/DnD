@@ -205,7 +205,8 @@ export class Svetla extends EventEmitter {
     this.nahodne = nahodne;
     this.opakovaniMs = opakovaniMs;
     this.soubor = path.join(cesty.lokalniStav, 'svetla.json');
-    this.mistni = { ridit: false, vychozi: { ...VYCHOZI_SVETLA }, hp: normalizujHp() };
+    this.mistni = { ridit: false, vychozi: { ...VYCHOZI_SVETLA }, hp: normalizujHp(), nabehStartu: true };
+    this.nabeh = null; // odpočet na scéně Start: světla se přelévají do výchozího stavu (otevřený bod 77)
     this.vrstvy = { pocasi: {}, rezim: {} };
     this.chybyVrstev = [];
     this.zarizeni = new Map(); // klic → { klic, role, typ, ovladac, id, ok, chyba, posledni }
@@ -226,7 +227,7 @@ export class Svetla extends EventEmitter {
       } catch {
         /* poškozené nastavení málo HP: výchozí */
       }
-      this.mistni = { ridit: d.ridit === true, vychozi: { ...VYCHOZI_SVETLA, ...(d.vychozi ?? {}) }, hp };
+      this.mistni = { ridit: d.ridit === true, vychozi: { ...VYCHOZI_SVETLA, ...(d.vychozi ?? {}) }, hp, nabehStartu: d.nabehStartu !== false };
     } catch {
       /* první spuštění: výchozí hodnoty */
     }
@@ -301,6 +302,8 @@ export class Svetla extends EventEmitter {
       hpSvetla: this.hpSvetlaZapnute,
       kritickeHp: this.pulzBezi ? this.kritickeHp : null,
       hpNastaveni: this.mistni.hp,
+      nabehStartu: this.mistni.nabehStartu,
+      nabehBezi: Boolean(this.nabeh),
       nastaveno: this.zarizeni.size > 0,
       hue: { bridge: n.HUE_BRIDGE || '', sparovano: Boolean(n.HUE_KLIC) },
       zarizeni: [...this.zarizeni.values()].map(({ klic, role, typ, id, ok, chyba: c }) => ({ klic, role, typ, id, ok, chyba: c })),
@@ -327,6 +330,8 @@ export class Svetla extends EventEmitter {
         [...this.zarizeni.values()].map(async (z) => {
           // Lampa a pozadí při málo HP scénu neposlouchají, dokud tah postavy neskončí.
           if (this.pulzBezi && ROLE_PRI_HP.includes(z.role) && !vynutit) return;
+          // Během odpočtu světla plynou do výchozího stavu; scéna je převezme až po něm.
+          if (this.nabeh && !vynutit) return;
           const cil = cile[z.role];
           const json = JSON.stringify(cil);
           if (!vynutit && z.posledni === json && z.ok) return;
@@ -407,9 +412,125 @@ export class Svetla extends EventEmitter {
     return this.verejny();
   }
 
+  /** Výchozí stav rolí (s pojistkami hlavního světla). */
+  cileVychozi() {
+    return pojistky(Object.fromEntries(ROLE.map((r) => [r, normalizujRoli(this.mistni.vychozi[r]) ?? normalizujRoli(VYCHOZI_SVETLA[r])])));
+  }
+
+  /**
+   * Odpočet do začátku hry (otevřený bod 77): podle stavu odpočtu spustí, pozastaví, nebo ukončí přelévání
+   * světel do výchozího stavu. Volá app.js při každé změně odpočtu.
+   */
+  odpocet(s) {
+    const klic = `${s?.stav}|${s?.konec ?? ''}`;
+    if (klic === this.klicOdpoctu) return;
+    this.klicOdpoctu = klic;
+    if (s?.stav === 'bezi' && s.konec) this.spustitNabeh(Date.parse(s.konec)).catch(() => {});
+    else if (s?.stav === 'pauza') this.zastavitNabeh(); // světla zůstanou, kde jsou; po pokračování se přelévají dál
+    else this.zastavitNabeh({ obnovit: true });
+  }
+
+  /**
+   * Start hry: světla se od toho, jak právě svítí, pomalu přelijí do výchozího stavu a doběhnou s odpočtem.
+   * Jen s Řídit světla a zapnutým přepínačem. Hue dostává kroky s přechodem (plynule), WiZ kroky po
+   * 0,5–3 s podle délky odpočtu; po konci převezme světla scéna (přechod 3 s).
+   */
+  async spustitNabeh(konecMs) {
+    this.zastavitNabeh();
+    if (!this.mistni.ridit || !this.mistni.nabehStartu) return false;
+    const zacatek = Date.now();
+    if (!Number.isFinite(konecMs) || konecMs - zacatek < 3000) return false;
+    const cile = this.cileVychozi();
+    const zarizeni = [...this.zarizeni.values()].filter((z) => z.ovladac && cile[z.role]);
+    const token = {};
+    this.nabeh = { token, konecMs };
+    // Odkud: to, jak světla svítí teď (zařízení, které neodpoví, jde rovnou do cíle s přechodem).
+    const od = new Map();
+    await Promise.all(zarizeni.map(async (z) => {
+      try {
+        od.set(z.klic, z.typ === 'hue' ? await z.ovladac.stav(z.id) : await z.ovladac.stav());
+      } catch {
+        /* bez výchozího bodu */
+      }
+    }));
+    if (this.nabeh?.token !== token) return false;
+    const krokMs = Math.round(Math.min(3000, Math.max(500, (konecMs - zacatek) / 200)));
+    const smes = (a, b, t) => Math.round(a + (b - a) * t);
+    const krok = () => {
+      if (this.nabeh?.token !== token) return;
+      const t = Math.min(1, (Date.now() - zacatek) / (konecMs - zacatek));
+      for (const z of zarizeni) {
+        if (this.pulzBezi && ROLE_PRI_HP.includes(z.role)) continue;
+        const cil = cile[z.role];
+        const o = od.get(z.klic);
+        let mezi = cil;
+        if (t < 1 && o && !o.scena && !cil.scena) {
+          const oJas = o.zap ? o.jas : 0;
+          const oRgb = o.zap && o.rgb ? o.rgb : cil.rgb;
+          const jas = smes(oJas, cil.zap ? cil.jas : 0, t);
+          mezi = { zap: jas > 0, jas, rgb: oRgb.map((c, i) => smes(c, cil.rgb[i], t)) };
+        }
+        if (t >= 1) z.posledni = JSON.stringify(cil);
+        this.poslatKrok(z, mezi, z.typ === 'hue' ? krokMs : 0, () => this.nabeh?.token === token || t >= 1);
+      }
+      if (t >= 1) {
+        this.nabeh = null;
+        this.oznam();
+        // Po odpočtu převezme světla scéna (místo, počasí); bez vlastních světel zůstane výchozí stav.
+        for (const z of this.zarizeni.values()) z.posledni = null;
+        setTimeout(() => this.aplikovat({ prechodMs: 3000 }).catch(() => {}), krokMs + 200).unref?.();
+        return;
+      }
+      this.casovacNabehu = setTimeout(krok, krokMs);
+      this.casovacNabehu.unref?.();
+    };
+    krok();
+    this.oznam();
+    return true;
+  }
+
+  /** Ukončí přelévání při odpočtu; `obnovit` = světla hned převezme scéna (zrušený odpočet). */
+  zastavitNabeh({ obnovit = false } = {}) {
+    if (!this.nabeh) return;
+    clearTimeout(this.casovacNabehu);
+    this.nabeh = null;
+    for (const z of this.zarizeni.values()) {
+      z.krokCeka = null;
+      z.posledni = null;
+    }
+    if (obnovit && this.mistni.ridit) this.aplikovat({ prechodMs: 2000 }).catch(() => {});
+    this.oznam();
+  }
+
+  /** Krok přelévání: na zařízení nejvýš jeden příkaz na cestě, čeká jen ten nejnovější (jako poslatPulz). */
+  poslatKrok(z, cil, ms, platne) {
+    if (z.krokNaCeste) {
+      z.krokCeka = { cil, ms, platne };
+      return;
+    }
+    z.krokNaCeste = true;
+    this.poslat(z, cil, ms)
+      .catch(() => {})
+      .finally(() => {
+        z.krokNaCeste = false;
+        const dalsi = z.krokCeka;
+        z.krokCeka = null;
+        if (dalsi && dalsi.platne()) this.poslatKrok(z, dalsi.cil, dalsi.ms, dalsi.platne);
+      });
+  }
+
+  async nastavitNabehStartu(zap) {
+    this.mistni.nabehStartu = zap === true;
+    await this.ulozitMistni();
+    if (!this.mistni.nabehStartu) this.zastavitNabeh({ obnovit: true });
+    this.oznam();
+    return this.verejny();
+  }
+
   /** Světla normál: výchozí stav na všech zařízeních, bez ohledu na scénu. */
   async normal() {
-    const cile = pojistky(Object.fromEntries(ROLE.map((r) => [r, normalizujRoli(this.mistni.vychozi[r]) ?? normalizujRoli(VYCHOZI_SVETLA[r])])));
+    this.zastavitNabeh();
+    const cile = this.cileVychozi();
     await this.aplikovat({ cile, vynutit: true, prechodMs: 1000 });
     for (const z of this.zarizeni.values()) z.posledni = null; // další scéna se pošle celá
     return this.verejny();
@@ -611,6 +732,11 @@ export class Svetla extends EventEmitter {
       const vynutit = this.zkouskaHp;
       this.pulzBezi = false;
       clearTimeout(this.casovacPulzu);
+      // Krok ze starého nastavení (třeba barva B před přepnutím na Jen intenzita) už nepošle.
+      for (const z of this.zarizeni.values()) {
+        clearInterval(z.prelivani);
+        z.pulzCeka = null;
+      }
       this.nastavitKritickeHp(k, { vynutit });
     }
     this.oznam();
@@ -641,5 +767,7 @@ export class Svetla extends EventEmitter {
     clearTimeout(this.casovacZkouskyHp);
     clearTimeout(this.casovacBlesku);
     clearInterval(this.casovacOpakovani);
+    clearTimeout(this.casovacNabehu);
+    this.nabeh = null;
   }
 }

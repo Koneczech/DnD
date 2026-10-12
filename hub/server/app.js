@@ -238,6 +238,7 @@ export class Hub {
     this.odpocet.on('stav', (s) => {
       this.vysilac.vyslat('odpocet', s);
       this.hlidatOdpocet();
+      this.svetla.odpocet(this.odpocet.stav); // start hry: světla plynou do výchozího stavu (bod 77)
     });
     this.kalendar.on('zmena', (k) => this.vysilac.vyslat('kalendar-dm', k));
     this.kalendar.on('verejne', (k) => this.vyslatKalendar(k));
@@ -301,6 +302,7 @@ export class Hub {
     }
     this.obnovitGit(this.gitSit);
     this.hlidatOdpocet();
+    this.svetla.odpocet(this.odpocet.stav);
     this.svetla.zmenaSceny();
     this.svetla.overit().catch(() => {});
     return this;
@@ -610,6 +612,11 @@ export class Hub {
       return poslatJson(res, 200, await mapa[akce]());
     }
     if (p === '/api/odpocet' && m === 'GET') return poslatJson(res, 200, this.odpocet.verejny());
+    if (p === '/api/iniciativa/overit' && m === 'POST') {
+      await nacistJson(req);
+      await this.pruchod?.overit();
+      return poslatJson(res, 200, this.stavIniciativy());
+    }
     if (p === '/api/iniciativa' && m === 'PUT') {
       const telo = await nacistJson(req);
       return poslatJson(res, 200, await this.iniciativa.nastavit(telo.odkaz));
@@ -816,6 +823,7 @@ export class Hub {
       return s.blesk({ vzdalenost: vzdalenost || undefined });
     }
     if (p === '/api/svetla/hp' && m === 'PUT') return s.nastavitHp(await nacistJson(req));
+    if (p === '/api/svetla/nabeh' && m === 'PUT') return s.nastavitNabehStartu((await nacistJson(req)).zap === true);
     if (p === '/api/svetla/hp/zkouska' && m === 'POST') {
       await nacistJson(req);
       return s.zkusitHp();
@@ -1063,7 +1071,7 @@ export class Hub {
   stavIniciativy() {
     return {
       ...this.iniciativa.verejny(),
-      pruchod: this.pruchod?.server ? { port: this.portPruchodu, prihlasen: this.pruchod.prihlasen } : null,
+      pruchod: this.pruchod?.server ? { port: this.portPruchodu, prihlasen: this.pruchod.prihlasen, ucet: this.pruchod.ucet } : null,
       pruchodChyba: this.pruchodChyba ?? null,
     };
   }

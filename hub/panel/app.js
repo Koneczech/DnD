@@ -1080,6 +1080,15 @@ function vykresliIniciativu() {
   el.className = stav.iniciativaChyba ? 'ulozeni chyba' : i?.chyba ? 'ulozeni varovani' : 'ulozeni';
   el.textContent = stav.iniciativaChyba
     ?? (!i?.odkaz ? 'Vlož odkaz na Player View: Hub ho dá do OBS i do náhledu.' : i.chyba ?? `V OBS: ${i.zdroje.join(', ')}`);
+  // Nastavení Player View v účtu Epic (otevřený bod 78): typicky je přepíše druhé okno editoru s jiným nastavením.
+  const ucet = pr?.prihlasen ? pr.ucet : null;
+  const idOdkazu = i?.odkaz?.match(/\/p\/([A-Za-z0-9_-]+)/)?.[1];
+  const varovani = [];
+  if (ucet && !ucet.encounterId) varovani.push(`V Improved Initiative chybí vlastní Encounter ID, takže Player View v OBS se přestane hýbat. V editoru: Settings → Player View → Custom Encounter ID${idOdkazu ? ` = ${idOdkazu}` : ''}, pak Save.`);
+  if (ucet && !ucet.portrety) varovani.push('Display Portraits je v Improved Initiative vypnuté: karty v OBS jsou bez ilustrací. Settings → Player View → Display Portraits, pak Save.');
+  const v = $('#iniciativa-ucet');
+  v.hidden = !varovani.length;
+  v.textContent = varovani.join(' ');
 }
 async function ulozitIniciativu(odkaz) {
   try {
@@ -1195,7 +1204,10 @@ function otevritIniciativu() {
     } catch {
       prazdne = false;
     }
-    if (prazdne) oknoIniciativy.location.href = ADRESA_INICIATIVY;
+    // Přes průchod Hubu: stejné přihlášení, stejné úložiště a nastavení z účtu jako editor v panelu.
+    // Přímá adresa improvedinitiative.app má vlastní úložiště prohlížeče a po uložení by do účtu
+    // poslala jiná nastavení Player View (otevřený bod 78).
+    if (prazdne) oknoIniciativy.location.href = adresaVlozeneIniciativy() ?? ADRESA_INICIATIVY;
   }
   oknoIniciativy.focus();
 }
@@ -2463,6 +2475,7 @@ function vykresliSvetla() {
   vykresliHueSvetla();
   vykresliWiz();
   const v = sv.vychozi ?? {};
+  $('#pole-nabeh-startu').checked = sv.nabehStartu !== false;
   $('#svetla-vychozi').replaceChildren(
     'Platí, když místo světla nemá, pro Světla normál a po vypnutí Řídit světla. ',
     ...['hlavni', 'pozadi', 'lampa'].flatMap((r) => [vzorek(v[r]?.barva), `${NAZVY_ROLI[r]}: ${popisRole(v[r])}. `]),
@@ -2691,9 +2704,13 @@ async function ulozitHp(zmena, pole) {
     const sv = await api('/api/svetla/hp', { metoda: 'PUT', telo: zmena });
     stav.prehled.svetla = sv;
     vykresliHpNastaveni(sv.hpNastaveni);
-    if (pole) oznacUlozeno(pole);
+    // Značka „Uloženo“ do řádku pod mřížkou: vložená do mřížky nebo přepínače by posunula pole.
     $('#hp-vysledek').className = 'ulozeni';
-    $('#hp-vysledek').textContent = '';
+    $('#hp-vysledek').textContent = pole ? 'Uloženo ✓' : '';
+    clearTimeout(stav.casovacHp);
+    stav.casovacHp = setTimeout(() => {
+      if ($('#hp-vysledek').textContent === 'Uloženo ✓') $('#hp-vysledek').textContent = '';
+    }, 3000);
   } catch (chyba) {
     $('#hp-vysledek').className = 'ulozeni chyba';
     $('#hp-vysledek').textContent = `Neuloženo: ${chyba.message}`;
@@ -2723,6 +2740,14 @@ $('#hp-zkusit').addEventListener('click', async () => {
 });
 
 $('#pole-hp-svetla').addEventListener('change', (e) => ulozitNastaveni({ hpSvetla: e.target.checked }, e.target.closest('label'), { chybaDo: $('#svetla-vysledek') }));
+$('#pole-nabeh-startu').addEventListener('change', async (e) => {
+  try {
+    stav.prehled.svetla = await api('/api/svetla/nabeh', { metoda: 'PUT', telo: { zap: e.target.checked } });
+    oznacUlozeno(e.target.closest('label'));
+  } catch (chyba) {
+    toast(chyba.message, { chyba: true });
+  }
+});
 $('#pole-blesky').addEventListener('change', (e) => ulozitNastaveni({ blesky: e.target.checked }, e.target.closest('label'), { chybaDo: $('#svetla-vysledek') }));
 $('#pole-hue-bridge').addEventListener('change', async (e) => {
   const n = stav.prehled?.nastaveni ?? {};

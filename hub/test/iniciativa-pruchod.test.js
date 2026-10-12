@@ -95,3 +95,33 @@ test('skript s nastavením se vloží jen do stránky s <head> a nic tajného ne
   assert.ok(vlozitSkript('<HEAD lang="en">x').startsWith('<HEAD lang="en"><script>'));
   assert.doesNotMatch(SKRIPT_NASTAVENI, /connect\.sid/);
 });
+
+test('průchod si z účtu pamatuje Encounter ID a portréty; prázdné ID nehlásí jako encounter', async () => {
+  const relace = falesnaRelace();
+  let nastaveni = { PlayerView: { CustomEncounterId: '', DisplayPortraits: false } };
+  const cil = http.createServer((req, res) => {
+    res.writeHead(200, { 'content-type': 'application/json' });
+    if (req.method === 'POST') {
+      nastaveni = { PlayerView: { CustomEncounterId: 'krkavci', DisplayPortraits: true } };
+      return res.end('{}');
+    }
+    res.end(JSON.stringify({ settings: nastaveni }));
+  });
+  await new Promise((r) => cil.listen(0, '127.0.0.1', r));
+  const request = (volby, cb) => http.request({ ...volby, host: '127.0.0.1', port: cil.address().port }, cb);
+  const pruchod = new PruchodIniciativy({ port: 0, relace: () => relace, request });
+  await pruchod.spustit();
+  pruchod.port = pruchod.server.address().port;
+  const id = [];
+  pruchod.on('encounter', (x) => id.push(x));
+  await pruchod.overit();
+  assert.deepEqual(pruchod.ucet, { encounterId: null, portrety: false });
+  assert.deepEqual(id, []);
+  // Editor uloží nastavení: průchod si ho do 1,5 s ověří sám.
+  await fetch(`http://127.0.0.1:${pruchod.port}/my/settings`, { method: 'POST', headers: { 'content-type': 'application/json', origin: `http://127.0.0.1:${pruchod.port}` }, body: '{}' });
+  await new Promise((r) => setTimeout(r, 1800));
+  assert.deepEqual(pruchod.ucet, { encounterId: 'krkavci', portrety: true });
+  assert.deepEqual(id, ['krkavci']);
+  await pruchod.zastavit();
+  await new Promise((r) => cil.close(r));
+});

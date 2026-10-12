@@ -185,3 +185,22 @@ test('čtení Player View: zaseknutý dotaz nezastaví další čtení', async (
   assert.equal(volani, 2);
   assert.ok(c.stav, 'druhé čtení prošlo');
 });
+
+test('podíl ubraného HP: z čísel i z barvy Colored Label, bez čísla pro hráče', () => {
+  const stav = (hp, rezim) => ({
+    encounterState: {
+      ActiveCombatantId: 't',
+      Combatants: [
+        simulovatPlayerView({ id: 't', jmeno: 'Tusker', max: 34, hp: 34, hrac: true }, 'Actual HP'),
+        simulovatPlayerView({ id: 'b', jmeno: 'Bandit', max: 11, hp }, rezim),
+      ],
+    },
+  });
+  const barva = zjistitUdery(stav(11, 'Colored Label'), stav(5, 'Colored Label')).cile[0];
+  assert.equal(barva.o, null, 'číslo hráči nevidí');
+  assert.ok(Math.abs(barva.podil - 6 / 11) < 0.02, `podíl z barvy ${barva.podil}`);
+  const cisla = zjistitUdery(stav(11, 'Actual HP'), stav(8, 'Actual HP')).cile[0];
+  assert.deepEqual([cisla.o, cisla.podil], [3, 0.27]);
+  const mono = zjistitUdery(stav(11, 'Monochrome Label'), stav(4, 'Monochrome Label')).cile[0];
+  assert.equal(mono.podil, null, 'jen stav: podíl nejde poznat');
+});

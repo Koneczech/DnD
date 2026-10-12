@@ -65,7 +65,7 @@ export function platneJmeno(jmeno) {
 export function normalizujZvukMista(zvuk) {
   if (!zvuk || typeof zvuk !== 'object') return null;
   const vysledek = {};
-  // Připnuté zvuky soundboardu pro toto místo (otevřený bod 74): ID skupin, nejvýš 24.
+  // Připnuté zvuky soundboardu pro toto místo (otevřený bod 76): ID skupin, nejvýš 24.
   if (Array.isArray(zvuk.pripnute)) {
     const p = [...new Set(zvuk.pripnute.map(platneId).filter(Boolean))].slice(0, 24);
     if (p.length) vysledek.pripnute = p;
@@ -316,7 +316,7 @@ export class Zvuk extends EventEmitter {
       stranky,
       // Stránka Hudba v OBS je potřeba, jen když hudba hraje v OBS.
       potrebne: this.mistni.hudbaKde === 'obs' ? ['hudba', 'stul'] : ['stul'],
-      // Soundboard (otevřený bod 74): knihovna podle složek a co z ní teď hraje.
+      // Soundboard (otevřený bod 76): knihovna podle složek a co z ní teď hraje.
       knihovna: { jednorazove: this.knihovna.jednorazove, smycky: this.knihovna.smycky },
       zapnuteSmycky: [...this.smycky.keys()],
       tahy: { zapnuto: this.mistni.tahy, jenHraci: this.mistni.tahyJenHraci },
@@ -475,7 +475,7 @@ export class Zvuk extends EventEmitter {
   }
 
   /**
-   * Zvuk na tah v souboji (otevřený bod 74): podle jména a tagů z Player View a mapy v kampan/zvuky.yaml.
+   * Zvuk na tah v souboji (otevřený bod 76): podle jména a tagů z Player View a mapy v kampan/zvuky.yaml.
    * @param {{jmeno: string, hrac: boolean, tagy: string[]}} kdo
    * @returns {string|null} zahraný soubor
    */

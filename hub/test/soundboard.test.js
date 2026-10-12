@@ -1,4 +1,4 @@
-// Soundboard, zvuky na tahu a fanfára (otevřený bod 74).
+// Soundboard, zvuky na tahu a fanfára (otevřený bod 76).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';

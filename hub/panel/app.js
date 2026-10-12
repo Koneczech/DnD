@@ -2891,7 +2891,7 @@ $('#zvuk-prohledat').addEventListener('click', async () => {
   }
 });
 
-/* ---------- Soundboard (otevřený bod 74) ---------- */
+/* ---------- Soundboard (otevřený bod 76) ---------- */
 
 /** Všechny zvuky knihovny (jednorázové i smyčky) s druhem. */
 function zvukyKnihovny() {

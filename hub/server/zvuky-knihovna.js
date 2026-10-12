@@ -1,4 +1,4 @@
-// Soundboard a zvuky na tahu (otevřený bod 74): čisté funkce nad seznamem souborů ve složce zvuku
+// Soundboard a zvuky na tahu (otevřený bod 76): čisté funkce nad seznamem souborů ve složce zvuku
 // a nad mapou `kampan/zvuky.yaml`. Soubory zůstávají mimo repo (rozhodnutí 63); repo zná jen jména.
 //
 // Složky ve složce zvuku:

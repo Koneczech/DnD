@@ -26,6 +26,8 @@ import { Zvuk, TYPY_ZVUKU } from './zvuk.js';
 import { Iniciativa } from './iniciativa.js';
 import { PruchodIniciativy } from './iniciativa-pruchod.js';
 import { SledovaniHp } from './iniciativa-hp.js';
+import { CteniPlayerView } from './iniciativa-cteni.js';
+import { Udery } from './udery.js';
 import { createReadStream } from 'node:fs';
 import { nacistStyl, sestavPrompt, ZABERY } from './dilna.js';
 
@@ -157,14 +159,22 @@ export class Hub {
     });
     this.data.dalsiKontroly = () => this.zvuk.kontrola();
     this.iniciativa = new Iniciativa({ cesty: this.c, obs: this.obs });
-    // Světla podle HP (otevřený bod 72): Player View se čte jen během souboje se zapnutým vypínačem.
+    // Player View se čte jen během souboje, jednou za sekundu pro celý Hub (otevřený bod 75).
+    this.cteniPlayerView = new CteniPlayerView({
+      odkaz: () => this.iniciativa.odkaz,
+      aktivni: () => this.scena.stav.rezim === 'souboj',
+    });
+    // Světla podle HP (otevřený bod 72) a zvuky na tahu (bod 76): ze stavu, který přečetlo cteniPlayerView.
     this.sledovaniHp = new SledovaniHp({
       odkaz: () => this.iniciativa.odkaz,
       // Player View se čte celý souboj (zvuky na tahu); málo HP jen se zapnutým vypínačem.
       // Obraz pulzuje i s vypnutým Řídit světla; lampa jen s ním (hlídá Svetla).
       aktivni: () => this.scena.stav.rezim === 'souboj',
       hlidatHp: () => this.nastaveni.hodnoty.HP_SVETLA !== '0',
+      nacist: () => this.cteniPlayerView.posledni(),
     });
+    // Animace zásahu (otevřený bod 75): výstup uder.html.
+    this.udery = new Udery();
     this.sledovaniHp.on('zmena', (k) => this.svetla.nastavitKritickeHp(k));
     this.sledovaniHp.on('tah', (kdo) => this.zvuk.tah(kdo));
     this.svetla.on('kriticke-hp', (k) => {
@@ -221,6 +231,10 @@ export class Hub {
       this.obsBylPripojen = s.pripojeno;
     });
     this.iniciativa.on('stav', () => this.vysilac.vyslat('iniciativa', this.stavIniciativy()));
+    this.cteniPlayerView.on('stav', (id, stav) => this.udery.zpracovat(id, stav));
+    this.cteniPlayerView.on('chyba', (text) => this.udery.nastavitChybu(text));
+    this.udery.on('uder', (u) => this.vysilac.vyslat('uder', u));
+    this.udery.on('stav', (s) => this.vysilac.vyslat('uder-stav', s));
     this.odpocet.on('stav', (s) => {
       this.vysilac.vyslat('odpocet', s);
       this.hlidatOdpocet();
@@ -258,7 +272,9 @@ export class Hub {
     await this.svetla.nacist();
     await this.zvuk.nacist();
     await this.iniciativa.nacist();
+    this.cteniPlayerView.spustit();
     this.sledovaniHp.spustit();
+    this.vysilac.vyslat('uder-stav', this.udery.verejny());
     if (this.obs.pripojeno) this.iniciativa.doObs().catch(() => {});
     await this.odpocet.nacist();
     this.vysilac.vyslat('odpocet', this.odpocet.verejny());
@@ -685,7 +701,7 @@ export class Hub {
     } else {
       const bezel = this.scena.stav.rezim === 'souboj';
       scenaObs = this.scena.ukoncitSouboj().obsScena;
-      // Vítězná fanfára (otevřený bod 74); „Konec bez fanfáry“ pro útěk nebo prohru.
+      // Vítězná fanfára (otevřený bod 76); „Konec bez fanfáry“ pro útěk nebo prohru.
       if (bezel && fanfara) this.zvuk.fanfara();
     }
     const zacatek = Date.now();
@@ -1092,6 +1108,7 @@ export class Hub {
   async zastavit() {
     clearTimeout(this.casovacOdpoctu);
     clearInterval(this.casovacPruchodu);
+    this.cteniPlayerView.zastavit();
     this.sledovaniHp.zastavit();
     await this.pruchod?.zastavit();
     this.scena.zastavit();

@@ -208,7 +208,7 @@ export class Mista extends EventEmitter {
     return { misto: this.get(id) };
   }
 
-  /** Připnuté zvuky soundboardu pro místo (`zvuk.pripnute`, otevřený bod 74): ID skupin v pořadí tlačítek. */
+  /** Připnuté zvuky soundboardu pro místo (`zvuk.pripnute`, otevřený bod 76): ID skupin v pořadí tlačítek. */
   async nastavitPripnute(id, seznam) {
     this.get(id);
     if (!Array.isArray(seznam) || seznam.length > 24) throw chyba('Připnout jde nejvýš 24 zvuků.');

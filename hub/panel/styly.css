@@ -522,7 +522,7 @@ details.oprava summary { cursor: pointer; color: var(--mlha); font-size: var(--t
 .posuvnik-zvuku output { min-width: 2.8rem; color: var(--mlha); font-weight: 400; font-variant-numeric: tabular-nums; }
 .zvuk-efekty { display: flex; flex-wrap: wrap; gap: var(--m-1); }
 .zvuk-efekty:empty { display: none; }
-/* Soundboard (otevřený bod 74) */
+/* Soundboard (otevřený bod 76) */
 .soundboard-hlava { display: flex; align-items: center; gap: var(--m-2); margin-top: var(--m-2); }
 .soundboard-hlava h3 { margin: 0 auto 0 0; font-size: var(--t-popisek); text-transform: uppercase; letter-spacing: .06em; color: var(--mlha); }
 .soundboard-hlava button { padding: var(--m-1) var(--m-3); font-size: var(--t-popisek); }

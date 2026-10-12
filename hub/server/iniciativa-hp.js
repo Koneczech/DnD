@@ -44,7 +44,7 @@ export function idSetkani(odkaz) {
 
 /**
  * Události: 'zmena' ({jmeno, hp, max} nebo null) pro málo HP, 'tah' ({id, jmeno, hrac, tagy}) při změně
- * postavy na tahu (zvuky na tahu, otevřený bod 74).
+ * postavy na tahu (zvuky na tahu, otevřený bod 76).
  */
 export class SledovaniHp extends EventEmitter {
   constructor({ odkaz, aktivni, hlidatHp = () => true, intervalMs = 1000, nacist }) {
@@ -92,8 +92,8 @@ export class SledovaniHp extends EventEmitter {
   }
 }
 
-/** Stav Player View (veřejný, bez přihlášení). */
-function nacistPlayerView(id) {
+/** Stav Player View (veřejný, bez přihlášení). Čte ho i animace zásahu (iniciativa-cteni.js). */
+export function nacistPlayerView(id) {
   return new Promise((ok, chyba) => {
     const r = https.get({ host: 'improvedinitiative.app', path: `/playerviews/${encodeURIComponent(id)}`, headers: { accept: 'application/json' } }, (odpoved) => {
       if (odpoved.statusCode !== 200) {

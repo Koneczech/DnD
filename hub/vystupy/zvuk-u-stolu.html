@@ -29,11 +29,12 @@
   </div>
 
   <h1>Zvuk u stolu</h1>
-  <p class="uvod">Hudba scény, ambient místa a počasí, hrom a ruční efekty pro reproduktor u stolu. Ovládá je panel Hubu; toto okno nech otevřené celou hru (klidně minimalizované).</p>
+  <p class="uvod">Hudba scény, ambient místa a počasí, hrom, zvuky na tahu a soundboard pro reproduktor u stolu. Ovládá je panel Hubu; toto okno nech otevřené celou hru (klidně minimalizované).</p>
 
   <div class="stav-zvuku" aria-live="polite">
     <p id="stav-hraje">Čekám na Hub…</p>
     <p id="stav-hudba">Hudba: čekám na Hub…</p>
+    <p id="stav-smycky" hidden></p>
     <p id="stav-ticho" class="ticho" hidden>Ticho: zvuk je ztlumený z panelu.</p>
     <p id="stav-tlumeni" class="ticho" hidden>Málo HP: zvuk zní jako přes ucpané uši.</p>
     <p class="ulozeni chyba" id="stav-chyba" hidden></p>
@@ -59,6 +60,8 @@
     let sberniceHudby;
     let tlumeniHudby;
     let tlumeniAmbientu;
+    let uhybHudby;
+    let smycky;
     let efekty;
     let posledni = null;
 
@@ -71,6 +74,8 @@
         p.nastavHlasitost(sberniceHudby, s.ticho ? 0 : s.hlasitost.hudba);
         p.nastavHlasitost(efekty, s.ticho ? 0 : s.hlasitost.efekty);
         ambient.nastavit(s.ambient, s.prolnutiMs);
+        // Smyčky soundboardu: náběh i doběh 1,5 s, hlasitost každé zvlášť (sběrnice efektů).
+        smycky.nastavit(s.smycky ?? [], 1500);
         hudba.nastavit(s.hudbaKde !== 'obs' && s.hudba ? [s.hudba] : [], s.prolnutiMs);
         const t = s.tlumeni ?? {};
         tlumeniHudby.nastavit(Boolean(t.aktivni), t.hz);
@@ -78,10 +83,17 @@
         vykreslit();
         setTimeout(() => p.hlasit(), 300);
       },
-      priEfektu: (e) => (e.test ? p.test(p.ctx.destination) : p.efekt(e, efekty).catch((x) => p.zaznamenatChybu(`Efekt ${e.soubor} nehraje: ${x.message ?? x}`))),
+      priEfektu: (e) => {
+        if (e.test) return p.test(p.ctx.destination);
+        return p.efekt(e, efekty)
+          .then((delka) => {
+            if (e.uhnout) p.uhnout(uhybHudby, delka);
+          })
+          .catch((x) => p.zaznamenatChybu(`Efekt ${e.soubor} nehraje: ${x.message ?? x}`));
+      },
     });
     ({ g: sbernice, tlumeni: tlumeniAmbientu } = p.sberniceSTlumenim());
-    ({ g: sberniceHudby, tlumeni: tlumeniHudby } = p.sberniceSTlumenim());
+    ({ g: sberniceHudby, tlumeni: tlumeniHudby, uhyb: uhybHudby } = p.sberniceSTlumenim());
     efekty = p.sbernice();
     const priChybe = (t) => {
       p.zaznamenatChybu(t);
@@ -89,12 +101,15 @@
     };
     ambient = new Vrstvy(p.ctx, sbernice, priChybe);
     hudba = new Vrstvy(p.ctx, sberniceHudby, priChybe);
-    p.hraje = () => [...hudba.hraje(), ...ambient.hraje()];
+    smycky = new Vrstvy(p.ctx, efekty, priChybe);
+    p.hraje = () => [...hudba.hraje(), ...ambient.hraje(), ...smycky.hraje()];
 
     function vykreslit() {
       const s = posledni;
       $('#odemknout').hidden = p.odemceno;
       $('#stav-hraje').textContent = !s ? 'Čekám na Hub…' : s.ambient.length ? `Ambient: ${s.ambient.map((a) => `${a.soubor} (${Math.round(a.hlasitost * 100)} %)`).join(', ')}` : 'Teď nehraje žádný ambient.';
+      $('#stav-smycky').hidden = !s?.smycky?.length;
+      $('#stav-smycky').textContent = s?.smycky?.length ? `Smyčky: ${s.smycky.map((x) => x.soubor.split('/').pop()).join(', ')}` : '';
       $('#stav-hudba').textContent = !s ? 'Hudba: čekám na Hub…' : s.hudbaKde === 'obs' ? 'Hudba hraje v OBS (Nastavení → Zvuk).' : `Hudba: ${s.hudba?.soubor ?? 'žádná'}`;
       $('#stav-ticho').hidden = !s?.ticho;
       $('#stav-tlumeni').hidden = !s?.tlumeni?.aktivni;
@@ -109,6 +124,7 @@
       if (posledni) {
         ambient.nastavit(posledni.ambient, 300);
         hudba.nastavit(posledni.hudbaKde !== 'obs' && posledni.hudba ? [posledni.hudba] : [], 300);
+        smycky.nastavit(posledni.smycky ?? [], 300);
       }
       vykreslit();
     });

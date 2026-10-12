@@ -743,6 +743,7 @@ function pripojitUdalosti() {
       stav.prehled.scena = data;
       vykresliScenu();
       vykresliSouboj();
+      vykresliSoundboard();
     },
     'zvuk-stav': (data) => {
       if (!stav.prehled) return;
@@ -1053,6 +1054,7 @@ function vykresliSouboj() {
   // Záložka Souboj na U stolu
   $('#souboj-stav').textContent = souboj ? 'Souboj běží.' : 'Souboj neběží.';
   $('#souboj-prepnout').textContent = souboj ? 'Konec souboje' : 'Zahájit souboj';
+  $('#souboj-bez-fanfary').hidden = !souboj;
 }
 
 $('#souboj-prepnout').addEventListener('click', () => $('#tlacitko-souboj').click());
@@ -2791,20 +2793,9 @@ function vykresliZvuk() {
   $('#zvuk-popis').textContent = z.ticho
     ? 'Ticho: hudba i ambient jsou ztlumené.'
     : `Hudba: ${z.hudba?.soubor ?? 'žádná'} · Ambient: ${z.ambient.length ? z.ambient.map((a) => a.soubor).join(', ') : 'žádný'}${z.chybiTed?.length ? ` · chybí: ${z.chybiTed.join(', ')}` : ''}`;
-  // Ruční efekty: soubory v podsložce efekty/ ve složce zvuku.
-  const efekty = $('#zvuk-efekty');
-  if (!efekty.contains(document.activeElement)) {
-    efekty.replaceChildren(
-      ...z.efekty.map((soubor) => {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.textContent = soubor.replace(/^efekty\//, '').replace(/\.[a-z0-9]+$/i, '').replace(/[-_]/g, ' ');
-        b.title = `Přehrát ${soubor} u stolu`;
-        b.addEventListener('click', () => api('/api/zvuk/efekt', { metoda: 'POST', telo: { soubor } }).catch((e) => toast(e.message, { chyba: true })));
-        return b;
-      }),
-    );
-  }
+  vykresliSoundboard();
+  $('#souboj-tahy').checked = z.tahy?.zapnuto !== false;
+  $('#zvuk-tahy-hraci').checked = z.tahy?.jenHraci === true;
 
   // Nastavení → Zvuk
   $('#zvuk-slozka-stav').textContent = `${z.slozkaNastavena ? '' : 'Nevyplněno = výchozí '}${z.slozka}: ${z.slozkaExistuje ? `${z.pocetSouboru} zvukových souborů` : 'složka neexistuje'}. Efekty pro tlačítka U stolu dej do podsložky efekty.`;
@@ -2897,6 +2888,190 @@ $('#zvuk-prohledat').addEventListener('click', async () => {
     toast(`Ve složce je ${stav.prehled.zvuk.pocetSouboru} zvukových souborů.`);
   } catch (e) {
     toast(e.message, { chyba: true });
+  }
+});
+
+/* ---------- Soundboard (otevřený bod 76) ---------- */
+
+/** Všechny zvuky knihovny (jednorázové i smyčky) s druhem. */
+function zvukyKnihovny() {
+  const k = stav.prehled?.zvuk?.knihovna;
+  if (!k) return [];
+  return [...k.jednorazove.map((x) => ({ ...x, smycka: false })), ...k.smycky.map((x) => ({ ...x, smycka: true }))];
+}
+
+/** Místo, které je teď ve scéně (k němu se zvuky připínají). */
+function mistoSceny() {
+  const id = stav.prehled?.scena?.misto?.id;
+  return id ? stav.prehled?.mista?.mista?.find((m) => m.id === id) ?? null : null;
+}
+
+/** Připnuté zvuky místa, které ve složce opravdu jsou (pořadí = klávesy 1–9). */
+function pripnuteZvuky() {
+  const vse = zvukyKnihovny();
+  return (mistoSceny()?.zvuk?.pripnute ?? []).map((id) => vse.find((x) => x.id === id)).filter(Boolean);
+}
+
+function prehratZvuk(z) {
+  const zap = stav.prehled?.zvuk?.zapnuteSmycky ?? [];
+  const pozadavek = z.smycka
+    ? api('/api/zvuk/smycka', { metoda: 'PUT', telo: { zvuk: z.id, zap: !zap.includes(z.id) } }).then((st) => {
+      stav.prehled.zvuk = st;
+      vykresliSoundboard();
+      vykresliKnihovnu();
+    })
+    : api('/api/zvuk/efekt', { metoda: 'POST', telo: { zvuk: z.id } });
+  pozadavek.catch((e) => toast(e.message, { chyba: true }));
+}
+
+function tlacitkoZvuku(z, poradi) {
+  const zap = stav.prehled?.zvuk?.zapnuteSmycky ?? [];
+  const b = document.createElement('button');
+  b.type = 'button';
+  if (poradi) {
+    const k = document.createElement('kbd');
+    k.textContent = String(poradi);
+    b.append(k);
+  }
+  b.append(z.nazev);
+  if (z.smycka) {
+    b.dataset.smycka = '';
+    b.setAttribute('aria-pressed', String(zap.includes(z.id)));
+    b.title = `${zap.includes(z.id) ? 'Vypnout' : 'Zapnout'} smyčku ${z.nazev}${z.limit_s ? ` (sama skončí po ${z.limit_s} s)` : ''}`;
+  } else {
+    b.title = `Přehrát ${z.nazev}${z.soubory.length > 1 ? ` (${z.soubory.length} variant)` : ''}`;
+  }
+  b.addEventListener('click', () => prehratZvuk(z));
+  return b;
+}
+
+function vykresliSoundboard() {
+  const z = stav.prehled?.zvuk;
+  const el = $('#zvuk-efekty');
+  if (!z || !el || el.contains(document.activeElement)) return;
+  const pripnute = pripnuteZvuky();
+  const zap = z.zapnuteSmycky ?? [];
+  // Zapnuté smyčky, které nejsou připnuté, jsou vidět taky (jde je vypnout).
+  const vse = zvukyKnihovny();
+  const dalsi = zap.filter((id) => !pripnute.some((x) => x.id === id)).map((id) => vse.find((x) => x.id === id)).filter(Boolean);
+  el.replaceChildren(...pripnute.map((x, i) => tlacitkoZvuku(x, i < 9 ? i + 1 : null)), ...dalsi.map((x) => tlacitkoZvuku(x)));
+  $('#sb-zastavit').hidden = !zap.length;
+  const misto = mistoSceny();
+  $('#sb-popis').textContent = !vse.length
+    ? 'Ve složce zvuku nejsou složky jednorazove, smycky ani efekty.'
+    : pripnute.length ? '' : `${misto ? `${misto.nazev} nemá` : 'Bez místa nejsou'} připnuté zvuky. Připneš je v Knihovně.`;
+}
+
+function vykresliKnihovnu() {
+  const dialog = $('#dialog-knihovna');
+  if (!dialog.open) return;
+  const misto = mistoSceny();
+  const pripnute = misto?.zvuk?.pripnute ?? [];
+  $('#knihovna-popis').textContent = misto
+    ? `☆ připne zvuk k místu ${misto.nazev}: pak je na U stolu a hraje klávesou 1–9.`
+    : 'Ve scéně není místo, připnout teď nejde. Přehrát můžeš cokoli.';
+  const hledat = $('#knihovna-hledat').value.trim().toLowerCase();
+  const bezDiakritiky = (t) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const vse = zvukyKnihovny().filter((x) => !hledat || bezDiakritiky(`${x.nazev} ${x.kategorie} ${x.id}`).includes(bezDiakritiky(hledat)));
+  const skupiny = new Map();
+  for (const x of vse) {
+    const k = `${x.smycka ? 'Smyčky' : 'Jednorázové'} · ${x.kategorie}`;
+    if (!skupiny.has(k)) skupiny.set(k, []);
+    skupiny.get(k).push(x);
+  }
+  const seznam = $('#knihovna-seznam');
+  if (!skupiny.size) {
+    const p = document.createElement('p');
+    p.className = 'ulozeni';
+    p.textContent = zvukyKnihovny().length ? 'Nic neodpovídá hledání.' : 'Knihovna je prázdná. Dej zvuky do složek jednorazove\\<kategorie> a smycky ve složce zvuku.';
+    seznam.replaceChildren(p);
+    return;
+  }
+  seznam.replaceChildren(
+    ...[...skupiny].map(([nazev, zvuky]) => {
+      const sekce = document.createElement('section');
+      const h = document.createElement('h3');
+      h.textContent = nazev;
+      const radek = document.createElement('div');
+      radek.className = 'knihovna-skupina';
+      for (const x of zvuky) {
+        const obal = document.createElement('span');
+        obal.className = 'knihovna-zvuk';
+        const pin = document.createElement('button');
+        pin.type = 'button';
+        pin.className = 'pripnout';
+        const je = pripnute.includes(x.id);
+        pin.textContent = je ? '★' : '☆';
+        pin.setAttribute('aria-pressed', String(je));
+        pin.setAttribute('aria-label', `${je ? 'Odepnout' : 'Připnout'} ${x.nazev}`);
+        pin.disabled = !misto;
+        pin.addEventListener('click', () => pripnoutZvuk(x.id, !je));
+        obal.append(tlacitkoZvuku(x), pin);
+        radek.append(obal);
+      }
+      sekce.append(h, radek);
+      return sekce;
+    }),
+  );
+}
+
+async function pripnoutZvuk(id, pripnout) {
+  const misto = mistoSceny();
+  if (!misto) return;
+  const ted = misto.zvuk?.pripnute ?? [];
+  const nove = pripnout ? [...ted.filter((x) => x !== id), id] : ted.filter((x) => x !== id);
+  try {
+    const r = await api(`/api/mista/${misto.id}/zvuk-pripnute`, { metoda: 'PUT', telo: { pripnute: nove } });
+    const i = stav.prehled.mista.mista.findIndex((m) => m.id === misto.id);
+    if (i >= 0) stav.prehled.mista.mista[i] = r.misto;
+    vykresliKnihovnu();
+    vykresliSoundboard();
+  } catch (e) {
+    toast(e.message, { chyba: true });
+  }
+}
+
+$('#sb-knihovna').addEventListener('click', () => {
+  $('#knihovna-hledat').value = '';
+  $('#dialog-knihovna').showModal();
+  vykresliKnihovnu();
+  $('#knihovna-hledat').focus();
+});
+$('#knihovna-hledat').addEventListener('input', vykresliKnihovnu);
+$('#knihovna-hledat').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') e.preventDefault(); // Enter v hledání dialog nezavře
+});
+
+function zastavitSmycky() {
+  api('/api/zvuk/smycky/zastavit', { metoda: 'POST', telo: {} })
+    .then((st) => {
+      stav.prehled.zvuk = st;
+      vykresliSoundboard();
+      vykresliKnihovnu();
+    })
+    .catch((e) => toast(e.message, { chyba: true }));
+}
+$('#sb-zastavit').addEventListener('click', zastavitSmycky);
+
+// Klávesy 1–9 hrají připnuté zvuky, 0 vypne smyčky. Ne při psaní a ne v otevřeném dialogu.
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey || e.metaKey || e.altKey || e.repeat || !/^[0-9]$/.test(e.key)) return;
+  if (e.target.closest?.('input, textarea, select, [contenteditable="true"]') || document.querySelector('dialog[open]')) return;
+  if (!stav.prehled?.zvuk) return;
+  e.preventDefault();
+  if (e.key === '0') return zastavitSmycky();
+  const z = pripnuteZvuky()[Number(e.key) - 1];
+  if (z) prehratZvuk(z);
+});
+
+$('#souboj-tahy').addEventListener('change', (e) => ulozitZvuk({ tahy: e.target.checked }));
+$('#zvuk-tahy-hraci').addEventListener('change', (e) => ulozitZvuk({ tahyJenHraci: e.target.checked }));
+$('#souboj-bez-fanfary').addEventListener('click', async () => {
+  try {
+    const r = await api('/api/souboj', { metoda: 'POST', telo: { zapnout: false, fanfara: false } });
+    if (r.chybaObs) toast(r.chybaObs, { chyba: true });
+  } catch (chyba) {
+    toast(chyba.message, { chyba: true });
   }
 });
 

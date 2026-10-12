@@ -164,16 +164,19 @@ export class Hub {
       odkaz: () => this.iniciativa.odkaz,
       aktivni: () => this.scena.stav.rezim === 'souboj',
     });
-    // Světla podle HP (otevřený bod 72): ze stavu, který přečetlo cteniPlayerView, a jen se zapnutým vypínačem.
+    // Světla podle HP (otevřený bod 72) a zvuky na tahu (bod 76): ze stavu, který přečetlo cteniPlayerView.
     this.sledovaniHp = new SledovaniHp({
       odkaz: () => this.iniciativa.odkaz,
+      // Player View se čte celý souboj (zvuky na tahu); málo HP jen se zapnutým vypínačem.
       // Obraz pulzuje i s vypnutým Řídit světla; lampa jen s ním (hlídá Svetla).
-      aktivni: () => this.scena.stav.rezim === 'souboj' && this.nastaveni.hodnoty.HP_SVETLA !== '0',
+      aktivni: () => this.scena.stav.rezim === 'souboj',
+      hlidatHp: () => this.nastaveni.hodnoty.HP_SVETLA !== '0',
       nacist: () => this.cteniPlayerView.posledni(),
     });
     // Animace zásahu (otevřený bod 75): výstup uder.html.
     this.udery = new Udery();
     this.sledovaniHp.on('zmena', (k) => this.svetla.nastavitKritickeHp(k));
+    this.sledovaniHp.on('tah', (kdo) => this.zvuk.tah(kdo));
     this.svetla.on('kriticke-hp', (k) => {
       // Obraz tepe v rytmu lampy: délka cyklu = fáze A + B z Nastavení → Světla.
       const hp = this.svetla.mistni.hp;
@@ -311,6 +314,11 @@ export class Hub {
       this.svetla.zmenaSceny();
       this.zvuk.zmenaSceny();
       this.svetla.oznam();
+      this.data.naplanovatKontrolu();
+      return;
+    }
+    if (path.resolve(soubor) === path.join(this.c.kampan, 'zvuky.yaml')) {
+      await this.zvuk.nacistMapu();
       this.data.naplanovatKontrolu();
       return;
     }
@@ -608,7 +616,7 @@ export class Hub {
     }
     if ((p === '/api/souboj' || p === '/api/obs/souboj') && m === 'POST') {
       const telo = await nacistJson(req);
-      return poslatJson(res, 200, await this.souboj(telo.zapnout !== false));
+      return poslatJson(res, 200, await this.souboj(telo.zapnout !== false, { fanfara: telo.fanfara !== false }));
     }
     if (p.startsWith('/api/zvuk')) {
       const v = await this.apiZvuk(req, m, p, url);
@@ -682,7 +690,7 @@ export class Hub {
    * přepne na scénu Souboj a světla na bojová. Konec vrátí OBS i světla do stavu před soubojem.
    * Scéna Hubu se přepne i bez OBS; chyba OBS se jen ohlásí.
    */
-  async souboj(zapnout) {
+  async souboj(zapnout, { fanfara = true } = {}) {
     let scenaObs = null;
     let chybaObs = null;
     if (zapnout) {
@@ -691,7 +699,10 @@ export class Hub {
       const predtim = this.scena.stav.rezim === 'souboj' ? undefined : this.obs.aktualniScena ?? null;
       if (predtim !== undefined) this.scena.zahajitSouboj({ obsScena: predtim === scenaObs ? null : predtim });
     } else {
+      const bezel = this.scena.stav.rezim === 'souboj';
       scenaObs = this.scena.ukoncitSouboj().obsScena;
+      // Vítězná fanfára (otevřený bod 76); „Konec bez fanfáry“ pro útěk nebo prohru.
+      if (bezel && fanfara) this.zvuk.fanfara();
     }
     const zacatek = Date.now();
     if (scenaObs) {
@@ -723,6 +734,11 @@ export class Hub {
       return z.hlasit(String(telo.stranka), telo);
     }
     if (p === '/api/zvuk/efekt' && m === 'POST') return z.efekt(await nacistJson(req));
+    if (p === '/api/zvuk/smycka' && m === 'PUT') return z.smycka(await nacistJson(req));
+    if (p === '/api/zvuk/smycky/zastavit' && m === 'POST') {
+      await nacistJson(req);
+      return z.zastavitSmycky();
+    }
     return undefined;
   }
 
@@ -878,6 +894,8 @@ export class Hub {
 
   async apiMista(req, m, p, url) {
     if (p === '/api/mista' && m === 'GET') return this.mista.seznam();
+    const pz = /^\/api\/mista\/([a-z0-9-]{1,60})\/zvuk-pripnute$/.exec(p);
+    if (pz && m === 'PUT') return this.mista.nastavitPripnute(pz[1], (await nacistJson(req)).pripnute);
     const mz = /^\/api\/mista\/([a-z0-9-]{1,60})\/zvuk\/(den|noc)$/.exec(p);
     if (mz && m === 'PUT') {
       const v = await this.mista.nastavitZvuk(mz[1], mz[2], await nacistJson(req));

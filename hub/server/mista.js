@@ -8,6 +8,7 @@ import YAML from 'yaml';
 import { rozebrat, upravitDokument } from './frontmatter.js';
 import { zapsatAtomicky } from './zapis.js';
 import { normalizujZvukMista, platneJmeno } from './zvuk.js';
+import { platneId } from './zvuky-knihovna.js';
 
 export const UCELY = Object.freeze(['scena', 'portret', 'token', 'karta']);
 export const VARIANTY = Object.freeze(['den', 'noc']);
@@ -202,6 +203,29 @@ export class Mista extends EventEmitter {
         else uzel.set(k, v);
       }
       if (!uzel.items.length) zvuk.delete(varianta);
+      if (!zvuk.items.length) dok.delete('zvuk');
+    });
+    return { misto: this.get(id) };
+  }
+
+  /** Připnuté zvuky soundboardu pro místo (`zvuk.pripnute`, otevřený bod 76): ID skupin v pořadí tlačítek. */
+  async nastavitPripnute(id, seznam) {
+    this.get(id);
+    if (!Array.isArray(seznam) || seznam.length > 24) throw chyba('Připnout jde nejvýš 24 zvuků.');
+    const ids = [...new Set(seznam.map(platneId))];
+    if (ids.some((x) => !x)) throw chyba('Neplatné jméno zvuku.');
+    await this.upravitSoubor(id, (dok) => {
+      let zvuk = dok.get('zvuk', true);
+      if (!YAML.isMap(zvuk)) {
+        if (!ids.length) return;
+        zvuk = dok.createNode({});
+        dok.set('zvuk', zvuk);
+      }
+      if (ids.length) {
+        const uzel = dok.createNode(ids);
+        uzel.flow = true;
+        zvuk.set('pripnute', uzel);
+      } else zvuk.delete('pripnute');
       if (!zvuk.items.length) dok.delete('zvuk');
     });
     return { misto: this.get(id) };

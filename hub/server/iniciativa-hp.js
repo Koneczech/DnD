@@ -24,18 +24,35 @@ export function kritickaPostava(stav, prah = PRAH_HP) {
   return { jmeno: naTahu.Name, hp: hp.hp, max: hp.max };
 }
 
+/** Kdo je na tahu: {id, jmeno, hrac, tagy}, nebo null. Tagy jsou jen ty, které Player View ukazuje hráčům. */
+export function naTahu(stav) {
+  const s = stav?.encounterState ?? stav;
+  const c = (s?.Combatants ?? []).find((x) => x.Id === s?.ActiveCombatantId);
+  if (!c) return null;
+  const tagy = (Array.isArray(c.Tags) ? c.Tags : [])
+    .map((t) => (typeof t === 'string' ? t : t?.Text))
+    .filter((t) => typeof t === 'string' && t.trim())
+    .map((t) => t.trim().slice(0, 60));
+  return { id: String(c.Id), jmeno: String(c.Name ?? ''), hrac: c.IsPlayerCharacter === true, tagy };
+}
+
 /** ID setkání z odkazu na Player View (…/p/<id>). */
 export function idSetkani(odkaz) {
   const m = String(odkaz ?? '').match(/\/p\/([A-Za-z0-9_-]+)/);
   return m ? m[1] : null;
 }
 
-/** Události: 'zmena' ({jmeno, hp, max} nebo null). */
+/**
+ * Události: 'zmena' ({jmeno, hp, max} nebo null) pro málo HP, 'tah' ({id, jmeno, hrac, tagy}) při změně
+ * postavy na tahu (zvuky na tahu, otevřený bod 76).
+ */
 export class SledovaniHp extends EventEmitter {
-  constructor({ odkaz, aktivni, intervalMs = 1500, nacist }) {
+  constructor({ odkaz, aktivni, hlidatHp = () => true, intervalMs = 1000, nacist }) {
     super();
     this.odkaz = odkaz; // () => odkaz na Player View
-    this.aktivni = aktivni; // () => běží souboj a světla podle HP jsou zapnutá
+    this.aktivni = aktivni; // () => běží souboj
+    this.hlidatHp = hlidatHp; // () => světla podle HP jsou zapnutá
+    this.naTahu = null; // ID bytosti na tahu
     this.intervalMs = intervalMs;
     this.nacist = nacist ?? nacistPlayerView;
     this.stav = null;
@@ -57,7 +74,13 @@ export class SledovaniHp extends EventEmitter {
     this.bezi = true;
     try {
       const id = idSetkani(this.odkaz());
-      const novy = this.aktivni() && id ? kritickaPostava(await this.nacist(id)) : null;
+      const stav = this.aktivni() && id ? await this.nacist(id) : null;
+      const kdo = stav ? naTahu(stav) : null;
+      if ((kdo?.id ?? null) !== this.naTahu) {
+        this.naTahu = kdo?.id ?? null;
+        if (kdo) this.emit('tah', kdo);
+      }
+      const novy = stav && this.hlidatHp() ? kritickaPostava(stav) : null;
       const klic = (x) => (x ? `${x.jmeno}:${x.hp}/${x.max}` : '');
       if (klic(novy) !== klic(this.stav)) {
         this.stav = novy;

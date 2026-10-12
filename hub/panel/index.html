@@ -189,6 +189,8 @@
                 <p class="ulozeni" id="souboj-popis" title="Souboj přepne OBS na scénu s iniciativou, světla na bojová a hudbu na bojovou. Ambient počasí nechá. Konec souboje vrátí scénu i světla přesně tam, kde byly.">Přepne OBS na iniciativu, světla a hudbu na bojové; konec vrátí, co bylo.</p>
                 <button type="button" class="tiche" id="iniciativa-okno" title="Otevře Improved Initiative v běžné záložce (s Epic účtem), nebo ji přenese do popředí">V záložce <kbd>F4</kbd></button>
                 <button type="button" class="hlavni" id="souboj-prepnout">Zahájit souboj</button>
+                <button type="button" class="tiche" id="souboj-bez-fanfary" hidden title="Konec souboje bez vítězné fanfáry (útěk, prohra)">Konec bez fanfáry</button>
+                <label class="prepinac-zap souboj-tahy" title="Při změně tahu zahraje zvuk postavy (kampan/zvuky.yaml)"><input type="checkbox" id="souboj-tahy" role="switch"> <span>Zvuky tahů</span></label>
                 <form class="iniciativa-odkaz" id="iniciativa-formular" autocomplete="off">
                   <label for="iniciativa-pole">Player View</label>
                   <input id="iniciativa-pole" type="url" placeholder="https://improvedinitiative.app/p/…" spellcheck="false">
@@ -247,7 +249,13 @@
               <label class="posuvnik-zvuku">Hudba <input type="range" id="zvuk-hudba" min="0" max="100" step="5"> <output id="zvuk-hudba-hodnota"></output></label>
               <label class="posuvnik-zvuku">Ambient <input type="range" id="zvuk-ambient" min="0" max="100" step="5"> <output id="zvuk-ambient-hodnota"></output></label>
               <p class="ulozeni" id="zvuk-popis" aria-live="polite"></p>
-              <div class="zvuk-efekty" id="zvuk-efekty" aria-label="Zvukové efekty"></div>
+              <div class="soundboard-hlava">
+                <h3>Soundboard</h3>
+                <button type="button" class="tiche" id="sb-zastavit" hidden title="Vypne všechny zapnuté smyčky">Zastavit smyčky <kbd>0</kbd></button>
+                <button type="button" id="sb-knihovna" title="Všechny zvuky ze složky zvuku; tady je připneš k místu">Knihovna…</button>
+              </div>
+              <div class="zvuk-efekty" id="zvuk-efekty" aria-label="Připnuté zvuky"></div>
+              <p class="ulozeni" id="sb-popis"></p>
             </div>
           </aside>
         </div>
@@ -584,6 +592,7 @@
                 <button type="button" id="zvuk-tlumeni-zkusit">Vyzkoušet 12 s</button>
               </div>
               <p class="poznamka">Když je na tahu postava s málo HP, hudba nezeslábne, ale zní tupě, jako přes ucpané uši. Zkouška pustí i pulz lampy a kraje obrazu v OBS (stejně jako v Nastavení → Světla → Málo HP).</p>
+              <label class="prepinac-zap samostatny"><input type="checkbox" id="zvuk-tahy-hraci" role="switch"> <span>Zvuky tahů jen pro postavy hráčů (bez společného zvuku nepřátel)</span></label>
               <p class="ulozeni" id="zvuk-volby-vysledek" aria-live="polite"></p>
               <h2>Složka zvuku</h2>
               <div class="formular siroky">
@@ -689,6 +698,18 @@
         <button type="submit" class="hlavni" value="ukoncit" id="ukoncit-potvrdit">Ukončit a uložit do GitHubu</button>
         <button type="submit" value="jen-ukoncit" id="ukoncit-bez-gitu">Jen ukončit</button>
         <button type="submit" value="zrusit" formnovalidate>Zpět</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dialog-knihovna" class="dialog dialog-siroky">
+    <form method="dialog" id="formular-knihovna">
+      <h2>Knihovna zvuků</h2>
+      <p class="uvod" id="knihovna-popis"></p>
+      <input type="search" id="knihovna-hledat" placeholder="Hledat zvuk…" autocomplete="off" aria-label="Hledat zvuk">
+      <div class="knihovna-seznam" id="knihovna-seznam"></div>
+      <div class="tlacitka">
+        <button type="submit" value="zavrit">Zavřít <kbd>Esc</kbd></button>
       </div>
     </form>
   </dialog>

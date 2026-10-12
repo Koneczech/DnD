@@ -1,0 +1,32 @@
+# Soundboard a zvuky na tahu (ZADANI.md, otevřený bod 76). Soubory leží ve složce zvuku mimo repo
+# (Nastavení → Zvuk), tady jsou jen jejich jména bez přípony. Hub soubor čte znovu při každé změně.
+#
+# Složky ve složce zvuku:
+#   jednorazove/<kategorie>/   jednorázové zvuky (kategorie = skupina tlačítek: boj, zvirata, voda …)
+#   smycky/<kategorie>/        smyčky: klik zapne, další klik vypne
+#   tahy/                      zvuky na tah v souboji
+# Varianty: mec-1.mp3, mec-2.mp3 … jsou jedno tlačítko „mec“, hraje náhodná varianta.
+schema: 1
+
+# Popisky tlačítek a automatický konec smyček (nepovinné; bez zápisu je popisek jméno souboru).
+zvuky:
+  smycky/poplasny-zvon: { nazev: Poplašný zvon, limit_s: 20 }
+
+# Zvuky na tah: Hub během souboje čte Player View z Improved Initiative. Při změně tahu zahraje
+# zvuk postavy (podle jména v Improved Initiative), u ostatních bytostí společný zvuk nepřátel.
+tahy:
+  postavy:
+    Tusker: tahy/tusker
+    Koudur: tahy/koudur
+    Leta: tahy/leta
+    Malk Orren: tahy/malk
+    Alba:
+      vychozi: tahy/alba
+      # Divoká podoba: DM přidá Albě v Improved Initiative viditelný tag s názvem podoby.
+      # Doplň podle Albiných známých podob, např.:
+      # podle_tagu:
+      #   Vlk: zvirata/vlk-vyti
+  # Tagy pro kohokoli na tahu, např. tlukot srdce u postavy v bezvědomí:
+  # tagy:
+  #   Unconscious: tahy/srdce
+  nepratele: tahy/nepritel

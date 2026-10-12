@@ -36,4 +36,7 @@ async function ukoncit() {
 process.on('SIGINT', ukoncit);
 process.on('SIGTERM', ukoncit);
 process.on('message', (z) => z?.typ === 'ukoncit' && ukoncit());
-process.on('unhandledRejection', (e) => console.error('Neošetřená chyba:', e));
+process.on('unhandledRejection', (e) => {
+  console.error('Neošetřená chyba:', e);
+  hub.zaznam?.chyba('hub', `Neošetřená chyba: ${e?.message ?? e}`);
+});

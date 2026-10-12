@@ -42,6 +42,7 @@ class Smycka {
     const p = this.prvky[0];
     p.g.gain.setValueAtTime(1, this.ctx.currentTime);
     await p.a.play();
+    this.spustena = true;
   }
 
   /** Kousek před koncem spustí druhý prvek od začátku a oba prolne. */
@@ -55,7 +56,15 @@ class Smycka {
       p.a.play().catch(() => {});
       return;
     }
-    if (!Number.isFinite(d) || p.a.paused) return;
+    if (p.a.paused) {
+      // Spuštěná smyčka se sama zastavila (prohlížeč přerušil přehrávání): po chvilce ji rozjeď znovu.
+      if (this.spustena && performance.now() - (this.posledniOziveni ?? 0) > 2000) {
+        this.posledniOziveni = performance.now();
+        p.a.play().catch(() => {});
+      }
+      return;
+    }
+    if (!Number.isFinite(d)) return;
     if (d < KRATKA_SMYCKA_S) {
       p.a.loop = true; // krátký zvuk: prolnutí by bylo delší než on sám
       return;
@@ -130,9 +139,20 @@ export class Vrstvy {
       const s = new Smycka(this.ctx, this.cil, x, this.priChybe);
       this.smycky.set(soubor, s);
       // Prolnutí začne až s prvním zvukem nové smyčky: stará mezitím dohrává, ticho nevznikne.
-      s.spustit()
-        .then(() => s.hlasitost(cil, prolnutiMs))
-        .catch((e) => this.priChybe?.(e?.name === 'NotAllowedError' ? 'Prohlížeč zatím nepovolil zvuk. Klikni do stránky.' : `Soubor ${soubor} nehraje: ${e?.message ?? e}`));
+      // AbortError („play() interrupted by pause()“): přehrávání přerušil prohlížeč (přepnutí výstupu,
+      // načítání), ne soubor. Smyčka, která pořád má hrát, to zkusí znovu, jinak by zůstala potichu.
+      const zkusit = (pokus) =>
+        s.spustit()
+          .then(() => s.hlasitost(cil, prolnutiMs))
+          .catch((e) => {
+            if (s.zastaveno) return;
+            if (e?.name === 'AbortError' && pokus < 5) {
+              setTimeout(() => !s.zastaveno && zkusit(pokus + 1), 300 * (pokus + 1));
+              return;
+            }
+            this.priChybe?.(e?.name === 'NotAllowedError' ? 'Prohlížeč zatím nepovolil zvuk. Klikni do stránky.' : `Soubor ${soubor} nehraje: ${e?.message ?? e}`);
+          });
+      zkusit(0);
     }
   }
 

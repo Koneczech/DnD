@@ -25,11 +25,11 @@ ilustrace:
     puvod: src/places/Lurkwood/les-vuz.png
   - soubor: tabor-zajatci.png
     ucel: scena
-    skryta: false
+    skryta: true
     puvod: src/places/Lurkwood/les-zajatci.png
   - soubor: les-prokleti.png
     ucel: scena
-    skryta: true
+    skryta: false
     puvod: src/places/Lurkwood/les-corrupted.png
   - soubor: les-prokleti-detail.png
     ucel: scena

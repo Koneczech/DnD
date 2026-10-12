@@ -94,6 +94,8 @@ export function karta(c) {
     tagy: t,
     hp: m?.druh === 'cisla' ? { hp: m.hp, docasne: m.docasne, max: m.max } : null,
     barvaHp: /^rgb\(/.test(String(c.HPColor ?? '')) ? c.HPColor : null,
+    // Poražený (0 HP nebo Defeated): výstup kartu ukáže zašedlou (otevřený bod 79).
+    porazeny: padly(c, m),
   };
 }
 

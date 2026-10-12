@@ -611,18 +611,34 @@ export class Svetla extends EventEmitter {
     if (!this.smiZablesknout()) return { blesk: false, duvod: 'Limit 3 záblesky za sekundu.' };
     const [od, do_] = v.hrom;
     this.emit('blesk', { vzdalenost: vzdalenost ?? s.bourka ?? 'blizko', jas: v.jas, hromZaMs: Math.round(od + this.nahodne() * (do_ - od)) });
-    if (!this.mistni.ridit) return { blesk: true };
-    const cile = this.cil();
+    if (!this.mistni.ridit || this.nabeh) return { blesk: true };
     const posun = v.posunMs ?? 0;
+    // Lampa a pozadí při málo HP pulzují; blesk je nepřeruší.
+    const role = v.role.filter((r) => !(this.pulzBezi && ROLE_PRI_HP.includes(r)));
     await Promise.all(
-      v.role.map(async (role, i) => {
-        await new Promise((r) => setTimeout(r, i * posun));
-        const zarizeni = [...this.zarizeni.values()].filter((z) => z.role === role && z.ovladac);
+      role.map(async (r, i) => {
+        await new Promise((ok) => setTimeout(ok, i * posun));
+        const zarizeni = [...this.zarizeni.values()].filter((z) => z.role === r && z.ovladac);
         await Promise.all(zarizeni.map((z) => this.poslat(z, { zap: true, jas: v.jas, rgb: [235, 240, 255] }, 0)));
-        await new Promise((r) => setTimeout(r, 90));
-        await Promise.all(zarizeni.map((z) => this.poslat(z, cile[role], 120)));
+        await new Promise((ok) => setTimeout(ok, 90));
+        // Návrat na to, co má role svítit teď (scéna, bez vlastních světel výchozí stav).
+        await Promise.all(zarizeni.map((z) => this.poslat(z, this.cil()[r], 120)));
       }),
     );
+    // Hue doručuje rychle po sobě jdoucí příkazy přes Zigbee bez záruky pořadí: záblesk může dorazit
+    // až po návratu a světlo zůstane bílé. Proto za 0,8 s ještě jednou pošle správný stav.
+    const pojistka = setTimeout(() => {
+      if (!this.mistni.ridit || this.nabeh) return;
+      const cile = this.cil();
+      for (const z of this.zarizeni.values()) {
+        if (!role.includes(z.role) || !z.ovladac) continue;
+        if (this.pulzBezi && ROLE_PRI_HP.includes(z.role)) continue;
+        this.poslat(z, cile[z.role], 300).then(() => {
+          if (z.ok) z.posledni = JSON.stringify(cile[z.role]);
+        }).catch(() => {});
+      }
+    }, 800);
+    pojistka.unref?.();
     return { blesk: true };
   }
 

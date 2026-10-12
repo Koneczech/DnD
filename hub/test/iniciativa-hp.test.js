@@ -185,3 +185,36 @@ test('odpočet: světla se z aktuálního stavu přelévají do výchozího a po
   assert.equal(svetla.nabeh, null, 'vypnutý přepínač: nic');
   svetla.zastavit();
 });
+
+test('blesk: světlo se vrátí na stav scény a za 0,8 s ho Hub pošle ještě jednou', async () => {
+  const { Svetla } = await import('../server/svetla.js');
+  const os = await import('node:os');
+  const path = await import('node:path');
+  const prikazy = [];
+  const svetla = new Svetla({
+    cesty: { lokalniStav: path.join(os.tmpdir(), 'hub-blesk-test'), kampan: path.join(os.tmpdir(), 'hub-hp-neni') },
+    nastaveni: () => ({ SVETLA_LAMPA: 'wiz:10.0.0.9' }),
+    misto: () => null,
+    scena: () => ({ varianta: 'den', pocasi: [], intenzita: 0, bourka: 'nad-nami' }),
+    ovladace: { wiz: () => ({ nastavit: async (cil) => prikazy.push(cil), stav: async () => ({}) }) },
+  });
+  svetla.sestavitZarizeni();
+  svetla.mistni.ridit = true;
+  svetla.zablesky = [];
+  await svetla.blesk({ vzdalenost: 'nad-nami' });
+  const cil = svetla.cil().lampa;
+  assert.deepEqual(prikazy[0].rgb, [235, 240, 255], 'záblesk');
+  assert.deepEqual(prikazy[1], cil, 'návrat');
+  await new Promise((r) => setTimeout(r, 1000));
+  assert.deepEqual(prikazy.at(-1), cil, 'pojistka pošle stav scény znovu');
+  assert.equal(prikazy.length, 3);
+  // Při málo HP lampa pulzuje a blesk na ni nesahá.
+  svetla.pulzBezi = true;
+  prikazy.length = 0;
+  svetla.zablesky = [];
+  await svetla.blesk({ vzdalenost: 'nad-nami' });
+  await new Promise((r) => setTimeout(r, 1000));
+  assert.equal(prikazy.length, 0);
+  svetla.pulzBezi = false;
+  svetla.zastavit();
+});

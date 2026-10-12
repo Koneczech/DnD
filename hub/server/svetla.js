@@ -33,10 +33,13 @@ export const VYCHOZI_HP = Object.freeze({
   a: { rgb: [255, 0, 0], jas: 100, s: 3 },
   b: { rgb: [255, 110, 0], jas: 70, s: 1 },
   pozadi: { rgb: [255, 0, 0], jas: 100, nabeh_s: 3 },
+  // Hlavní světlo v herně (otevřený bod 82): zčervená se stejným náběhem jako pozadí. Plná barva
+  // na přání DM (výjimka ze stropu sytosti, rozhodnutí 64), jas nejméně podlaha jasu kvůli deníkům.
+  hlavni: { zap: true, rgb: [255, 0, 0], jas: 60 },
 });
 /** Nejkratší fáze: 0,5 s = nejvýš 2 změny za sekundu, pod hranicí 3 záblesků (rozhodnutí 64). */
 export const HP_NEJKRATSI_S = 0.5;
-const ROLE_PRI_HP = ['lampa', 'pozadi'];
+const ROLE_PRI_HP_ZAKLAD = ['lampa', 'pozadi'];
 
 /** Ověří a doplní nastavení málo HP; chybu ohlásí srozumitelně. */
 export function normalizujHp(z, puvodni = VYCHOZI_HP) {
@@ -64,6 +67,14 @@ export function normalizujHp(z, puvodni = VYCHOZI_HP) {
       rgb: barva(z[f].rgb, `Lampa ${f.toUpperCase()}`) ?? v[f].rgb,
       jas: cislo(z[f].jas, 1, 100, `Jas lampy ${f.toUpperCase()}`) ?? v[f].jas,
       s: cislo(z[f].s, HP_NEJKRATSI_S, 30, `Délka fáze ${f.toUpperCase()} (s)`) ?? v[f].s,
+    };
+  }
+  if (z.hlavni) {
+    if (z.hlavni.zap !== undefined && typeof z.hlavni.zap !== 'boolean') throw chyba('Hlavní světlo při málo HP je zapnuté, nebo vypnuté.');
+    v.hlavni = {
+      zap: z.hlavni.zap ?? v.hlavni.zap,
+      rgb: barva(z.hlavni.rgb, 'Hlavní světlo') ?? v.hlavni.rgb,
+      jas: cislo(z.hlavni.jas, PODLAHA_JASU, 100, 'Jas hlavního světla') ?? v.hlavni.jas,
     };
   }
   if (z.pozadi) {
@@ -329,7 +340,7 @@ export class Svetla extends EventEmitter {
       await Promise.all(
         [...this.zarizeni.values()].map(async (z) => {
           // Lampa a pozadí při málo HP scénu neposlouchají, dokud tah postavy neskončí.
-          if (this.pulzBezi && ROLE_PRI_HP.includes(z.role) && !vynutit) return;
+          if (this.pulzBezi && this.rolePriHp().includes(z.role) && !vynutit) return;
           // Během odpočtu světla plynou do výchozího stavu; scéna je převezme až po něm.
           if (this.nabeh && !vynutit) return;
           const cil = cile[z.role];
@@ -412,6 +423,11 @@ export class Svetla extends EventEmitter {
     return this.verejny();
   }
 
+  /** Role, které při málo HP poslouchají pulz, ne scénu (hlavní světlo jen se zapnutou volbou). */
+  rolePriHp() {
+    return this.mistni.hp?.hlavni?.zap ? [...ROLE_PRI_HP_ZAKLAD, 'hlavni'] : ROLE_PRI_HP_ZAKLAD;
+  }
+
   /** Výchozí stav rolí (s pojistkami hlavního světla). */
   cileVychozi() {
     return pojistky(Object.fromEntries(ROLE.map((r) => [r, normalizujRoli(this.mistni.vychozi[r]) ?? normalizujRoli(VYCHOZI_SVETLA[r])])));
@@ -460,7 +476,7 @@ export class Svetla extends EventEmitter {
       if (this.nabeh?.token !== token) return;
       const t = Math.min(1, (Date.now() - zacatek) / (konecMs - zacatek));
       for (const z of zarizeni) {
-        if (this.pulzBezi && ROLE_PRI_HP.includes(z.role)) continue;
+        if (this.pulzBezi && this.rolePriHp().includes(z.role)) continue;
         const cil = cile[z.role];
         const o = od.get(z.klic);
         let mezi = cil;
@@ -614,7 +630,7 @@ export class Svetla extends EventEmitter {
     if (!this.mistni.ridit || this.nabeh) return { blesk: true };
     const posun = v.posunMs ?? 0;
     // Lampa a pozadí při málo HP pulzují; blesk je nepřeruší.
-    const role = v.role.filter((r) => !(this.pulzBezi && ROLE_PRI_HP.includes(r)));
+    const role = v.role.filter((r) => !(this.pulzBezi && this.rolePriHp().includes(r)));
     await Promise.all(
       role.map(async (r, i) => {
         await new Promise((ok) => setTimeout(ok, i * posun));
@@ -632,7 +648,7 @@ export class Svetla extends EventEmitter {
       const cile = this.cil();
       for (const z of this.zarizeni.values()) {
         if (!role.includes(z.role) || !z.ovladac) continue;
-        if (this.pulzBezi && ROLE_PRI_HP.includes(z.role)) continue;
+        if (this.pulzBezi && this.rolePriHp().includes(z.role)) continue;
         this.poslat(z, cile[z.role], 300).then(() => {
           if (z.ok) z.posledni = JSON.stringify(cile[z.role]);
         }).catch(() => {});
@@ -661,6 +677,10 @@ export class Svetla extends EventEmitter {
       this.pulzBezi = true;
       const nabeh = Math.round(n.pozadi.nabeh_s * 1000);
       Promise.all(zarizeniRole('pozadi').map((z) => this.poslat(z, { zap: true, jas: n.pozadi.jas, rgb: n.pozadi.rgb }, nabeh))).catch(() => {});
+      if (n.hlavni?.zap) {
+        const cil = { zap: true, jas: Math.max(PODLAHA_JASU, n.hlavni.jas), rgb: n.hlavni.rgb };
+        Promise.all(zarizeniRole('hlavni').map((z) => this.poslat(z, cil, nabeh))).catch(() => {});
+      }
       let faze = 'a';
       let predchozi = null;
       const krok = () => {
@@ -685,7 +705,7 @@ export class Svetla extends EventEmitter {
         clearInterval(z.prelivani);
         z.pulzCeka = null; // čekající krok pulzu už nepošle; návrat ke scéně jde po tom, co je na cestě
       }
-      for (const z of this.zarizeni.values()) if (ROLE_PRI_HP.includes(z.role)) z.posledni = null;
+      for (const z of this.zarizeni.values()) if (this.rolePriHp().includes(z.role)) z.posledni = null;
       if (this.mistni.ridit) this.aplikovat({ prechodMs: Math.round(n.pozadi.nabeh_s * 1000) }).catch(() => {});
       else this.normal().catch(() => {}); // po zkoušce bez Řídit světla zpět na výchozí stav
     }

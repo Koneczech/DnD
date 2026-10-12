@@ -218,3 +218,33 @@ test('blesk: světlo se vrátí na stav scény a za 0,8 s ho Hub pošle ještě 
   svetla.pulzBezi = false;
   svetla.zastavit();
 });
+
+test('málo HP: hlavní světlo zčervená s náběhem a scéna ho nepřebije; vypnutá volba ho nechá', async () => {
+  const { Svetla } = await import('../server/svetla.js');
+  const os = await import('node:os');
+  const path = await import('node:path');
+  const prikazy = [];
+  const svetla = new Svetla({
+    cesty: { lokalniStav: path.join(os.tmpdir(), 'hub-hp-hlavni'), kampan: path.join(os.tmpdir(), 'hub-hp-neni') },
+    nastaveni: () => ({ SVETLA_HLAVNI: 'wiz:10.0.0.7' }),
+    misto: () => null,
+    scena: () => ({ varianta: 'den', pocasi: [], intenzita: 0 }),
+    ovladace: { wiz: () => ({ nastavit: async (cil) => prikazy.push(cil), stav: async () => ({}) }) },
+  });
+  svetla.sestavitZarizeni();
+  svetla.mistni.ridit = true;
+  svetla.nastavitKritickeHp({ jmeno: 'Leta', hp: 2, max: 24 });
+  await new Promise((r) => setTimeout(r, 50));
+  assert.deepEqual(prikazy.at(-1), { zap: true, jas: 60, rgb: [255, 0, 0] });
+  const pocet = prikazy.length;
+  await svetla.aplikovat({ cile: { hlavni: { zap: true, jas: 70, rgb: [255, 214, 170] } } });
+  assert.equal(prikazy.length, pocet, 'scéna hlavní světlo během pulzu nepřebije');
+  svetla.nastavitKritickeHp(null);
+  svetla.mistni.hp = { ...svetla.mistni.hp, hlavni: { ...svetla.mistni.hp.hlavni, zap: false } };
+  prikazy.length = 0;
+  svetla.nastavitKritickeHp({ jmeno: 'Leta', hp: 2, max: 24 });
+  await new Promise((r) => setTimeout(r, 50));
+  assert.ok(!prikazy.some((p) => p.rgb?.[1] === 0 && p.rgb?.[0] === 255), 'vypnutá volba: hlavní světlo nezčervená');
+  svetla.nastavitKritickeHp(null);
+  svetla.zastavit();
+});

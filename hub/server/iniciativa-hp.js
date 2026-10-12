@@ -69,8 +69,8 @@ export class SledovaniHp extends EventEmitter {
   }
 }
 
-/** Stav Player View (veřejný, bez přihlášení). */
-function nacistPlayerView(id) {
+/** Stav Player View (veřejný, bez přihlášení). Čte ho i animace zásahu (iniciativa-cteni.js). */
+export function nacistPlayerView(id) {
   return new Promise((ok, chyba) => {
     const r = https.get({ host: 'improvedinitiative.app', path: `/playerviews/${encodeURIComponent(id)}`, headers: { accept: 'application/json' } }, (odpoved) => {
       if (odpoved.statusCode !== 200) {

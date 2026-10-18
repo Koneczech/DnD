@@ -492,8 +492,14 @@ export class Zvuk extends EventEmitter {
     return f ? [f] : [];
   }
 
+  /**
+   * Adresa souboru pro stránky. `?v=` je otisk souboru (velikost a čas změny): vyměněný soubor
+   * (Vyměnit, ↻, nový soubor se stejným jménem) má jinou adresu, takže ho stránka u stolu načte
+   * znovu bez F5 a neschová se za starou kopii v paměti.
+   */
   url(jmeno) {
-    return `/audio/${jmeno.split('/').map(encodeURIComponent).join('/')}`;
+    const otisk = this.otisky.get(jmeno);
+    return `/audio/${jmeno.split('/').map(encodeURIComponent).join('/')}${otisk ? `?v=${encodeURIComponent(otisk)}` : ''}`;
   }
 
   /** Pro panel: stav stránek, chybějící soubory, seznam efektů. */

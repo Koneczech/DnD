@@ -9,6 +9,8 @@ import { idSkupiny, sestavitKnihovnu, najitSkupinu, vybratVariantu, normalizujMa
 import { naTahu, SledovaniHp } from '../server/iniciativa-hp.js';
 import { docasneRepo, dokud, FalesnyObs } from './pomoc.js';
 
+const bezVerze = (u) => String(u).replace(/\?v=[^&]*$/, '');
+
 const SOUBORY = [
   'jednorazove/boj/mec-1.mp3', 'jednorazove/boj/mec-2.mp3', 'jednorazove/boj/mec-3.mp3',
   'jednorazove/zvirata/vlk-vyti.ogg', 'efekty/dvere.ogg', 'jednorazove/splouchnuti.wav',
@@ -160,7 +162,7 @@ test('soundboard v Hubu: jednorázový zvuk s variantou, smyčka zap/vyp i sama 
     let r = await t.volat('/api/zvuk/smycka', { metoda: 'PUT', telo: { zvuk: 'smycky/priroda/reka', zap: true, hlasitost: 0.6 } });
     assert.deepEqual(r.data.zapnuteSmycky, ['smycky/priroda/reka']);
     let pro = (await t.volat('/api/zvuk?pro=stranka')).data;
-    assert.deepEqual(pro.smycky.map((x) => [x.soubor, x.hlasitost, x.url]), [['smycky/priroda/reka', 0.6, '/audio/smycky/priroda/reka.mp3']]);
+    assert.deepEqual(pro.smycky.map((x) => [x.soubor, x.hlasitost, bezVerze(x.url)]), [['smycky/priroda/reka', 0.6, '/audio/smycky/priroda/reka.mp3']]);
     // Klik na smyčku v soundboardu (stejné API jako jednorázový zvuk) ji přepne.
     await t.volat('/api/zvuk/efekt', { metoda: 'POST', telo: { zvuk: 'smycky/poplasny-zvon' } });
     assert.equal((await t.volat('/api/zvuk')).data.zapnuteSmycky.length, 2);

@@ -872,3 +872,15 @@ main { padding: var(--m-4) var(--m-5) var(--m-5); }
 .hp-nastaveni .hp-prechod { grid-column: span 3; }
 .hp-nastaveni .hp-prechod small { color: var(--text-tlumeny); }
 #iniciativa-ucet { flex-basis: 100%; margin: 0; }
+
+/* Záznam událostí (Nastavení → Hub) */
+.zaznam-blok { display: grid; gap: var(--m-2); max-width: 72rem; }
+.zaznam-hlava { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--m-2) var(--m-4); }
+.zaznam { list-style: none; margin: 0; padding: var(--m-2); max-height: 22rem; overflow-y: auto; background: var(--povrch-0); border: 1px solid var(--linka); border-radius: var(--zaobleni); font-size: var(--t-popisek); }
+.zaznam li { display: grid; grid-template-columns: 4.5rem 6.5rem 1fr; gap: var(--m-2); padding: 2px 0; border-bottom: 1px solid color-mix(in srgb, var(--linka) 50%, transparent); }
+.zaznam li:last-child { border-bottom: 0; }
+.zaznam time, .zaznam .zdroj { color: var(--text-tlumeny); font-variant-numeric: tabular-nums; }
+.zaznam li.varovani .zaznam-text { color: var(--varovani); }
+.zaznam li.chyba .zaznam-text { color: var(--chyba); }
+.zaznam li.prazdny { display: block; color: var(--text-tlumeny); }
+@media (max-width: 40rem) { .zaznam li { grid-template-columns: 4.5rem 1fr; } .zaznam .zdroj { display: none; } }

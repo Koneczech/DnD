@@ -761,6 +761,7 @@ function pripojitUdalosti() {
       vykresliKontrolky();
       vykresliObrazovkuSezeni();
     },
+    zaznam: (data) => pridatDoZaznamu(data),
     odpocet: (data) => {
       if (!stav.prehled) return;
       stav.prehled.odpocet = data;
@@ -769,9 +770,10 @@ function pripojitUdalosti() {
     },
   };
   odebirat(Object.keys(obsluha), (udalost, data) => obsluha[udalost]?.(data), {
-    priStavu: (pripojeno) => {
+    priStavu: (pripojeno, poVypadku) => {
       if (pripojeno) {
         if (!stav.serverOk) nactiPrehled();
+        if (poVypadku) nactiZaznam();
       } else {
         stav.serverOk = false;
         prekresli();
@@ -2423,7 +2425,68 @@ for (const b of document.querySelectorAll('[data-kopirovat]')) {
 
 $('#adresa-vystupu').textContent = `${location.origin}/vystupy/test.html`;
 
+/* ---------- Záznam událostí (otevřený bod 84) ---------- */
+
+const MAX_ZAZNAMU_V_PANELU = 300;
+let zaznamPolozky = [];
+
+function radekZaznamu(z) {
+  const li = document.createElement('li');
+  li.className = z.uroven;
+  const cas = document.createElement('time');
+  cas.dateTime = z.cas;
+  cas.textContent = new Date(z.cas).toLocaleTimeString('cs-CZ');
+  const zdroj = document.createElement('span');
+  zdroj.className = 'zdroj';
+  zdroj.textContent = z.zdroj;
+  const zprava = document.createElement('span');
+  zprava.className = 'zaznam-text';
+  zprava.textContent = z.zprava;
+  if (z.data) zprava.title = JSON.stringify(z.data, null, 1);
+  li.append(cas, zdroj, zprava);
+  return li;
+}
+
+function vykresliZaznam() {
+  const seznam = $('#zaznam-seznam');
+  if (!seznam) return;
+  const jenProblemy = $('#zaznam-problemy').checked;
+  const vyber = zaznamPolozky.filter((z) => !jenProblemy || z.uroven !== 'info').slice().reverse();
+  if (!vyber.length) {
+    const li = document.createElement('li');
+    li.className = 'prazdny';
+    li.textContent = jenProblemy ? 'Žádná varování ani chyby.' : 'Zatím nic.';
+    seznam.replaceChildren(li);
+    return;
+  }
+  seznam.replaceChildren(...vyber.map(radekZaznamu));
+}
+
+function pridatDoZaznamu(z) {
+  if (!z || zaznamPolozky.some((x) => x.cislo === z.cislo && x.cas === z.cas)) return;
+  zaznamPolozky.push(z);
+  if (zaznamPolozky.length > MAX_ZAZNAMU_V_PANELU) zaznamPolozky.splice(0, zaznamPolozky.length - MAX_ZAZNAMU_V_PANELU);
+  const seznam = $('#zaznam-seznam');
+  if (!seznam || ($('#zaznam-problemy').checked && z.uroven === 'info')) return;
+  seznam.querySelector('.prazdny')?.remove();
+  seznam.prepend(radekZaznamu(z));
+  while (seznam.children.length > MAX_ZAZNAMU_V_PANELU) seznam.lastElementChild.remove();
+}
+
+async function nactiZaznam() {
+  try {
+    const { polozky } = await api(`/api/zaznam?n=${MAX_ZAZNAMU_V_PANELU}`);
+    zaznamPolozky = polozky;
+  } catch {
+    /* Hub neodpovídá; záznam se doplní po připojení */
+  }
+  vykresliZaznam();
+}
+
+$('#zaznam-problemy').addEventListener('change', vykresliZaznam);
+
 await nactiPrehled();
+nactiZaznam();
 ukazObrazovku(stav.prehled?.nastaveni && !stav.prehled.nastaveni.existuje && !location.hash ? 'nastaveni' : location.hash.slice(1));
 pripojitUdalosti();
 

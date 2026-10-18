@@ -666,6 +666,15 @@
                 <p class="poznamka" id="server-info"></p>
                 <button type="button" class="nebezpecne" id="tlacitko-restart">Restartovat Hub</button>
               </div>
+              <h2 id="nastaveni-zaznam">Záznam událostí</h2>
+              <div class="zaznam-blok">
+                <div class="zaznam-hlava">
+                  <label class="prepinac-zap"><input id="zaznam-problemy" type="checkbox" role="switch"> <span>Jen varování a chyby</span></label>
+                  <a class="tlacitko tiche" href="/api/zaznam/text" download id="zaznam-stahnout">Stáhnout záznam</a>
+                </div>
+                <ol class="zaznam" id="zaznam-seznam"></ol>
+                <small class="poznamka">Co Hub dělal a co selhalo: scény, hudba, stránky zvuku, světla, OBS, Player View, zásahy a tahy. Když se něco pokazí, stáhni záznam a pošli ho Claudovi. Tajné hodnoty se do záznamu nezapisují. Celé dny jsou v <code>hub/.stav/zaznam/</code> (14 dní).</small>
+              </div>
             </section>
           </div>
         </div>

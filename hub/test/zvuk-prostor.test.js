@@ -9,6 +9,8 @@ import { slozitZvuk, normalizujZvukMista, normalizujNahodne, platnaVzdalenost } 
 import { sestavitKnihovnu, najitSkupinu } from '../server/zvuky-knihovna.js';
 import { docasneRepo, dokud, FalesnyObs } from './pomoc.js';
 
+const bezVerze = (u) => String(u).replace(/\?v=[^&]*$/, '');
+
 const sc = (z = {}) => ({ varianta: 'den', pocasi: [], intenzita: 0, rezim: 'pruzkum', ...z });
 
 test('náhodné zvuky: výchozí hodnoty, meze, duplicity a nejvýš 8', () => {
@@ -155,7 +157,7 @@ test('Místa → Zvuk: náhodné zvuky, vzdálenost a dozvuk se uloží do hlavi
     const s = (await t.volat('/api/zvuk?pro=stranka')).data;
     assert.equal(s.dozvuk, 'jeskyne');
     assert.equal(s.ambient[0].vzdalenost, 0.3);
-    assert.deepEqual(s.nahodne[0].soubory.map((f) => f.url), ['/audio/nahodne/tabor/hlasy-1.mp3', '/audio/nahodne/tabor/hlasy-2.mp3']);
+    assert.deepEqual(s.nahodne[0].soubory.map((f) => bezVerze(f.url)), ['/audio/nahodne/tabor/hlasy-1.mp3', '/audio/nahodne/tabor/hlasy-2.mp3']);
     assert.deepEqual(s.nahodne[1].soubory.map((f) => f.soubor), ['jednorazove/zvirata/kun.mp3']);
 
     // Chybějící náhodný zvuk: stránka ho vynechá, panel a Kontrola dat ho ukážou.
@@ -185,6 +187,24 @@ test('Místa → Zvuk: náhodné zvuky, vzdálenost a dozvuk se uloží do hlavi
     assert.equal((await t.volat('/api/mista/tabor/zvuk-dozvuk', { metoda: 'PUT', telo: { dozvuk: 'katedrala' } })).status, 400);
     assert.equal((await t.volat('/api/mista/tabor/zvuk/den', { metoda: 'PUT', telo: { vzdalenost: 2 } })).status, 400);
     assert.equal((await t.volat('/api/mista/tabor/zvuk/den', { metoda: 'PUT', telo: { nahodne: [{ zvuk: '../ven' }] } })).status, 400);
+  } finally {
+    await t.zastavit();
+  }
+});
+
+test('vyměněný soubor má novou adresu, stránka ho načte bez F5', async () => {
+  const t = await spustitHub();
+  try {
+    await t.volat('/api/scena/zobrazit', { metoda: 'POST', telo: { misto: 'tabor' } });
+    const pred = (await t.volat('/api/zvuk?pro=stranka')).data.ambient[0].url;
+    assert.match(pred, /^\/audio\/tabor\.mp3\?v=/);
+    await new Promise((r) => setTimeout(r, 20));
+    const soubor = path.join(t.hub.zvuk.slozka, 'tabor.mp3');
+    await fs.writeFile(soubor, Buffer.from('jiny ohen '.repeat(80)));
+    await t.volat('/api/zvuk/prohledat', { metoda: 'POST', telo: {} });
+    const po = (await t.volat('/api/zvuk?pro=stranka')).data.ambient[0].url;
+    assert.notEqual(po, pred);
+    assert.equal((await fetch(t.hub.adresa + po)).status, 200, 'adresa s ?v= funguje');
   } finally {
     await t.zastavit();
   }

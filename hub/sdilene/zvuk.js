@@ -57,6 +57,7 @@ class Smycka {
   constructor(ctx, cil, { soubor, url, vzdalenost = 0 }, priChybe) {
     this.ctx = ctx;
     this.soubor = soubor;
+    this.url = url;
     this.priChybe = priChybe;
     this.vystup = ctx.createGain();
     this.vystup.gain.value = 0;
@@ -178,7 +179,13 @@ export class Vrstvy {
     for (const [soubor, x] of chci) {
       // Srovnání hlasitosti (otevřený bod 86): `zisk` dorovná soubor na výchozí hladinu svého druhu.
       const cil = (x.hlasitost ?? 1) * (x.zisk ?? 1);
-      const jiz = this.smycky.get(soubor);
+      let jiz = this.smycky.get(soubor);
+      // Soubor se vyměnil (jiný otisk v adrese): stará smyčka doběhne, nová naběhne.
+      if (jiz && x.url && jiz.url !== x.url) {
+        jiz.zastavit(prolnutiMs);
+        this.smycky.delete(soubor);
+        jiz = null;
+      }
       if (jiz) {
         jiz.hlasitost(cil, 600);
         jiz.vzdalenost.nastavit(x.vzdalenost ?? 0);

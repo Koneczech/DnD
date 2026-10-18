@@ -10,6 +10,8 @@ import { slozitZvuk, platneJmeno, normalizujZvukMista } from '../server/zvuk.js'
 import { najdiProblemy, jeZvukovySoubor } from '../hooks/pre-commit.js';
 import { docasneRepo, dokud, FalesnyObs } from './pomoc.js';
 
+const bezVerze = (u) => String(u).replace(/\?v=[^&]*$/, '');
+
 const VRSTVY = {
   pocasi: {
     dest: { zvuk: { ambient: 'dest.mp3', hlasitost_podle_intenzity: true } },
@@ -108,7 +110,7 @@ test('stránky dostanou co hrát; chybějící soubor se vynechá a panel ho uk�
     assert.equal(t.hub.zvuk.soubory.length, 6, 'jen zvukové soubory, i v podsložce');
     await t.volat('/api/scena/zobrazit', { metoda: 'POST', telo: { misto: 'les' } });
     let r = await t.volat('/api/zvuk?pro=stranka');
-    assert.equal(r.data.hudba.url, '/audio/les-den.mp3');
+    assert.equal(bezVerze(r.data.hudba.url), '/audio/les-den.mp3');
     assert.deepEqual(r.data.ambient.map((a) => a.soubor), ['les.mp3']);
     assert.equal(r.data.prolnutiMs, 2000);
     await fs.rm(path.join(t.audio, 'les.mp3'));
@@ -206,9 +208,9 @@ test('hrom zazní po blesku do 1 s (nad námi), efekty a zkušební zvuk jdou na
     assert.equal(b.data.blesk, true);
     await dokud(() => efekty.length === 1, 1500);
     assert.ok(efekty[0].cas - zacatek <= 1100);
-    assert.deepEqual([efekty[0].cil, efekty[0].url, efekty[0].hlasitost], ['stul', '/audio/hrom-1.mp3', 1]);
+    assert.deepEqual([efekty[0].cil, bezVerze(efekty[0].url), efekty[0].hlasitost], ['stul', '/audio/hrom-1.mp3', 1]);
     await t.volat('/api/zvuk/efekt', { metoda: 'POST', telo: { soubor: 'efekty/dvere.ogg' } });
-    assert.equal(efekty.at(-1).url, '/audio/efekty/dvere.ogg');
+    assert.equal(bezVerze(efekty.at(-1).url), '/audio/efekty/dvere.ogg');
     assert.equal((await t.volat('/api/zvuk/efekt', { metoda: 'POST', telo: { soubor: '../x.mp3' } })).status, 404);
     const test_ = await t.volat('/api/zvuk/efekt', { metoda: 'POST', telo: { test: true, cil: 'hudba' } });
     assert.equal(test_.data.pripojeno, false);
@@ -263,7 +265,7 @@ test('na příponě nezáleží: dest.mp3 v datech najde dest.wav, přednost má
     await t.volat('/api/scena/zobrazit', { metoda: 'POST', telo: { misto: 'les' } });
     await t.volat('/api/scena', { metoda: 'PUT', telo: { pocasi: ['bourka'] } });
     const r = await t.volat('/api/zvuk');
-    assert.deepEqual(r.data.ambient.map((a) => a.url), ['/audio/les.WAV', '/audio/bourka.mp3']);
+    assert.deepEqual(r.data.ambient.map((a) => bezVerze(a.url)), ['/audio/les.WAV', '/audio/bourka.mp3']);
     assert.deepEqual(r.data.chybiTed, []);
     assert.deepEqual(r.data.hrom, ['hrom-1.wav']);
     assert.equal((await t.volat('/audio/les.WAV')).status, 200);

@@ -25,7 +25,7 @@ ilustrace:
   - soubor: hori.png
     ucel: scena
     stav: hoří
-    skryta: false
+    skryta: true
     puvod: Burning Wilderness Camp at Sunset.png
   - soubor: opusteny.png
     ucel: scena
@@ -45,9 +45,13 @@ ilustrace:
     ucel: scena
     skryta: true
     puvod: Weathered Warrior’s Ring at Sunset.png
+svetla:
+  noc:
+    hlavni: { barva: [ 47, 128, 255 ], jas: 65 }
+    pozadi: { barva: [ 129, 255, 0 ], jas: 100 }
+    lampa: { barva: [ 31, 35, 255 ], jas: 21 }
 zvuk:
   den:
-    hudba: souboj.mp3
     ambient: tabor-ohen.mp3
     nahodne:
       - { zvuk: nahodne/tabor/kun, kazdych_s: 60, nahodilost: 0.8, hlasitost: 0.8, vzdalenost: 0.7 }

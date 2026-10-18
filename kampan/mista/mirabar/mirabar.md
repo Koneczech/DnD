@@ -32,6 +32,11 @@ ilustrace:
     varianta: noc
     skryta: false
     puvod: Places/Mirabar/fight.png (místo souboje, temná večerní ulička)
+svetla:
+  noc:
+    hlavni: { barva: [ 47, 128, 255 ], jas: 65 }
+    pozadi: { barva: [ 129, 255, 0 ], jas: 100 }
+    lampa: { barva: [ 31, 35, 255 ], jas: 21 }
 ---
 # Mirabar
 

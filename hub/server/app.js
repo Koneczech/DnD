@@ -198,10 +198,57 @@ export class Hub {
     this.restartovat = null;
     /** Proč je potřeba restart (stažený nový kód, změna portu), nebo null. */
     this.restartNutny = null;
+    /** Naplánovaný restart po Aktualizovat (otevřený bod 91): čas v ms, nebo null. */
+    this.restartV = null;
+    this.casovacRestartu = null;
+    /** Commit, se kterým Hub běží: `git pull` mimo Hub (PowerShell) se pozná podle změny. */
+    this.hlavaKodu = null;
   }
 
   infoServeru() {
-    return { spusteno: this.spusteno, pid: process.pid, restartNutny: this.restartNutny, restartZPanelu: Boolean(this.restartovat) };
+    return {
+      spusteno: this.spusteno,
+      pid: process.pid,
+      restartNutny: this.restartNutny,
+      restartZPanelu: Boolean(this.restartovat),
+      restartV: this.restartV,
+    };
+  }
+
+  /**
+   * Po aktualizaci s novým kódem se Hub restartuje sám za 5 s (panel ukáže odpočet a „Teď ne“).
+   * Během sezení ne: jen nabídne restart, ať se neztratí hudba ani světla uprostřed hry.
+   * @returns {'auto'|'rucne'|'nejde'}
+   */
+  naplanovatRestart(zaMs = 5000) {
+    if (!this.restartovat) return 'nejde';
+    if (this.data.stav?.sezeniBezi) return 'rucne';
+    clearTimeout(this.casovacRestartu);
+    this.restartV = Date.now() + zaMs;
+    this.casovacRestartu = setTimeout(() => {
+      this.zaznam.info('hub', 'Restart po aktualizaci');
+      this.restartovat();
+    }, zaMs);
+    this.casovacRestartu.unref?.();
+    this.vysilac.vyslat('server', this.infoServeru());
+    return 'auto';
+  }
+
+  zrusitRestart() {
+    clearTimeout(this.casovacRestartu);
+    this.casovacRestartu = null;
+    this.restartV = null;
+    this.vysilac.vyslat('server', this.infoServeru());
+  }
+
+  /** `git pull` mimo Hub: změnil se commit a s ním kód Hubu? Pak nabídne restart. */
+  async zkontrolovatHlavu() {
+    const hlava = await this.git.hlava().catch(() => null);
+    if (!hlava || !this.hlavaKodu || hlava === this.hlavaKodu) return;
+    const zmeny = await this.git.zmenyOd(this.hlavaKodu);
+    this.hlavaKodu = hlava;
+    this.oznacitZmenyKodu(zmeny);
+    this.obnovitGit(false);
   }
 
   /**
@@ -372,6 +419,9 @@ export class Hub {
       this.obs.nastavit(this.nastaveni.hodnoty.OBS_URL, this.nastaveni.hodnoty.OBS_HESLO);
     }
     this.obnovitGit(this.gitSit);
+    this.hlavaKodu = await this.git.hlava().catch(() => null);
+    this.casovacHlavy = setInterval(() => this.zkontrolovatHlavu().catch(() => {}), 15000);
+    this.casovacHlavy.unref?.();
     this.hlidatOdpocet();
     this.svetla.odpocet(this.odpocet.stav);
     this.svetla.zmenaSceny();
@@ -771,6 +821,29 @@ export class Hub {
       await this.mista.nacist();
       this.vysilac.vyslat('git', this.git.stav);
       return poslatJson(res, 200, this.git.stav);
+    }
+    if (p === '/api/git/aktualizovat' && m === 'POST') {
+      await nacistJson(req);
+      const pred = await this.git.hlava();
+      const vysledek = await this.git.aktualizovat(`Úpravy z panelu — ${datumCesky()}`);
+      const zmeny = await this.git.zmenyOd(pred);
+      this.hlavaKodu = await this.git.hlava();
+      this.oznacitZmenyKodu(zmeny);
+      if (zmeny.length) {
+        await this.data.nacist();
+        await this.kalendar.nacist();
+        await this.obchody.nacist();
+        await this.mista.nacist();
+      }
+      const restart = this.restartNutny && zmeny.some((f) => f.startsWith('hub/') && !f.startsWith('hub/test/')) ? this.naplanovatRestart() : null;
+      this.zaznam.info('git', `Aktualizovat: ${vysledek.ulozeno ? 'úpravy uloženy, ' : ''}staženo ${vysledek.stazeno}, ${vysledek.push ? 'odesláno' : 'neodesláno'}${restart ? `, restart ${restart}` : ''}`);
+      this.vysilac.vyslat('git', this.git.stav);
+      return poslatJson(res, 200, { ...vysledek, restart, git: this.git.stav });
+    }
+    if (p === '/api/restart/zrusit' && m === 'POST') {
+      await nacistJson(req);
+      this.zrusitRestart();
+      return poslatJson(res, 200, this.infoServeru());
     }
     if (p === '/api/git/sloucit' && m === 'POST') {
       await nacistJson(req);
@@ -1218,6 +1291,8 @@ export class Hub {
 
   async zastavit() {
     clearTimeout(this.casovacOdpoctu);
+    clearInterval(this.casovacHlavy);
+    clearTimeout(this.casovacRestartu);
     clearInterval(this.casovacPruchodu);
     this.cteniPlayerView.zastavit();
     this.sledovaniHp.zastavit();

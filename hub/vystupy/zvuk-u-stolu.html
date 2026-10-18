@@ -222,6 +222,23 @@
     $('#vystup-vybrat').addEventListener('click', async () => {
       const vysledek = $('#vystup-vysledek');
       try {
+        // Novější prohlížeče mají vlastní výběr reproduktoru (bez mikrofonu).
+        if (navigator.mediaDevices.selectAudioOutput) {
+          try {
+            const d = await navigator.mediaDevices.selectAudioOutput();
+            const volba = { id: d.deviceId, nazev: d.label || 'Vybraný reproduktor' };
+            await pouzit(volba);
+            try {
+              localStorage.setItem(KLIC, JSON.stringify(volba));
+            } catch {
+              /* bez úložiště jen pro toto otevření */
+            }
+            vysledek.textContent = `Uloženo: ${volba.nazev}.`;
+            return;
+          } catch (e) {
+            if (e.name === 'NotAllowedError') return; // DM výběr zavřel
+          }
+        }
         // Jména reproduktorů prohlížeč ukáže až po povolení mikrofonu. Hub mikrofon nepoužívá:
         // stream se hned zavře.
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -233,7 +250,11 @@
         select.hidden = false;
         vysledek.textContent = 'Vyber BT reproduktor a klikni na Zkušební zvuk.';
       } catch (e) {
-        vysledek.textContent = `Seznam reproduktorů se nenačetl (${e.message}). Nastav reproduktor ve Windows.`;
+        // Bez mikrofonu (NotFoundError) prohlížeč jména reproduktorů neprozradí: výstup se nastaví ve Windows.
+        vysledek.textContent =
+          e.name === 'NotFoundError'
+            ? 'Počítač nemá mikrofon, a bez něj prohlížeč neukáže jména reproduktorů. Nastav to ve Windows: Nastavení → Systém → Zvuk → Směšovač hlasitosti → u prohlížeče (Microsoft Edge / Google Chrome) vyber Výstupní zařízení = tvůj BT reproduktor. Windows si to pamatuje.'
+            : `Seznam reproduktorů se nenačetl (${e.message}). Nastav reproduktor ve Windows: Nastavení → Systém → Zvuk → Směšovač hlasitosti.`;
       }
     });
 

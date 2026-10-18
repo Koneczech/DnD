@@ -81,7 +81,7 @@ function ukazObrazovku(jmeno) {
     history.replaceState(null, '', `#${jmeno}`);
   }
   // Kotvy z kontrolek v liště: Git → GitHub v Sezení, Světla → Nastavení → Světla.
-  const KOTVY = { 'prehled-github': 'prehled', 'nastaveni-svetla': 'nastaveni', 'nastaveni-zvuk': 'nastaveni', 'nastaveni-obs': 'nastaveni', 'nastaveni-hub': 'nastaveni', 'nastaveni-vystupy': 'nastaveni', 'nastaveni-role': 'nastaveni' };
+  const KOTVY = { 'nastaveni-zaznam': 'nastaveni', 'prehled-github': 'prehled', 'nastaveni-svetla': 'nastaveni', 'nastaveni-zvuk': 'nastaveni', 'nastaveni-obs': 'nastaveni', 'nastaveni-hub': 'nastaveni', 'nastaveni-vystupy': 'nastaveni', 'nastaveni-role': 'nastaveni' };
   const kotva = KOTVY[jmeno] ? jmeno : null;
   if (kotva) jmeno = KOTVY[jmeno];
   const cil = platne.includes(jmeno) ? jmeno : 'prehled';
@@ -101,7 +101,7 @@ window.addEventListener('hashchange', () => ukazObrazovku(location.hash.slice(1)
 /* Nastavení po kategoriích: vlevo seznam, vpravo jen otevřená kategorie (rozhodnutí 65). */
 const KATEGORIE_KOTVY = {
   'nastaveni-obs': 'obs', 'nastaveni-role': 'obs', 'nastaveni-svetla': 'svetla', 'nastaveni-zvuk': 'zvuk',
-  'nastaveni-vystupy': 'vystupy', 'nastaveni-hub': 'hub',
+  'nastaveni-vystupy': 'vystupy', 'nastaveni-hub': 'hub', 'nastaveni-zaznam': 'hub',
 };
 function ukazKategorii(k, kotva) {
   stav.nastaveniKat = k;
@@ -211,6 +211,7 @@ function zprava(text, { chyba = false, tlacitko } = {}) {
   return div;
 }
 
+let casovacOdpoctuRestartu = null;
 function vykresliUpozorneni() {
   const box = $('#upozorneni');
   box.replaceChildren();
@@ -220,7 +221,17 @@ function vykresliUpozorneni() {
     return;
   }
   if (!p) return;
-  if (p.server?.restartNutny) {
+  if (p.server?.restartV) {
+    // Restart po aktualizaci (otevřený bod 91): odpočet s možností odložit.
+    const zbyva = Math.max(0, Math.ceil((p.server.restartV - Date.now() - (stav.odchylkaHodin ?? 0)) / 1000));
+    const z = zprava(`Nová verze Hubu je stažená. Hub se za ${zbyva} s restartuje sám; panel i výstupy v OBS se pak načtou znovu.`, { tlacitko: { text: 'Restartovat hned', akce: restartovatHub } });
+    const odlozit = Object.assign(document.createElement('button'), { type: 'button', className: 'tiche', textContent: 'Teď ne' });
+    odlozit.addEventListener('click', () => api('/api/restart/zrusit', { metoda: 'POST', telo: {} }).catch((e) => toast(e.message, { chyba: true })));
+    z.append(odlozit);
+    box.append(z);
+    clearTimeout(casovacOdpoctuRestartu);
+    casovacOdpoctuRestartu = setTimeout(vykresliUpozorneni, 1000);
+  } else if (p.server?.restartNutny) {
     box.append(
       p.server.restartZPanelu
         ? zprava(p.server.restartNutny, { tlacitko: { text: 'Restartovat Hub', akce: restartovatHub } })
@@ -238,10 +249,8 @@ function vykresliUpozorneni() {
     box.append(zprava('V .git/hooks je jiný pre-commit hook, Hub ho nepřepsal. Ochrana proti commitu tajných hodnot proto neběží.'));
   }
   const g = p.git;
-  if (g?.pozadu > 0 && g?.napred > 0) {
-    box.append(zprava(`Lokální a GitHubová verze se rozešly: na GitHubu je ${g.pozadu} nových commitů a u tebe ${g.napred} neodeslaných. Sloučení nic nemaže; tvoje změny se přiskládají za novinky a odešlou.`, { tlacitko: { text: 'Sloučit', akce: sloucitZmeny } }));
-  } else if (g?.pozadu > 0) {
-    box.append(zprava(`Na GitHubu jsou novější změny (${g.pozadu}).`, { tlacitko: { text: 'Stáhnout změny', akce: stahnoutZmeny } }));
+  if (g?.pozadu > 0) {
+    box.append(zprava(`Na GitHubu je nová verze (${g.pozadu} ${g.pozadu === 1 ? 'změna' : g.pozadu < 5 ? 'změny' : 'změn'}). Aktualizovat uloží tvoje úpravy kampaně, stáhne ji a případně Hub restartuje.`, { tlacitko: { text: 'Aktualizovat', akce: aktualizovat } }));
   }
   for (const v of p.obs?.varovaniZdroju ?? []) {
     box.append(zprava(`Zdroj „${v.zdroj}“ v OBS má zapnuté ${v.nastaveni.join(' a ')}. Vypni to, jinak výstup nepřežije výpadek Hubu.`));
@@ -285,34 +294,23 @@ async function restartovatHub() {
 }
 $('#tlacitko-restart').addEventListener('click', restartovatHub);
 
-async function sloucitZmeny() {
-  try {
-    const r = await api('/api/git/sloucit', { metoda: 'POST', telo: {} });
-    let text = r.push ? 'Sloučeno a odesláno na GitHub.' : 'Sloučeno, ale odeslání na GitHub se nepodařilo. Zkus Uložit do GitHubu později.';
-    if (r.vracenoZGitHubu?.length) {
-      text += ` Soubory ${r.vracenoZGitHubu.join(', ')} jsi měl rozdělané a zároveň se změnily na GitHubu: platí verze z GitHubu, tvoje verze je v úschovně Gitu. Pošli to Claudovi.`;
-    } else if (r.uschovnaNevracena) {
-      text += ' Tvoje neuložené změny zůstaly v úschovně Gitu, protože se nedaly vrátit; pošli to Claudovi.';
-    }
-    toast(text, { chyba: r.uschovnaNevracena });
-    await nactiPrehled();
-  } catch (e) {
-    $('#upozorneni').prepend(zprava(e.message, { chyba: true }));
-  }
-}
-async function stahnoutZmeny() {
-  try {
-    await api('/api/git/stahnout', { metoda: 'POST', telo: {} });
-    await nactiPrehled();
-  } catch (e) {
-    $('#upozorneni').prepend(zprava(e.message, { chyba: true }));
-  }
-}
-
 /* ---------- Kontrolky ---------- */
 
 function vykresliKontrolky() {
   const p = stav.prehled;
+  // Údržba v rozbalovacím Systému (otevřený bod 91): Kontrola dat a restart vždy po ruce.
+  {
+    const problemy = p?.kontrola?.problemy ?? [];
+    const chyby = problemy.filter((x) => x.uroven === 'chyba').length;
+    $('#system-kontrola').textContent = problemy.length ? `Kontrola dat · ${problemy.length}` : 'Kontrola dat';
+    $('#system-kontrola').title = problemy.length ? `${chyby} chyb, ${problemy.length - chyby} varování` : 'Bez problémů';
+    $('#system-kontrola').classList.toggle('hlavni', chyby > 0);
+    const restart = $('#system-restart');
+    restart.disabled = !p?.server?.restartZPanelu;
+    restart.title = p?.server?.restartZPanelu ? 'Restartuje server; panel i výstupy v OBS se načtou samy' : 'Hub neběží přes zástupce DM Hub: zavři ho a spusť zástupcem';
+    restart.classList.toggle('hlavni', Boolean(p?.server?.restartNutny));
+    $('#system').classList.toggle('ceka-akce', Boolean(p?.server?.restartNutny || p?.git?.pozadu > 0));
+  }
   $('#svetlo-server').dataset.stav = stav.serverOk ? (p?.stav?.odlozeneZapisy?.length ? 'varovani' : 'ok') : 'chyba';
   $('#svetlo-server').parentElement.title = stav.serverOk
     ? `Server běží (proces node.exe, PID ${p?.server?.pid ?? '?'})`
@@ -853,8 +851,7 @@ function vykresliObrazovkuSezeni() {
       : polozkaKontroly('ok', 'Role scén jsou přiřazené.'));
     const g = p.git;
     if (!g?.dostupny) k.push(polozkaKontroly('varovani', g?.chyba ?? 'Stav Gitu zjišťuji…'));
-    else if (g.pozadu > 0 && g.napred > 0) k.push(polozkaKontroly('chyba', 'Lokální a GitHubová verze se rozešly.', { text: 'Sloučit', klik: sloucitZmeny }));
-    else if (g.pozadu > 0) k.push(polozkaKontroly('varovani', `Na GitHubu jsou novější změny (${g.pozadu}).`, { text: 'Stáhnout změny', klik: stahnoutZmeny }));
+    else if (g.pozadu > 0) k.push(polozkaKontroly('varovani', `Na GitHubu je nová verze (${g.pozadu}).`, { text: 'Aktualizovat', klik: aktualizovat }));
     else if (g.chyba) k.push(polozkaKontroly('varovani', g.chyba));
     else k.push(polozkaKontroly('ok', 'Data jsou stejná jako na GitHubu.'));
     const chyby = (p.kontrola?.problemy ?? []).filter((x) => x.uroven === 'chyba').length;
@@ -1307,21 +1304,62 @@ for (const [id, akce] of [['#odpocet-spustit', 'spustit'], ['#odpocet-pauza', 'p
 }
 
 
-/* ---------- Uložení do GitHubu ---------- */
+/* ---------- GitHub: Aktualizovat (otevřený bod 91) ---------- */
+
+function popisTlacitkaAktualizovat(g) {
+  if (!g?.dostupny) return 'Aktualizovat';
+  if (g.pozadu > 0) return `Aktualizovat (${g.pozadu} nových)`;
+  if (g.zmeneno > 0) return 'Uložit na GitHub';
+  return 'Aktualizovat';
+}
 
 function vykresliGit() {
   const g = stav.prehled?.git;
   const popis = $('#git-popis');
+  for (const b of [$('#git-aktualizovat'), $('#system-aktualizovat')]) {
+    b.disabled = !g?.dostupny;
+    b.textContent = popisTlacitkaAktualizovat(g);
+    b.classList.toggle('hlavni', Boolean(g?.pozadu > 0));
+  }
   if (!g?.dostupny) {
     popis.textContent = g?.chyba || 'Zjišťuji stav Gitu…';
-    $('#git-ulozit').disabled = true;
     return;
   }
-  $('#git-ulozit').disabled = false;
-  $('#git-stahnout').hidden = !(g.pozadu > 0);
   const kdy = g.kontrolovano ? ` Naposledy zkontrolováno v ${new Date(g.kontrolovano).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}.` : '';
-  popis.textContent = `Větev ${g.vetev}. Neuložených souborů v repu: ${g.zmeneno}.${g.pozadu > 0 ? ` Na GitHubu je ${g.pozadu} novějších změn.` : ''}${kdy} Uložit ukládá jen data kampaně (kampan/), ne kód Hubu.`;
+  popis.textContent = `${g.zmeneno ? `Neuložené úpravy: ${g.zmeneno} ${g.zmeneno === 1 ? 'soubor' : g.zmeneno < 5 ? 'soubory' : 'souborů'}. ` : 'Všechno je uložené. '}${g.pozadu > 0 ? `Na GitHubu je nová verze (${g.pozadu}). ` : ''}${kdy.trim()} Aktualizovat uloží tvoje úpravy kampaně, stáhne novou verzi a odešle vše na GitHub; při nové verzi Hubu ho restartuje.`;
 }
+
+/** Jedno tlačítko místo Uložit, Stáhnout a Sloučit. */
+async function aktualizovat() {
+  const v = $('#git-vysledek');
+  v.className = 'ulozeni';
+  v.textContent = 'Aktualizuji…';
+  toast('Aktualizuji…');
+  try {
+    const r = await api('/api/git/aktualizovat', { metoda: 'POST', telo: {} });
+    const casti = [];
+    if (r.ulozeno) casti.push('tvoje úpravy uloženy');
+    if (r.stazeno) casti.push(`staženo ${r.stazeno} ${r.stazeno === 1 ? 'změna' : r.stazeno < 5 ? 'změny' : 'změn'}`);
+    if (r.ulozeno || r.stazeno) casti.push(r.push ? 'odesláno na GitHub' : 'na GitHub se zatím neodeslalo (zkus později)');
+    let text = casti.length ? `${casti.join(', ')}.` : 'Všechno je aktuální.';
+    text = text[0].toUpperCase() + text.slice(1);
+    if (r.vracenoZGitHubu?.length) text += ` Soubory ${r.vracenoZGitHubu.join(', ')} se změnily i na GitHubu: platí verze z GitHubu, tvoje je v úschovně Gitu. Pošli to Claudovi.`;
+    if (r.restart === 'auto') text += ' Hub se za chvíli restartuje.';
+    if (r.restart === 'rucne') text += ' Nová verze Hubu se spustí po restartu: běží sezení, tak jsem nic nerestartoval.';
+    if (r.restart === 'nejde') text += ' Nová verze Hubu se spustí, až Hub zavřeš a spustíš zástupcem DM Hub.';
+    v.className = r.push || !(r.ulozeno || r.stazeno) ? 'ulozeni' : 'ulozeni varovani';
+    v.textContent = text;
+    toast(text, { chyba: Boolean(r.vracenoZGitHubu?.length) });
+    await nactiPrehled();
+  } catch (e) {
+    v.className = 'ulozeni chyba';
+    v.textContent = e.message;
+    toast(e.message, { chyba: true });
+  }
+}
+$('#git-aktualizovat').addEventListener('click', aktualizovat);
+$('#system-aktualizovat').addEventListener('click', aktualizovat);
+$('#system-restart').addEventListener('click', restartovatHub);
 
 $('#git-zkontrolovat').addEventListener('click', async () => {
   const v = $('#git-vysledek');
@@ -1338,34 +1376,6 @@ $('#git-zkontrolovat').addEventListener('click', async () => {
     v.textContent = chyba.message;
   }
 });
-$('#git-stahnout').addEventListener('click', async () => {
-  const v = $('#git-vysledek');
-  v.className = 'ulozeni';
-  v.textContent = 'Stahuji…';
-  try {
-    await api('/api/git/stahnout', { metoda: 'POST', telo: {} });
-    await nactiPrehled();
-    v.textContent = 'Staženo. Pokud se měnil kód Hubu, zavři okno DM Hub a spusť ho znovu.';
-  } catch (chyba) {
-    v.className = 'ulozeni chyba';
-    v.textContent = chyba.message;
-  }
-});
-
-$('#git-ulozit').addEventListener('click', async () => {
-  const v = $('#git-vysledek');
-  v.className = 'ulozeni';
-  v.textContent = 'Ukládám…';
-  try {
-    const r = await api('/api/git/ulozit', { metoda: 'POST', telo: {} });
-    v.className = r.chybaPush ? 'ulozeni varovani' : 'ulozeni';
-    v.textContent = r.chybaPush ?? (r.commit ? `Uloženo a odesláno na GitHub v ${cas()}.` : 'Nic nového k uložení, GitHub je aktuální.');
-  } catch (chyba) {
-    v.className = 'ulozeni chyba';
-    v.textContent = chyba.message;
-  }
-});
-
 /* ---------- Výběr data v Harptosu ---------- */
 
 /** Rok, měsíc nebo svátek a den. Vrací {get, set}; get() dá datum, nebo null, když je neplatné. */

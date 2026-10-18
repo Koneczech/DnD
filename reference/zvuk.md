@@ -52,6 +52,7 @@ Když OBS „nic nehraje“ ani se zkušebním zvukem, je to skoro vždy monitor
 2. Spouštěč otevře stránku **Zvuk u stolu** sám (vypíná se v Nastavení → Zvuk), jinak ji otevři v **Nastavení → Zvuk → Otevřít Zvuk u stolu**.
 3. Klikni na **Zapnout zvuk u stolu**. Prohlížeč pustí zvuk až po kliknutí, po každém otevření stránky jednou.
 4. **Vybrat reproduktor**: prohlížeč se zeptá na mikrofon. Hub ho nepoužívá, bez povolení by ale prohlížeč neukázal jména reproduktorů. Vyber BT reproduktor. Volba se pamatuje.
+   - **Počítač bez mikrofonu** („Requested device not found“): prohlížeč pak jména reproduktorů neukáže. Použij jinou cestu níž.
    - Jiná cesta: ve Windows **Nastavení → Systém → Zvuk → Směšovač hlasitosti** nastav výstup prohlížeče na BT reproduktor. Tahle volba platí pro celý prohlížeč, takže se hodí, když panel běží v jiném prohlížeči než Zvuk u stolu.
 5. **Zkušební zvuk** zahraje tři tóny z vybraného reproduktoru, i když je zapnuté Ticho.
 6. Okno nech otevřené celou hru (klidně minimalizované).

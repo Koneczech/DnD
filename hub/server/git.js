@@ -65,6 +65,10 @@ export class Git {
     return this.vylucne(() => this._sloucit());
   }
 
+  aktualizovat(zprava) {
+    return this.vylucne(() => this._aktualizovat(zprava));
+  }
+
   /** Lokální stav bez sítě. */
   async _lokalniStav() {
     try {
@@ -117,7 +121,7 @@ export class Git {
    * Kód Hubu ani nic jiného se tímto tlačítkem necommituje.
    * @returns {Promise<{commit:boolean, push:boolean, zprava:string}>}
    */
-  async _ulozit(zprava, cesty = ['kampan']) {
+  async _ulozit(zprava, cesty = ['kampan'], { odeslat = true } = {}) {
     await this._lokalniStav();
     if (!this.stav.dostupny) throw Object.assign(new Error(this.stav.chyba || 'Git není dostupný.'), { status: 409 });
     const nesloucene = (await git(this.koren, ['diff', '--name-only', '--diff-filter=U'])).split('\n').filter(Boolean);
@@ -150,6 +154,10 @@ export class Git {
             : `Commit se nepodařil: ${vystup.split('\n')[0]}`;
         throw Object.assign(new Error(duvod), { status: 409 });
       }
+    }
+    if (!odeslat) {
+      await this._lokalniStav();
+      return { commit, push: false, chybaPush: null, zmeneno: zmeny ? zmeny.split('\n').length : 0 };
     }
     let push = false;
     let chybaPush = null;
@@ -191,18 +199,10 @@ export class Git {
   }
 
   /**
-   * Sloučit rozešlé verze (lokální commity i novinky na GitHubu): neuložené změny se odloží do úschovny,
-   * lokální commity se přeskládají za novinky z GitHubu a odešlou. Při konfliktu se všechno vrátí zpět.
-   * Nic se nemaže: co se nepodaří vrátit do pracovní složky, zůstane v úschovně (`git stash list`).
-   * @returns {Promise<{sloucene:true, push:boolean, uschovna:boolean, uschovnaNevracena:boolean}>}
+   * Stáhne novinky z GitHubu a lokální commity přeskládá za ně (pull --rebase), pak odešle.
+   * Neuložené změny mimo commity jdou do úschovny a po stažení se vrátí. Při konfliktu se vše vrátí.
    */
-  async _sloucit() {
-    await this._zkontrolovatVzdaleny();
-    if (!this.stav.dostupny || !this.stav.upstream) throw Object.assign(new Error('Větev nemá nastavenou vzdálenou větev na GitHubu.'), { status: 409 });
-    if (this.stav.chyba) throw Object.assign(new Error(this.stav.chyba), { status: 409 });
-    if (this.stav.pozadu === 0) throw Object.assign(new Error('Není co sloučit: na GitHubu nejsou žádné novější změny. Použij Stáhnout změny nebo Uložit do GitHubu.'), { status: 409 });
-    if (this.stav.napred === 0) throw Object.assign(new Error('Verze se nerozešly, stačí Stáhnout změny.'), { status: 409 });
-
+  async _stahnoutSPreskladanim() {
     const znacka = `dm-hub-pred-slucovanim-${new Date().toISOString()}`;
     let uschovna = false;
     if (this.stav.zmeneno > 0) {
@@ -253,6 +253,53 @@ export class Git {
       push = false;
     }
     await this._zkontrolovatVzdaleny();
-    return { sloucene: true, push, uschovna, uschovnaNevracena, vracenoZGitHubu };
+    return { push, uschovna, uschovnaNevracena, vracenoZGitHubu };
+  }
+
+  /**
+   * Aktualizovat (otevřený bod 91): jedno tlačítko místo Uložit, Stáhnout a Sloučit. Uloží rozdělané
+   * změny kampaně (commit kampan/), stáhne novinky z GitHubu a přeskládá za ně, odešle. Nic nemaže:
+   * při konfliktu zůstane tvůj commit lokálně a pracovní složka beze změny.
+   * @returns {Promise<{ulozeno:boolean, stazeno:number, push:boolean, uschovnaNevracena:boolean, vracenoZGitHubu:string[]}>}
+   */
+  async _aktualizovat(zprava) {
+    await this._zkontrolovatVzdaleny();
+    if (!this.stav.dostupny) throw Object.assign(new Error(this.stav.chyba || 'Git není dostupný.'), { status: 409 });
+    if (!this.stav.upstream) throw Object.assign(new Error('Větev nemá nastavenou vzdálenou větev na GitHubu.'), { status: 409 });
+    const ulozeni = await this._ulozit(zprava, ['kampan'], { odeslat: false });
+    await this._zkontrolovatVzdaleny();
+    if (this.stav.chyba) {
+      throw Object.assign(new Error(`${this.stav.chyba}${ulozeni.commit ? ' Tvoje úpravy jsou uložené lokálně a odešlou se příště.' : ''}`), { status: 409 });
+    }
+    const stazeno = this.stav.pozadu;
+    let vysledek = { push: false, uschovnaNevracena: false, vracenoZGitHubu: [] };
+    if (stazeno > 0) {
+      try {
+        vysledek = await this._stahnoutSPreskladanim();
+      } catch (e) {
+        if (ulozeni.commit) e.message += ' Tvoje úpravy kampaně jsou uložené v lokálním commitu, nic se neztratilo.';
+        throw e;
+      }
+    } else if (this.stav.napred > 0) {
+      vysledek.push = await git(this.koren, ['push', '--quiet'], { timeout: 60000 }).then(() => true, () => false);
+      await this._zkontrolovatVzdaleny();
+    }
+    return { ulozeno: ulozeni.commit, stazeno, ...vysledek };
+  }
+
+  /**
+   * Sloučit rozešlé verze (lokální commity i novinky na GitHubu): neuložené změny se odloží do úschovny,
+   * lokální commity se přeskládají za novinky z GitHubu a odešlou. Při konfliktu se všechno vrátí zpět.
+   * Nic se nemaže: co se nepodaří vrátit do pracovní složky, zůstane v úschovně (`git stash list`).
+   * @returns {Promise<{sloucene:true, push:boolean, uschovna:boolean, uschovnaNevracena:boolean}>}
+   */
+  async _sloucit() {
+    await this._zkontrolovatVzdaleny();
+    if (!this.stav.dostupny || !this.stav.upstream) throw Object.assign(new Error('Větev nemá nastavenou vzdálenou větev na GitHubu.'), { status: 409 });
+    if (this.stav.chyba) throw Object.assign(new Error(this.stav.chyba), { status: 409 });
+    if (this.stav.pozadu === 0) throw Object.assign(new Error('Není co sloučit: na GitHubu nejsou žádné novější změny. Použij Stáhnout změny nebo Uložit do GitHubu.'), { status: 409 });
+    if (this.stav.napred === 0) throw Object.assign(new Error('Verze se nerozešly, stačí Stáhnout změny.'), { status: 409 });
+
+    return { sloucene: true, ...(await this._stahnoutSPreskladanim()) };
   }
 }

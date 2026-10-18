@@ -23,6 +23,7 @@
 
     <details class="system" id="system">
       <summary id="system-souhrn" aria-label="Stav systému"><span class="tecky" id="system-tecky" aria-hidden="true"></span>Systém</summary>
+      <div class="system-panel">
       <ul class="kontrolky" aria-label="Stav systému">
         <li><a href="#nastaveni-hub"><span class="svetlo" id="svetlo-server" data-stav="ceka"></span><span class="nazev">Server</span><small></small></a></li>
         <li><a href="#nastaveni-obs"><span class="svetlo" id="svetlo-obs" data-stav="ceka"></span><span class="nazev">OBS</span><small></small></a></li>
@@ -30,6 +31,13 @@
         <li><a href="#nastaveni-svetla"><span class="svetlo" id="svetlo-svetla" data-stav="ceka"></span><span class="nazev">Světla</span><small></small></a></li>
         <li><a href="#nastaveni-zvuk"><span class="svetlo" id="svetlo-zvuk" data-stav="ceka"></span><span class="nazev">Zvuk</span><small></small></a></li>
       </ul>
+      <div class="system-akce" aria-label="Údržba Hubu">
+        <button type="button" id="system-aktualizovat">Aktualizovat</button>
+        <a class="tlacitko" href="#kontrola" id="system-kontrola">Kontrola dat</a>
+        <button type="button" id="system-restart">Restartovat Hub</button>
+        <a class="tlacitko tiche" href="#nastaveni-zaznam">Záznam událostí</a>
+      </div>
+      </div>
     </details>
   </header>
 
@@ -94,9 +102,8 @@
         <h2 id="prehled-github">GitHub</h2>
         <p id="git-popis" class="uvod"></p>
         <div class="tlacitka">
-          <button type="button" id="git-ulozit">Uložit</button>
-          <button type="button" id="git-zkontrolovat">Zkontrolovat</button>
-          <button type="button" id="git-stahnout" hidden>Stáhnout změny</button>
+          <button type="button" id="git-aktualizovat">Aktualizovat</button>
+          <button type="button" class="tiche" id="git-zkontrolovat">Zkontrolovat GitHub</button>
         </div>
         <p class="ulozeni" id="git-vysledek" aria-live="polite"></p>
           </section>

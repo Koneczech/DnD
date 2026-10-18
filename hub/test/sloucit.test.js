@@ -225,3 +225,59 @@ test('sloučení: rozdělaný soubor, který GitHub smazal, nezablokuje obnovu o
     await k.smazat();
   }
 });
+
+test('Aktualizovat: rozdělaná data kampaně se uloží, novinky z GitHubu stáhnou a vše odešle (bod 91)', async () => {
+  const k = await dvaKlony();
+  try {
+    await ulozit(k.a, 'hub/novy.js', 'nový kód\n', 'novinka', { push: true });
+    await ulozit(k.a, 'kampan/mista/tabor.md', 'zvuk: tabor\n', 'zvuk tábora', { push: true });
+    // Hub: rozdělaná změna jiného souboru kampaně (světla jinde) a neuložená nová ilustrace.
+    await zapsat(k.b, 'kampan/stav.md', 'datum: 2\n');
+    await zapsat(k.b, 'kampan/mista/cesta.md', 'svetla: noc\n');
+    const hub = new Git(k.b);
+    const r = await hub.aktualizovat('Úpravy z panelu');
+    assert.equal(r.ulozeno, true);
+    assert.equal(r.stazeno, 2);
+    assert.equal(r.push, true);
+    assert.equal(await precist(k.b, 'hub/novy.js'), 'nový kód\n');
+    assert.equal(await precist(k.b, 'kampan/stav.md'), 'datum: 2\n');
+    await git(k.a, ['pull', '-q']);
+    assert.equal(await precist(k.a, 'kampan/mista/cesta.md'), 'svetla: noc\n', 'tvoje úpravy jsou na GitHubu');
+    assert.equal(hub.stav.zmeneno, 0);
+    assert.equal(hub.stav.pozadu, 0);
+    assert.equal(hub.stav.napred, 0);
+  } finally {
+    await k.smazat();
+  }
+});
+
+test('Aktualizovat: jen uložit (GitHub nemá nic nového) i nic k dělání', async () => {
+  const k = await dvaKlony();
+  try {
+    const hub = new Git(k.b);
+    let r = await hub.aktualizovat('Úpravy z panelu');
+    assert.deepEqual([r.ulozeno, r.stazeno, r.push], [false, 0, false]);
+    await zapsat(k.b, 'kampan/stav.md', 'datum: 3\n');
+    r = await hub.aktualizovat('Úpravy z panelu');
+    assert.deepEqual([r.ulozeno, r.stazeno, r.push], [true, 0, true]);
+    await git(k.a, ['pull', '-q']);
+    assert.equal(await precist(k.a, 'kampan/stav.md'), 'datum: 3\n');
+  } finally {
+    await k.smazat();
+  }
+});
+
+test('Aktualizovat s konfliktem: nic se neztratí, úpravy zůstanou v lokálním commitu', async () => {
+  const k = await dvaKlony();
+  try {
+    await ulozit(k.a, 'kampan/stav.md', 'datum: GitHub\n', 'z GitHubu', { push: true });
+    await zapsat(k.b, 'kampan/stav.md', 'datum: moje\n');
+    const hub = new Git(k.b);
+    await assert.rejects(hub.aktualizovat('Úpravy z panelu'), (e) => /kampan\/stav\.md/.test(e.message) && /nic se neztratilo/.test(e.message));
+    assert.equal(await precist(k.b, 'kampan/stav.md'), 'datum: moje\n');
+    assert.match(await git(k.b, ['log', '-1', '--format=%s']), /Úpravy z panelu/);
+    assert.equal(await git(k.b, ['status', '--porcelain']), '');
+  } finally {
+    await k.smazat();
+  }
+});

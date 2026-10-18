@@ -900,3 +900,19 @@ main { padding: var(--m-4) var(--m-5) var(--m-5); }
 .nahodny-zvuk .kratke-cislo { width: 5.5rem; }
 @media (max-width: 900px) { .nahodne-mista { padding-left: 0; } }
 .posuvnik-mista input[type="range"] { accent-color: var(--mosaz); }
+
+/* Nastavení → Zvuk: zvuková sada a srovnání hlasitosti (otevřený bod 86) */
+.sada-hlava { display: flex; flex-wrap: wrap; align-items: center; gap: var(--m-2) var(--m-4); margin: var(--m-3) 0 var(--m-2); }
+.sada-obal { max-height: 26rem; overflow: auto; border: 1px solid var(--linka); border-radius: var(--zaobleni); }
+.sada { width: 100%; border-collapse: collapse; font-size: var(--t-popisek); }
+.sada th { position: sticky; top: 0; background: var(--povrch-1); text-align: left; color: var(--mlha); font-weight: 600; }
+.sada th, .sada td { padding: var(--m-2) var(--m-3); border-bottom: 1px solid var(--linka); vertical-align: top; }
+.sada tr:last-child td { border-bottom: 0; }
+.sada td small { display: block; color: var(--mlha); }
+.sada-soubory { display: flex; flex-wrap: wrap; gap: var(--m-1); }
+.sada-soubor { padding: 2px var(--m-2); font-size: var(--t-stitek); border-radius: 999px; }
+.sada-soubor:not(.je) { opacity: 0.55; border-style: dashed; }
+.hladiny { display: flex; flex-wrap: wrap; gap: var(--m-3); }
+.hladiny label { display: grid; gap: var(--m-1); color: var(--mlha); font-size: var(--t-popisek); }
+.hladiny input { width: 7rem; }
+#srovnani-stav { display: block; max-width: 75ch; margin-top: var(--m-2); }

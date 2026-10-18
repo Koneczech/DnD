@@ -167,7 +167,41 @@ zvuk:
       - { zvuk: nahodne/boj/rinceni, kazdych_s: 8, nahodilost: 0.8, hlasitost: 0.7, vzdalenost: 0.4 }
 ```
 
-## 5. Příprava souborů
+## 5. Zvuková sada z Freesoundu a srovnání hlasitosti
+
+Soubory nemusíš stahovat, stříhat ani srovnávat ručně (otevřený bod 86).
+
+### Zvuková sada
+
+1. Na [freesound.org](https://freesound.org) si založ účet (zdarma). Na `freesound.org/apiv2/apply` vytvoř klíč (popis třeba „DM Hub, osobní použití“) a zkopíruj *Client secret/Api key*.
+2. Vlož ho v **Nastavení → Zvuk → Zvuková sada z Freesoundu**. Zůstane jen v `hub/.env`.
+3. Klikni na **Doplnit chybějící zvuky**. Hub projde `kampan/zvuky-sada.yaml`, pro každou položku najde na Freesoundu nejlépe hodnocené zvuky s licencí **CC0** a zadanou délkou, stáhne je jako MP3 a pojmenuje podle sady (`nahodne\tabor\kun-1.mp3` …).
+4. V tabulce si každý soubor poslechneš (▶). Když se ti nelíbí, **Vyměnit** stáhne další v pořadí a ten starý už znovu nenabídne.
+
+- Autory, názvy a odkazy Hub zapíše do `zdroje.json` ve složce zvuku. CC0 uvedení autora nevyžaduje, ale je dobré vědět, odkud co je.
+- Tvoje vlastní soubory se stejným jménem Hub nepřepíše. Přepíše je jen tlačítkem Vyměnit.
+- Co do sady patří, upravíš v `kampan/zvuky-sada.yaml` (`hledat` anglicky, `delka: [od, do]`, `variant`).
+- Freesound dovolí 2 000 požadavků denně. Celá sada je pár desítek požadavků.
+
+### Srovnání hlasitosti
+
+Stránka Zvuk u stolu každý soubor jednou změří (hlasitost v LUFS, špička, ticho na začátku). Hub pak při přehrávání každému souboru přidá zesílení nebo zeslabení na hladinu jeho druhu. Soubory se nemění.
+
+| Druh | Výchozí hladina |
+| --- | --- |
+| Hudba | −18 LUFS |
+| Ambient (déšť, bouřka, oheň) | −24 LUFS |
+| Náhodné zvuky | −24 LUFS (k tomu hlasitost a vzdálenost u místa) |
+| Soundboard, zvuky na tah, fanfára | −18 LUFS |
+| Hrom | −16 LUFS |
+
+- Zesílení je nejvýš +12 dB a nikdy nepřekročí špičku souboru. Zeslabení je nejvýš −20 dB.
+- U krátkých zvuků Hub přeskočí ticho na začátku. Hrom tak přijde hned po blesku.
+- Zvuk na tah delší než 2,5 s se plynule ztlumí.
+- Hladiny a vypínač jsou v **Nastavení → Zvuk → Srovnání hlasitosti**. Posuvníky Hudba, Ambient a Efekty pak dolaďují už srovnané zvuky.
+- Měření běží na pozadí, když je otevřená stránka Zvuk u stolu (asi 1–3 s na soubor). Změněný soubor Hub změří znovu sám.
+
+## 6. Příprava souborů
 
 - **Smyčky**: Hub dlouhé soubory (8 s a víc) na konci prolne se začátkem (3 s), takže šev neslyšíš ani u MP3. Nejlépe znějí smyčky, které nemají na konci vyznění do ticha. U krátkých souborů do 8 s smyčka jen začne znovu.
 - **Hlasitost**: srovnej soubory na podobnou hlasitost (Audacity: *Efekty → Hlasitost a komprese → Normalizace hlasitosti*, cíl −16 LUFS pro hudbu, −20 LUFS pro ambient). Jemně pak dolaďuješ posuvníky Hudba a Ambient na U stolu.
@@ -175,7 +209,7 @@ zvuk:
 - **Náhodné zvuky**: krátké (1–6 s), bez ticha na začátku a na konci, ideálně 2–5 variant od jednoho zvuku.
 - **Délka**: ambient 2–10 minut stačí. Dlouhé soubory Hub nenačítá celé do paměti.
 
-## 6. Zdroje (licence ověř u každého souboru)
+## 7. Zdroje (licence ověř u každého souboru)
 
 | Zdroj | Na co | Licence |
 | --- | --- | --- |

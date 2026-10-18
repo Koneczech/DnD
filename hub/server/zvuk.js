@@ -12,6 +12,8 @@ import { EventEmitter } from 'node:events';
 import YAML from 'yaml';
 import { zapsatAtomicky } from './zapis.js';
 import { sestavitKnihovnu, najitSkupinu, vybratVariantu, normalizujMapu, zvukTahu, odkazyMapy, platneId } from './zvuky-knihovna.js';
+import { normalizujSadu, souboryPolozky, Freesound } from './zvuky-sada.js';
+import { HLADINY, ziskNaHladinu } from '../sdilene/mereni.js';
 
 /** Formáty, které umí přehrát prohlížeč v OBS i Chrome/Edge. */
 export const PRIPONY_ZVUKU = Object.freeze(['.mp3', '.ogg', '.opus', '.wav', '.flac', '.m4a']);
@@ -44,6 +46,11 @@ export const HUDBA_KDE = Object.freeze(['stul', 'obs']);
 export const TLUMENI = Object.freeze(['hudba', 'vse', 'vypnuto']);
 export const TLUMENI_HZ = Object.freeze({ min: 200, max: 2000, vychozi: 500 });
 const MAX_SOUBORU = 3000;
+/** Srovnání hlasitosti (otevřený bod 86): hladiny podle druhu zvuku v LUFS a jejich meze. */
+export const DRUHY_HLADIN = Object.freeze(Object.keys(HLADINY));
+export const HLADINA_MEZE = Object.freeze({ min: -40, max: -6 });
+/** Zvuk na tah déle než 2,5 s se plynule ztlumí (stříhat soubory není potřeba). */
+export const MAX_TAH_S = 2.5;
 /**
  * Dozvuk místa (otevřený bod 85): prostor, ve kterém zní náhodné zvuky a soundboard. Stránka u stolu
  * si dozvuk spočítá sama (Web Audio, bez souborů). `zadny` = venku, bez dozvuku.
@@ -197,7 +204,7 @@ export class Zvuk extends EventEmitter {
    * @param {() => object} volby.vrstvy vrstvy z kampan/sceny (sdílené se světly)
    * @param {() => Array<object>} volby.mista všechna místa (Kontrola dat)
    */
-  constructor({ cesty, nastaveni, misto, scena, vrstvy, mista, hodiny = () => Date.now(), nahodne = Math.random }) {
+  constructor({ cesty, nastaveni, misto, scena, vrstvy, mista, hodiny = () => Date.now(), nahodne = Math.random, fetchFreesound }) {
     super();
     this.c = cesty;
     this.nastaveni = nastaveni;
@@ -208,7 +215,17 @@ export class Zvuk extends EventEmitter {
     this.hodiny = hodiny;
     this.nahodne = nahodne;
     this.soubor = path.join(cesty.lokalniStav, 'zvuk.json');
-    this.mistni = { ticho: false, hudba: 0.8, ambient: 0.8, efekty: 1, hudbaKde: 'stul', tlumeni: 'hudba', tlumeniHz: TLUMENI_HZ.vychozi, tahy: true, tahyJenHraci: false };
+    this.mistni = { ticho: false, hudba: 0.8, ambient: 0.8, efekty: 1, hudbaKde: 'stul', tlumeni: 'hudba', tlumeniHz: TLUMENI_HZ.vychozi, tahy: true, tahyJenHraci: false, srovnat: true, hladiny: { ...HLADINY } };
+    // Srovnání hlasitosti (otevřený bod 86): změřené soubory (stránka u stolu je měří a posílá).
+    this.souborMereni = path.join(cesty.lokalniStav, 'zvuk-mereni.json');
+    this.mereni = new Map(); // soubor → { klic, lufs, spicka, zacatek, konec, delka, chyba? }
+    this.otisky = new Map(); // soubor → velikost:čas změny (změněný soubor se změří znovu)
+    this.casovacMereni = null;
+    // Zvuková sada (otevřený bod 86): kampan/zvuky-sada.yaml, stahování z Freesoundu.
+    this.fetchFreesound = fetchFreesound;
+    this.sada = normalizujSadu();
+    this.zdroje = { soubory: {}, vynechane: {} };
+    this.prubehSady = { bezi: false, hotovo: 0, celkem: 0, text: null, chyba: null };
     this.mapa = normalizujMapu(); // kampan/zvuky.yaml
     this.chybaMapy = null;
     this.knihovna = sestavitKnihovnu([], this.mapa);
@@ -237,9 +254,18 @@ export class Zvuk extends EventEmitter {
       if (TLUMENI.includes(d.tlumeni)) this.mistni.tlumeni = d.tlumeni;
       for (const k of ['tahy', 'tahyJenHraci']) if (typeof d[k] === 'boolean') this.mistni[k] = d[k];
       if (Number.isFinite(d.tlumeniHz)) this.mistni.tlumeniHz = Math.max(TLUMENI_HZ.min, Math.min(TLUMENI_HZ.max, Math.round(d.tlumeniHz)));
+      if (typeof d.srovnat === 'boolean') this.mistni.srovnat = d.srovnat;
+      for (const k of DRUHY_HLADIN) if (Number.isFinite(d.hladiny?.[k])) this.mistni.hladiny[k] = Math.max(HLADINA_MEZE.min, Math.min(HLADINA_MEZE.max, d.hladiny[k]));
     } catch {
       /* první spuštění */
     }
+    try {
+      const m = JSON.parse(await fs.readFile(this.souborMereni, 'utf8'));
+      for (const [soubor, x] of Object.entries(m ?? {})) if (x && typeof x.klic === 'string') this.mereni.set(soubor, x);
+    } catch {
+      /* zatím nic nezměřeno */
+    }
+    await this.nacistSadu();
     await this.nacistMapu();
     await this.prohledat();
     this.casovacKontroly = setInterval(() => this.oznamStav(), 5000);
@@ -264,6 +290,33 @@ export class Zvuk extends EventEmitter {
     return this.mapa;
   }
 
+  /** Zvuková sada z kampan/zvuky-sada.yaml (otevřený bod 86). */
+  async nacistSadu() {
+    if (!this.c.kampan) return this.sada;
+    try {
+      this.sada = normalizujSadu(YAML.parse(await fs.readFile(path.join(this.c.kampan, 'zvuky-sada.yaml'), 'utf8')) ?? {});
+    } catch (e) {
+      this.sada = normalizujSadu();
+      if (e.code !== 'ENOENT') this.sada.chyby.push(`Soubor se nepodařilo přečíst: ${e.message}`);
+    }
+    await this.nacistZdroje();
+    this.oznamStav();
+    return this.sada;
+  }
+
+  get souborZdroju() {
+    return path.join(this.slozka, 'zdroje.json');
+  }
+
+  async nacistZdroje() {
+    try {
+      const d = JSON.parse(await fs.readFile(this.souborZdroju, 'utf8'));
+      this.zdroje = { soubory: d.soubory ?? {}, vynechane: d.vynechane ?? {} };
+    } catch {
+      this.zdroje = { soubory: {}, vynechane: {} };
+    }
+  }
+
   async ulozitMistni() {
     await fs.mkdir(path.dirname(this.soubor), { recursive: true });
     await zapsatAtomicky(this.soubor, JSON.stringify(this.mistni, null, 2));
@@ -273,6 +326,7 @@ export class Zvuk extends EventEmitter {
   async prohledat() {
     const koren = this.slozka;
     const nalezene = [];
+    const otisky = new Map();
     const projit = async (slozka, rel) => {
       let polozky;
       try {
@@ -284,14 +338,26 @@ export class Zvuk extends EventEmitter {
         if (nalezene.length >= MAX_SOUBORU || p.name.startsWith('.')) continue;
         const r = rel ? `${rel}/${p.name}` : p.name;
         if (p.isDirectory()) await projit(path.join(slozka, p.name), r);
-        else if (PRIPONY_ZVUKU.includes(path.extname(p.name).toLowerCase())) nalezene.push(r);
+        else if (PRIPONY_ZVUKU.includes(path.extname(p.name).toLowerCase())) {
+          nalezene.push(r);
+          try {
+            const st = await fs.stat(path.join(slozka, p.name));
+            otisky.set(r, `${st.size}:${Math.round(st.mtimeMs)}`);
+          } catch {
+            /* soubor mezitím zmizel */
+          }
+        }
       }
       return true;
     };
     const existuje = await projit(koren, '');
-    const zmena = existuje !== this.slozkaExistuje || nalezene.join('\n') !== this.soubory.join('\n');
+    const zmena =
+      existuje !== this.slozkaExistuje ||
+      nalezene.join('\n') !== this.soubory.join('\n') ||
+      nalezene.some((f) => otisky.get(f) !== this.otisky.get(f));
     this.slozkaExistuje = existuje;
     this.soubory = nalezene;
+    this.otisky = otisky;
     this.knihovna = sestavitKnihovnu(nalezene, this.mapa);
     if (zmena) {
       this.oznam();
@@ -338,19 +404,21 @@ export class Zvuk extends EventEmitter {
     return {
       ticho: this.mistni.ticho,
       hlasitost: { hudba: this.mistni.hudba, ambient: this.mistni.ambient, efekty: this.mistni.efekty },
-      hudba: hudba ? { soubor: hudba, url: this.url(hudba) } : null,
+      hudba: hudba ? this.zvukovy(hudba, 'hudba') : null,
       ambient: c.ambient
         .map((a) => ({ ...a, soubor: this.najit(a.soubor) }))
         .filter((a) => a.soubor)
-        .map((a) => ({ ...a, url: this.url(a.soubor) })),
+        .map((a) => ({ ...a, ...this.zvukovy(a.soubor, 'ambient') })),
       // Náhodné zvuky prostředí (otevřený bod 85): kdy je zahrát, si počítá stránka u stolu.
       nahodne: c.nahodne
-        .map((n) => ({ ...n, soubory: this.souboryZvuku(n.zvuk).map((f) => ({ soubor: f, url: this.url(f) })) }))
+        .map((n) => ({ ...n, soubory: this.souboryZvuku(n.zvuk).map((f) => this.zvukovy(f, 'nahodne')) }))
         .filter((n) => n.soubory.length),
       dozvuk: c.dozvuk,
       prolnutiMs: PROLNUTI_MS,
       // Ručně zapnuté smyčky soundboardu (hraje je stránka Zvuk u stolu na sběrnici efektů).
-      smycky: [...this.smycky.entries()].map(([id, x]) => ({ soubor: id, url: this.url(x.soubor), hlasitost: x.hlasitost })),
+      smycky: [...this.smycky.entries()].map(([id, x]) => ({ ...this.zvukovy(x.soubor, 'efekty'), soubor: id, hlasitost: x.hlasitost })),
+      // Soubory, které stránka u stolu ještě nezměřila (měří je postupně na pozadí).
+      zmerit: this.nezmerene().slice(0, 5).map((f) => ({ soubor: f, url: this.url(f), klic: this.otisky.get(f) })),
       hudbaKde: this.mistni.hudbaKde,
       // Ucpané uši: stránky prolnou dolní propust na sběrnici hudby (a ambientu při „vse“).
       tlumeni: {
@@ -359,6 +427,57 @@ export class Zvuk extends EventEmitter {
         hz: this.mistni.tlumeniHz,
       },
     };
+  }
+
+  /** Platné měření souboru (soubor se od měření nezměnil). */
+  mereniSouboru(soubor) {
+    const m = this.mereni.get(soubor);
+    return m && m.klic === this.otisky.get(soubor) ? m : null;
+  }
+
+  nezmerene() {
+    return this.soubory.filter((f) => this.otisky.has(f) && !this.mereniSouboru(f));
+  }
+
+  /**
+   * Soubor pro stránku: adresa, zesílení na hladinu druhu (srovnání hlasitosti) a začátek bez ticha.
+   * @param {'hudba'|'ambient'|'nahodne'|'efekty'|'hrom'} druh
+   */
+  zvukovy(soubor, druh) {
+    const m = this.mereniSouboru(soubor);
+    const z = { soubor, url: this.url(soubor) };
+    const zisk = this.mistni.srovnat ? ziskNaHladinu(m, this.mistni.hladiny[druh]) : 1;
+    if (zisk !== 1) z.zisk = zisk;
+    if (m?.zacatek > 0.02 && druh !== 'hudba' && druh !== 'ambient') z.zacatek = m.zacatek;
+    return z;
+  }
+
+  /** Výsledek měření ze stránky u stolu. */
+  zapsatMereni(d) {
+    const soubor = typeof d?.soubor === 'string' ? d.soubor : '';
+    if (!this.soubory.includes(soubor)) throw chyba('Soubor ve složce není.', 404);
+    if (d.klic !== this.otisky.get(soubor)) return { ok: false, duvod: 'Soubor se mezitím změnil.' };
+    const cislo = (x, min, max) => (Number.isFinite(x) && x >= min && x <= max ? x : null);
+    const m = {
+      klic: d.klic,
+      lufs: cislo(d.lufs, -90, 10),
+      spicka: cislo(d.spicka, 0, 10) ?? 1,
+      zacatek: cislo(d.zacatek, 0, 36000) ?? 0,
+      konec: cislo(d.konec, 0, 36000),
+      delka: cislo(d.delka, 0, 36000),
+      ...(typeof d.chyba === 'string' ? { chyba: d.chyba.slice(0, 200) } : {}),
+    };
+    this.mereni.set(soubor, m);
+    clearTimeout(this.casovacMereni);
+    this.casovacMereni = setTimeout(() => this.ulozitMereni().catch(() => {}), 2000);
+    this.casovacMereni.unref?.();
+    this.oznam();
+    return { ok: true };
+  }
+
+  async ulozitMereni() {
+    const data = Object.fromEntries([...this.mereni].filter(([f]) => this.otisky.has(f) || !this.slozkaExistuje));
+    await zapsatAtomicky(this.souborMereni, JSON.stringify(data, null, 1));
   }
 
   /** Soubory náhodného zvuku: varianty skupiny (bez smyček), nebo jeden soubor podle jména. */
@@ -404,6 +523,15 @@ export class Zvuk extends EventEmitter {
       zapnuteSmycky: [...this.smycky.keys()],
       tahy: { zapnuto: this.mistni.tahy, jenHraci: this.mistni.tahyJenHraci },
       chybaMapy: this.chybaMapy,
+      // Srovnání hlasitosti a zvuková sada (otevřený bod 86).
+      srovnani: {
+        zapnuto: this.mistni.srovnat,
+        hladiny: this.mistni.hladiny,
+        zmereno: this.soubory.length - this.nezmerene().length,
+        celkem: this.soubory.length,
+        nejdou: this.soubory.filter((f) => this.mereniSouboru(f)?.chyba),
+      },
+      sada: this.stavSady(),
     };
   }
 
@@ -465,6 +593,18 @@ export class Zvuk extends EventEmitter {
       if (!Number.isFinite(n) || n < 0 || n > 1) throw chyba('Hlasitost je 0 až 1.');
       this.mistni[k] = Math.round(n * 100) / 100;
     }
+    if ('srovnat' in z) {
+      if (typeof z.srovnat !== 'boolean') throw chyba('Srovnání hlasitosti je zapnuté, nebo vypnuté.');
+      this.mistni.srovnat = z.srovnat;
+    }
+    if ('hladiny' in z) {
+      for (const [k, x] of Object.entries(z.hladiny ?? {})) {
+        const n = Number(x);
+        if (!DRUHY_HLADIN.includes(k)) throw chyba('Neznámý druh zvuku.');
+        if (!Number.isFinite(n) || n < HLADINA_MEZE.min || n > HLADINA_MEZE.max) throw chyba(`Hladina je ${HLADINA_MEZE.min} až ${HLADINA_MEZE.max} LUFS.`);
+        this.mistni.hladiny[k] = Math.round(n);
+      }
+    }
     await this.ulozitMistni();
     this.oznam();
     return this.stav();
@@ -506,15 +646,23 @@ export class Zvuk extends EventEmitter {
     const j = platneJmeno(soubor);
     const f = j && this.najit(j);
     if (!f) throw chyba('Zvuk ve složce není.', 404);
-    this.emit('efekt', { cil, soubor: f, url: this.url(f), hlasitost: 1 });
+    this.emit('efekt', { cil, ...this.zvukovy(f, 'efekty'), hlasitost: 1 });
     return { ok: true };
   }
 
   /** Zahraje náhodnou variantu skupiny u stolu. */
-  zahratSkupinu(skupina, { uhnout = false, hlasitost = 1, prostor = false } = {}) {
+  zahratSkupinu(skupina, { uhnout = false, hlasitost = 1, prostor = false, maxS = null } = {}) {
     const soubor = vybratVariantu(skupina, this.posledniVarianta.get(skupina.id), this.nahodne);
     this.posledniVarianta.set(skupina.id, soubor);
-    this.emit('efekt', { cil: 'stul', soubor, url: this.url(soubor), hlasitost, obmena: true, uhnout, ...(prostor ? { prostor: true } : {}) });
+    this.emit('efekt', {
+      cil: 'stul',
+      ...this.zvukovy(soubor, 'efekty'),
+      hlasitost,
+      obmena: true,
+      uhnout,
+      ...(prostor ? { prostor: true } : {}),
+      ...(maxS ? { maxS } : {}),
+    });
     return soubor;
   }
 
@@ -569,7 +717,7 @@ export class Zvuk extends EventEmitter {
     const id = zvukTahu(this.mapa, kdo);
     const n = id && najitSkupinu(this.knihovna, id);
     if (!n || n.druh === 'smycky') return null;
-    return this.zahratSkupinu(n.skupina);
+    return this.zahratSkupinu(n.skupina, { maxS: MAX_TAH_S });
   }
 
   /** Vítězná fanfára při Konci souboje: `zvuk.konec` ve vrstvě kampan/sceny/rezim/souboj.yaml. */
@@ -577,7 +725,7 @@ export class Zvuk extends EventEmitter {
     const jmeno = platneJmeno(this.vrstvy().rezim?.souboj?.zvuk?.konec);
     const soubor = jmeno && this.najit(jmeno);
     if (!soubor) return false;
-    this.emit('efekt', { cil: 'stul', soubor, url: this.url(soubor), hlasitost: 1, uhnout: true });
+    this.emit('efekt', { cil: 'stul', ...this.zvukovy(soubor, 'efekty'), hlasitost: 1, uhnout: true });
     return true;
   }
 
@@ -589,11 +737,107 @@ export class Zvuk extends EventEmitter {
     const v = HROM[vzdalenost] ?? HROM.blizko;
     const casovac = setTimeout(() => {
       this.casovacHromu.delete(casovac);
-      this.emit('efekt', { cil: 'stul', soubor, url: this.url(soubor), hlasitost: v.hlasitost, filtr: v.filtr });
+      this.emit('efekt', { cil: 'stul', ...this.zvukovy(soubor, 'hrom'), hlasitost: v.hlasitost, filtr: v.filtr });
     }, Math.max(0, hromZaMs ?? 0));
     casovac.unref?.();
     this.casovacHromu.add(casovac);
     return true;
+  }
+
+  /** Zvuková sada pro panel: co má být ve složce, co chybí a odkud je co staženo. */
+  stavSady() {
+    return {
+      klic: Boolean(this.nastaveni().FREESOUND_KLIC),
+      chyby: this.sada.chyby,
+      prubeh: this.prubehSady,
+      polozky: this.sada.polozky.map((p) => {
+        const soubory = souboryPolozky(p).map((f) => {
+          const je = this.najit(f);
+          const z = this.zdroje.soubory[f];
+          return { soubor: f, je: Boolean(je), ...(je ? { url: this.url(je) } : {}), ...(z ? { zdroj: { autor: z.autor, nazev: z.nazev, url: z.url, licence: z.licence } } : {}) };
+        });
+        return { cil: p.cil, popis: p.popis, hledat: p.hledat, delka: p.delka, soubory, chybi: soubory.filter((f) => !f.je).length };
+      }),
+    };
+  }
+
+  /**
+   * Doplní chybějící soubory sady z Freesoundu (CC0 náhledy MP3), nebo vymění soubory jedné položky
+   * za další v pořadí. Běží na pozadí; průběh je ve stavu (sada.prubeh).
+   * @param {{cil?: string, vymenit?: boolean}} volby
+   */
+  doplnitSadu({ cil = null, vymenit = false } = {}) {
+    if (this.prubehSady.bezi) throw chyba('Stahování už běží.', 409);
+    const klic = this.nastaveni().FREESOUND_KLIC;
+    if (!klic) throw chyba('Chybí klíč Freesound. Vlož ho v Nastavení → Zvuk.');
+    if (!this.slozkaExistuje) throw chyba(`Složka zvuku ${this.slozka} neexistuje.`);
+    const polozky = this.sada.polozky.filter((p) => (cil ? p.cil === cil : true));
+    if (cil && !polozky.length) throw chyba('Taková položka v sadě není.', 404);
+    const prace = polozky
+      .map((p) => ({ p, soubory: souboryPolozky(p).filter((f) => vymenit || !this.najit(f)) }))
+      .filter((x) => x.soubory.length);
+    const celkem = prace.reduce((n, x) => n + x.soubory.length, 0);
+    this.prubehSady = { bezi: Boolean(celkem), hotovo: 0, celkem, text: celkem ? 'Hledám na Freesoundu…' : 'Všechny soubory sady ve složce jsou.', chyba: null };
+    this.oznamStav();
+    if (!celkem) return { ok: true, celkem: 0 };
+    this.uloha = this.stahnoutSadu(prace, vymenit, new Freesound({ klic, ...(this.fetchFreesound ? { fetch: this.fetchFreesound, odstupMs: 0 } : {}) }));
+    return { ok: true, celkem };
+  }
+
+  async stahnoutSadu(prace, vymenit, fs_) {
+    const chyby = [];
+    try {
+      for (const { p, soubory } of prace) {
+        const vynechane = new Set(this.zdroje.vynechane[p.cil] ?? []);
+        if (vymenit) for (const f of soubory) if (this.zdroje.soubory[f]) vynechane.add(this.zdroje.soubory[f].id);
+        const pouzite = new Set(souboryPolozky(p).filter((f) => !soubory.includes(f)).map((f) => this.zdroje.soubory[f]?.id).filter(Boolean));
+        this.prubehSady.text = `Hledám „${p.hledat}“ pro ${p.cil}…`;
+        this.oznamStav();
+        let kandidati;
+        try {
+          kandidati = (await fs_.hledat(p)).filter((k) => !vynechane.has(k.id) && !pouzite.has(k.id));
+          if (kandidati.length < soubory.length) kandidati.push(...(await fs_.hledat(p, 2).catch(() => [])).filter((k) => !vynechane.has(k.id) && !pouzite.has(k.id)));
+        } catch (e) {
+          if (e.status === 400 || e.status === 429) throw e; // špatný klíč nebo limit: dál nemá smysl
+          chyby.push(`${p.cil}: ${e.message}`);
+          this.prubehSady.hotovo += soubory.length;
+          continue;
+        }
+        if (!kandidati.length) {
+          chyby.push(`${p.cil}: na Freesoundu nic dalšího (CC0, ${p.delka[0]}–${p.delka[1]} s). Zkus v sadě jiné hledat.`);
+          this.prubehSady.hotovo += soubory.length;
+          continue;
+        }
+        for (const f of soubory) {
+          const k = kandidati.shift();
+          if (!k) {
+            chyby.push(`${f}: došli kandidáti`);
+            this.prubehSady.hotovo++;
+            continue;
+          }
+          this.prubehSady.text = `Stahuji ${f} (${k.nazev}, ${k.autor})…`;
+          this.oznamStav();
+          try {
+            const data = await fs_.stahnout(k.nahled);
+            await zapsatAtomicky(path.join(this.slozka, ...f.split('/')), data);
+            if (this.zdroje.soubory[f] && vymenit) vynechane.add(this.zdroje.soubory[f].id);
+            this.zdroje.soubory[f] = { id: k.id, nazev: k.nazev, autor: k.autor, licence: k.licence, url: k.url, cil: p.cil, stazeno: new Date(this.hodiny()).toISOString() };
+          } catch (e) {
+            chyby.push(`${f}: ${e.message}`);
+          }
+          this.prubehSady.hotovo++;
+        }
+        if (vynechane.size) this.zdroje.vynechane[p.cil] = [...vynechane].slice(-50);
+        await zapsatAtomicky(this.souborZdroju, JSON.stringify(this.zdroje, null, 1));
+        await this.prohledat();
+      }
+      this.prubehSady = { ...this.prubehSady, bezi: false, text: chyby.length ? `Hotovo, ${chyby.length}× problém.` : 'Hotovo. Zvuky jsou ve složce.', chyba: chyby.length ? chyby.join('\n') : null };
+    } catch (e) {
+      this.prubehSady = { ...this.prubehSady, bezi: false, text: 'Stahování se zastavilo.', chyba: e.message };
+    }
+    await this.prohledat().catch(() => {});
+    this.oznamStav();
+    this.emit('sada', this.prubehSady);
   }
 
   /**
@@ -620,8 +864,10 @@ export class Zvuk extends EventEmitter {
       }
     }
     const tahy = odkazyMapy(this.mapa);
-    if (!odkazy.length && !tahy.length && !nahodneOdkazy.length && !this.chybaMapy) return [];
+    const sada = this.sada.chyby.map((zprava) => ({ soubor: 'kampan/zvuky-sada.yaml', uroven: 'varovani', zprava }));
+    if (!odkazy.length && !tahy.length && !nahodneOdkazy.length && !this.chybaMapy) return sada;
     const mapa = [
+      ...sada,
       ...(this.chybaMapy ? [{ soubor: 'kampan/zvuky.yaml', uroven: 'chyba', zprava: this.chybaMapy }] : []),
       ...(this.slozkaExistuje ? tahy.filter((id) => !najitSkupinu(this.knihovna, id)).map((id) => ({ soubor: 'kampan/zvuky.yaml', uroven: 'varovani', zprava: `Zvuk „${id}“ není ve složce zvuku` })) : []),
       ...(this.slozkaExistuje
@@ -641,6 +887,7 @@ export class Zvuk extends EventEmitter {
   }
 
   zastavit() {
+    clearTimeout(this.casovacMereni);
     clearInterval(this.casovacKontroly);
     clearInterval(this.casovacSlozky);
     for (const c of this.casovacHromu) clearTimeout(c);

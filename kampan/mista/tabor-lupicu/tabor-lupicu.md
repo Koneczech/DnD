@@ -46,7 +46,20 @@ ilustrace:
     skryta: true
     puvod: Weathered Warrior’s Ring at Sunset.png
 zvuk:
-  den: { hudba: souboj.mp3 }
+  den:
+    hudba: souboj.mp3
+    ambient: tabor-ohen.mp3
+    nahodne:
+      - { zvuk: nahodne/tabor/kun, kazdych_s: 60, nahodilost: 0.8, hlasitost: 0.8, vzdalenost: 0.7 }
+      - { zvuk: nahodne/tabor/kovadlina, kazdych_s: 45, nahodilost: 0.5, hlasitost: 0.8, vzdalenost: 0.7 }
+      - { zvuk: nahodne/tabor/krkavec, kazdych_s: 90, nahodilost: 0.9, hlasitost: 0.7, vzdalenost: 0.5 }
+      - { zvuk: nahodne/tabor/drevo, kazdych_s: 40, nahodilost: 0.6, hlasitost: 0.8, vzdalenost: 0.3 }
+  souboj:
+    ambient: tabor-bitva.mp3
+    nahodne:
+      - { zvuk: nahodne/boj/rinceni, kazdych_s: 6, nahodilost: 0.8, hlasitost: 0.7, vzdalenost: 0.4 }
+      - { zvuk: nahodne/boj/sip, kazdych_s: 12, nahodilost: 0.9, hlasitost: 0.7, vzdalenost: 0.3 }
+      - { zvuk: nahodne/boj/pokrik, kazdych_s: 15, nahodilost: 0.9, hlasitost: 0.6, vzdalenost: 0.6 }
 ---
 # Tábor lupičů
 

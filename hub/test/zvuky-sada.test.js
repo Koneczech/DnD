@@ -232,3 +232,108 @@ test('srovnání hlasitosti: měření ze stránky, zisk podle druhu, vypnutí a
     await t.zastavit();
   }
 });
+
+/** Malý ZIP pro testy: jedna položka uložená, ostatní deflate (jako balíčky Kenney). */
+async function vytvoritZip(soubory) {
+  const zlib = await import('node:zlib');
+  const mistni = [];
+  const centralni = [];
+  let offset = 0;
+  Object.entries(soubory).forEach(([nazev, obsah], i) => {
+    const data = Buffer.from(obsah);
+    const metoda = i === 0 ? 0 : 8;
+    const komprimovano = metoda ? zlib.deflateRawSync(data) : data;
+    const jmeno = Buffer.from(nazev);
+    const crc = zlib.crc32(data);
+    const h = Buffer.alloc(30);
+    h.writeUInt32LE(0x04034b50, 0);
+    h.writeUInt16LE(metoda, 8);
+    h.writeUInt32LE(crc, 14);
+    h.writeUInt32LE(komprimovano.length, 18);
+    h.writeUInt32LE(data.length, 22);
+    h.writeUInt16LE(jmeno.length, 26);
+    const c = Buffer.alloc(46);
+    c.writeUInt32LE(0x02014b50, 0);
+    c.writeUInt16LE(metoda, 10);
+    c.writeUInt32LE(crc, 16);
+    c.writeUInt32LE(komprimovano.length, 20);
+    c.writeUInt32LE(data.length, 24);
+    c.writeUInt16LE(jmeno.length, 28);
+    c.writeUInt32LE(offset, 42);
+    mistni.push(h, jmeno, komprimovano);
+    centralni.push(c, jmeno);
+    offset += 30 + jmeno.length + komprimovano.length;
+  });
+  const cd = Buffer.concat(centralni);
+  const konec = Buffer.alloc(22);
+  konec.writeUInt32LE(0x06054b50, 0);
+  konec.writeUInt16LE(Object.keys(soubory).length, 8);
+  konec.writeUInt16LE(Object.keys(soubory).length, 10);
+  konec.writeUInt32LE(cd.length, 12);
+  konec.writeUInt32LE(offset, 16);
+  return Buffer.concat([...mistni, cd, konec]);
+}
+
+test('dotazy: náhradní a zkrácené, nikdy pod dvě slova', async () => {
+  const { dotazyPolozky, Kenney } = await import('../server/zvuky-sada.js');
+  assert.deepEqual(dotazyPolozky({ hledat: 'war drum hit' }), ['war drum hit', 'war drum', 'drum hit']);
+  assert.deepEqual(dotazyPolozky({ hledat: 'war cry' }), ['war cry']);
+  assert.deepEqual(dotazyPolozky({ dotazy: ['lute strum', 'harp'] }), ['lute strum', 'harp']);
+  const html = '<a href="https://kenney.nl/media/pages/assets/rpg-audio/8e99002d76-1677590336/kenney_rpg-audio.zip">Download</a>';
+  assert.equal(Kenney.odkazZip(html, 'rpg-audio'), 'https://kenney.nl/media/pages/assets/rpg-audio/8e99002d76-1677590336/kenney_rpg-audio.zip');
+  assert.equal(Kenney.odkazZip(html, 'jiny'), null);
+});
+
+test('ZIP: seznam položek a rozbalení uložené i deflate položky', async () => {
+  const { polozkyZip, rozbalit } = await import('../server/zip.js');
+  const zip = await vytvoritZip({ 'License.txt': 'CC0', 'Audio/chop.ogg': 'OggS sekani'.repeat(100), 'Audio/creak1.ogg': 'OggS vrz' });
+  const p = polozkyZip(zip);
+  assert.deepEqual(p.map((x) => x.nazev), ['License.txt', 'Audio/chop.ogg', 'Audio/creak1.ogg']);
+  assert.equal(rozbalit(zip, p[1]).toString(), 'OggS sekani'.repeat(100));
+  assert.equal(rozbalit(zip, p[0]).toString(), 'CC0');
+  assert.throws(() => polozkyZip(Buffer.from('není zip')), /není ZIP/);
+});
+
+test('balíček Kenney: stáhne ZIP jednou do baliky/, vybere soubory podle jména a dál pracuje lokálně', async () => {
+  const zip = await vytvoritZip({ 'License.txt': 'CC0 '.repeat(300), 'Audio/doorOpen_1.ogg': 'OggS dvere 1 '.repeat(80), 'Audio/doorOpen_2.ogg': 'OggS dvere 2 '.repeat(80) });
+  const volani = [];
+  const f = async (adresa) => {
+    volani.push(adresa);
+    if (adresa === 'https://kenney.nl/assets/rpg-audio') {
+      return { ok: true, status: 200, text: async () => '<a href="https://kenney.nl/media/pages/assets/rpg-audio/abc123-1/kenney_rpg-audio.zip">Download</a>' };
+    }
+    if (adresa.endsWith('kenney_rpg-audio.zip')) return { ok: true, status: 200, arrayBuffer: async () => zip.buffer.slice(zip.byteOffset, zip.byteOffset + zip.length) };
+    return { ok: true, status: 200, json: async () => ({ results: [] }) };
+  };
+  const t = await spustitHub({ f });
+  try {
+    await fs.writeFile(
+      path.join(t.repo.c.kampan, 'zvuky-sada.yaml'),
+      'zvuky:\n  jednorazove/predmety/dvere: { balik: kenney/rpg-audio, soubory: [doorOpen_1, DOOROPEN_2] }\n  jednorazove/predmety/chybi: { balik: kenney/rpg-audio, soubory: [nic] }\n',
+    );
+    await t.hub.zvuk.nacistSadu();
+    const r = await t.volat('/api/zvuk/sada/doplnit', { metoda: 'POST', telo: {} });
+    assert.equal(r.data.celkem, 3);
+    await dokud(async () => !(await t.volat('/api/zvuk')).data.sada.prubeh.bezi, 5000);
+    const s = (await t.volat('/api/zvuk')).data.sada;
+    assert.match(s.prubeh.chyba, /v balíčku rpg-audio není „nic“/);
+    assert.match(await fs.readFile(path.join(t.audio, 'jednorazove', 'predmety', 'dvere-2.ogg'), 'utf8'), /^OggS dvere 2 /);
+    await fs.access(path.join(t.audio, 'baliky', 'kenney_rpg-audio.zip'));
+    const z = JSON.parse(await fs.readFile(path.join(t.audio, 'zdroje.json'), 'utf8')).soubory['jednorazove/predmety/dvere-1.mp3'];
+    assert.deepEqual([z.autor, z.licence, z.zdroj, z.soubor], ['Kenney', 'CC0', 'Kenney (rpg-audio)', 'jednorazove/predmety/dvere-1.ogg']);
+    assert.ok(s.polozky[0].balik.startsWith('Kenney: rpg-audio'));
+    assert.ok(t.hub.zvuk.knihovna.jednorazove.some((g) => g.id === 'jednorazove/predmety/dvere' && g.soubory.length === 2));
+    // Podruhé už se nic nestahuje: ZIP je ve složce.
+    const pred = volani.filter((a) => a.includes('kenney.nl')).length;
+    await fs.rm(path.join(t.audio, 'jednorazove', 'predmety', 'dvere-1.ogg'));
+    await t.volat('/api/zvuk/prohledat', { metoda: 'POST', telo: {} });
+    await t.volat('/api/zvuk/sada/doplnit', { metoda: 'POST', telo: { cil: 'jednorazove/predmety/dvere' } });
+    await dokud(async () => !(await t.volat('/api/zvuk')).data.sada.prubeh.bezi, 5000);
+    await fs.access(path.join(t.audio, 'jednorazove', 'predmety', 'dvere-1.ogg'));
+    assert.equal(volani.filter((a) => a.includes('kenney.nl')).length, pred);
+    // Vyměnit u balíčku nejde: mění se jméno v sadě.
+    assert.equal((await t.volat('/api/zvuk/sada/doplnit', { metoda: 'POST', telo: { cil: 'jednorazove/predmety/dvere', vymenit: true } })).status, 400);
+  } finally {
+    await t.zastavit();
+  }
+});

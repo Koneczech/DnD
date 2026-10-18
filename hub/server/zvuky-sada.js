@@ -6,6 +6,8 @@
 //   Freesound  APIv2 s klíčem (token), náhledy MP3 bez OAuth; jen když je klíč vložený
 //   Openverse  vyhledávač WordPressu nad volně licencovanými zvuky (Wikimedia Commons, Jamendo,
 //              ccMixter, Freesound …), bez klíče
+//   Kenney     balíčky CC0 z kenney.nl (otevřený bod 88): položka s `balik` vezme jmenované soubory
+//              z balíčku; ZIP se stáhne jednou do složky zvuku (baliky/) a dál se pracuje lokálně
 import path from 'node:path';
 import { platneId } from './zvuky-knihovna.js';
 
@@ -19,7 +21,7 @@ export const ODSTUP_API_MS = 1100;
 export const LICENCE = Object.freeze(['cc0', 'by']);
 export const ZDROJE = Object.freeze(['freesound', 'openverse']);
 /** Odkud smí Hub soubor stáhnout (https). */
-const POVOLENE_HOSTY = /(^|\.)(freesound\.org|wikimedia\.org|jamendo\.com|ccmixter\.org|openverse\.org)$/i;
+const POVOLENE_HOSTY = /(^|\.)(freesound\.org|wikimedia\.org|jamendo\.com|ccmixter\.org|openverse\.org|kenney\.nl)$/i;
 const PRIPONY = Object.freeze(['.mp3', '.ogg', '.opus', '.wav', '.flac']);
 const MAX_BAJTU = 40 * 1024 * 1024;
 
@@ -27,8 +29,11 @@ const chyba = (zprava, status = 400) => Object.assign(new Error(zprava), { statu
 
 /**
  * Položky sady z YAML. Klíč = cíl ve složce zvuku bez přípony (`nahodne/tabor/kun`, `vitezstvi`).
- * Hodnota: `hledat` (anglicky), `delka: [od, do]` v sekundách, `variant` (1 = jeden soubor,
- * víc = `cil-1` …), volitelně `popis` (česky pro panel) a `licence: [cc0, by]` (výchozí jen CC0).
+ * Hodnota: `hledat` (anglicky; text, nebo seznam náhradních dotazů), `delka: [od, do]` v sekundách,
+ * `variant` (1 = jeden soubor, víc = `cil-1` …), volitelně `popis` (česky pro panel)
+ * a `licence: [cc0, by]` (výchozí jen CC0).
+ * Nebo z balíčku: `balik: kenney/<balíček>` a `soubory: [jméno, …]` (jména v balíčku bez přípony;
+ * počet souborů = počet variant).
  */
 export function normalizujSadu(d) {
   const polozky = [];
@@ -40,7 +45,31 @@ export function normalizujSadu(d) {
       chyby.push(`„${klic}“: cíl je cesta ve složce zvuku bez přípony`);
       continue;
     }
-    const hledat = typeof x?.hledat === 'string' ? x.hledat.trim().slice(0, 120) : '';
+    const balik = typeof x?.balik === 'string' ? x.balik.trim().toLowerCase() : null;
+    if (balik) {
+      const m = balik.match(/^kenney\/([a-z0-9-]{2,60})$/);
+      const soubory = Array.isArray(x.soubory) ? x.soubory.map((f) => String(f).trim()).filter((f) => /^[A-Za-z0-9_ .'()-]{1,80}$/.test(f)) : [];
+      if (!m || !soubory.length || soubory.length !== (x.soubory?.length ?? 0) || soubory.length > MAX_VARIANT) {
+        chyby.push(`„${cil}“: balik je kenney/<balíček> a soubory seznam 1–${MAX_VARIANT} jmen`);
+        continue;
+      }
+      polozky.push({
+        cil,
+        hledat: null,
+        dotazy: [],
+        delka: null,
+        variant: soubory.length,
+        popis: typeof x.popis === 'string' ? x.popis.trim().slice(0, 80) : null,
+        licence: ['cc0'],
+        balik: { zdroj: 'kenney', nazev: m[1], soubory },
+      });
+      continue;
+    }
+    const dotazy = (Array.isArray(x?.hledat) ? x.hledat : [x?.hledat])
+      .filter((h) => typeof h === 'string' && h.trim())
+      .map((h) => h.trim().slice(0, 120))
+      .slice(0, 6);
+    const hledat = dotazy[0] ?? '';
     if (!hledat) {
       chyby.push(`„${cil}“: chybí hledat`);
       continue;
@@ -56,6 +85,7 @@ export function normalizujSadu(d) {
     polozky.push({
       cil,
       hledat,
+      dotazy,
       delka,
       variant: Number.isInteger(v) && v >= 1 ? Math.min(MAX_VARIANT, v) : 1,
       popis: typeof x.popis === 'string' ? x.popis.trim().slice(0, 80) : null,
@@ -69,6 +99,21 @@ export function normalizujSadu(d) {
 /** Jména souborů pro položku (bez ohledu na příponu): `vitezstvi.mp3`, nebo `nahodne/tabor/kun-1.mp3` … */
 export function souboryPolozky({ cil, variant }) {
   return variant === 1 ? [`${cil}.mp3`] : Array.from({ length: variant }, (_, i) => `${cil}-${i + 1}.mp3`);
+}
+
+/**
+ * Dotazy pro položku: zadané varianty, pak zkrácené (bez posledních slov), ať se něco najde
+ * i u příliš konkrétního hledání („war drum hit“ → „war drum“, „drum hit“).
+ */
+export function dotazyPolozky(polozka) {
+  const vysledek = [...(polozka.dotazy?.length ? polozka.dotazy : [polozka.hledat])];
+  for (const d of [...vysledek]) {
+    const slova = d.split(/\s+/);
+    // Zkracuje se jen dotaz o 3 a víc slovech a nikdy pod 2 slova („war cry“ → „war“ by našlo cokoli).
+    for (let n = slova.length - 1; n >= 2; n--) vysledek.push(slova.slice(0, n).join(' '));
+    if (slova.length >= 3) vysledek.push(slova.slice(1).join(' '));
+  }
+  return [...new Set(vysledek.filter(Boolean))].slice(0, 8);
 }
 
 /** Jednotné ID kandidáta napříč zdroji: zvuk z Freesoundu je stejný, ať přijde odkudkoli. */
@@ -119,28 +164,30 @@ class Zdroj {
     this.posledni = 0;
   }
 
-  async volat(adresa, { binarni = false, hlavicky = {} } = {}) {
+  async volat(adresa, { binarni = false, hlavicky = {}, text = false } = {}) {
     const cekat = this.posledni + this.odstupMs - Date.now();
     if (!binarni && cekat > 0) await new Promise((r) => setTimeout(r, cekat));
     if (!binarni) this.posledni = Date.now();
     let r;
     try {
-      r = await this.fetch(adresa, { headers: hlavicky, signal: AbortSignal.timeout(this.limitMs) });
+      // Stahování souboru (dlouhý ambient) může trvat i minuty; hledání má limit kratší.
+      r = await this.fetch(adresa, { headers: hlavicky, signal: AbortSignal.timeout(binarni ? Math.max(this.limitMs, 180000) : this.limitMs) });
     } catch (e) {
       throw chyba(`${this.nazev} neodpovídá (${e.name === 'TimeoutError' ? 'vypršel čas' : e.message}).`, 502);
     }
     if (r.status === 401 || r.status === 403) throw chyba(this.odmitnuto, 400);
     if (r.status === 429) throw chyba(`${this.nazev}: limit požadavků vyčerpán. Zkus to později.`, 429);
     if (!r.ok) throw chyba(`${this.nazev} vrátil chybu ${r.status}.`, 502);
-    return binarni ? Buffer.from(await r.arrayBuffer()) : r.json();
+    if (binarni) return Buffer.from(await r.arrayBuffer());
+    return text ? r.text() : r.json();
   }
 
   /** Stáhne soubor (jen https a jen ze známých úložišť zvuků). */
-  async stahnout(adresa) {
+  async stahnout(adresa, max = MAX_BAJTU) {
     const u = new URL(adresa);
     if (u.protocol !== 'https:' || !POVOLENE_HOSTY.test(u.hostname)) throw chyba(`Soubor není ze známého úložiště (${u.hostname}).`, 400);
     const data = await this.volat(u.toString(), { binarni: true });
-    if (data.length < 500 || data.length > MAX_BAJTU) throw chyba('Stažený zvuk má divnou velikost.', 502);
+    if (data.length < 500 || data.length > max) throw chyba('Stažený soubor má divnou velikost.', 502);
     return data;
   }
 }
@@ -210,6 +257,29 @@ export class Openverse extends Zdroj {
   }
 }
 
+/** Kenney.nl: balíček (ZIP) podle jména ze stránky balíčku. Licence všech balíčků je CC0. */
+export class Kenney extends Zdroj {
+  constructor(volby = {}) {
+    super(volby);
+    this.nazev = 'Kenney';
+    this.odmitnuto = 'Kenney odmítl požadavek.';
+  }
+
+  /** Adresa ZIP z HTML stránky balíčku (odkaz se s novou verzí mění, proto ne napevno). */
+  static odkazZip(html, nazev) {
+    const m = String(html).match(new RegExp(`https://kenney\\.nl/media/pages/assets/${nazev}/[A-Za-z0-9_-]+/[A-Za-z0-9_.-]+\\.zip`));
+    return m ? m[0] : null;
+  }
+
+  async stahnoutBalik(nazev) {
+    if (!/^[a-z0-9-]{2,60}$/.test(nazev)) throw chyba('Neplatné jméno balíčku.', 400);
+    const html = await this.volat(`https://kenney.nl/assets/${nazev}`, { text: true, hlavicky: { Accept: 'text/html' } });
+    const odkaz = Kenney.odkazZip(html, nazev);
+    if (!odkaz) throw chyba(`Na kenney.nl/assets/${nazev} není odkaz na ZIP.`, 502);
+    return this.stahnout(odkaz, 80 * 1024 * 1024);
+  }
+}
+
 function povolenaLicence(text, licence = ['cc0']) {
   const l = nazevLicence(text);
   return l === 'CC0' || l === 'Public domain' || (l === 'CC BY' && licence.includes('by'));
@@ -229,19 +299,28 @@ export async function hledatKandidaty(zdroje, polozka, { kolik, vynechat = new S
   const kandidati = [];
   const videne = new Set(vynechat);
   const chyby = [];
-  for (const z of zdroje) {
-    for (const strana of [1, 2]) {
-      try {
-        for (const k of await z.hledat(polozka, strana)) {
-          if (videne.has(k.id)) continue;
-          videne.add(k.id);
-          kandidati.push(k);
+  const vadne = new Set(); // zdroj, který selhal (klíč, limit), se už znovu nezkouší
+  // Nejdřív zadané dotazy, pak zkrácené: příliš konkrétní hledání jinak nic nenajde.
+  for (const hledat of dotazyPolozky(polozka)) {
+    for (const z of zdroje) {
+      if (vadne.has(z)) continue;
+      for (const strana of [1, 2]) {
+        let nove = 0;
+        try {
+          for (const k of await z.hledat({ ...polozka, hledat }, strana)) {
+            if (videne.has(k.id)) continue;
+            videne.add(k.id);
+            kandidati.push(k);
+            nove++;
+          }
+        } catch (e) {
+          chyby.push(e);
+          vadne.add(z);
+          break;
         }
-      } catch (e) {
-        chyby.push(e);
-        break;
+        if (kandidati.length >= kolik) return { kandidati, chyby };
+        if (!nove) break; // další strana by byla taky prázdná
       }
-      if (kandidati.length >= kolik) return { kandidati, chyby };
     }
   }
   return { kandidati, chyby };

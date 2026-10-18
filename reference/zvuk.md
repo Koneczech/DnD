@@ -180,6 +180,8 @@ Hub hledá zvuky ve dvou zdrojích (otevřené body 86 a 87):
 | **Freesound** | největší knihovna zvukových efektů, hledá se jako první | ano, zdarma (`freesound.org/apiv2/apply`) |
 | **Openverse** | vyhledávač nad volně licencovanými zvuky: Freesound, Wikimedia Commons, Jamendo, ccMixter a další | ne |
 
+Třetí zdroj jsou **balíčky Kenney** (kenney.nl, CC0): položka sady s `balik: kenney/<balíček>` a `soubory: [jména]` vezme jmenované soubory z balíčku. ZIP se stáhne jednou do `baliky\kenney_<balíček>.zip` ve složce zvuku a dál se pracuje lokálně (balíček tam jde dát i ručně). Ve složce už jsou RPG Audio, Impact Sounds, Music Jingles a Voiceover Pack: Fighter.
+
 Bez klíče Freesound tedy sada funguje taky: Openverse najde i CC0 zvuky z Freesoundu, jen s menším výběrem. Pixabay ani Mixkit veřejné API na zvuky nemají, ty jdou jen ručně.
 
 1. (Nepovinně) Na [freesound.org](https://freesound.org) si založ účet a na `freesound.org/apiv2/apply` vytvoř klíč. Vlož ho v **Nastavení → Zvuk → Zvuková sada**. Zůstane jen v `hub/.env`.
@@ -191,6 +193,8 @@ Bez klíče Freesound tedy sada funguje taky: Openverse najde i CC0 zvuky z Free
 - Tvoje vlastní soubory se stejným jménem Hub nepřepíše; přepíše je jen tlačítkem Vyměnit.
 - Když jeden zdroj nejde (špatný klíč, limit), Hub hledá dál v dalším a chybu napíše pod tlačítko.
 - Co do sady patří, upravíš v `kampan/zvuky-sada.yaml` (`hledat` anglicky, `delka: [od, do]`, `variant`, `licence`).
+- `hledat` může být i seznam náhradních dotazů (`hledat: [lute strum, harp strum]`). Když nic nenajde, Hub dotaz o 3 a víc slovech zkusí zkrátit.
+- Zvuk z balíčku nemá „další v pořadí“: vymění se přepsáním jména v `soubory`. Jména souborů najdeš v ZIPu ve složce `baliky`.
 
 ### Srovnání hlasitosti
 

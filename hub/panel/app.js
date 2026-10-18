@@ -2938,14 +2938,14 @@ function vykresliSadu(z) {
   const tabulka = $('#sada-tabulka');
   if (tabulka.contains(document.activeElement) && !p.bezi) return;
   const hlava = document.createElement('tr');
-  hlava.append(...['Zvuk', 'Hledá na Freesoundu', 'Soubory', ''].map((t) => Object.assign(document.createElement('th'), { textContent: t, scope: 'col' })));
+  hlava.append(...['Zvuk', 'Hledá (nebo balíček)', 'Soubory', ''].map((t) => Object.assign(document.createElement('th'), { textContent: t, scope: 'col' })));
   tabulka.replaceChildren(
     hlava,
     ...sada.polozky.map((x) => {
       const tr = document.createElement('tr');
       const co = document.createElement('td');
       co.append(Object.assign(document.createElement('code'), { textContent: x.cil }), ...(x.popis ? [Object.assign(document.createElement('small'), { textContent: x.popis })] : []));
-      const hleda = Object.assign(document.createElement('td'), { textContent: `${x.hledat} · ${x.delka[0]}–${x.delka[1]} s` });
+      const hleda = Object.assign(document.createElement('td'), { textContent: x.balik ?? `${x.hledat} · ${x.delka[0]}–${x.delka[1]} s` });
       const soubory = document.createElement('td');
       soubory.className = 'sada-soubory';
       for (const f of x.soubory) {
@@ -2966,6 +2966,8 @@ function vykresliSadu(z) {
       vymenit.disabled = p.bezi;
       vymenit.title = x.chybi === x.soubory.length ? 'Stáhnout jen tuhle položku' : 'Stáhnout místo těchto souborů další zvuky v pořadí';
       vymenit.addEventListener('click', () => doplnitSadu({ cil: x.cil, vymenit: x.chybi !== x.soubory.length }));
+      // Zvuk z balíčku nemá „další v pořadí“: mění se jménem souboru v kampan/zvuky-sada.yaml.
+      vymenit.hidden = Boolean(x.balik) && !x.chybi;
       akce.append(vymenit);
       tr.append(co, hleda, soubory, akce);
       return tr;

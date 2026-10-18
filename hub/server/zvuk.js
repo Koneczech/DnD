@@ -12,7 +12,8 @@ import { EventEmitter } from 'node:events';
 import YAML from 'yaml';
 import { zapsatAtomicky } from './zapis.js';
 import { sestavitKnihovnu, najitSkupinu, vybratVariantu, normalizujMapu, zvukTahu, odkazyMapy, platneId } from './zvuky-knihovna.js';
-import { normalizujSadu, souboryPolozky, Freesound, Openverse, hledatKandidaty, idKandidata, ZDROJE } from './zvuky-sada.js';
+import { normalizujSadu, souboryPolozky, Freesound, Openverse, Kenney, hledatKandidaty, idKandidata, ZDROJE } from './zvuky-sada.js';
+import { polozkyZip, rozbalit } from './zip.js';
 import { HLADINY, ziskNaHladinu } from '../sdilene/mereni.js';
 
 /** Formáty, které umí přehrát prohlížeč v OBS i Chrome/Edge. */
@@ -757,7 +758,15 @@ export class Zvuk extends EventEmitter {
           const z = this.zdroje.soubory[f];
           return { soubor: f, je: Boolean(je), ...(je ? { url: this.url(je), skutecny: je } : {}), ...(z ? { zdroj: { autor: z.autor, nazev: z.nazev, url: z.url, licence: z.licence, odkud: z.zdroj ?? 'Freesound' } } : {}) };
         });
-        return { cil: p.cil, popis: p.popis, hledat: p.hledat, delka: p.delka, soubory, chybi: soubory.filter((f) => !f.je).length };
+        return {
+          cil: p.cil,
+          popis: p.popis,
+          hledat: p.hledat,
+          delka: p.delka,
+          ...(p.balik ? { balik: `Kenney: ${p.balik.nazev} (${p.balik.soubory.join(', ')})` } : {}),
+          soubory,
+          chybi: soubory.filter((f) => !f.je).length,
+        };
       }),
     };
   }
@@ -770,6 +779,78 @@ export class Zvuk extends EventEmitter {
   }
 
   /**
+   * Balíček Kenney (otevřený bod 88): ZIP se stáhne jednou do složky zvuku (baliky/kenney_<jméno>.zip)
+   * a dál se z něj jen vybírá. Vlastní ZIP stejného jména tam jde dát i ručně.
+   */
+  async balik(nazev) {
+    const soubor = path.join(this.slozka, 'baliky', `kenney_${nazev}.zip`);
+    try {
+      return await fs.readFile(soubor);
+    } catch {
+      /* ještě není: stáhne se */
+    }
+    this.prubehSady.text = `Stahuji balíček Kenney ${nazev}…`;
+    this.oznamStav();
+    const data = await new Kenney(this.fetchZvuky ? { fetch: this.fetchZvuky, odstupMs: 0 } : {}).stahnoutBalik(nazev);
+    await zapsatAtomicky(soubor, data);
+    return data;
+  }
+
+  /** Soubory položky z balíčku: jméno v balíčku (bez přípony, bez ohledu na velikost písmen) → cíl. */
+  async zBaliku(p, soubory, chyby) {
+    const kmen = (f) => f.slice(0, f.length - path.posix.extname(f).length);
+    let zip;
+    try {
+      zip = await this.balik(p.balik.nazev);
+    } catch (e) {
+      chyby.push(`${p.cil}: ${e.message}`);
+      this.prubehSady.hotovo += soubory.length;
+      return;
+    }
+    let polozky;
+    try {
+      polozky = polozkyZip(zip).filter((x) => !x.nazev.endsWith('/'));
+    } catch (e) {
+      chyby.push(`${p.cil}: balíček ${p.balik.nazev}: ${e.message}`);
+      this.prubehSady.hotovo += soubory.length;
+      return;
+    }
+    const vsechny = souboryPolozky(p);
+    for (const f of soubory) {
+      const jmeno = p.balik.soubory[vsechny.indexOf(f)];
+      const x = polozky.find((y) => {
+        const z = path.posix.basename(y.nazev);
+        return PRIPONY_ZVUKU.includes(path.posix.extname(z).toLowerCase()) && kmen(z).toLowerCase() === jmeno.toLowerCase();
+      });
+      if (!x) {
+        chyby.push(`${f}: v balíčku ${p.balik.nazev} není „${jmeno}“`);
+        this.prubehSady.hotovo++;
+        continue;
+      }
+      try {
+        const cilovy = `${kmen(f)}${path.posix.extname(x.nazev).toLowerCase()}`;
+        await zapsatAtomicky(path.join(this.slozka, ...cilovy.split('/')), rozbalit(zip, x));
+        this.zdroje.soubory[f] = {
+          id: `kenney:${p.balik.nazev}/${jmeno}`,
+          soubor: cilovy,
+          nazev: path.posix.basename(x.nazev),
+          autor: 'Kenney',
+          licence: 'CC0',
+          url: `https://kenney.nl/assets/${p.balik.nazev}`,
+          zdroj: `Kenney (${p.balik.nazev})`,
+          cil: p.cil,
+          stazeno: new Date(this.hodiny()).toISOString(),
+        };
+      } catch (e) {
+        chyby.push(`${f}: ${e.message}`);
+      }
+      this.prubehSady.hotovo++;
+    }
+    await zapsatAtomicky(this.souborZdroju, JSON.stringify(this.zdroje, null, 1));
+    await this.prohledat();
+  }
+
+  /**
    * Doplní chybějící soubory sady (Freesound, Openverse), nebo vymění soubory jedné položky
    * za další v pořadí. Běží na pozadí; průběh je ve stavu (sada.prubeh).
    * @param {{cil?: string, vymenit?: boolean}} volby
@@ -779,6 +860,7 @@ export class Zvuk extends EventEmitter {
     if (!this.slozkaExistuje) throw chyba(`Složka zvuku ${this.slozka} neexistuje.`);
     const polozky = this.sada.polozky.filter((p) => (cil ? p.cil === cil : true));
     if (cil && !polozky.length) throw chyba('Taková položka v sadě není.', 404);
+    if (vymenit && polozky.some((p) => p.balik)) throw chyba('Zvuk z balíčku nejde vyměnit za další: změň jméno souboru v kampan/zvuky-sada.yaml.');
     const prace = polozky
       .map((p) => ({ p, soubory: souboryPolozky(p).filter((f) => vymenit || !this.najit(f)) }))
       .filter((x) => x.soubory.length);
@@ -796,6 +878,10 @@ export class Zvuk extends EventEmitter {
     const kmen = (f) => f.slice(0, f.length - path.posix.extname(f).length);
     try {
       for (const { p, soubory } of prace) {
+        if (p.balik) {
+          await this.zBaliku(p, soubory, chyby);
+          continue;
+        }
         const vynechane = new Set((this.zdroje.vynechane[p.cil] ?? []).map(idKandidata));
         if (vymenit) for (const f of soubory) if (this.zdroje.soubory[f]) vynechane.add(idKandidata(this.zdroje.soubory[f].id));
         const pouzite = souboryPolozky(p)
@@ -808,7 +894,7 @@ export class Zvuk extends EventEmitter {
         const { kandidati, chyby: ch } = await hledatKandidaty(zdroje, p, { kolik: soubory.length, vynechat: new Set([...vynechane, ...pouzite]) });
         for (const e of ch) chybyZdroju.set(e.message.split(':')[0], e.message);
         if (!kandidati.length) {
-          chyby.push(`${p.cil}: nic dalšího (${p.licence.join(', ').toUpperCase()}, ${p.delka[0]}–${p.delka[1]} s). Zkus v sadě jiné hledat.`);
+          chyby.push(`${p.cil}: nic dalšího (${p.licence.join(', ').toUpperCase()}, ${p.delka[0]}–${p.delka[1]} s). Zkus v sadě jiné hledat, nebo víc dotazů: hledat: [první, druhý].`);
           this.prubehSady.hotovo += soubory.length;
           continue;
         }

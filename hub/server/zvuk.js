@@ -360,6 +360,7 @@ export class Zvuk extends EventEmitter {
     this.soubory = nalezene;
     this.otisky = otisky;
     this.knihovna = sestavitKnihovnu(nalezene, this.mapa);
+    this.prohledano = true;
     if (zmena) {
       this.oznam();
       this.emit('soubory', this.soubory);
@@ -878,6 +879,7 @@ export class Zvuk extends EventEmitter {
   async stahnoutSadu(prace, vymenit, zdroje) {
     const chyby = [];
     const chybyZdroju = new Map(); // název zdroje → zpráva (každá jen jednou)
+    const vadne = new Set(); // zdroj, který selhal, se do konce stahování už nezkouší
     const kmen = (f) => f.slice(0, f.length - path.posix.extname(f).length);
     try {
       for (const { p, soubory } of prace) {
@@ -894,8 +896,8 @@ export class Zvuk extends EventEmitter {
           .map(idKandidata);
         this.prubehSady.text = `Hledám „${p.hledat}“ pro ${p.cil}…`;
         this.oznamStav();
-        const { kandidati, chyby: ch } = await hledatKandidaty(zdroje, p, { kolik: soubory.length, vynechat: new Set([...vynechane, ...pouzite]) });
-        for (const e of ch) chybyZdroju.set(e.message.split(':')[0], e.message);
+        const { kandidati, chyby: ch } = await hledatKandidaty(zdroje, p, { kolik: soubory.length, vynechat: new Set([...vynechane, ...pouzite]), vadne });
+        for (const e of ch) chybyZdroju.set(e.zdroj ?? e.message, e.message);
         if (!kandidati.length) {
           chyby.push(`${p.cil}: nic dalšího (${p.licence.join(', ').toUpperCase()}, ${p.delka[0]}–${p.delka[1]} s). Zkus v sadě jiné hledat, nebo víc dotazů: hledat: [první, druhý].`);
           this.prubehSady.hotovo += soubory.length;
@@ -931,8 +933,16 @@ export class Zvuk extends EventEmitter {
         await zapsatAtomicky(this.souborZdroju, JSON.stringify(this.zdroje, null, 1));
         await this.prohledat();
       }
-      const problemy = [...chyby, ...chybyZdroju.values()];
-      this.prubehSady = { ...this.prubehSady, bezi: false, text: chyby.length ? `Hotovo, ${chyby.length}× problém.` : 'Hotovo. Zvuky jsou ve složce.', chyba: problemy.length ? problemy.join('\n') : null };
+      // Nedostupný zdroj vadí, jen když něco chybí; jinak je to jen poznámka (stačil jiný zdroj).
+      const zdroje_ = [...chybyZdroju.keys()].join(' a ');
+      this.prubehSady = {
+        ...this.prubehSady,
+        bezi: false,
+        text: chyby.length
+          ? `Hotovo, ${chyby.length}× problém.`
+          : `Hotovo. Zvuky jsou ve složce.${zdroje_ ? ` (${zdroje_} teď nešel, stačily ostatní zdroje.)` : ''}`,
+        chyba: chyby.length ? [...chyby, ...chybyZdroju.values()].join('\n') : null,
+      };
     } catch (e) {
       this.prubehSady = { ...this.prubehSady, bezi: false, text: 'Stahování se zastavilo.', chyba: e.message };
     }

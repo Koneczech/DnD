@@ -240,6 +240,7 @@ export class Hub {
           z.info('stranka', `Zvuk ${nazev === 'stul' ? 'u stolu' : 'v OBS'}: chyba pominula`);
         }
       }
+      if (!this.zvuk.prohledano) return; // před prvním projitím složky by „chybělo“ všechno
       if (s.chybiTed?.length) z.zmena('zvuk-chybi', 'zvuk', 'varovani', `Ve složce zvuku chybí: ${s.chybiTed.join(', ')}`);
       else z.zmena('zvuk-chybi', 'zvuk', 'info', 'Všechny soubory scény ve složce jsou');
     });

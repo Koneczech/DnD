@@ -128,7 +128,9 @@ export function adresaHledani({ hledat, delka, licence = ['cc0'] }, klic, strana
   const lic = licence.map((l) => (l === 'by' ? '"Attribution"' : '"Creative Commons 0"'));
   u.searchParams.set('query', hledat);
   u.searchParams.set('filter', `license:${lic.length > 1 ? `(${lic.join(' OR ')})` : lic[0]} duration:[${delka[0]} TO ${delka[1]}]`);
-  u.searchParams.set('sort', 'rating_desc');
+  // Podle shody s dotazem, ne podle hodnocení: hodnocení vynášelo dobře hodnocené, ale cizí zvuky
+  // („battle ambience“ našlo vesmírnou loď).
+  u.searchParams.set('sort', 'score');
   u.searchParams.set('fields', 'id,name,username,license,duration,previews,url');
   u.searchParams.set('page_size', '30');
   u.searchParams.set('page', String(strana));
@@ -224,7 +226,8 @@ export class Freesound extends Zdroj {
 export class Openverse extends Zdroj {
   constructor(volby = {}) {
     // Bez klíče Openverse hlídá rychlé dotazy za sebou (ochrana proti robotům): delší odstup.
-    super({ odstupMs: 2500, ...volby });
+    // Hledání má kratší limit: když Openverse neodpovídá, nemá smysl čekat 20 s na každou položku.
+    super({ odstupMs: 2500, limitMs: 8000, ...volby });
     this.nazev = 'Openverse';
     this.odmitnuto = 'Openverse odmítl požadavek.';
   }
@@ -296,11 +299,11 @@ function priponaSouboru(filetype, url) {
  * Kandidáti pro položku ze všech zdrojů v pořadí, bez duplicit a bez vyřazených.
  * Chyba jednoho zdroje (špatný klíč, limit) nezastaví ostatní; vrací ji v `chyby`.
  */
-export async function hledatKandidaty(zdroje, polozka, { kolik, vynechat = new Set() }) {
+export async function hledatKandidaty(zdroje, polozka, { kolik, vynechat = new Set(), vadne = new Set() }) {
   const kandidati = [];
   const videne = new Set(vynechat);
   const chyby = [];
-  const vadne = new Set(); // zdroj, který selhal (klíč, limit), se už znovu nezkouší
+  // `vadne`: zdroj, který selhal (klíč, limit, neodpovídá), se do konce stahování už nezkouší.
   // Nejdřív zadané dotazy, pak zkrácené: příliš konkrétní hledání jinak nic nenajde.
   for (const hledat of dotazyPolozky(polozka)) {
     for (const z of zdroje) {
@@ -315,6 +318,7 @@ export async function hledatKandidaty(zdroje, polozka, { kolik, vynechat = new S
             nove++;
           }
         } catch (e) {
+          e.zdroj = z.nazev;
           chyby.push(e);
           vadne.add(z);
           break;

@@ -28,7 +28,7 @@ test('sada: položky, výchozí hodnoty, chyby a jména souborů', () => {
   assert.equal(o.searchParams.get('license'), 'cc0,by,pdm');
   const u = new URL(adresaHledani(polozky[1], 'falesny'));
   assert.equal(u.searchParams.get('filter'), 'license:"Creative Commons 0" duration:[0.3 TO 30]');
-  assert.equal(u.searchParams.get('sort'), 'rating_desc');
+  assert.equal(u.searchParams.get('sort'), 'score');
 });
 
 test('měření: sinus 997 Hz kolem −3 LUFS, ticho na začátku, zesílení na hladinu s mezemi', () => {
@@ -169,12 +169,15 @@ test('Openverse: bez klíče, jiné přípony, délka a licence, Freesound se ne
     ov('kun-ov-1'),
     ov('kun-ov-2', { license: 'pdm', filetype: 'mp3', url: 'https://upload.wikimedia.org/x/kun-ov-2.mp3' }),
   ];
-  const t = await spustitHub(falesnyFreesound({ status: 401, openverse }));
+  const fake = falesnyFreesound({ status: 401, openverse });
+  const t = await spustitHub(fake);
   try {
     await t.volat('/api/zvuk/sada/doplnit', { metoda: 'POST', telo: { cil: 'nahodne/tabor/kun' } });
     await dokud(async () => !(await t.volat('/api/zvuk')).data.sada.prubeh.bezi, 5000);
     let s = (await t.volat('/api/zvuk')).data.sada;
-    assert.match(s.prubeh.chyba, /odmítl klíč/, 'chyba Freesoundu se ukáže');
+    assert.equal(s.prubeh.chyba, null, 'nic nechybí: nedostupný zdroj není chyba');
+    assert.match(s.prubeh.text, /Freesound teď nešel, stačily ostatní zdroje/);
+    assert.equal(fake.volani.filter((a) => a.includes('freesound.org/apiv2')).length, 1, 'odmítnutý zdroj se do konce stahování nezkouší');
     assert.equal(s.polozky[0].chybi, 0, 'Openverse doplnil i tak');
     // fs:100 přes Openverse prošel (Freesound přímo odmítl klíč); dlouhý, CC BY a cizí host ne.
     const z = JSON.parse(await fs.readFile(path.join(t.audio, 'zdroje.json'), 'utf8')).soubory;

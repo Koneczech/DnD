@@ -66,6 +66,26 @@ test('skládání: náhodné zvuky místa a počasí, v souboji místo ztichne, 
   assert.equal(slozitZvuk({ misto: null, scena: sc(), vrstvy }).dozvuk, 'zadny');
 });
 
+test('souboj místa: vlastní hudba, ambient a náhodné zvuky nahradí zvuk místa; co chybí, platí jako dřív', () => {
+  const vrstvy = { pocasi: {}, rezim: { souboj: { zvuk: { hudba: 'souboj.mp3' } } } };
+  const misto = {
+    zvuk: normalizujZvukMista({
+      den: { hudba: 'tabor.mp3', ambient: 'tabor-ohen.mp3', nahodne: [{ zvuk: 'tabor/kun' }] },
+      souboj: { ambient: 'tabor-boj.mp3', nahodne: [{ zvuk: 'boj/rinceni', hlasitost: 0.9 }] },
+    }),
+  };
+  const boj = slozitZvuk({ misto, scena: sc({ rezim: 'souboj' }), vrstvy });
+  assert.equal(boj.hudba, 'souboj.mp3', 'bez vlastní hudby hraje hudba souboje');
+  assert.deepEqual(boj.ambient.map((a) => [a.soubor, a.hlasitost]), [['tabor-boj.mp3', 1]]);
+  assert.deepEqual(boj.nahodne.map((n) => [n.zvuk, n.hlasitost]), [['boj/rinceni', 0.9]]);
+  const vlastniHudba = slozitZvuk({ misto: { zvuk: { ...misto.zvuk, souboj: { hudba: 'tabor-bitva.mp3' } } }, scena: sc({ rezim: 'souboj' }), vrstvy });
+  assert.equal(vlastniHudba.hudba, 'tabor-bitva.mp3');
+  assert.deepEqual(vlastniHudba.ambient.map((a) => [a.soubor, a.hlasitost]), [['tabor-ohen.mp3', 0.35]], 'bez vlastního ambientu ztlumený ambient místa');
+  assert.equal(vlastniHudba.nahodne[0].hlasitost, 0.28);
+  const mimoBoj = slozitZvuk({ misto, scena: sc(), vrstvy });
+  assert.equal(mimoBoj.ambient[0].soubor, 'tabor-ohen.mp3', 'mimo souboj se zvuk souboje nepoužije');
+});
+
 test('knihovna: složka nahodne/ je vlastní druh a krátké ID ji najde', () => {
   const k = sestavitKnihovnu(['nahodne/tabor/hlasy-1.mp3', 'nahodne/tabor/hlasy-2.mp3', 'jednorazove/boj/mec.mp3']);
   assert.deepEqual(k.nahodne.map((s) => [s.id, s.kategorie, s.soubory.length]), [['nahodne/tabor/hlasy', 'tabor', 2]]);
@@ -147,6 +167,13 @@ test('Místa → Zvuk: náhodné zvuky, vzdálenost a dozvuk se uloží do hlavi
     // Soundboard zní v prostoru místa, zvuk na tah ne.
     await t.volat('/api/zvuk/efekt', { metoda: 'POST', telo: { zvuk: 'zvirata/kun' } });
     assert.equal(t.efekty.at(-1).prostor, true);
+
+    // Zvuk místa v souboji se ukládá stejně jako den a noc.
+    r = await t.volat('/api/mista/tabor/zvuk/souboj', { metoda: 'PUT', telo: { ambient: 'tabor.mp3', nahodne: [{ zvuk: 'zvirata/kun' }] } });
+    assert.equal(r.status, 200, JSON.stringify(r.data));
+    assert.equal(t.hub.mista.get('tabor').zvuk.souboj.ambient, 'tabor.mp3');
+    await t.volat('/api/mista/tabor/zvuk/souboj', { metoda: 'PUT', telo: { ambient: null, nahodne: [] } });
+    assert.equal(t.hub.mista.get('tabor').zvuk.souboj, undefined);
 
     // Smazání: prázdný seznam, vzdálenost 0, bez dozvuku; jednořádkový zápis se vrátí.
     await t.volat('/api/mista/tabor/zvuk/den', { metoda: 'PUT', telo: { nahodne: [], vzdalenost: 0 } });

@@ -3266,20 +3266,23 @@ function vykresliZvukMista(m) {
   lDozvuk.append(sDozvuk);
   prostor.append(lDozvuk, Object.assign(document.createElement('small'), { className: 'poznamka', textContent: 'Ozvěna prostoru pro náhodné zvuky a soundboard. Ambient a hudba zůstávají, jak jsou nahrané.' }));
 
-  const varianty = ['den', 'noc'].map((varianta) => {
+  const NAZVY = { den: 'Den', noc: 'Noc', souboj: 'Souboj' };
+  const varianty = ['den', 'noc', 'souboj'].map((varianta) => {
     const obal = document.createElement('div');
     obal.className = 'zvuk-varianta';
     const radek = document.createElement('div');
     radek.className = 'zvuk-radek';
-    radek.append(Object.assign(document.createElement('strong'), { textContent: varianta === 'den' ? 'Den' : 'Noc' }));
-    const kdy = varianta === 'den' ? 'den' : 'noc';
+    radek.append(Object.assign(document.createElement('strong'), { textContent: NAZVY[varianta] }));
+    const kdy = varianta;
     for (const [k, popis] of [['hudba', 'Hudba'], ['ambient', 'Ambient']]) {
       const aktualni = m.zvuk?.[varianta]?.[k] ?? '';
       const label = document.createElement('label');
       label.textContent = popis;
       const select = document.createElement('select');
       const moznosti = [...new Set([...bezEfektu, ...(aktualni ? [aktualni] : [])])];
-      select.append(new Option(varianta === 'noc' && m.zvuk?.den?.[k] ? '— jako ve dne —' : '— žádná —', ''), ...moznosti.map((x) => new Option(soubory.includes(x) || soubory.some((y) => kmenZvuku(y) === kmenZvuku(x)) ? x : `${x} (ve složce chybí)`, x)));
+      // Souboj bez vlastní volby: hudba souboje z kampan/sceny/rezim/souboj.yaml, ambient místa ztlumený.
+      const prazdna = varianta === 'souboj' ? (k === 'hudba' ? '— hudba souboje —' : '— ambient místa, ztlumený —') : varianta === 'noc' && m.zvuk?.den?.[k] ? '— jako ve dne —' : '— žádná —';
+      select.append(new Option(prazdna, ''), ...moznosti.map((x) => new Option(soubory.includes(x) || soubory.some((y) => kmenZvuku(y) === kmenZvuku(x)) ? x : `${x} (ve složce chybí)`, x)));
       select.value = aktualni;
       select.addEventListener('change', () => ulozitZvuk(`/api/mista/${m.id}/zvuk/${varianta}`, { [k]: select.value || null }, `${popis} pro ${kdy} uložen${k === 'hudba' ? 'a' : ''}`));
       const prehrat = document.createElement('button');
@@ -3301,7 +3304,7 @@ function vykresliZvukMista(m) {
 
   kontejner.replaceChildren(prostor, ...varianty);
   $('#misto-zvuk-popis').textContent = soubory.length
-    ? `Hudba hraje ${stav.prehled?.zvuk?.hudbaKde === 'obs' ? 'v OBS' : 'u stolu'}, ambient a náhodné zvuky u stolu. Noc bez vlastního zvuku hraje zvuk dne.`
+    ? `Hudba hraje ${stav.prehled?.zvuk?.hudbaKde === 'obs' ? 'v OBS' : 'u stolu'}, ambient a náhodné zvuky u stolu. Noc bez vlastního zvuku hraje zvuk dne. Souboj nahradí jen to, co u něj nastavíš.`
     : 'Ve složce zvuku zatím nic není. Nastav ji v Nastavení → Zvuk a nahraj do ní soubory (mp3, ogg, wav).';
 }
 
@@ -3319,7 +3322,7 @@ function vykresliNahodne(m, varianta, ulozitZvuk) {
   seznam.className = 'nahodne-seznam';
   const skupiny = skupinyNahodnych();
   const vsechny = skupiny.flatMap(([, g]) => g);
-  const kdy = varianta === 'den' ? 've dne' : 'v noci';
+  const kdy = { den: 've dne', noc: 'v noci', souboj: 'v souboji' }[varianta];
 
   const sebrat = () =>
     [...seznam.querySelectorAll('.nahodny-zvuk')].map((r) => ({
@@ -3412,9 +3415,12 @@ function vykresliNahodne(m, varianta, ulozitZvuk) {
   });
   const prazdne = document.createElement('small');
   prazdne.className = 'poznamka';
-  prazdne.textContent = varianta === 'noc' && !m.zvuk?.noc && m.zvuk?.den?.nahodne?.length
-    ? 'Noc bez vlastního zvuku hraje zvuky dne.'
-    : 'Krátké zvuky, které se samy občas ozvou pod ambientem (hlasy, kůň, krkavec). Varianty mec-1, mec-2 … se střídají.';
+  prazdne.textContent =
+    varianta === 'souboj'
+      ? 'Bez vlastních zvuků hrají v souboji náhodné zvuky místa ztlumené. Vlastní je nahradí (třeba řinčení zbraní a výkřiky zdálky).'
+      : varianta === 'noc' && !m.zvuk?.noc && m.zvuk?.den?.nahodne?.length
+        ? 'Noc bez vlastního zvuku hraje zvuky dne.'
+        : 'Krátké zvuky, které se samy občas ozvou pod ambientem (kůň, kovadlina, krkavec). Varianty kun-1, kun-2 … se střídají.';
   sekce.append(nadpis, seznam, pridat, ...(vlastni.length ? [] : [prazdne]));
   return sekce;
 }

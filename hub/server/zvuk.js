@@ -50,6 +50,8 @@ const MAX_SOUBORU = 3000;
  */
 export const DOZVUKY = Object.freeze(['zadny', 'mistnost', 'kobka', 'sal', 'jeskyne']);
 /** Náhodné zvuky prostředí (otevřený bod 85): nejvýš 8 na den nebo noc místa, interval 3 s až 10 min. */
+/** Části zvuku místa: den a noc, a souboj (vlastní zvuk místa v boji, otevřený bod 85). */
+export const CASTI_ZVUKU_MISTA = Object.freeze(['den', 'noc', 'souboj']);
 export const NAHODNE = Object.freeze({ max: 8, minS: 3, maxS: 600, kazdychS: 30, nahodilost: 0.5, hlasitost: 0.8, vzdalenost: 0 });
 
 const chyba = (zprava, status = 400) => Object.assign(new Error(zprava), { status });
@@ -113,7 +115,7 @@ export function normalizujZvukMista(zvuk) {
     const p = [...new Set(zvuk.pripnute.map(platneId).filter(Boolean))].slice(0, 24);
     if (p.length) vysledek.pripnute = p;
   }
-  for (const v of ['den', 'noc']) {
+  for (const v of CASTI_ZVUKU_MISTA) {
     const x = zvuk[v];
     if (!x || typeof x !== 'object') continue;
     const z = {};
@@ -145,7 +147,9 @@ export function slozitZvuk({ misto, scena, vrstvy }) {
   const zMista = zm?.[varianta] ?? (varianta === 'noc' ? zm?.den : null) ?? {};
   const souboj = scena.rezim === 'souboj';
   const zSouboje = souboj ? vrstvy.rezim?.souboj?.zvuk ?? {} : {};
-  const hudba = (souboj && platneJmeno(zSouboje.hudba)) || zMista.hudba || null;
+  // Vlastní zvuk místa v souboji (`zvuk.souboj`): co nastaví, nahradí; co ne, platí jako dřív.
+  const zBoje = souboj ? zm?.souboj ?? {} : {};
+  const hudba = zBoje.hudba || (souboj && platneJmeno(zSouboje.hudba)) || zMista.hudba || null;
 
   const ambient = [];
   const pridat = (soubor, hlasitost, zdroj, vzdalenost = null) => {
@@ -162,8 +166,10 @@ export function slozitZvuk({ misto, scena, vrstvy }) {
     }
   };
   const tlumitMisto = souboj ? AMBIENT_MISTA_V_SOUBOJI : 1;
-  pridat(zMista.ambient, tlumitMisto, 'misto', platnaVzdalenost(zMista.vzdalenost));
-  pridatNahodne(zMista.nahodne, tlumitMisto, 'misto');
+  if (zBoje.ambient) pridat(zBoje.ambient, 1, 'misto-souboj', platnaVzdalenost(zBoje.vzdalenost));
+  else pridat(zMista.ambient, tlumitMisto, 'misto', platnaVzdalenost(zMista.vzdalenost));
+  if (zBoje.nahodne?.length) pridatNahodne(zBoje.nahodne, 1, 'misto-souboj');
+  else pridatNahodne(zMista.nahodne, tlumitMisto, 'misto');
   const hrom = [];
   for (const efekt of scena.pocasi ?? []) {
     const z = vrstvy.pocasi?.[efekt]?.zvuk;
@@ -598,7 +604,7 @@ export class Zvuk extends EventEmitter {
     const odkazy = []; // [souborDat, jménoZvuku]
     const nahodneOdkazy = []; // [souborDat, skupina nebo soubor] (otevřený bod 85)
     for (const m of this.mista()) {
-      for (const v of ['den', 'noc']) {
+      for (const v of CASTI_ZVUKU_MISTA) {
         for (const k of ['hudba', 'ambient']) if (m.zvuk?.[v]?.[k]) odkazy.push([`kampan/mista/${m.id}/${m.id}.md`, m.zvuk[v][k]]);
         for (const n of m.zvuk?.[v]?.nahodne ?? []) nahodneOdkazy.push([`kampan/mista/${m.id}/${m.id}.md`, n.zvuk]);
       }

@@ -992,7 +992,7 @@ export class Hub {
     if (dz && m === 'PUT') return this.mista.nastavitDozvuk(dz[1], (await nacistJson(req)).dozvuk);
     const pz = /^\/api\/mista\/([a-z0-9-]{1,60})\/zvuk-pripnute$/.exec(p);
     if (pz && m === 'PUT') return this.mista.nastavitPripnute(pz[1], (await nacistJson(req)).pripnute);
-    const mz = /^\/api\/mista\/([a-z0-9-]{1,60})\/zvuk\/(den|noc)$/.exec(p);
+    const mz = /^\/api\/mista\/([a-z0-9-]{1,60})\/zvuk\/(den|noc|souboj)$/.exec(p);
     if (mz && m === 'PUT') {
       const v = await this.mista.nastavitZvuk(mz[1], mz[2], await nacistJson(req));
       this.data.naplanovatKontrolu();

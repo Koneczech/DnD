@@ -124,8 +124,8 @@ Nastavuje se v **Místa → místo → Zvuk** (otevřený bod 85):
 
 | Co | Kde | Jak zní |
 | --- | --- | --- |
-| **Náhodné zvuky** | u dne a noci, nejvýš 8 | krátké zvuky, které se samy občas ozvou pod ambientem: hlasy v táboře, kůň, kovadlina, krkavec |
-| **Vzdálenost ambientu** | u dne a noci | posuvník od „u stolu“ po „hodně daleko“: ambient je tišší a tupější |
+| **Náhodné zvuky** | u dne, noci a souboje, nejvýš 8 | krátké zvuky, které se samy občas ozvou pod ambientem: kůň, kovadlina, krkavec; v boji řinčení a výkřiky |
+| **Vzdálenost ambientu** | u dne, noci a souboje | posuvník od „u stolu“ po „hodně daleko“: ambient je tišší a tupější |
 | **Dozvuk** | jednou pro celé místo | Bez dozvuku (venku), Místnost, Kobka, Velký sál, Jeskyně |
 
 Náhodný zvuk má tyto volby:
@@ -136,12 +136,20 @@ Náhodný zvuk má tyto volby:
 
 Další pravidla:
 
-- Varianty `hlasy-1.mp3`, `hlasy-2.mp3` … se střídají (nikdy dvakrát stejná). Každé zaznění má trochu jinou výšku a přijde náhodně zleva nebo zprava.
-- Soubory dej do `nahodne\<kategorie>\` (třeba `nahodne\tabor\hlasy-1.mp3`). Vybrat jde i jednorázový zvuk soundboardu.
+- Varianty `kun-1.mp3`, `kun-2.mp3` … se střídají (nikdy dvakrát stejná). Každé zaznění má trochu jinou výšku a přijde náhodně zleva nebo zprava.
+- Soubory dej do `nahodne\<kategorie>\` (třeba `nahodne\tabor\kun-1.mp3`). Vybrat jde i jednorázový zvuk soundboardu.
 - Náhodné zvuky hrají s hlasitostí Ambient a v souboji se ztlumí jako ambient místa. Ticho je vypne a ucpané uši s volbou „vše“ je utlumí.
 - **Dozvuk** platí pro náhodné zvuky a pro soundboard (tlačítka i smyčky). Ambient a hudba zůstávají, jak jsou nahrané, protože nahrávky z jeskyně svou ozvěnu už mají. Zvuky na tah, fanfára a hrom jdou bez dozvuku.
 - Počasí může mít náhodné zvuky taky. Zapisují se ručně do `kampan/sceny/pocasi/*.yaml` (viz README tamtéž).
 - Chybějící náhodný zvuk ohlásí Kontrola dat. Stránka Zvuk u stolu ukáže, které náhodné zvuky hrají a jaký je dozvuk.
+
+**Souboj místa**: třetí řádek vedle Den a Noc. Co u něj nastavíš, v souboji nahradí zvuk místa:
+
+- **Hudba** nahradí hudbu souboje z `kampan/sceny/rezim/souboj.yaml`.
+- **Ambient** a **Náhodné zvuky** nahradí ambient a náhodné zvuky místa a hrají naplno.
+- Co nenastavíš, platí jako dřív: hudba souboje a ztlumený ambient a náhodné zvuky místa.
+
+Třeba tábor: mimo boj oheň, koně a kovadlina; v boji ambient bitvy, řinčení zbraní a výkřiky.
 
 V hlavičce místa vypadá zápis takto:
 
@@ -152,7 +160,11 @@ zvuk:
     ambient: tabor-ohen.mp3
     vzdalenost: 0.2
     nahodne:
-      - { zvuk: nahodne/tabor/hlasy, kazdych_s: 25, nahodilost: 0.7, hlasitost: 0.8, vzdalenost: 0.6 }
+      - { zvuk: nahodne/tabor/kun, kazdych_s: 60, nahodilost: 0.7, hlasitost: 0.8, vzdalenost: 0.7 }
+  souboj:
+    ambient: tabor-bitva.mp3
+    nahodne:
+      - { zvuk: nahodne/boj/rinceni, kazdych_s: 8, nahodilost: 0.8, hlasitost: 0.7, vzdalenost: 0.4 }
 ```
 
 ## 5. Příprava souborů

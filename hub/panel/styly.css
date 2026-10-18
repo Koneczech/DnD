@@ -546,7 +546,7 @@ details.oprava summary { cursor: pointer; color: var(--mlha); font-size: var(--t
 .zvuk-volby { display: grid; grid-template-columns: repeat(3, minmax(10rem, 14rem)) auto; gap: var(--m-3); align-items: end; }
 @media (max-width: 900px) { .zvuk-volby { grid-template-columns: 1fr; } }
 .zvuk-radek { display: flex; flex-wrap: wrap; align-items: end; gap: var(--m-2) var(--m-3); }
-.zvuk-radek > strong { min-width: 2.5rem; align-self: center; }
+.zvuk-radek > strong { min-width: 3.75rem; align-self: center; }
 .zvuk-radek label { display: grid; gap: var(--m-1); color: var(--mlha); font-size: var(--t-popisek); }
 .zvuk-radek select { min-width: 14rem; }
 .svetla-nastaveni > label:not(.zaskrtavaci):not(.prepinac-zap) { display: grid; gap: var(--m-1); }
@@ -891,7 +891,7 @@ main { padding: var(--m-4) var(--m-5) var(--m-5); }
 .posuvnik-mista { display: grid; grid-template-columns: 1fr auto; gap: var(--m-1) var(--m-2); align-items: center; min-width: 9rem; }
 .posuvnik-mista > span { grid-column: 1 / -1; }
 .posuvnik-mista output { min-width: 5.5rem; color: var(--text); font-size: var(--t-popisek); }
-.nahodne-mista { display: grid; gap: var(--m-2); padding-left: calc(2.5rem + var(--m-3)); justify-items: start; }
+.nahodne-mista { display: grid; gap: var(--m-2); padding-left: calc(3.75rem + var(--m-3)); justify-items: start; }
 .nahodne-nadpis { margin: 0; color: var(--mlha); font-size: var(--t-popisek); text-transform: uppercase; letter-spacing: 0.06em; }
 .nahodne-seznam { display: grid; gap: var(--m-2); width: 100%; }
 .nahodny-zvuk { display: flex; flex-wrap: wrap; align-items: end; gap: var(--m-2) var(--m-3); padding: var(--m-2) var(--m-3); background: var(--povrch-0); border: 1px solid var(--linka); border-radius: var(--zaobleni); }

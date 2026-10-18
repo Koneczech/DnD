@@ -7,7 +7,7 @@ import { EventEmitter } from 'node:events';
 import YAML from 'yaml';
 import { rozebrat, upravitDokument } from './frontmatter.js';
 import { zapsatAtomicky } from './zapis.js';
-import { normalizujZvukMista, platneJmeno, platnaVzdalenost, normalizujNahodne, DOZVUKY, NAHODNE } from './zvuk.js';
+import { normalizujZvukMista, platneJmeno, platnaVzdalenost, normalizujNahodne, DOZVUKY, NAHODNE, CASTI_ZVUKU_MISTA } from './zvuk.js';
 import { platneId } from './zvuky-knihovna.js';
 
 export const UCELY = Object.freeze(['scena', 'portret', 'token', 'karta']);
@@ -170,13 +170,13 @@ export class Mista extends EventEmitter {
   }
 
   /**
-   * Zvuk místa pro den, nebo noc: hudba a ambient (jméno souboru ve složce zvuku, null = žádný),
+   * Zvuk místa pro den, noc, nebo souboj: hudba a ambient (jméno souboru ve složce zvuku, null = žádný),
    * vzdálenost ambientu (0–1, 0 = smazat) a náhodné zvuky (seznam, prázdný = smazat; otevřený bod 85).
    * Mění jen tyto klíče v `zvuk.<varianta>`, zbytek hlavičky zůstává.
    */
   async nastavitZvuk(id, varianta, zmeny) {
     this.get(id);
-    if (!VARIANTY.includes(varianta)) throw chyba('Zvuk se nastavuje pro den, nebo noc.');
+    if (!CASTI_ZVUKU_MISTA.includes(varianta)) throw chyba('Zvuk se nastavuje pro den, noc, nebo souboj.');
     const nastavit = {};
     for (const k of ['hudba', 'ambient']) {
       if (!(k in zmeny)) continue;

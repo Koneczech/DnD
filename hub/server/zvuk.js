@@ -14,7 +14,7 @@ import { zapsatAtomicky } from './zapis.js';
 import { sestavitKnihovnu, najitSkupinu, vybratVariantu, normalizujMapu, zvukTahu, odkazyMapy, platneId } from './zvuky-knihovna.js';
 import { normalizujSadu, souboryPolozky, Freesound, Openverse, Kenney, hledatKandidaty, idKandidata, ZDROJE } from './zvuky-sada.js';
 import { polozkyZip, rozbalit } from './zip.js';
-import { HLADINY, ziskNaHladinu } from '../sdilene/mereni.js';
+import { HLADINY, ziskNaHladinu, VERZE_MERENI } from '../sdilene/mereni.js';
 
 /** Formáty, které umí přehrát prohlížeč v OBS i Chrome/Edge. */
 export const PRIPONY_ZVUKU = Object.freeze(['.mp3', '.ogg', '.opus', '.wav', '.flac', '.m4a']);
@@ -433,7 +433,8 @@ export class Zvuk extends EventEmitter {
   /** Platné měření souboru (soubor se od měření nezměnil). */
   mereniSouboru(soubor) {
     const m = this.mereni.get(soubor);
-    return m && m.klic === this.otisky.get(soubor) ? m : null;
+    // Starší měření (jiný výpočet) neplatí: soubor se změří znovu.
+    return m && m.klic === this.otisky.get(soubor) && m.verze === VERZE_MERENI ? m : null;
   }
 
   nezmerene() {
@@ -466,6 +467,7 @@ export class Zvuk extends EventEmitter {
       zacatek: cislo(d.zacatek, 0, 36000) ?? 0,
       konec: cislo(d.konec, 0, 36000),
       delka: cislo(d.delka, 0, 36000),
+      verze: VERZE_MERENI,
       ...(typeof d.chyba === 'string' ? { chyba: d.chyba.slice(0, 200) } : {}),
     };
     this.mereni.set(soubor, m);
@@ -853,16 +855,17 @@ export class Zvuk extends EventEmitter {
   /**
    * Doplní chybějící soubory sady (Freesound, Openverse), nebo vymění soubory jedné položky
    * za další v pořadí. Běží na pozadí; průběh je ve stavu (sada.prubeh).
-   * @param {{cil?: string, vymenit?: boolean}} volby
+   * @param {{cil?: string, soubor?: string, vymenit?: boolean}} volby `soubor` = jen jedna varianta položky
    */
-  doplnitSadu({ cil = null, vymenit = false } = {}) {
+  doplnitSadu({ cil = null, soubor = null, vymenit = false } = {}) {
     if (this.prubehSady.bezi) throw chyba('Stahování už běží.', 409);
     if (!this.slozkaExistuje) throw chyba(`Složka zvuku ${this.slozka} neexistuje.`);
     const polozky = this.sada.polozky.filter((p) => (cil ? p.cil === cil : true));
     if (cil && !polozky.length) throw chyba('Taková položka v sadě není.', 404);
     if (vymenit && polozky.some((p) => p.balik)) throw chyba('Zvuk z balíčku nejde vyměnit za další: změň jméno souboru v kampan/zvuky-sada.yaml.');
+    if (soubor && (!cil || !souboryPolozky(polozky[0]).includes(soubor))) throw chyba('Taková varianta v položce není.', 404);
     const prace = polozky
-      .map((p) => ({ p, soubory: souboryPolozky(p).filter((f) => vymenit || !this.najit(f)) }))
+      .map((p) => ({ p, soubory: souboryPolozky(p).filter((f) => (!soubor || f === soubor) && (vymenit || !this.najit(f))) }))
       .filter((x) => x.soubory.length);
     const celkem = prace.reduce((n, x) => n + x.soubory.length, 0);
     this.prubehSady = { bezi: Boolean(celkem), hotovo: 0, celkem, text: celkem ? 'Hledám zvuky…' : 'Všechny soubory sady ve složce jsou.', chyba: null };

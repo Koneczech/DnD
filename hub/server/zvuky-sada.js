@@ -141,7 +141,7 @@ export function adresaOpenverse({ hledat, licence = ['cc0'] }, strana = 1) {
   const u = new URL(`${OPENVERSE_API}/audio/`);
   u.searchParams.set('q', hledat);
   u.searchParams.set('license', [...new Set([...licence, 'pdm'])].join(','));
-  u.searchParams.set('page_size', '40');
+  u.searchParams.set('page_size', '20'); // bez klíče víc nejde (401)
   u.searchParams.set('page', String(strana));
   return u.toString();
 }
@@ -223,13 +223,14 @@ export class Freesound extends Zdroj {
 /** Openverse (bez klíče). Freesound v něm dostane stejné ID jako přímo z Freesoundu. */
 export class Openverse extends Zdroj {
   constructor(volby = {}) {
-    super(volby);
+    // Bez klíče Openverse hlídá rychlé dotazy za sebou (ochrana proti robotům): delší odstup.
+    super({ odstupMs: 2500, ...volby });
     this.nazev = 'Openverse';
     this.odmitnuto = 'Openverse odmítl požadavek.';
   }
 
   async hledat(polozka, strana = 1) {
-    const d = await this.volat(adresaOpenverse(polozka, strana), { hlavicky: { Accept: 'application/json' } });
+    const d = await this.volat(adresaOpenverse(polozka, strana), { hlavicky: { Accept: 'application/json', 'User-Agent': 'DM-Hub/1.0 (osobni pouziti; github.com/Koneczech/DnD)' } });
     const [od, do_] = polozka.delka;
     return (d.results ?? [])
       .map((x) => {

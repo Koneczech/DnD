@@ -2957,15 +2957,27 @@ function vykresliSadu(z) {
         b.title = f.je ? `${f.zdroj ? `${f.zdroj.nazev} · ${f.zdroj.autor} · ${f.zdroj.licence} · ${f.zdroj.odkud}` : 'Tvůj soubor'} (klik = ukázka)` : 'Ve složce chybí';
         if (f.je) b.addEventListener('click', () => prehratUkazku(f.skutecny ?? f.soubor, b));
         soubory.append(b);
+        // Jen tahle varianta za další v pořadí (ostatní zůstanou).
+        if (f.je && !x.balik) {
+          const v = document.createElement('button');
+          v.type = 'button';
+          v.className = 'tiche sada-vymenit';
+          v.textContent = '↻';
+          v.title = `Vyměnit jen ${f.soubor.split('/').pop()} za další zvuk v pořadí`;
+          v.setAttribute('aria-label', v.title);
+          v.disabled = p.bezi;
+          v.addEventListener('click', () => doplnitSadu({ cil: x.cil, soubor: f.soubor, vymenit: true }));
+          soubory.append(v);
+        }
       }
       const akce = document.createElement('td');
       const vymenit = document.createElement('button');
       vymenit.type = 'button';
       vymenit.className = 'tiche';
-      vymenit.textContent = x.chybi === x.soubory.length ? 'Stáhnout' : 'Vyměnit';
       vymenit.disabled = p.bezi;
-      vymenit.title = x.chybi === x.soubory.length ? 'Stáhnout jen tuhle položku' : 'Stáhnout místo těchto souborů další zvuky v pořadí';
-      vymenit.addEventListener('click', () => doplnitSadu({ cil: x.cil, vymenit: x.chybi !== x.soubory.length }));
+      vymenit.textContent = x.chybi === x.soubory.length ? 'Stáhnout' : x.chybi ? 'Doplnit' : x.soubory.length > 1 ? 'Vyměnit vše' : 'Vyměnit';
+      vymenit.title = x.chybi === x.soubory.length ? 'Stáhnout jen tuhle položku' : x.chybi ? 'Doplnit chybějící varianty' : 'Stáhnout místo všech souborů položky další zvuky v pořadí (jednu variantu vyměníš tlačítkem ↻)';
+      vymenit.addEventListener('click', () => doplnitSadu({ cil: x.cil, vymenit: !x.chybi }));
       // Zvuk z balíčku nemá „další v pořadí“: mění se jménem souboru v kampan/zvuky-sada.yaml.
       vymenit.hidden = Boolean(x.balik) && !x.chybi;
       akce.append(vymenit);

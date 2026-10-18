@@ -839,7 +839,7 @@ export class Hub {
     if (p === '/api/zvuk/mereni' && m === 'POST') return z.zapsatMereni(await nacistJson(req));
     if (p === '/api/zvuk/sada/doplnit' && m === 'POST') {
       const telo = await nacistJson(req);
-      return z.doplnitSadu({ cil: typeof telo.cil === 'string' ? telo.cil : null, vymenit: telo.vymenit === true });
+      return z.doplnitSadu({ cil: typeof telo.cil === 'string' ? telo.cil : null, soubor: typeof telo.soubor === 'string' ? telo.soubor : null, vymenit: telo.vymenit === true });
     }
     if (p === '/api/zvuk/smycka' && m === 'PUT') return z.smycka(await nacistJson(req));
     if (p === '/api/zvuk/smycky/zastavit' && m === 'POST') {

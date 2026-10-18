@@ -135,6 +135,12 @@ test('sada v Hubu: doplní chybějící z Freesoundu (jen CC0), zapíše autory,
     assert.match(await fs.readFile(path.join(t.audio, 'nahodne', 'tabor', 'kun-2.mp3'), 'utf8'), /^mp3 103 /);
     const z2 = JSON.parse(await fs.readFile(path.join(t.audio, 'zdroje.json'), 'utf8'));
     assert.deepEqual(z2.vynechane['nahodne/tabor/kun'].sort(), ['fs:100', 'fs:101']);
+    // Jen jedna varianta: kun-2 dostane další, kun-1 zůstane.
+    await t.volat('/api/zvuk/sada/doplnit', { metoda: 'POST', telo: { cil: 'nahodne/tabor/kun', soubor: 'nahodne/tabor/kun-2.mp3', vymenit: true } });
+    await dokud(async () => !(await t.volat('/api/zvuk')).data.sada.prubeh.bezi, 5000);
+    assert.match(await fs.readFile(path.join(t.audio, 'nahodne', 'tabor', 'kun-1.mp3'), 'utf8'), /^mp3 102 /);
+    assert.match(await fs.readFile(path.join(t.audio, 'nahodne', 'tabor', 'kun-2.mp3'), 'utf8'), /^mp3 104 /);
+    assert.equal((await t.volat('/api/zvuk/sada/doplnit', { metoda: 'POST', telo: { cil: 'nahodne/tabor/kun', soubor: 'jiny.mp3', vymenit: true } })).status, 404);
     // Nic nechybí: doplnit nic nedělá.
     assert.equal((await t.volat('/api/zvuk/sada/doplnit', { metoda: 'POST', telo: {} })).data.celkem, 0);
   } finally {
@@ -336,4 +342,18 @@ test('balíček Kenney: stáhne ZIP jednou do baliky/, vybere soubory podle jmé
   } finally {
     await t.zastavit();
   }
+});
+
+test('měření: krátký zvuk s pozvolným náběhem začne tam, kde je opravdu slyšet; staré měření neplatí', async () => {
+  const { VERZE_MERENI } = await import('../sdilene/mereni.js');
+  const fs_ = 44100;
+  const s = new Float32Array(fs_ * 3);
+  // Tichý šum do 0,4 s, pak tichounký náběh, hlavní tón od 0,8 s.
+  for (let i = 0; i < s.length; i++) {
+    const t = i / fs_;
+    s[i] = (t < 0.4 ? 0.012 * Math.sin(i * 1.7) : 0) + (t >= 0.4 && t < 0.8 ? 0.004 * Math.sin((2 * Math.PI * 440 * i) / fs_) : 0) + (t >= 0.8 ? 0.08 * Math.sin((2 * Math.PI * 440 * i) / fs_) : 0);
+  }
+  const m = zmeritVzorky([s], fs_);
+  assert.ok(Math.abs(m.zacatek - 0.78) < 0.03, `zacatek ${m.zacatek}`);
+  assert.equal(m.verze, VERZE_MERENI);
 });

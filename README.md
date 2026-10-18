@@ -4,6 +4,7 @@ Repo drží data kampaně D&D 5e (2024), ilustrace a **DM Hub**, lokální ovlá
 
 | Co | Kde |
 | --- | --- |
+| **Co Hub umí a co je rozdělané** | [`PREHLED.md`](PREHLED.md) |
 | Zadání DM Hubu (master) | [`ZADANI.md`](ZADANI.md) |
 | Pravidla pro práci Claude Code | [`CLAUDE.md`](CLAUDE.md) |
 | Kód Hubu | [`hub/`](hub/) |

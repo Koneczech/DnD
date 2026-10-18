@@ -601,17 +601,17 @@
               <p class="poznamka">Když je na tahu postava s málo HP, hudba nezeslábne, ale zní tupě, jako přes ucpané uši. Zkouška pustí i pulz lampy a kraje obrazu v OBS (stejně jako v Nastavení → Světla → Málo HP).</p>
               <label class="prepinac-zap samostatny"><input type="checkbox" id="zvuk-tahy-hraci" role="switch"> <span>Zvuky tahů jen pro postavy hráčů (bez společného zvuku nepřátel)</span></label>
               <p class="ulozeni" id="zvuk-volby-vysledek" aria-live="polite"></p>
-              <h2 id="nastaveni-sada">Zvuková sada z Freesoundu</h2>
+              <h2 id="nastaveni-sada">Zvuková sada</h2>
               <div class="formular siroky">
                 <p class="ulozeni" id="sada-klic-stav" aria-live="polite"></p>
                 <div class="pole-s-tlacitkem">
-                  <label>Klíč Freesound (API key)
+                  <label>Klíč Freesound (nepovinný)
                     <input id="pole-freesound" type="password" autocomplete="off" spellcheck="false" placeholder="z freesound.org/apiv2/apply">
                   </label>
                   <button type="button" id="freesound-ulozit">Uložit klíč</button>
                   <button type="button" class="tiche" id="freesound-smazat" hidden>Odebrat</button>
                 </div>
-                <small class="poznamka">Účet na freesound.org je zdarma. Klíč vytvoříš na <code>freesound.org/apiv2/apply</code> (popis třeba „DM Hub, osobní použití“) a zkopíruješ <em>Client secret/Api key</em>. Zůstane jen v <code>hub/.env</code>. Hub stahuje jen zvuky s licencí CC0 a autory zapíše do <code>zdroje.json</code> ve složce zvuku.</small>
+                <small class="poznamka">Účet na freesound.org je zdarma. Klíč vytvoříš na <code>freesound.org/apiv2/apply</code> (popis třeba „DM Hub, osobní použití“) a zkopíruješ <em>Client secret/Api key</em>. Zůstane jen v <code>hub/.env</code>. Bez klíče Hub hledá jen v Openverse. Stahuje jen zvuky s licencí CC0 nebo public domain (CC BY jen u položek, které to v sadě dovolí) a autory zapíše do <code>zdroje.json</code> ve složce zvuku.</small>
               </div>
               <div class="sada-hlava">
                 <button type="button" id="sada-doplnit">Doplnit chybějící zvuky</button>

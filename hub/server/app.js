@@ -125,7 +125,7 @@ export class Hub {
    * @param {object} [volby.obsKlient] náhrada klienta OBS (testy)
    * @param {boolean} [volby.gitSit] kontrolovat GitHub při startu (výchozí true)
    */
-  constructor({ cesty = vychoziCesty(), obsKlient, gitSit = true, port, ovladaceSvetel, sparovatHue, fetchFreesound } = {}) {
+  constructor({ cesty = vychoziCesty(), obsKlient, gitSit = true, port, ovladaceSvetel, sparovatHue, fetchZvuky } = {}) {
     this.c = cesty;
     this.gitSit = gitSit;
     this.portPrepis = port;
@@ -157,7 +157,7 @@ export class Hub {
       scena: () => this.scena.stav,
       vrstvy: () => this.svetla.vrstvy,
       mista: () => [...this.mista.mista.values()],
-      fetchFreesound,
+      fetchZvuky,
     });
     this.data.dalsiKontroly = () => this.zvuk.kontrola();
     this.iniciativa = new Iniciativa({ cesty: this.c, obs: this.obs });

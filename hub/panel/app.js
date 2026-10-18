@@ -3193,50 +3193,230 @@ function prehratUkazku(soubor, tlacitko) {
 /** Jméno bez přípony: dest.mp3 v datech najde i dest.wav (stejně jako server). */
 const kmenZvuku = (x) => x.replace(/\.[a-z0-9]+$/i, '').toLowerCase();
 
+/** Vzdálenost 0–1 slovy (posuvníky v Místa → Zvuk). */
+function popisVzdalenosti(v) {
+  if (!v) return 'u stolu';
+  if (v <= 0.3) return 'kousek';
+  if (v <= 0.6) return 'opodál';
+  if (v <= 0.85) return 'daleko';
+  return 'hodně daleko';
+}
+
+/** Posuvník 0–100 % s popiskem; `popis` převede hodnotu 0–1 na text vedle. */
+function posuvnikZvuku(text, hodnota, popis, priZmene) {
+  const label = document.createElement('label');
+  label.className = 'posuvnik-mista';
+  const nazev = document.createElement('span');
+  nazev.textContent = text;
+  const input = Object.assign(document.createElement('input'), { type: 'range', min: '0', max: '100', step: '5', value: String(Math.round((hodnota ?? 0) * 100)) });
+  const vystup = document.createElement('output');
+  const ukaz = () => (vystup.textContent = popis(Number(input.value) / 100));
+  ukaz();
+  input.addEventListener('input', ukaz);
+  input.addEventListener('change', () => priZmene(Number(input.value) / 100));
+  label.append(nazev, input, vystup);
+  return { label, input };
+}
+
+/** Skupiny pro náhodné zvuky: nejdřív složka nahodne/, pak jednorázové zvuky soundboardu. */
+function skupinyNahodnych() {
+  const k = stav.prehled?.zvuk?.knihovna ?? {};
+  return [
+    ['Náhodné zvuky (složka nahodne)', k.nahodne ?? []],
+    ['Jednorázové zvuky', k.jednorazove ?? []],
+  ];
+}
+
 function vykresliZvukMista(m) {
   const kontejner = $('#misto-zvuk');
   if (kontejner.contains(document.activeElement)) return;
   const soubory = stav.zvukoveSoubory ?? [];
   // Hrom hraje Hub sám po blesku, do hudby ani ambientu místa nepatří (⚠ návrh).
-  const bezEfektu = soubory.filter((x) => !x.startsWith('efekty/') && !/^hrom/i.test(kmenZvuku(x)));
-  kontejner.replaceChildren(
-    ...['den', 'noc'].map((varianta) => {
-      const radek = document.createElement('div');
-      radek.className = 'zvuk-radek';
-      radek.append(Object.assign(document.createElement('strong'), { textContent: varianta === 'den' ? 'Den' : 'Noc' }));
-      for (const [k, popis] of [['hudba', 'Hudba'], ['ambient', 'Ambient']]) {
-        const aktualni = m.zvuk?.[varianta]?.[k] ?? '';
-        const label = document.createElement('label');
-        label.textContent = popis;
-        const select = document.createElement('select');
-        const moznosti = [...new Set([...bezEfektu, ...(aktualni ? [aktualni] : [])])];
-        select.append(new Option(varianta === 'noc' && m.zvuk?.den?.[k] ? '— jako ve dne —' : '— žádná —', ''), ...moznosti.map((x) => new Option(soubory.includes(x) || soubory.some((y) => kmenZvuku(y) === kmenZvuku(x)) ? x : `${x} (ve složce chybí)`, x)));
-        select.value = aktualni;
-        select.addEventListener('change', async () => {
-          const vysledek = $('#misto-zvuk-vysledek');
-          try {
-            await api(`/api/mista/${m.id}/zvuk/${varianta}`, { metoda: 'PUT', telo: { [k]: select.value || null } });
-            vysledek.className = 'ulozeni';
-            vysledek.textContent = `${popis} pro ${varianta === 'den' ? 'den' : 'noc'} uložen${k === 'hudba' ? 'a' : ''} v ${cas()}.`;
-          } catch (e) {
-            vysledek.className = 'ulozeni chyba';
-            vysledek.textContent = `Neuloženo: ${e.message}`;
-          }
-        });
-        const prehrat = document.createElement('button');
-        prehrat.type = 'button';
-        prehrat.textContent = '▶';
-        prehrat.title = 'Přehrát ukázku v tomto prohlížeči';
-        prehrat.addEventListener('click', () => select.value && prehratUkazku(select.value, prehrat));
-        label.append(select);
-        radek.append(label, prehrat);
-      }
-      return radek;
-    }),
-  );
+  const bezEfektu = soubory.filter((x) => !x.startsWith('efekty/') && !x.startsWith('nahodne/') && !/^hrom/i.test(kmenZvuku(x)));
+  const ulozitZvuk = async (cesta, telo, hlaseni) => {
+    const vysledek = $('#misto-zvuk-vysledek');
+    try {
+      await api(cesta, { metoda: 'PUT', telo });
+      vysledek.className = 'ulozeni';
+      vysledek.textContent = `${hlaseni} v ${cas()}.`;
+    } catch (e) {
+      vysledek.className = 'ulozeni chyba';
+      vysledek.textContent = `Neuloženo: ${e.message}`;
+    }
+  };
+
+  // Dozvuk místa: platí pro den i noc (otevřený bod 85).
+  const prostor = document.createElement('div');
+  prostor.className = 'zvuk-radek';
+  prostor.append(Object.assign(document.createElement('strong'), { textContent: 'Prostor' }));
+  const lDozvuk = document.createElement('label');
+  lDozvuk.textContent = 'Dozvuk';
+  const sDozvuk = document.createElement('select');
+  // Seznam je tady, ne nahoře v modulu: panel kreslí místa už při načtení (top-level await).
+  const dozvuky = [
+    ['zadny', 'Bez dozvuku (venku)'],
+    ['mistnost', 'Místnost'],
+    ['kobka', 'Kobka, sklep'],
+    ['sal', 'Velký sál, chrám'],
+    ['jeskyne', 'Jeskyně'],
+  ];
+  sDozvuk.append(...dozvuky.map(([v, t]) => new Option(t, v)));
+  sDozvuk.value = m.zvuk?.dozvuk ?? 'zadny';
+  sDozvuk.addEventListener('change', () => ulozitZvuk(`/api/mista/${m.id}/zvuk-dozvuk`, { dozvuk: sDozvuk.value }, 'Dozvuk uložen'));
+  lDozvuk.append(sDozvuk);
+  prostor.append(lDozvuk, Object.assign(document.createElement('small'), { className: 'poznamka', textContent: 'Ozvěna prostoru pro náhodné zvuky a soundboard. Ambient a hudba zůstávají, jak jsou nahrané.' }));
+
+  const varianty = ['den', 'noc'].map((varianta) => {
+    const obal = document.createElement('div');
+    obal.className = 'zvuk-varianta';
+    const radek = document.createElement('div');
+    radek.className = 'zvuk-radek';
+    radek.append(Object.assign(document.createElement('strong'), { textContent: varianta === 'den' ? 'Den' : 'Noc' }));
+    const kdy = varianta === 'den' ? 'den' : 'noc';
+    for (const [k, popis] of [['hudba', 'Hudba'], ['ambient', 'Ambient']]) {
+      const aktualni = m.zvuk?.[varianta]?.[k] ?? '';
+      const label = document.createElement('label');
+      label.textContent = popis;
+      const select = document.createElement('select');
+      const moznosti = [...new Set([...bezEfektu, ...(aktualni ? [aktualni] : [])])];
+      select.append(new Option(varianta === 'noc' && m.zvuk?.den?.[k] ? '— jako ve dne —' : '— žádná —', ''), ...moznosti.map((x) => new Option(soubory.includes(x) || soubory.some((y) => kmenZvuku(y) === kmenZvuku(x)) ? x : `${x} (ve složce chybí)`, x)));
+      select.value = aktualni;
+      select.addEventListener('change', () => ulozitZvuk(`/api/mista/${m.id}/zvuk/${varianta}`, { [k]: select.value || null }, `${popis} pro ${kdy} uložen${k === 'hudba' ? 'a' : ''}`));
+      const prehrat = document.createElement('button');
+      prehrat.type = 'button';
+      prehrat.textContent = '▶';
+      prehrat.title = 'Přehrát ukázku v tomto prohlížeči';
+      prehrat.addEventListener('click', () => select.value && prehratUkazku(select.value, prehrat));
+      label.append(select);
+      radek.append(label, prehrat);
+    }
+    // Vzdálenost ambientu (otevřený bod 85): tišší a tupější, jako by se ozýval zdálky.
+    const { label: lVzd } = posuvnikZvuku('Vzdálenost ambientu', m.zvuk?.[varianta]?.vzdalenost ?? 0, popisVzdalenosti, (v) =>
+      ulozitZvuk(`/api/mista/${m.id}/zvuk/${varianta}`, { vzdalenost: v }, `Vzdálenost ambientu pro ${kdy} uložena`),
+    );
+    radek.append(lVzd);
+    obal.append(radek, vykresliNahodne(m, varianta, ulozitZvuk));
+    return obal;
+  });
+
+  kontejner.replaceChildren(prostor, ...varianty);
   $('#misto-zvuk-popis').textContent = soubory.length
-    ? `Hudba hraje ${stav.prehled?.zvuk?.hudbaKde === 'obs' ? 'v OBS' : 'u stolu'}, ambient u stolu. Noc bez vlastního zvuku hraje zvuk dne.`
+    ? `Hudba hraje ${stav.prehled?.zvuk?.hudbaKde === 'obs' ? 'v OBS' : 'u stolu'}, ambient a náhodné zvuky u stolu. Noc bez vlastního zvuku hraje zvuk dne.`
     : 'Ve složce zvuku zatím nic není. Nastav ji v Nastavení → Zvuk a nahraj do ní soubory (mp3, ogg, wav).';
+}
+
+/**
+ * Náhodné zvuky místa pro den, nebo noc (otevřený bod 85): krátké zvuky, které se samy občas ozvou
+ * pod ambientem. Každá změna uloží celý seznam.
+ */
+function vykresliNahodne(m, varianta, ulozitZvuk) {
+  const sekce = document.createElement('div');
+  sekce.className = 'nahodne-mista';
+  const nadpis = document.createElement('p');
+  nadpis.className = 'nahodne-nadpis';
+  nadpis.textContent = 'Náhodné zvuky';
+  const seznam = document.createElement('div');
+  seznam.className = 'nahodne-seznam';
+  const skupiny = skupinyNahodnych();
+  const vsechny = skupiny.flatMap(([, g]) => g);
+  const kdy = varianta === 'den' ? 've dne' : 'v noci';
+
+  const sebrat = () =>
+    [...seznam.querySelectorAll('.nahodny-zvuk')].map((r) => ({
+      zvuk: r.querySelector('select').value,
+      kazdych_s: Number(r.querySelector('[data-k="kazdych_s"]').value),
+      nahodilost: Number(r.querySelector('[data-k="nahodilost"]').value) / 100,
+      hlasitost: Number(r.querySelector('[data-k="hlasitost"]').value) / 100,
+      vzdalenost: Number(r.querySelector('[data-k="vzdalenost"]').value) / 100,
+    }));
+  const ulozitSeznam = (hlaseni = `Náhodné zvuky ${kdy} uloženy`) => ulozitZvuk(`/api/mista/${m.id}/zvuk/${varianta}`, { nahodne: sebrat() }, hlaseni);
+
+  const radek = (n) => {
+    const r = document.createElement('div');
+    r.className = 'nahodny-zvuk';
+    const lZvuk = document.createElement('label');
+    lZvuk.textContent = 'Zvuk';
+    const select = document.createElement('select');
+    for (const [nazev, g] of skupiny) {
+      if (!g.length) continue;
+      const og = document.createElement('optgroup');
+      og.label = nazev;
+      og.append(...g.map((x) => new Option(`${x.kategorie} · ${x.nazev}${x.soubory.length > 1 ? ` (${x.soubory.length}×)` : ''}`, x.id)));
+      select.append(og);
+    }
+    if (!vsechny.some((x) => x.id === n.zvuk || x.id.endsWith(`/${n.zvuk}`))) select.append(new Option(`${n.zvuk} (ve složce chybí)`, n.zvuk));
+    select.value = vsechny.find((x) => x.id === n.zvuk)?.id ?? vsechny.find((x) => x.id.endsWith(`/${n.zvuk}`))?.id ?? n.zvuk;
+    select.addEventListener('change', () => ulozitSeznam());
+    lZvuk.append(select);
+
+    const lKazdych = document.createElement('label');
+    lKazdych.textContent = 'Každých (s)';
+    const kazdych = Object.assign(document.createElement('input'), { type: 'number', min: '3', max: '600', step: '1', value: String(n.kazdych_s) });
+    kazdych.dataset.k = 'kazdych_s';
+    kazdych.className = 'kratke-cislo';
+    kazdych.addEventListener('change', () => ulozitSeznam());
+    lKazdych.append(kazdych);
+
+    const posuvnik = (k, text, popis) => {
+      const { label, input } = posuvnikZvuku(text, n[k], popis, () => ulozitSeznam());
+      input.dataset.k = k;
+      return label;
+    };
+    const prehrat = document.createElement('button');
+    prehrat.type = 'button';
+    prehrat.textContent = '▶';
+    prehrat.title = 'Přehrát jednu variantu v tomto prohlížeči';
+    prehrat.addEventListener('click', () => {
+      const g = vsechny.find((x) => x.id === select.value);
+      if (g) prehratUkazku(g.soubory[Math.floor(Math.random() * g.soubory.length)], prehrat);
+    });
+    const odebrat = document.createElement('button');
+    odebrat.type = 'button';
+    odebrat.className = 'tiche';
+    odebrat.textContent = '✕';
+    odebrat.title = 'Odebrat náhodný zvuk';
+    odebrat.setAttribute('aria-label', 'Odebrat náhodný zvuk');
+    odebrat.addEventListener('click', () => {
+      r.remove();
+      ulozitSeznam(`Náhodný zvuk ${kdy} odebrán`);
+      pridat.hidden = false;
+    });
+    r.append(
+      lZvuk,
+      lKazdych,
+      posuvnik('nahodilost', 'Nahodilost', (v) => (v < 0.15 ? 'pravidelně' : v < 0.6 ? 'trochu' : 'hodně')),
+      posuvnik('hlasitost', 'Hlasitost', (v) => `${Math.round(v * 100)} %`),
+      posuvnik('vzdalenost', 'Vzdálenost', popisVzdalenosti),
+      prehrat,
+      odebrat,
+    );
+    return r;
+  };
+
+  const vlastni = m.zvuk?.[varianta]?.nahodne ?? [];
+  seznam.append(...vlastni.map(radek));
+  const pridat = document.createElement('button');
+  pridat.type = 'button';
+  pridat.className = 'tiche';
+  pridat.textContent = '+ Náhodný zvuk';
+  pridat.hidden = vlastni.length >= 8;
+  pridat.disabled = !vsechny.length;
+  pridat.title = vsechny.length ? '' : 'Ve složce zvuku nejsou krátké zvuky (nahodne/ nebo jednorazove/).';
+  pridat.addEventListener('click', () => {
+    const pouzite = new Set(sebrat().map((x) => x.zvuk));
+    const volny = vsechny.find((x) => !pouzite.has(x.id));
+    if (!volny) return toast('Všechny zvuky ze složky už v seznamu jsou.', { chyba: true });
+    seznam.append(radek({ zvuk: volny.id, kazdych_s: 30, nahodilost: 0.5, hlasitost: 0.8, vzdalenost: 0.3 }));
+    pridat.hidden = seznam.children.length >= 8;
+    ulozitSeznam(`Náhodný zvuk ${kdy} přidán`);
+  });
+  const prazdne = document.createElement('small');
+  prazdne.className = 'poznamka';
+  prazdne.textContent = varianta === 'noc' && !m.zvuk?.noc && m.zvuk?.den?.nahodne?.length
+    ? 'Noc bez vlastního zvuku hraje zvuky dne.'
+    : 'Krátké zvuky, které se samy občas ozvou pod ambientem (hlasy, kůň, krkavec). Varianty mec-1, mec-2 … se střídají.';
+  sekce.append(nadpis, seznam, pridat, ...(vlastni.length ? [] : [prazdne]));
+  return sekce;
 }
 
 /* ---------- Odezva (rozhodnutí 65) ----------

@@ -118,11 +118,49 @@ tahy:
 
 **Konec souboje** zahraje `vitezstvi.mp3` (`zvuk.konec` v `kampan/sceny/rezim/souboj.yaml`). Při útěku nebo prohře použij v záložce Souboj **Konec bez fanfáry**.
 
+### Náhodné zvuky, vzdálenost a dozvuk místa
+
+Nastavuje se v **Místa → místo → Zvuk** (otevřený bod 85):
+
+| Co | Kde | Jak zní |
+| --- | --- | --- |
+| **Náhodné zvuky** | u dne a noci, nejvýš 8 | krátké zvuky, které se samy občas ozvou pod ambientem: hlasy v táboře, kůň, kovadlina, krkavec |
+| **Vzdálenost ambientu** | u dne a noci | posuvník od „u stolu“ po „hodně daleko“: ambient je tišší a tupější |
+| **Dozvuk** | jednou pro celé místo | Bez dozvuku (venku), Místnost, Kobka, Velký sál, Jeskyně |
+
+Náhodný zvuk má tyto volby:
+
+- **Každých (s)**: průměrný odstup, 3 s až 10 min.
+- **Nahodilost**: „pravidelně“ hraje přesně po odstupu, „hodně“ kdykoli mezi nulou a dvojnásobkem.
+- **Hlasitost** a **Vzdálenost**: vzdálený zvuk je tišší a bez výšek, jako zpoza tábora.
+
+Další pravidla:
+
+- Varianty `hlasy-1.mp3`, `hlasy-2.mp3` … se střídají (nikdy dvakrát stejná). Každé zaznění má trochu jinou výšku a přijde náhodně zleva nebo zprava.
+- Soubory dej do `nahodne\<kategorie>\` (třeba `nahodne\tabor\hlasy-1.mp3`). Vybrat jde i jednorázový zvuk soundboardu.
+- Náhodné zvuky hrají s hlasitostí Ambient a v souboji se ztlumí jako ambient místa. Ticho je vypne a ucpané uši s volbou „vše“ je utlumí.
+- **Dozvuk** platí pro náhodné zvuky a pro soundboard (tlačítka i smyčky). Ambient a hudba zůstávají, jak jsou nahrané, protože nahrávky z jeskyně svou ozvěnu už mají. Zvuky na tah, fanfára a hrom jdou bez dozvuku.
+- Počasí může mít náhodné zvuky taky. Zapisují se ručně do `kampan/sceny/pocasi/*.yaml` (viz README tamtéž).
+- Chybějící náhodný zvuk ohlásí Kontrola dat. Stránka Zvuk u stolu ukáže, které náhodné zvuky hrají a jaký je dozvuk.
+
+V hlavičce místa vypadá zápis takto:
+
+```yaml
+zvuk:
+  dozvuk: jeskyne
+  den:
+    ambient: tabor-ohen.mp3
+    vzdalenost: 0.2
+    nahodne:
+      - { zvuk: nahodne/tabor/hlasy, kazdych_s: 25, nahodilost: 0.7, hlasitost: 0.8, vzdalenost: 0.6 }
+```
+
 ## 5. Příprava souborů
 
 - **Smyčky**: Hub dlouhé soubory (8 s a víc) na konci prolne se začátkem (3 s), takže šev neslyšíš ani u MP3. Nejlépe znějí smyčky, které nemají na konci vyznění do ticha. U krátkých souborů do 8 s smyčka jen začne znovu.
 - **Hlasitost**: srovnej soubory na podobnou hlasitost (Audacity: *Efekty → Hlasitost a komprese → Normalizace hlasitosti*, cíl −16 LUFS pro hudbu, −20 LUFS pro ambient). Jemně pak dolaďuješ posuvníky Hudba a Ambient na U stolu.
 - **Hrom**: krátké soubory bez ticha na začátku, jinak přijde pozdě po blesku.
+- **Náhodné zvuky**: krátké (1–6 s), bez ticha na začátku a na konci, ideálně 2–5 variant od jednoho zvuku.
 - **Délka**: ambient 2–10 minut stačí. Dlouhé soubory Hub nenačítá celé do paměti.
 
 ## 6. Zdroje (licence ověř u každého souboru)

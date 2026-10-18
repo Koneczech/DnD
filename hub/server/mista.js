@@ -7,7 +7,7 @@ import { EventEmitter } from 'node:events';
 import YAML from 'yaml';
 import { rozebrat, upravitDokument } from './frontmatter.js';
 import { zapsatAtomicky } from './zapis.js';
-import { normalizujZvukMista, platneJmeno } from './zvuk.js';
+import { normalizujZvukMista, platneJmeno, platnaVzdalenost, normalizujNahodne, DOZVUKY, NAHODNE } from './zvuk.js';
 import { platneId } from './zvuky-knihovna.js';
 
 export const UCELY = Object.freeze(['scena', 'portret', 'token', 'karta']);
@@ -170,8 +170,9 @@ export class Mista extends EventEmitter {
   }
 
   /**
-   * Zvuk místa pro den, nebo noc: hudba a ambient (jméno souboru ve složce zvuku, null = žádný).
-   * Mění jen `zvuk.<varianta>.<hudba|ambient>`, zbytek hlavičky zůstává.
+   * Zvuk místa pro den, nebo noc: hudba a ambient (jméno souboru ve složce zvuku, null = žádný),
+   * vzdálenost ambientu (0–1, 0 = smazat) a náhodné zvuky (seznam, prázdný = smazat; otevřený bod 85).
+   * Mění jen tyto klíče v `zvuk.<varianta>`, zbytek hlavičky zůstává.
    */
   async nastavitZvuk(id, varianta, zmeny) {
     this.get(id);
@@ -185,6 +186,18 @@ export class Mista extends EventEmitter {
         if (!j) throw chyba('Zvuk je jméno souboru ve složce zvuku (mp3, ogg, wav …).');
         nastavit[k] = j;
       }
+    }
+    if ('vzdalenost' in zmeny) {
+      const v = zmeny.vzdalenost === null ? 0 : platnaVzdalenost(zmeny.vzdalenost);
+      if (v === null) throw chyba('Vzdálenost je 0 až 1.');
+      nastavit.vzdalenost = v || null;
+    }
+    if ('nahodne' in zmeny) {
+      const seznam = zmeny.nahodne ?? [];
+      if (!Array.isArray(seznam) || seznam.length > NAHODNE.max) throw chyba(`Náhodných zvuků jde nejvýš ${NAHODNE.max}.`);
+      const n = normalizujNahodne(seznam);
+      if (n.length !== seznam.length) throw chyba('Náhodný zvuk potřebuje platné jméno a každý jen jednou.');
+      nastavit.nahodne = n.length ? n : null;
     }
     await this.upravitSoubor(id, (dok) => {
       let zvuk = dok.get('zvuk', true);
@@ -200,9 +213,34 @@ export class Mista extends EventEmitter {
       }
       for (const [k, v] of Object.entries(nastavit)) {
         if (v === null) uzel.delete(k);
-        else uzel.set(k, v);
+        else if (k === 'nahodne') {
+          // Seznam náhodných zvuků: každý na svém řádku jako { zvuk: …, kazdych_s: … }.
+          const seznam = dok.createNode(v);
+          for (const polozka of seznam.items) polozka.flow = true;
+          uzel.set(k, seznam);
+        } else uzel.set(k, v);
       }
+      // Jednořádkový zápis jen pro hudbu, ambient a vzdálenost; se seznamem náhodných zvuků víc řádků.
+      uzel.flow = !uzel.has('nahodne');
       if (!uzel.items.length) zvuk.delete(varianta);
+      if (!zvuk.items.length) dok.delete('zvuk');
+    });
+    return { misto: this.get(id) };
+  }
+
+  /** Dozvuk místa (`zvuk.dozvuk`, otevřený bod 85): prostor pro náhodné zvuky a soundboard. */
+  async nastavitDozvuk(id, dozvuk) {
+    this.get(id);
+    if (!DOZVUKY.includes(dozvuk)) throw chyba(`Dozvuk je jeden z: ${DOZVUKY.join(', ')}.`);
+    await this.upravitSoubor(id, (dok) => {
+      let zvuk = dok.get('zvuk', true);
+      if (!YAML.isMap(zvuk)) {
+        if (dozvuk === 'zadny') return;
+        zvuk = dok.createNode({});
+        dok.set('zvuk', zvuk);
+      }
+      if (dozvuk === 'zadny') zvuk.delete('dozvuk');
+      else zvuk.set('dozvuk', dozvuk);
       if (!zvuk.items.length) dok.delete('zvuk');
     });
     return { misto: this.get(id) };

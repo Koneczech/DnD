@@ -44,6 +44,13 @@ export const HUDBA_KDE = Object.freeze(['stul', 'obs']);
 export const TLUMENI = Object.freeze(['hudba', 'vse', 'vypnuto']);
 export const TLUMENI_HZ = Object.freeze({ min: 200, max: 2000, vychozi: 500 });
 const MAX_SOUBORU = 3000;
+/**
+ * Dozvuk místa (otevřený bod 85): prostor, ve kterém zní náhodné zvuky a soundboard. Stránka u stolu
+ * si dozvuk spočítá sama (Web Audio, bez souborů). `zadny` = venku, bez dozvuku.
+ */
+export const DOZVUKY = Object.freeze(['zadny', 'mistnost', 'kobka', 'sal', 'jeskyne']);
+/** Náhodné zvuky prostředí (otevřený bod 85): nejvýš 8 na den nebo noc místa, interval 3 s až 10 min. */
+export const NAHODNE = Object.freeze({ max: 8, minS: 3, maxS: 600, kazdychS: 30, nahodilost: 0.5, hlasitost: 0.8, vzdalenost: 0 });
 
 const chyba = (zprava, status = 400) => Object.assign(new Error(zprava), { status });
 
@@ -61,7 +68,43 @@ export function platneJmeno(jmeno) {
   return s;
 }
 
-/** Pole `zvuk` z hlavičky místa: den/noc s hudbou a ambientem a připnuté zvuky soundboardu. */
+const cislo01 = (x, vychozi) => {
+  const n = Number(x);
+  return Number.isFinite(n) ? Math.round(Math.max(0, Math.min(1, n)) * 100) / 100 : vychozi;
+};
+
+/** Vzdálenost 0 (u stolu) až 1 (hodně daleko); jinak null. */
+export function platnaVzdalenost(x) {
+  if (x === undefined || x === null || x === '') return null;
+  const n = Number(x);
+  return Number.isFinite(n) && n >= 0 && n <= 1 ? Math.round(n * 100) / 100 : null;
+}
+
+/**
+ * Seznam náhodných zvuků z dat (místo nebo počasí). Položka: `zvuk` (skupina variant ze složky zvuku,
+ * např. `tabor/hlasy`, nebo jméno souboru), `kazdych_s` (průměrný odstup), `nahodilost` 0–1 (0 = přesně
+ * pravidelně), `hlasitost` 0–1, `vzdalenost` 0–1. Neplatné položky se vynechají.
+ */
+export function normalizujNahodne(seznam) {
+  if (!Array.isArray(seznam)) return [];
+  const vysledek = [];
+  for (const x of seznam) {
+    const zvuk = typeof x === 'string' ? platneId(x) : platneId(x?.zvuk);
+    if (!zvuk || vysledek.some((y) => y.zvuk === zvuk)) continue;
+    const k = Number(x?.kazdych_s);
+    vysledek.push({
+      zvuk,
+      kazdych_s: Number.isFinite(k) ? Math.round(Math.max(NAHODNE.minS, Math.min(NAHODNE.maxS, k))) : NAHODNE.kazdychS,
+      nahodilost: cislo01(x?.nahodilost, NAHODNE.nahodilost),
+      hlasitost: cislo01(x?.hlasitost, NAHODNE.hlasitost),
+      vzdalenost: cislo01(x?.vzdalenost, NAHODNE.vzdalenost),
+    });
+    if (vysledek.length >= NAHODNE.max) break;
+  }
+  return vysledek;
+}
+
+/** Pole `zvuk` z hlavičky místa: den/noc s hudbou, ambientem a náhodnými zvuky, dozvuk a připnuté zvuky soundboardu. */
 export function normalizujZvukMista(zvuk) {
   if (!zvuk || typeof zvuk !== 'object') return null;
   const vysledek = {};
@@ -76,8 +119,13 @@ export function normalizujZvukMista(zvuk) {
     const z = {};
     if (platneJmeno(x.hudba)) z.hudba = platneJmeno(x.hudba);
     if (platneJmeno(x.ambient)) z.ambient = platneJmeno(x.ambient);
+    // Vzdálenost ambientu místa (otevřený bod 85): 0 = u stolu, 1 = hodně daleko (tišší a tupější).
+    if (platnaVzdalenost(x.vzdalenost)) z.vzdalenost = platnaVzdalenost(x.vzdalenost);
+    const nahodne = normalizujNahodne(x.nahodne);
+    if (nahodne.length) z.nahodne = nahodne;
     if (Object.keys(z).length) vysledek[v] = z;
   }
+  if (DOZVUKY.includes(zvuk.dozvuk) && zvuk.dozvuk !== 'zadny') vysledek.dozvuk = zvuk.dozvuk;
   return Object.keys(vysledek).length ? vysledek : null;
 }
 
@@ -85,8 +133,10 @@ const seznamJmen = (x) => (Array.isArray(x) ? x : x ? [x] : []).map(platneJmeno)
 
 /**
  * Co má hrát (čistá funkce). Hudba z místa, v souboji z režimu; počasí hudbu nemění.
- * Ambient místa a ambienty efektů počasí hrají současně jako vrstvy.
- * @returns {{hudba: string|null, ambient: Array<{soubor:string, hlasitost:number, zdroj:string}>, hrom: string[]}}
+ * Ambient místa a ambienty efektů počasí hrají současně jako vrstvy, k nim náhodné zvuky místa
+ * a počasí. V souboji místo ztichne (ambient i náhodné zvuky), počasí ne.
+ * @returns {{hudba: string|null, ambient: Array<{soubor:string, hlasitost:number, zdroj:string, vzdalenost?:number}>,
+ *   nahodne: Array<object>, dozvuk: string, hrom: string[]}}
  */
 export function slozitZvuk({ misto, scena, vrstvy }) {
   const zm = misto?.zvuk ?? null;
@@ -98,23 +148,34 @@ export function slozitZvuk({ misto, scena, vrstvy }) {
   const hudba = (souboj && platneJmeno(zSouboje.hudba)) || zMista.hudba || null;
 
   const ambient = [];
-  const pridat = (soubor, hlasitost, zdroj) => {
+  const pridat = (soubor, hlasitost, zdroj, vzdalenost = null) => {
     if (!soubor) return;
     const jiz = ambient.find((a) => a.soubor === soubor);
     if (jiz) jiz.hlasitost = Math.max(jiz.hlasitost, hlasitost);
-    else ambient.push({ soubor, hlasitost: Math.round(hlasitost * 100) / 100, zdroj });
+    else ambient.push({ soubor, hlasitost: Math.round(hlasitost * 100) / 100, zdroj, ...(vzdalenost ? { vzdalenost } : {}) });
   };
-  pridat(zMista.ambient, souboj ? AMBIENT_MISTA_V_SOUBOJI : 1, 'misto');
+  const nahodne = [];
+  const pridatNahodne = (seznam, nasobek, zdroj) => {
+    for (const n of normalizujNahodne(seznam)) {
+      if (nahodne.some((x) => x.zvuk === n.zvuk)) continue;
+      nahodne.push({ ...n, hlasitost: Math.round(n.hlasitost * nasobek * 100) / 100, zdroj });
+    }
+  };
+  const tlumitMisto = souboj ? AMBIENT_MISTA_V_SOUBOJI : 1;
+  pridat(zMista.ambient, tlumitMisto, 'misto', platnaVzdalenost(zMista.vzdalenost));
+  pridatNahodne(zMista.nahodne, tlumitMisto, 'misto');
   const hrom = [];
   for (const efekt of scena.pocasi ?? []) {
     const z = vrstvy.pocasi?.[efekt]?.zvuk;
     if (!z) continue;
     const h = z.hlasitost_podle_intenzity ? HLASITOST_INTENZITY[scena.intenzita] ?? 1 : 1;
-    for (const s of seznamJmen(z.ambient)) pridat(s, h, efekt);
+    for (const s of seznamJmen(z.ambient)) pridat(s, h, efekt, platnaVzdalenost(z.vzdalenost));
+    pridatNahodne(z.nahodne, h, efekt);
     hrom.push(...seznamJmen(z.hrom));
   }
   if (souboj) for (const s of seznamJmen(zSouboje.ambient)) pridat(s, 1, 'souboj');
-  return { hudba, ambient, hrom };
+  const dozvuk = DOZVUKY.includes(zm?.dozvuk) ? zm.dozvuk : 'zadny';
+  return { hudba, ambient, nahodne, dozvuk, hrom };
 }
 
 /**
@@ -276,6 +337,11 @@ export class Zvuk extends EventEmitter {
         .map((a) => ({ ...a, soubor: this.najit(a.soubor) }))
         .filter((a) => a.soubor)
         .map((a) => ({ ...a, url: this.url(a.soubor) })),
+      // Náhodné zvuky prostředí (otevřený bod 85): kdy je zahrát, si počítá stránka u stolu.
+      nahodne: c.nahodne
+        .map((n) => ({ ...n, soubory: this.souboryZvuku(n.zvuk).map((f) => ({ soubor: f, url: this.url(f) })) }))
+        .filter((n) => n.soubory.length),
+      dozvuk: c.dozvuk,
       prolnutiMs: PROLNUTI_MS,
       // Ručně zapnuté smyčky soundboardu (hraje je stránka Zvuk u stolu na sběrnici efektů).
       smycky: [...this.smycky.entries()].map(([id, x]) => ({ soubor: id, url: this.url(x.soubor), hlasitost: x.hlasitost })),
@@ -287,6 +353,14 @@ export class Zvuk extends EventEmitter {
         hz: this.mistni.tlumeniHz,
       },
     };
+  }
+
+  /** Soubory náhodného zvuku: varianty skupiny (bez smyček), nebo jeden soubor podle jména. */
+  souboryZvuku(id) {
+    const n = najitSkupinu(this.knihovna, id);
+    if (n && n.druh !== 'smycky') return n.skupina.soubory;
+    const f = platneJmeno(id) && this.najit(id);
+    return f ? [f] : [];
   }
 
   url(jmeno) {
@@ -311,13 +385,16 @@ export class Zvuk extends EventEmitter {
       slozkaExistuje: this.slozkaExistuje,
       pocetSouboru: this.soubory.length,
       efekty: this.soubory.filter((s) => s.startsWith('efekty/')),
-      chybiTed: [c.hudba, ...c.ambient.map((a) => a.soubor), ...c.hrom].filter((s) => s && !this.najit(s)),
+      chybiTed: [
+        ...[c.hudba, ...c.ambient.map((a) => a.soubor), ...c.hrom].filter((s) => s && !this.najit(s)),
+        ...c.nahodne.map((n) => n.zvuk).filter((id) => !this.souboryZvuku(id).length),
+      ],
       hrom: c.hrom.map((s) => this.najit(s)).filter(Boolean),
       stranky,
       // Stránka Hudba v OBS je potřeba, jen když hudba hraje v OBS.
       potrebne: this.mistni.hudbaKde === 'obs' ? ['hudba', 'stul'] : ['stul'],
       // Soundboard (otevřený bod 76): knihovna podle složek a co z ní teď hraje.
-      knihovna: { jednorazove: this.knihovna.jednorazove, smycky: this.knihovna.smycky },
+      knihovna: { jednorazove: this.knihovna.jednorazove, smycky: this.knihovna.smycky, nahodne: this.knihovna.nahodne },
       zapnuteSmycky: [...this.smycky.keys()],
       tahy: { zapnuto: this.mistni.tahy, jenHraci: this.mistni.tahyJenHraci },
       chybaMapy: this.chybaMapy,
@@ -416,7 +493,8 @@ export class Zvuk extends EventEmitter {
       const n = najitSkupinu(this.knihovna, zvuk);
       if (!n) throw chyba('Zvuk ve složce není.', 404);
       if (n.druh === 'smycky') return this.smycka({ zvuk, zap: !this.smycky.has(n.skupina.id) });
-      this.zahratSkupinu(n.skupina, { uhnout: true });
+      // Tlačítko soundboardu zní v prostoru místa (dozvuk, otevřený bod 85); zvuky na tah a fanfára ne.
+      this.zahratSkupinu(n.skupina, { uhnout: true, prostor: true });
       return { ok: true };
     }
     const j = platneJmeno(soubor);
@@ -427,10 +505,10 @@ export class Zvuk extends EventEmitter {
   }
 
   /** Zahraje náhodnou variantu skupiny u stolu. */
-  zahratSkupinu(skupina, { uhnout = false, hlasitost = 1 } = {}) {
+  zahratSkupinu(skupina, { uhnout = false, hlasitost = 1, prostor = false } = {}) {
     const soubor = vybratVariantu(skupina, this.posledniVarianta.get(skupina.id), this.nahodne);
     this.posledniVarianta.set(skupina.id, soubor);
-    this.emit('efekt', { cil: 'stul', soubor, url: this.url(soubor), hlasitost, obmena: true, uhnout });
+    this.emit('efekt', { cil: 'stul', soubor, url: this.url(soubor), hlasitost, obmena: true, uhnout, ...(prostor ? { prostor: true } : {}) });
     return soubor;
   }
 
@@ -518,9 +596,11 @@ export class Zvuk extends EventEmitter {
    */
   kontrola() {
     const odkazy = []; // [souborDat, jménoZvuku]
+    const nahodneOdkazy = []; // [souborDat, skupina nebo soubor] (otevřený bod 85)
     for (const m of this.mista()) {
       for (const v of ['den', 'noc']) {
         for (const k of ['hudba', 'ambient']) if (m.zvuk?.[v]?.[k]) odkazy.push([`kampan/mista/${m.id}/${m.id}.md`, m.zvuk[v][k]]);
+        for (const n of m.zvuk?.[v]?.nahodne ?? []) nahodneOdkazy.push([`kampan/mista/${m.id}/${m.id}.md`, n.zvuk]);
       }
     }
     // Zvuky na tah z kampan/zvuky.yaml: odkazují na skupiny (bez přípony), kontrolují se zvlášť níže.
@@ -530,15 +610,19 @@ export class Zvuk extends EventEmitter {
         const z = d?.zvuk;
         if (!z) continue;
         for (const s of [...seznamJmen(z.ambient), ...seznamJmen(z.hudba), ...seznamJmen(z.hrom), ...seznamJmen(z.konec)]) odkazy.push([`kampan/sceny/${druh}/${id}.yaml`, s]);
+        for (const n of normalizujNahodne(z.nahodne)) nahodneOdkazy.push([`kampan/sceny/${druh}/${id}.yaml`, n.zvuk]);
       }
     }
     const tahy = odkazyMapy(this.mapa);
-    if (!odkazy.length && !tahy.length && !this.chybaMapy) return [];
+    if (!odkazy.length && !tahy.length && !nahodneOdkazy.length && !this.chybaMapy) return [];
     const mapa = [
       ...(this.chybaMapy ? [{ soubor: 'kampan/zvuky.yaml', uroven: 'chyba', zprava: this.chybaMapy }] : []),
       ...(this.slozkaExistuje ? tahy.filter((id) => !najitSkupinu(this.knihovna, id)).map((id) => ({ soubor: 'kampan/zvuky.yaml', uroven: 'varovani', zprava: `Zvuk „${id}“ není ve složce zvuku` })) : []),
+      ...(this.slozkaExistuje
+        ? nahodneOdkazy.filter(([, id]) => !this.souboryZvuku(id).length).map(([soubor, id]) => ({ soubor, uroven: 'varovani', zprava: `Náhodný zvuk „${id}“ není ve složce zvuku` }))
+        : []),
     ];
-    if (!odkazy.length) return mapa;
+    if (!odkazy.length && !nahodneOdkazy.length) return mapa;
     if (!this.slozkaExistuje) {
       return [{ soubor: 'hub/.env', uroven: 'varovani', zprava: `Složka zvuku ${this.slozka} neexistuje. Nastav ji v Nastavení → Zvuk.` }];
     }

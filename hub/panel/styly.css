@@ -884,3 +884,19 @@ main { padding: var(--m-4) var(--m-5) var(--m-5); }
 .zaznam li.chyba .zaznam-text { color: var(--chyba); }
 .zaznam li.prazdny { display: block; color: var(--text-tlumeny); }
 @media (max-width: 40rem) { .zaznam li { grid-template-columns: 4.5rem 1fr; } .zaznam .zdroj { display: none; } }
+
+/* Místa → Zvuk: vzdálenost, náhodné zvuky a dozvuk (otevřený bod 85) */
+.zvuk-varianta { display: grid; gap: var(--m-2); padding-top: var(--m-3); border-top: 1px solid var(--linka); }
+.zvuk-radek .poznamka { align-self: center; max-width: 32rem; margin: 0; }
+.posuvnik-mista { display: grid; grid-template-columns: 1fr auto; gap: var(--m-1) var(--m-2); align-items: center; min-width: 9rem; }
+.posuvnik-mista > span { grid-column: 1 / -1; }
+.posuvnik-mista output { min-width: 5.5rem; color: var(--text); font-size: var(--t-popisek); }
+.nahodne-mista { display: grid; gap: var(--m-2); padding-left: calc(2.5rem + var(--m-3)); justify-items: start; }
+.nahodne-nadpis { margin: 0; color: var(--mlha); font-size: var(--t-popisek); text-transform: uppercase; letter-spacing: 0.06em; }
+.nahodne-seznam { display: grid; gap: var(--m-2); width: 100%; }
+.nahodny-zvuk { display: flex; flex-wrap: wrap; align-items: end; gap: var(--m-2) var(--m-3); padding: var(--m-2) var(--m-3); background: var(--povrch-0); border: 1px solid var(--linka); border-radius: var(--zaobleni); }
+.nahodny-zvuk label { display: grid; gap: var(--m-1); color: var(--mlha); font-size: var(--t-popisek); }
+.nahodny-zvuk select { min-width: 14rem; }
+.nahodny-zvuk .kratke-cislo { width: 5.5rem; }
+@media (max-width: 900px) { .nahodne-mista { padding-left: 0; } }
+.posuvnik-mista input[type="range"] { accent-color: var(--mosaz); }

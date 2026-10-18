@@ -9,15 +9,60 @@ import { odebirat } from '/sdilene/zive.js';
 const PROLNUTI_SMYCKY_S = 3;
 const KRATKA_SMYCKA_S = 8;
 
+/**
+ * Vzdálenost zvuku (otevřený bod 85): 0 = u stolu, 1 = hodně daleko. Vzdálený zvuk je tišší a tupější
+ * (dolní propust ubírá výšky), jako když se ozývá přes tábor nebo zpoza zdi.
+ */
+export class Vzdalenost {
+  static parametry(v) {
+    const x = Math.max(0, Math.min(1, Number(v) || 0));
+    // 0 → 20 kHz (nic), 1 → 900 Hz; hlasitost 1 → 0,4.
+    return { hz: 20000 * Math.pow(900 / 20000, x), zisk: 1 - 0.6 * x };
+  }
+
+  constructor(ctx, v = 0) {
+    this.ctx = ctx;
+    this.propust = ctx.createBiquadFilter();
+    this.propust.type = 'lowpass';
+    this.propust.Q.value = 0.5;
+    this.zisk = ctx.createGain();
+    this.vstup = this.propust;
+    this.vystup = this.zisk;
+    this.propust.connect(this.zisk);
+    this.v = null;
+    this.nastavit(v, 0);
+  }
+
+  nastavit(v, ms = 800) {
+    const x = Math.max(0, Math.min(1, Number(v) || 0));
+    if (x === this.v) return;
+    this.v = x;
+    const { hz, zisk } = Vzdalenost.parametry(x);
+    const t = this.ctx.currentTime;
+    for (const [param, cil, exp] of [[this.propust.frequency, hz, true], [this.zisk.gain, zisk, false]]) {
+      param.cancelScheduledValues(t);
+      if (!ms) {
+        param.setValueAtTime(cil, t);
+        continue;
+      }
+      param.setValueAtTime(param.value, t);
+      if (exp) param.exponentialRampToValueAtTime(cil, t + ms / 1000);
+      else param.linearRampToValueAtTime(cil, t + ms / 1000);
+    }
+  }
+}
+
 /** Jedna smyčka (hudba nebo vrstva ambientu). */
 class Smycka {
-  constructor(ctx, cil, { soubor, url }, priChybe) {
+  constructor(ctx, cil, { soubor, url, vzdalenost = 0 }, priChybe) {
     this.ctx = ctx;
     this.soubor = soubor;
     this.priChybe = priChybe;
     this.vystup = ctx.createGain();
     this.vystup.gain.value = 0;
-    this.vystup.connect(cil);
+    this.vzdalenost = new Vzdalenost(ctx, vzdalenost);
+    this.vystup.connect(this.vzdalenost.vstup);
+    this.vzdalenost.vystup.connect(cil);
     this.prvky = [0, 1].map(() => {
       const a = new Audio();
       a.preload = 'auto';
@@ -108,6 +153,7 @@ class Smycka {
         a.load();
       }
       this.vystup.disconnect();
+      this.vzdalenost.vystup.disconnect();
     }, ms + 100);
   }
 }
@@ -134,6 +180,7 @@ export class Vrstvy {
       const jiz = this.smycky.get(soubor);
       if (jiz) {
         jiz.hlasitost(cil, 600);
+        jiz.vzdalenost.nastavit(x.vzdalenost ?? 0);
         continue;
       }
       const s = new Smycka(this.ctx, this.cil, x, this.priChybe);
@@ -158,6 +205,152 @@ export class Vrstvy {
 
   hraje() {
     return [...this.smycky.values()].filter((s) => s.hraje).map((s) => s.soubor);
+  }
+}
+
+/**
+ * Náhodné zvuky prostředí (otevřený bod 85): krátké zvuky, které se samy občas ozvou pod ambientem
+ * (hlasy v táboře, kůň, kovadlina, krkavec). Každý má průměrný odstup `kazdych_s` a `nahodilost`
+ * (0 = přesně pravidelně, 1 = kdykoli mezi 0 a dvojnásobkem). Varianta se nikdy neopakuje dvakrát
+ * za sebou, výška a hlasitost se trochu mění a zvuk přijde náhodně zleva nebo zprava.
+ */
+export class NahodneZvuky {
+  /**
+   * @param {Prehravac} prehravac
+   * @param {AudioNode} cil sběrnice (s dozvukem místa)
+   */
+  constructor(prehravac, cil) {
+    this.p = prehravac;
+    this.cil = cil;
+    this.zvuky = new Map(); // zvuk → {x, casovac, posledni, klic}
+  }
+
+  static odstupMs({ kazdych_s, nahodilost }, nahodne = Math.random) {
+    const r = Math.max(0, Math.min(1, nahodilost ?? 0.5));
+    return Math.max(1500, kazdych_s * 1000 * (1 + r * (nahodne() * 2 - 1)));
+  }
+
+  /** @param {Array<{zvuk:string, soubory:Array<{soubor:string,url:string}>, kazdych_s:number, nahodilost:number, hlasitost:number, vzdalenost:number}>} seznam */
+  nastavit(seznam = []) {
+    const chci = new Map(seznam.map((x) => [x.zvuk, x]));
+    for (const [zvuk, z] of this.zvuky) {
+      if (chci.has(zvuk)) continue;
+      clearTimeout(z.casovac);
+      this.zvuky.delete(zvuk);
+    }
+    for (const [zvuk, x] of chci) {
+      const klic = JSON.stringify([x.kazdych_s, x.nahodilost, x.soubory.map((f) => f.url)]);
+      const jiz = this.zvuky.get(zvuk);
+      if (jiz) {
+        jiz.x = x; // hlasitost a vzdálenost platí od dalšího zaznění
+        if (jiz.klic === klic) continue;
+        clearTimeout(jiz.casovac);
+      }
+      const z = { x, klic, casovac: null, posledni: jiz?.posledni ?? null };
+      this.zvuky.set(zvuk, z);
+      // První zaznění ne hned po přepnutí scény: někde mezi třetinou a celým odstupem.
+      this.naplanovat(z, Math.max(1500, x.kazdych_s * 1000 * (0.33 + Math.random() * 0.67)));
+    }
+  }
+
+  naplanovat(z, ms) {
+    z.casovac = setTimeout(() => {
+      if (this.zvuky.get(z.x.zvuk) !== z) return;
+      this.zahrat(z);
+      this.naplanovat(z, NahodneZvuky.odstupMs(z.x));
+    }, ms);
+  }
+
+  zahrat(z) {
+    if (!this.p.odemceno) return;
+    const { soubory, hlasitost, vzdalenost } = z.x;
+    const moznosti = soubory.length > 1 ? soubory.filter((f) => f.url !== z.posledni) : soubory;
+    const f = moznosti[Math.floor(Math.random() * moznosti.length)];
+    if (!f) return;
+    z.posledni = f.url;
+    // Vzdálený zvuk je v prostoru víc „rozlitý“, blízký může přijít víc ze strany.
+    const pan = (Math.random() * 2 - 1) * (0.7 - 0.3 * (vzdalenost ?? 0));
+    this.p.efekt({ url: f.url, hlasitost, obmena: true, vzdalenost, pan }, this.cil).catch((e) => this.p.zaznamenatChybu(`Náhodný zvuk ${f.soubor} nehraje: ${e.message ?? e}`));
+  }
+
+  zastavit() {
+    this.nastavit([]);
+  }
+}
+
+/**
+ * Dozvuk místa (otevřený bod 85): ozvěna prostoru spočítaná přímo v prohlížeči (konvoluce s uměle
+ * vytvořenou odezvou místnosti, bez souborů). Přímý zvuk zůstává, přidá se jen „ocas“ prostoru.
+ */
+export class Dozvuk {
+  /** délka dozvuku (s), jak rychle doznívá, podíl dozvuku, tmavost (0 = jasný, 1 = tmavý) a předzpoždění (s) */
+  static PROSTORY = Object.freeze({
+    zadny: null,
+    mistnost: { delka: 0.7, pokles: 3.5, mokry: 0.18, tmavost: 0.3, pred: 0.008 },
+    kobka: { delka: 1.3, pokles: 2.8, mokry: 0.26, tmavost: 0.45, pred: 0.012 },
+    sal: { delka: 2.4, pokles: 2.4, mokry: 0.3, tmavost: 0.35, pred: 0.025 },
+    jeskyne: { delka: 3.8, pokles: 2, mokry: 0.38, tmavost: 0.65, pred: 0.035 },
+  });
+
+  static odezvy = new Map();
+
+  /** Umělá odezva prostoru: stereo šum, který exponenciálně doznívá; tmavé prostory ztratí výšky. */
+  static odezva(ctx, nazev) {
+    const klic = `${nazev}@${ctx.sampleRate}`;
+    if (Dozvuk.odezvy.has(klic)) return Dozvuk.odezvy.get(klic);
+    const p = Dozvuk.PROSTORY[nazev];
+    const delka = Math.ceil(p.delka * ctx.sampleRate);
+    const pred = Math.floor(p.pred * ctx.sampleRate);
+    const buffer = ctx.createBuffer(2, delka, ctx.sampleRate);
+    for (let k = 0; k < 2; k++) {
+      const d = buffer.getChannelData(k);
+      let hladky = 0;
+      for (let i = pred; i < delka; i++) {
+        const t = (i - pred) / (delka - pred);
+        const sum = Math.random() * 2 - 1;
+        // Jednopólová dolní propust: čím dál v čase, tím tmavší (vzduch a kámen pohltí výšky).
+        const a = Math.min(0.97, p.tmavost * (0.5 + t));
+        hladky = a * hladky + (1 - a) * sum;
+        d[i] = hladky * Math.pow(1 - t, p.pokles);
+      }
+    }
+    Dozvuk.odezvy.set(klic, buffer);
+    return buffer;
+  }
+
+  constructor(ctx) {
+    this.ctx = ctx;
+    this.vstup = ctx.createGain();
+    this.vystup = ctx.createGain();
+    this.konvoluce = ctx.createConvolver();
+    this.mokry = ctx.createGain();
+    this.mokry.gain.value = 0;
+    this.vstup.connect(this.vystup); // přímý zvuk
+    this.vstup.connect(this.konvoluce).connect(this.mokry).connect(this.vystup);
+    this.prostor = 'zadny';
+    this.casovac = null;
+  }
+
+  /** Plynule přepne prostor: dozvuk starého doběhne, nový naběhne. */
+  nastavit(nazev) {
+    const prostor = Dozvuk.PROSTORY[nazev] !== undefined ? nazev : 'zadny';
+    if (prostor === this.prostor) return;
+    this.prostor = prostor;
+    const t = this.ctx.currentTime;
+    const g = this.mokry.gain;
+    g.cancelScheduledValues(t);
+    g.setValueAtTime(g.value, t);
+    g.linearRampToValueAtTime(0, t + 0.6);
+    clearTimeout(this.casovac);
+    const p = Dozvuk.PROSTORY[prostor];
+    if (!p) return;
+    this.casovac = setTimeout(() => {
+      this.konvoluce.buffer = Dozvuk.odezva(this.ctx, prostor);
+      const t2 = this.ctx.currentTime;
+      g.cancelScheduledValues(t2);
+      g.setValueAtTime(0, t2);
+      g.linearRampToValueAtTime(p.mokry, t2 + 1.2);
+    }, 650);
   }
 }
 
@@ -294,7 +487,7 @@ export class Prehravac {
    * v paměti. `obmena`: drobně jiná výška (±5 %) a hlasitost, aby opakovaný zvuk nezněl jako stroj.
    * @returns {Promise<number>} délka zvuku v sekundách
    */
-  async efekt({ url, hlasitost = 1, filtr = null, obmena = false }, cil) {
+  async efekt({ url, hlasitost = 1, filtr = null, obmena = false, vzdalenost = 0, pan = 0 }, cil) {
     let buffer = this.buffery.get(url);
     if (!buffer) {
       const data = await (await fetch(url)).arrayBuffer();
@@ -314,6 +507,21 @@ export class Prehravac {
       f.type = 'lowpass';
       f.frequency.value = 700;
       uzel = uzel.connect(f);
+    }
+    if (vzdalenost > 0) {
+      // Náhodný zvuk z dálky (otevřený bod 85): tišší a tupější.
+      const { hz, zisk } = Vzdalenost.parametry(vzdalenost);
+      const f = this.ctx.createBiquadFilter();
+      f.type = 'lowpass';
+      f.frequency.value = hz;
+      f.Q.value = 0.5;
+      uzel = uzel.connect(f);
+      g.gain.value *= zisk;
+    }
+    if (pan && this.ctx.createStereoPanner) {
+      const s = this.ctx.createStereoPanner();
+      s.pan.value = Math.max(-1, Math.min(1, pan));
+      uzel = uzel.connect(s);
     }
     uzel.connect(g).connect(cil);
     zdroj.start();

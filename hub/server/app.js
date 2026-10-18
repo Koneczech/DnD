@@ -225,7 +225,7 @@ export class Hub {
     });
     this.zvuk.on('zvuk', (v) => {
       const amb = v.ambient.map((a) => `${a.soubor} ${Math.round(a.hlasitost * 100)} %`).join(', ') || 'žádný';
-      z.zmena('zvuk-co', 'zvuk', 'info', `Hraje: hudba ${v.hudba?.soubor ?? 'žádná'} (${v.hudbaKde}) · ambient ${amb}${v.smycky?.length ? ` · smyčky ${v.smycky.map((x) => x.soubor).join(', ')}` : ''}${v.ticho ? ' · TICHO' : ''}${v.tlumeni?.aktivni ? ' · ucpané uši' : ''}`);
+      z.zmena('zvuk-co', 'zvuk', 'info', `Hraje: hudba ${v.hudba?.soubor ?? 'žádná'} (${v.hudbaKde}) · ambient ${amb}${v.smycky?.length ? ` · smyčky ${v.smycky.map((x) => x.soubor).join(', ')}` : ''}${v.nahodne?.length ? ` · náhodné ${v.nahodne.map((n) => n.zvuk).join(', ')}` : ''}${v.dozvuk && v.dozvuk !== 'zadny' ? ` · dozvuk ${v.dozvuk}` : ''}${v.ticho ? ' · TICHO' : ''}${v.tlumeni?.aktivni ? ' · ucpané uši' : ''}`);
     });
     this.zvuk.on('stav', (s) => {
       for (const [nazev, x] of Object.entries(s.stranky ?? {})) {
@@ -988,9 +988,11 @@ export class Hub {
 
   async apiMista(req, m, p, url) {
     if (p === '/api/mista' && m === 'GET') return this.mista.seznam();
+    const dz = /^\/api\/mista\/([a-z0-9-]{1,60})\/zvuk-dozvuk$/.exec(p);
+    if (dz && m === 'PUT') return this.mista.nastavitDozvuk(dz[1], (await nacistJson(req)).dozvuk);
     const pz = /^\/api\/mista\/([a-z0-9-]{1,60})\/zvuk-pripnute$/.exec(p);
     if (pz && m === 'PUT') return this.mista.nastavitPripnute(pz[1], (await nacistJson(req)).pripnute);
-    const mz = /^\/api\/mista\/([a-z0-9-]{1,60})\/zvuk\/(den|noc)$/.exec(p);
+    const mz = /^\/api\/mista\/([a-z0-9-]{1,60})\/zvuk\/(den|noc|souboj)$/.exec(p);
     if (mz && m === 'PUT') {
       const v = await this.mista.nastavitZvuk(mz[1], mz[2], await nacistJson(req));
       this.data.naplanovatKontrolu();

@@ -5,12 +5,13 @@
 //   jednorazove/<kategorie>/…  jednorázové zvuky (klik = jedno přehrání); stará složka efekty/ platí taky
 //   smycky/<kategorie>/…       smyčky (klik = zapnout, další klik = vypnout)
 //   tahy/…                     zvuky na tah v souboji
+//   nahodne/<kategorie>/…      náhodné zvuky prostředí (otevřený bod 85): hrají samy občas pod ambientem
 // Varianty jednoho zvuku: `vlk-1.mp3`, `vlk-2.mp3` … jsou jedno tlačítko „vlk“, hraje náhodná varianta.
 import path from 'node:path';
 
-export const DRUHY = Object.freeze(['jednorazove', 'smycky', 'tahy']);
+export const DRUHY = Object.freeze(['jednorazove', 'smycky', 'tahy', 'nahodne']);
 /** Kořenová složka → druh zvuku. `efekty/` je původní složka ručních efektů (Blok 5). */
-const KORENY = Object.freeze({ jednorazove: 'jednorazove', efekty: 'jednorazove', smycky: 'smycky', tahy: 'tahy' });
+const KORENY = Object.freeze({ jednorazove: 'jednorazove', efekty: 'jednorazove', smycky: 'smycky', tahy: 'tahy', nahodne: 'nahodne' });
 const MAX_LIMIT_S = 600;
 
 /** ID skupiny: cesta bez přípony a bez čísla varianty na konci (`jednorazove/boj/mec-2.mp3` → `jednorazove/boj/mec`). */
@@ -37,7 +38,7 @@ function popisek(id) {
  * Knihovna ze seznamu souborů ve složce zvuku.
  * @param {string[]} soubory relativní cesty s lomítky
  * @param {object} mapa normalizovaná mapa z kampan/zvuky.yaml (popisky, limity smyček)
- * @returns {{jednorazove: object[], smycky: object[], tahy: object[]}} skupiny {id, nazev, kategorie, soubory, limit_s?}
+ * @returns {{jednorazove: object[], smycky: object[], tahy: object[], nahodne: object[]}} skupiny {id, nazev, kategorie, soubory, limit_s?}
  */
 export function sestavitKnihovnu(soubory, mapa = normalizujMapu()) {
   const skupiny = new Map();
@@ -56,7 +57,7 @@ export function sestavitKnihovnu(soubory, mapa = normalizujMapu()) {
     }
     s.soubory.push(soubor);
   }
-  const vysledek = { jednorazove: [], smycky: [], tahy: [] };
+  const vysledek = { jednorazove: [], smycky: [], tahy: [], nahodne: [] };
   for (const s of skupiny.values()) {
     const { druh, ...zbytek } = s;
     vysledek[druh].push(zbytek);
@@ -73,7 +74,7 @@ export function sestavitKnihovnu(soubory, mapa = normalizujMapu()) {
 export function najitSkupinu(knihovna, id) {
   const j = platneId(id);
   if (!j) return null;
-  const kandidati = [j, `jednorazove/${j}`, `tahy/${j}`, `efekty/${j}`, `smycky/${j}`];
+  const kandidati = [j, `jednorazove/${j}`, `nahodne/${j}`, `tahy/${j}`, `efekty/${j}`, `smycky/${j}`];
   for (const k of kandidati) {
     for (const druh of DRUHY) {
       const skupina = knihovna[druh].find((s) => s.id.toLowerCase() === k.toLowerCase());

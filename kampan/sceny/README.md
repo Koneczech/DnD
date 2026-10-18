@@ -19,7 +19,9 @@ Klíč `zvuk` odkazuje jménem na soubory ve **složce zvuku mimo repo** (Nastav
 `Dokumenty\DnD\audio`). Zvukové soubory do repa nepatří (rozhodnutí 63), hook je odmítne.
 
 - Počasí: `ambient` (jeden soubor nebo seznam), `hlasitost_podle_intenzity: true` zesílí ambient
-  s intenzitou, u bouřky `hrom: [ … ]` (po blesku náhodně jeden).
+  s intenzitou, u bouřky `hrom: [ … ]` (po blesku náhodně jeden). Volitelně `vzdalenost` ambientu
+  (0–1) a `nahodne: [ { zvuk, kazdych_s, nahodilost, hlasitost, vzdalenost } ]` (náhodné zvuky,
+  zesílí s intenzitou stejně jako ambient; viz `reference/zvuk.md`).
 - Souboj: `hudba` (nahradí hudbu místa), volitelně `ambient`. Ambient počasí hraje dál, ambient
   místa se ztlumí.
 

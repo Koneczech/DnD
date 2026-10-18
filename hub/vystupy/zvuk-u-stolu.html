@@ -35,6 +35,7 @@
     <p id="stav-hraje">Čekám na Hub…</p>
     <p id="stav-hudba">Hudba: čekám na Hub…</p>
     <p id="stav-smycky" hidden></p>
+    <p id="stav-nahodne" hidden></p>
     <p id="stav-ticho" class="ticho" hidden>Ticho: zvuk je ztlumený z panelu.</p>
     <p id="stav-tlumeni" class="ticho" hidden>Málo HP: zvuk zní jako přes ucpané uši.</p>
     <p class="ulozeni chyba" id="stav-chyba" hidden></p>
@@ -50,7 +51,7 @@
   <p class="ulozeni" id="vystup-vysledek" aria-live="polite"></p>
 
   <script type="module">
-    import { Prehravac, Vrstvy } from '/sdilene/zvuk.js';
+    import { Prehravac, Vrstvy, NahodneZvuky, Dozvuk } from '/sdilene/zvuk.js';
 
     const $ = (s) => document.querySelector(s);
     const KLIC = 'dmhub-reproduktor';
@@ -63,6 +64,11 @@
     let uhybHudby;
     let smycky;
     let efekty;
+    let efektyProstor; // soundboard: zní v prostoru místa (dozvuk)
+    let sberniceNahodnych;
+    let nahodne;
+    let dozvukNahodnych;
+    let dozvukSoundboardu;
     let posledni = null;
 
     const p = new Prehravac({
@@ -73,7 +79,13 @@
         p.nastavHlasitost(sbernice, s.ticho ? 0 : s.hlasitost.ambient);
         p.nastavHlasitost(sberniceHudby, s.ticho ? 0 : s.hlasitost.hudba);
         p.nastavHlasitost(efekty, s.ticho ? 0 : s.hlasitost.efekty);
+        p.nastavHlasitost(efektyProstor, s.ticho ? 0 : s.hlasitost.efekty);
+        p.nastavHlasitost(sberniceNahodnych, s.ticho ? 0 : s.hlasitost.ambient);
         ambient.nastavit(s.ambient, s.prolnutiMs);
+        // Náhodné zvuky a dozvuk místa (otevřený bod 85).
+        nahodne.nastavit(s.nahodne ?? []);
+        dozvukNahodnych.nastavit(s.dozvuk);
+        dozvukSoundboardu.nastavit(s.dozvuk);
         // Smyčky soundboardu: náběh i doběh 1,5 s, hlasitost každé zvlášť (sběrnice efektů).
         smycky.nastavit(s.smycky ?? [], 1500);
         hudba.nastavit(s.hudbaKde !== 'obs' && s.hudba ? [s.hudba] : [], s.prolnutiMs);
@@ -85,7 +97,7 @@
       },
       priEfektu: (e) => {
         if (e.test) return p.test(p.ctx.destination);
-        return p.efekt(e, efekty)
+        return p.efekt(e, e.prostor ? efektyProstor : efekty)
           .then((delka) => {
             if (e.uhnout) p.uhnout(uhybHudby, delka);
           })
@@ -95,19 +107,36 @@
     ({ g: sbernice, tlumeni: tlumeniAmbientu } = p.sberniceSTlumenim());
     ({ g: sberniceHudby, tlumeni: tlumeniHudby, uhyb: uhybHudby } = p.sberniceSTlumenim());
     efekty = p.sbernice();
+    // Soundboard (tlačítka i smyčky) zní v prostoru místa: hlasitost → dozvuk → výstup.
+    efektyProstor = p.ctx.createGain();
+    efektyProstor.gain.value = 0;
+    dozvukSoundboardu = new Dozvuk(p.ctx);
+    efektyProstor.connect(dozvukSoundboardu.vstup);
+    dozvukSoundboardu.vystup.connect(p.ctx.destination);
+    // Náhodné zvuky: hlasitost ambientu → dozvuk → stejné tlumení jako ambient (ucpané uši „vše“).
+    sberniceNahodnych = p.ctx.createGain();
+    sberniceNahodnych.gain.value = 0;
+    dozvukNahodnych = new Dozvuk(p.ctx);
+    sberniceNahodnych.connect(dozvukNahodnych.vstup);
+    dozvukNahodnych.vystup.connect(tlumeniAmbientu.vstup);
+    nahodne = new NahodneZvuky(p, sberniceNahodnych);
     const priChybe = (t) => {
       p.zaznamenatChybu(t);
       vykreslit();
     };
     ambient = new Vrstvy(p.ctx, sbernice, priChybe);
     hudba = new Vrstvy(p.ctx, sberniceHudby, priChybe);
-    smycky = new Vrstvy(p.ctx, efekty, priChybe);
+    smycky = new Vrstvy(p.ctx, efektyProstor, priChybe);
     p.hraje = () => [...hudba.hraje(), ...ambient.hraje(), ...smycky.hraje()];
+
+    const DOZVUKY_POPIS = { mistnost: 'místnost', kobka: 'kobka', sal: 'sál', jeskyne: 'jeskyně' };
 
     function vykreslit() {
       const s = posledni;
       $('#odemknout').hidden = p.odemceno;
       $('#stav-hraje').textContent = !s ? 'Čekám na Hub…' : s.ambient.length ? `Ambient: ${s.ambient.map((a) => `${a.soubor} (${Math.round(a.hlasitost * 100)} %)`).join(', ')}` : 'Teď nehraje žádný ambient.';
+      $('#stav-nahodne').hidden = !s?.nahodne?.length;
+      $('#stav-nahodne').textContent = s?.nahodne?.length ? `Náhodné zvuky: ${s.nahodne.map((n) => `${n.zvuk.split('/').pop()} (~${n.kazdych_s} s)`).join(', ')}${s.dozvuk && s.dozvuk !== 'zadny' ? ` · dozvuk ${DOZVUKY_POPIS[s.dozvuk] ?? s.dozvuk}` : ''}` : '';
       $('#stav-smycky').hidden = !s?.smycky?.length;
       $('#stav-smycky').textContent = s?.smycky?.length ? `Smyčky: ${s.smycky.map((x) => x.soubor.split('/').pop()).join(', ')}` : '';
       $('#stav-hudba').textContent = !s ? 'Hudba: čekám na Hub…' : s.hudbaKde === 'obs' ? 'Hudba hraje v OBS (Nastavení → Zvuk).' : `Hudba: ${s.hudba?.soubor ?? 'žádná'}`;

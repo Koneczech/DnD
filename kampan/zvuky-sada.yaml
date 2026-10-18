@@ -17,7 +17,7 @@ zvuky:
 
   # Zvuky na tah (kampan/zvuky.yaml): krátké, Hub je po 2,5 s ztlumí
   tahy/tusker: { hledat: [war drum hit, tribal drum hit, big drum hit, taiko drum], delka: [0.3, 3], popis: Tusker }
-  tahy/koudur: { hledat: [lute strum, lute, harp strum, acoustic guitar strum], delka: [0.5, 4], popis: Koudur }
+  tahy/koudur: { hledat: [bagpipe, bagpipes, bagpipe drone, bagpipe note], delka: [0.5, 6], popis: Koudur (dudy) }
   tahy/leta: { hledat: dagger unsheathe, delka: [0.3, 3], popis: Leta }
   tahy/alba: { hledat: [magic nature chime, wind chimes, magic sparkle, chimes], delka: [0.5, 4], popis: Alba }
   tahy/malk: { hledat: sword unsheathe, delka: [0.3, 3], popis: Malk Orren }

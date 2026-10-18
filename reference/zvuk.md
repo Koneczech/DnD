@@ -186,7 +186,7 @@ Bez klíče Freesound tedy sada funguje taky: Openverse najde i CC0 zvuky z Free
 
 1. (Nepovinně) Na [freesound.org](https://freesound.org) si založ účet a na `freesound.org/apiv2/apply` vytvoř klíč. Vlož ho v **Nastavení → Zvuk → Zvuková sada**. Zůstane jen v `hub/.env`.
 2. Klikni na **Doplnit chybějící zvuky**. Hub projde `kampan/zvuky-sada.yaml`, pro každou položku najde zvuky se zadanou délkou a povolenou licencí, stáhne je a pojmenuje podle sady (`nahodne\tabor\kun-1.mp3` …). Soubor z Wikimedia Commons může mít příponu `.ogg` nebo `.wav`; data i Hub ho najdou stejně.
-3. V tabulce si každý soubor poslechneš (▶, v popisku je autor, licence a zdroj). **Vyměnit** stáhne další v pořadí a ten starý už znovu nenabídne.
+3. V tabulce si každý soubor poslechneš (▶, v popisku je autor, licence a zdroj). **↻** u souboru vymění jen tuhle variantu, **Vyměnit vše** celou položku. Hub stáhne další zvuk v pořadí a ten starý už znovu nenabídne.
 
 - **Licence**: vždy CC0 a public domain. Položka může dovolit i CC BY (`licence: [cc0, by]`), třeba kvůli hudbě z Jamenda. Na soukromé hraní stačí, autory máš v `zdroje.json`.
 - Autory, názvy, odkazy a zdroj Hub zapíše do `zdroje.json` ve složce zvuku.

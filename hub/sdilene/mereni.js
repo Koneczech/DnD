@@ -60,6 +60,9 @@ function kvadratyK(x, fs) {
 
 const lufs = (ms) => -0.691 + 10 * Math.log10(ms);
 
+/** Verze měření: změna výpočtu = Hub soubory změří znovu. */
+export const VERZE_MERENI = 2;
+
 /**
  * Změří vzorky.
  * @param {Float32Array[]} kanaly vzorky po kanálech (−1 až 1)
@@ -85,6 +88,21 @@ export function zmeritVzorky(kanaly, fs) {
     }
   }
   const okraje = prvni < 0 ? { zacatek: 0, konec: delka } : { zacatek: Math.max(0, prvni / fs - 0.01), konec: Math.min(delka, posledni / fs + 0.05) };
+  // Krátký zvuk (do 10 s): začátek až tam, kde je zvuk opravdu slyšet, ne první šum. Obálka po 10 ms,
+  // začátek = první okno aspoň −15 dB pod nejhlasitějším oknem (harfa s pozvolným náběhem, šum nahrávky).
+  if (prvni >= 0 && delka <= 10) {
+    const okno = Math.max(1, Math.round(0.01 * fs));
+    const obalka = [];
+    for (let z = 0; z < n; z += okno) {
+      let s = 0;
+      for (const k of kanaly) for (let i = z; i < Math.min(n, z + okno); i++) s += k[i] * k[i];
+      obalka.push(Math.sqrt(s / (Math.min(n, z + okno) - z) / kanaly.length));
+    }
+    const max = Math.max(...obalka);
+    const prah = max * 0.18;
+    const i = obalka.findIndex((r) => r >= prah);
+    if (i > 0) okraje.zacatek = Math.max(okraje.zacatek, (i * okno) / fs - 0.02);
+  }
 
   const kv = kanaly.slice(0, 2).map((k) => kvadratyK(k, fs));
   const blok = Math.round(0.4 * fs);
@@ -99,11 +117,11 @@ export function zmeritVzorky(kanaly, fs) {
     if (n < blok) break;
   }
   const nadAbs = bloky.filter((m) => m > 0 && lufs(m) > -70);
-  if (!nadAbs.length) return { lufs: null, spicka: zaokr(spicka, 4), ...zaokrOkraje(okraje), delka: zaokr(delka, 2) };
+  if (!nadAbs.length) return { lufs: null, spicka: zaokr(spicka, 4), ...zaokrOkraje(okraje), delka: zaokr(delka, 2), verze: VERZE_MERENI };
   const prumer = (s) => s.reduce((a, b) => a + b, 0) / s.length;
   const relPrah = lufs(prumer(nadAbs)) - 10;
   const brane = nadAbs.filter((m) => lufs(m) > relPrah);
-  return { lufs: zaokr(lufs(prumer(brane)), 1), spicka: zaokr(spicka, 4), ...zaokrOkraje(okraje), delka: zaokr(delka, 2) };
+  return { lufs: zaokr(lufs(prumer(brane)), 1), spicka: zaokr(spicka, 4), ...zaokrOkraje(okraje), delka: zaokr(delka, 2), verze: VERZE_MERENI };
 }
 
 const zaokr = (x, d) => Math.round(x * 10 ** d) / 10 ** d;

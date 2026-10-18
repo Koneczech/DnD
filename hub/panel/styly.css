@@ -916,3 +916,4 @@ main { padding: var(--m-4) var(--m-5) var(--m-5); }
 .hladiny label { display: grid; gap: var(--m-1); color: var(--mlha); font-size: var(--t-popisek); }
 .hladiny input { width: 7rem; }
 #srovnani-stav { display: block; max-width: 75ch; margin-top: var(--m-2); }
+.sada-vymenit { padding: 2px var(--m-1); margin-left: -2px; margin-right: var(--m-2); font-size: var(--t-stitek); }

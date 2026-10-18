@@ -66,8 +66,10 @@ const Z_REPA = /^https:\/\/raw\.githubusercontent\.com\/Koneczech\/DnD\/(?:refs\
 /** Adresa ilustrace pro výstup: z repa přes Hub (kořen, monsters/, kampan/), jinak původní https. */
 export function mistniObrazek(url) {
   const u = String(url ?? '').trim();
-  const m = u.match(Z_REPA);
-  if (m && /\.(png|jpe?g|webp)$/i.test(m[1]) && (!m[1].includes('/') || /^(monsters|kampan)\//i.test(m[1]))) return `/${m[1]}`;
+  // ?v=2 na konci adresy obchází mezipaměť OBS a prohlížeče po výměně obrázku; místní kopie ho nese taky.
+  const [bez, dotaz = ''] = u.split(/(?=[?#])/);
+  const m = bez.match(Z_REPA);
+  if (m && /\.(png|jpe?g|webp)$/i.test(m[1]) && (!m[1].includes('/') || /^(monsters|kampan)\//i.test(m[1]))) return `/${m[1]}${dotaz.startsWith('?') ? dotaz : ''}`;
   return /^https:\/\//i.test(u) ? u : null;
 }
 

@@ -204,3 +204,8 @@ test('podíl ubraného HP: z čísel i z barvy Colored Label, bez čísla pro hr
   const mono = zjistitUdery(stav(11, 'Monochrome Label'), stav(4, 'Monochrome Label')).cile[0];
   assert.equal(mono.podil, null, 'jen stav: podíl nejde poznat');
 });
+
+test('místní obrázek: adresa s ?v=2 (obejití mezipaměti) se přeloží na místní soubor i s verzí', () => {
+  assert.equal(mistniObrazek('https://raw.githubusercontent.com/Koneczech/DnD/main/monsters/tough.png?v=2'), '/monsters/tough.png?v=2');
+  assert.equal(mistniObrazek('https://raw.githubusercontent.com/Koneczech/DnD/main/monsters/tough.png'), '/monsters/tough.png');
+});

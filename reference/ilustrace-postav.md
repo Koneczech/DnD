@@ -24,4 +24,4 @@ Všechny portréty postav, NPC, bytostí a podob mají stejné plátno, aby veli
 
 Úprava hotového obrázku: oříznout na neprůhlednou část, zmenšit na výšku podle tabulky, vložit na průhledné plátno 1080 × 1500 tak, aby chodidla byla na y = 1375.
 
-**Improved Initiative** bere ilustrace z GitHubu adresou. Když adresa obsahuje číslo commitu (`…/DnD/ccc9f23…/monsters/bandit.png`), ukazuje pořád starou verzi; po úpravě obrázku v ní nahraď číslo commitu slovem `main`.
+**Improved Initiative** bere ilustrace z GitHubu adresou. Když adresa obsahuje číslo commitu (`…/DnD/ccc9f23…/monsters/bandit.png`), ukazuje pořád starou verzi; po úpravě obrázku v ní nahraď číslo commitu slovem `main`. Prohlížeč a OBS si obrázek pamatují: po každé výměně přidej na konec adresy `?v=2` (příště `?v=3` …), jinak ukazují starou verzi.

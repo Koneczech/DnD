@@ -1,0 +1,42 @@
+# Zvuková sada (ZADANI.md, otevřený bod 86): jaké zvuky má mít složka zvuku a jak je Hub najde
+# na Freesoundu (jen licence CC0). Soubory do repa nepatří; Hub je stáhne do složky zvuku
+# (Nastavení → Zvuk → Doplnit chybějící zvuky) a autory zapíše do zdroje.json ve složce zvuku.
+#
+# Klíč = cíl ve složce zvuku bez přípony. variant: 1 = jeden soubor (cil.mp3), víc = cil-1.mp3, cil-2.mp3 …
+# hledat = anglicky, jak se hledá na Freesoundu; delka = [od, do] v sekundách.
+# Hlasitost se neřeší: Hub soubory změří a srovná (Nastavení → Zvuk → Srovnání hlasitosti).
+schema: 1
+
+zvuky:
+  # Souboj: konec a poplach
+  vitezstvi: { hledat: medieval fanfare trumpet, delka: [3, 15], popis: Vítězná fanfára (Konec souboje) }
+  smycky/poplasny-zvon: { hledat: bell ringing alarm, delka: [8, 60], popis: Poplašný zvon (soundboard, sám skončí po 20 s) }
+
+  # Zvuky na tah (kampan/zvuky.yaml): krátké, Hub je po 2,5 s ztlumí
+  tahy/tusker: { hledat: war drum hit, delka: [0.3, 3], popis: Tusker }
+  tahy/koudur: { hledat: lute strum, delka: [0.5, 4], popis: Koudur }
+  tahy/leta: { hledat: dagger unsheathe, delka: [0.3, 3], popis: Leta }
+  tahy/alba: { hledat: magic nature chime, delka: [0.5, 4], popis: Alba }
+  tahy/malk: { hledat: sword unsheathe, delka: [0.3, 3], popis: Malk Orren }
+  tahy/nepritel: { hledat: deep drum impact, delka: [0.3, 3], popis: Společný zvuk nepřátel }
+  tahy/srdce: { hledat: heartbeat, delka: [1, 4], popis: Tlukot srdce (tag Unconscious, zatím nezapojený) }
+
+  # Tábor lupičů mimo boj: ambient a náhodné zvuky
+  tabor-ohen: { hledat: campfire crackling, delka: [60, 600], popis: Ambient tábora (oheň) }
+  nahodne/tabor/kun: { hledat: horse whinny, delka: [1, 6], variant: 3, popis: Kůň }
+  nahodne/tabor/kovadlina: { hledat: anvil hammer strike, delka: [0.5, 5], variant: 3, popis: Kovadlina }
+  nahodne/tabor/krkavec: { hledat: raven call, delka: [0.5, 4], variant: 3, popis: Krkavec }
+  nahodne/tabor/drevo: { hledat: wood chopping axe, delka: [0.5, 4], variant: 3, popis: Sekání dřeva }
+  smycky/tabor/hori: { hledat: large fire burning, delka: [20, 300], popis: Požár (stav Hoří, soundboard) }
+
+  # Tábor lupičů v souboji: ambient a náhodné zvuky
+  tabor-bitva: { hledat: medieval battle ambience, delka: [60, 600], popis: Ambient bitvy }
+  nahodne/boj/rinceni: { hledat: sword clash, delka: [0.3, 3], variant: 4, popis: Řinčení zbraní }
+  nahodne/boj/sip: { hledat: arrow whoosh impact, delka: [0.3, 3], variant: 3, popis: Šípy }
+  nahodne/boj/pokrik: { hledat: war cry shout, delka: [0.5, 3], variant: 3, popis: Válečný pokřik }
+
+  # Soundboard
+  jednorazove/boj/mec: { hledat: sword hit, delka: [0.2, 2], variant: 3, popis: Úder mečem }
+  jednorazove/boj/stit: { hledat: shield block impact, delka: [0.2, 2], variant: 2, popis: Rána do štítu }
+  jednorazove/zvirata/vlk-vroceni: { hledat: wolf growl, delka: [1, 5], variant: 2, popis: Vrčení vlka (Alba) }
+  jednorazove/zvirata/medved-rev: { hledat: bear roar, delka: [1, 5], variant: 2, popis: Řev medvěda (Alba) }

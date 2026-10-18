@@ -125,7 +125,7 @@ export class Hub {
    * @param {object} [volby.obsKlient] náhrada klienta OBS (testy)
    * @param {boolean} [volby.gitSit] kontrolovat GitHub při startu (výchozí true)
    */
-  constructor({ cesty = vychoziCesty(), obsKlient, gitSit = true, port, ovladaceSvetel, sparovatHue } = {}) {
+  constructor({ cesty = vychoziCesty(), obsKlient, gitSit = true, port, ovladaceSvetel, sparovatHue, fetchFreesound } = {}) {
     this.c = cesty;
     this.gitSit = gitSit;
     this.portPrepis = port;
@@ -157,6 +157,7 @@ export class Hub {
       scena: () => this.scena.stav,
       vrstvy: () => this.svetla.vrstvy,
       mista: () => [...this.mista.mista.values()],
+      fetchFreesound,
     });
     this.data.dalsiKontroly = () => this.zvuk.kontrola();
     this.iniciativa = new Iniciativa({ cesty: this.c, obs: this.obs });
@@ -242,6 +243,7 @@ export class Hub {
       if (s.chybiTed?.length) z.zmena('zvuk-chybi', 'zvuk', 'varovani', `Ve složce zvuku chybí: ${s.chybiTed.join(', ')}`);
       else z.zmena('zvuk-chybi', 'zvuk', 'info', 'Všechny soubory scény ve složce jsou');
     });
+    this.zvuk.on('sada', (s) => z[s.chyba ? 'varovani' : 'info']('zvuk', `Zvuková sada: ${s.text} (${s.hotovo}/${s.celkem})${s.chyba ? ` ${s.chyba}` : ''}`));
     this.zvuk.on('efekt', (e) => {
       if (!e.test) z.info('zvuk', `Efekt ${e.soubor ?? ''}${e.cil === 'hudba' ? ' (OBS)' : ''}`);
     });
@@ -384,6 +386,11 @@ export class Hub {
       this.svetla.zmenaSceny();
       this.zvuk.zmenaSceny();
       this.svetla.oznam();
+      this.data.naplanovatKontrolu();
+      return;
+    }
+    if (path.resolve(soubor) === path.join(this.c.kampan, 'zvuky-sada.yaml')) {
+      await this.zvuk.nacistSadu();
       this.data.naplanovatKontrolu();
       return;
     }
@@ -618,6 +625,7 @@ export class Hub {
         this.obs.nastavit(this.nastaveni.hodnoty.OBS_URL, this.nastaveni.hodnoty.OBS_HESLO);
       }
       if (telo.iiRelace || telo.smazatIiRelace) await this.zajistitPruchod();
+      if (telo.freesoundKlic || telo.smazatFreesoundKlic) this.zvuk.oznamStav();
       this.svetla.sestavitZarizeni();
       this.svetla.zmenaSceny();
       this.svetla.overit().catch(() => {});
@@ -827,6 +835,12 @@ export class Hub {
       return z.hlasit(String(telo.stranka), telo);
     }
     if (p === '/api/zvuk/efekt' && m === 'POST') return z.efekt(await nacistJson(req));
+    // Srovnání hlasitosti a zvuková sada (otevřený bod 86).
+    if (p === '/api/zvuk/mereni' && m === 'POST') return z.zapsatMereni(await nacistJson(req));
+    if (p === '/api/zvuk/sada/doplnit' && m === 'POST') {
+      const telo = await nacistJson(req);
+      return z.doplnitSadu({ cil: typeof telo.cil === 'string' ? telo.cil : null, vymenit: telo.vymenit === true });
+    }
     if (p === '/api/zvuk/smycka' && m === 'PUT') return z.smycka(await nacistJson(req));
     if (p === '/api/zvuk/smycky/zastavit' && m === 'POST') {
       await nacistJson(req);

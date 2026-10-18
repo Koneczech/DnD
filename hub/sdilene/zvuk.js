@@ -176,7 +176,8 @@ export class Vrstvy {
       this.smycky.delete(soubor);
     }
     for (const [soubor, x] of chci) {
-      const cil = x.hlasitost ?? 1;
+      // Srovnání hlasitosti (otevřený bod 86): `zisk` dorovná soubor na výchozí hladinu svého druhu.
+      const cil = (x.hlasitost ?? 1) * (x.zisk ?? 1);
       const jiz = this.smycky.get(soubor);
       if (jiz) {
         jiz.hlasitost(cil, 600);
@@ -270,7 +271,7 @@ export class NahodneZvuky {
     z.posledni = f.url;
     // Vzdálený zvuk je v prostoru víc „rozlitý“, blízký může přijít víc ze strany.
     const pan = (Math.random() * 2 - 1) * (0.7 - 0.3 * (vzdalenost ?? 0));
-    this.p.efekt({ url: f.url, hlasitost, obmena: true, vzdalenost, pan }, this.cil).catch((e) => this.p.zaznamenatChybu(`Náhodný zvuk ${f.soubor} nehraje: ${e.message ?? e}`));
+    this.p.efekt({ url: f.url, hlasitost, obmena: true, vzdalenost, pan, zisk: f.zisk ?? 1, zacatek: f.zacatek ?? 0 }, this.cil).catch((e) => this.p.zaznamenatChybu(`Náhodný zvuk ${f.soubor} nehraje: ${e.message ?? e}`));
   }
 
   zastavit() {
@@ -487,7 +488,7 @@ export class Prehravac {
    * v paměti. `obmena`: drobně jiná výška (±5 %) a hlasitost, aby opakovaný zvuk nezněl jako stroj.
    * @returns {Promise<number>} délka zvuku v sekundách
    */
-  async efekt({ url, hlasitost = 1, filtr = null, obmena = false, vzdalenost = 0, pan = 0 }, cil) {
+  async efekt({ url, hlasitost = 1, filtr = null, obmena = false, vzdalenost = 0, pan = 0, zisk = 1, zacatek = 0, maxS = null }, cil) {
     let buffer = this.buffery.get(url);
     if (!buffer) {
       const data = await (await fetch(url)).arrayBuffer();
@@ -498,7 +499,8 @@ export class Prehravac {
     const zdroj = this.ctx.createBufferSource();
     zdroj.buffer = buffer;
     const g = this.ctx.createGain();
-    g.gain.value = obmena ? hlasitost * (0.85 + Math.random() * 0.15) : hlasitost;
+    const h = hlasitost * zisk;
+    g.gain.value = obmena ? h * (0.85 + Math.random() * 0.15) : h;
     if (obmena) zdroj.playbackRate.value = 0.95 + Math.random() * 0.1;
     let uzel = zdroj;
     if (filtr === 'daleko') {
@@ -524,8 +526,18 @@ export class Prehravac {
       uzel = uzel.connect(s);
     }
     uzel.connect(g).connect(cil);
-    zdroj.start();
-    return buffer.duration / zdroj.playbackRate.value;
+    // Ticho na začátku souboru se přeskočí (změřené, otevřený bod 86); dlouhý zvuk se po maxS ztlumí.
+    const od = Math.min(Math.max(0, zacatek), Math.max(0, buffer.duration - 0.05));
+    zdroj.start(0, od);
+    let delka = (buffer.duration - od) / zdroj.playbackRate.value;
+    if (maxS && delka > maxS) {
+      const t = this.ctx.currentTime;
+      g.gain.setValueAtTime(g.gain.value, t + maxS - 0.3);
+      g.gain.linearRampToValueAtTime(0, t + maxS);
+      zdroj.stop(t + maxS + 0.05);
+      delka = maxS;
+    }
+    return delka;
   }
 
   /** Zkušební tón bez souboru: tři stoupající tóny. */

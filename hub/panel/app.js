@@ -2909,11 +2909,120 @@ function vykresliZvuk() {
   $('#zvuk-poznamka').firstChild.textContent = hudbaVObs
     ? 'Hudba hraje výstup Hudba v OBS (zvuk na TV), ambient a efekty stránka Zvuk u stolu do BT reproduktoru. Postup v '
     : 'Hudba, ambient i efekty hraje stránka Zvuk u stolu do BT reproduktoru. Postup v ';
+  vykresliSadu(z);
+  vykresliSrovnani(z);
   $('#zvuk-stranky').replaceChildren(
     ...[...(hudbaVObs ? [['Hudba v OBS', z.stranky.hudba]] : []), ['Zvuk u stolu', z.stranky.stul]].map(([nazev, x]) =>
       polozkaKontroly(x?.pripojeno && x.odemceno !== false && !x.chyba && x.vystup?.ok !== false ? 'ok' : x?.pripojeno ? 'varovani' : 'chyba', popisStrankyZvuku(nazev, x))),
   );
 }
+
+/* ---------- Zvuková sada a srovnání hlasitosti (otevřený bod 86) ---------- */
+
+function vykresliSadu(z) {
+  const sada = z.sada;
+  if (!sada) return;
+  const klic = Boolean(stav.prehled?.nastaveni?.freesoundNastaven ?? sada.klic);
+  $('#sada-klic-stav').textContent = klic ? 'Klíč Freesound je vložený.' : 'Klíč Freesound zatím není vložený: bez něj Hub zvuky stahovat neumí.';
+  $('#freesound-smazat').hidden = !klic;
+  const p = sada.prubeh ?? {};
+  const chybi = sada.polozky.reduce((n, x) => n + x.chybi, 0);
+  const doplnit = $('#sada-doplnit');
+  doplnit.disabled = !klic || p.bezi || !chybi;
+  doplnit.textContent = chybi ? `Doplnit chybějící zvuky (${chybi})` : 'Všechny zvuky sady jsou ve složce';
+  const prubeh = $('#sada-prubeh');
+  prubeh.className = p.chyba && !p.bezi ? 'ulozeni chyba' : 'ulozeni';
+  prubeh.textContent = p.bezi ? `${p.hotovo}/${p.celkem} · ${p.text ?? ''}` : p.text ? `${p.text}${p.chyba ? ` ${p.chyba.split('\n').slice(0, 3).join(' · ')}` : ''}` : sada.chyby.length ? `Chyby v kampan/zvuky-sada.yaml: ${sada.chyby.join(' · ')}` : '';
+  const tabulka = $('#sada-tabulka');
+  if (tabulka.contains(document.activeElement) && !p.bezi) return;
+  const hlava = document.createElement('tr');
+  hlava.append(...['Zvuk', 'Hledá na Freesoundu', 'Soubory', ''].map((t) => Object.assign(document.createElement('th'), { textContent: t, scope: 'col' })));
+  tabulka.replaceChildren(
+    hlava,
+    ...sada.polozky.map((x) => {
+      const tr = document.createElement('tr');
+      const co = document.createElement('td');
+      co.append(Object.assign(document.createElement('code'), { textContent: x.cil }), ...(x.popis ? [Object.assign(document.createElement('small'), { textContent: x.popis })] : []));
+      const hleda = Object.assign(document.createElement('td'), { textContent: `${x.hledat} · ${x.delka[0]}–${x.delka[1]} s` });
+      const soubory = document.createElement('td');
+      soubory.className = 'sada-soubory';
+      for (const f of x.soubory) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = f.je ? 'sada-soubor je' : 'sada-soubor';
+        b.textContent = `${f.je ? '▶' : '·'} ${f.soubor.split('/').pop()}`;
+        b.disabled = !f.je;
+        b.title = f.je ? `${f.zdroj ? `${f.zdroj.nazev} · ${f.zdroj.autor} · ${f.zdroj.licence}` : 'Tvůj soubor'} (klik = ukázka)` : 'Ve složce chybí';
+        if (f.je) b.addEventListener('click', () => prehratUkazku(f.soubor, b));
+        soubory.append(b);
+      }
+      const akce = document.createElement('td');
+      const vymenit = document.createElement('button');
+      vymenit.type = 'button';
+      vymenit.className = 'tiche';
+      vymenit.textContent = x.chybi === x.soubory.length ? 'Stáhnout' : 'Vyměnit';
+      vymenit.disabled = !klic || p.bezi;
+      vymenit.title = x.chybi === x.soubory.length ? 'Stáhnout jen tuhle položku' : 'Stáhnout místo těchto souborů další zvuky v pořadí';
+      vymenit.addEventListener('click', () => doplnitSadu({ cil: x.cil, vymenit: x.chybi !== x.soubory.length }));
+      akce.append(vymenit);
+      tr.append(co, hleda, soubory, akce);
+      return tr;
+    }),
+  );
+}
+
+async function doplnitSadu(telo) {
+  try {
+    await api('/api/zvuk/sada/doplnit', { metoda: 'POST', telo });
+  } catch (e) {
+    toast(e.message, { chyba: true });
+  }
+}
+$('#sada-doplnit').addEventListener('click', () => doplnitSadu({}));
+$('#freesound-ulozit').addEventListener('click', async () => {
+  const pole = $('#pole-freesound');
+  if (!pole.value.trim()) return pole.focus();
+  if (await ulozitNastaveni({ freesoundKlic: pole.value.trim() }, pole, { chybaDo: $('#sada-klic-stav') })) pole.value = '';
+});
+$('#freesound-smazat').addEventListener('click', async () => {
+  if (!confirm('Odebrat klíč Freesound? Stažené zvuky ve složce zůstanou.')) return;
+  await ulozitNastaveni({ smazatFreesoundKlic: true }, $('#freesound-smazat'), { chybaDo: $('#sada-klic-stav') });
+});
+
+function vykresliSrovnani(z) {
+  // Seznam uvnitř funkce: panel kreslí zvuk už při načtení (top-level await), před koncem modulu.
+  const HLADINY_POPIS = [
+    ['hudba', 'Hudba'],
+    ['ambient', 'Ambient'],
+    ['nahodne', 'Náhodné zvuky'],
+    ['efekty', 'Soundboard a tahy'],
+    ['hrom', 'Hrom'],
+  ];
+  const s = z.srovnani;
+  if (!s) return;
+  $('#zvuk-srovnat').checked = s.zapnuto;
+  const obal = $('#zvuk-hladiny');
+  if (!obal.contains(document.activeElement)) {
+    obal.replaceChildren(
+      ...HLADINY_POPIS.map(([k, popis]) => {
+        const label = document.createElement('label');
+        label.textContent = `${popis} (LUFS)`;
+        const input = Object.assign(document.createElement('input'), { type: 'number', min: '-40', max: '-6', step: '1', value: String(s.hladiny[k]) });
+        input.disabled = !s.zapnuto;
+        input.addEventListener('change', () => ulozitZvuk({ hladiny: { [k]: Number(input.value) } }));
+        label.append(input);
+        return label;
+      }),
+    );
+  }
+  const nejdou = s.nejdou?.length ? ` Prohlížeč neumí přečíst: ${s.nejdou.slice(0, 5).join(', ')}${s.nejdou.length > 5 ? ' …' : ''} (poškozený nebo nepodporovaný soubor).` : '';
+  $('#srovnani-stav').textContent = (!s.celkem
+    ? 'Ve složce zatím nejsou žádné zvuky.'
+    : s.zmereno >= s.celkem
+      ? `Změřeno všech ${s.celkem} souborů. Hub každému přidá zesílení nebo zeslabení na hladinu jeho druhu a u krátkých zvuků přeskočí ticho na začátku. Soubory se nemění.`
+      : `Změřeno ${s.zmereno} z ${s.celkem} souborů. Měří stránka Zvuk u stolu postupně na pozadí, takže musí být otevřená. Nezměřené soubory hrají beze změny.`) + nejdou;
+}
+$('#zvuk-srovnat').addEventListener('change', (e) => ulozitZvuk({ srovnat: e.target.checked }));
 
 let casovacHlasitosti = null;
 for (const k of ['hudba', 'ambient']) {

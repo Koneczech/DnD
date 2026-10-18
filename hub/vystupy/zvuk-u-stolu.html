@@ -52,6 +52,7 @@
 
   <script type="module">
     import { Prehravac, Vrstvy, NahodneZvuky, Dozvuk } from '/sdilene/zvuk.js';
+    import { zmeritUrl } from '/sdilene/mereni.js';
 
     const $ = (s) => document.querySelector(s);
     const KLIC = 'dmhub-reproduktor';
@@ -94,6 +95,7 @@
         tlumeniAmbientu.nastavit(Boolean(t.aktivni) && t.rozsah === 'vse', t.hz);
         vykreslit();
         setTimeout(() => p.hlasit(), 300);
+        zmeritDalsi(s.zmerit ?? []);
       },
       priEfektu: (e) => {
         if (e.test) return p.test(p.ctx.destination);
@@ -128,6 +130,27 @@
     hudba = new Vrstvy(p.ctx, sberniceHudby, priChybe);
     smycky = new Vrstvy(p.ctx, efektyProstor, priChybe);
     p.hraje = () => [...hudba.hraje(), ...ambient.hraje(), ...smycky.hraje()];
+
+    /* ---------- Srovnání hlasitosti (otevřený bod 86): soubory se změří jednou, postupně na pozadí ---------- */
+    let meri = false;
+    const nemeritZnovu = new Set();
+    async function zmeritDalsi(seznam) {
+      if (meri) return;
+      const f = seznam.find((x) => !nemeritZnovu.has(`${x.soubor}|${x.klic}`));
+      if (!f) return;
+      meri = true;
+      nemeritZnovu.add(`${f.soubor}|${f.klic}`);
+      let telo;
+      try {
+        telo = { soubor: f.soubor, klic: f.klic, ...(await zmeritUrl(p.ctx, f.url)) };
+      } catch (e) {
+        telo = { soubor: f.soubor, klic: f.klic, lufs: null, chyba: String(e?.message ?? e) };
+      }
+      await fetch('/api/zvuk/mereni', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(telo) }).catch(() => {});
+      meri = false;
+      // Další soubor přijde s novým stavem z Hubu; kdyby nepřišel, zkusí se zbytek seznamu.
+      setTimeout(() => zmeritDalsi(posledni?.zmerit ?? []), 1500);
+    }
 
     const DOZVUKY_POPIS = { mistnost: 'místnost', kobka: 'kobka', sal: 'sál', jeskyne: 'jeskyně' };
 

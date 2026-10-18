@@ -26,10 +26,11 @@ export const VYCHOZI = Object.freeze({
   ZVUK_OTEVRIT: '1',
   II_RELACE: '',
   HP_SVETLA: '1',
+  FREESOUND_KLIC: '',
 });
 
 /** Klíče, jejichž hodnoty jsou tajné: nikdy neopustí server a hook je hlídá v commitech. */
-export const TAJNE_KLICE = Object.freeze(['OBS_HESLO', 'PIN', 'OPENAI_API_KEY', 'HUE_KLIC', 'II_RELACE']);
+export const TAJNE_KLICE = Object.freeze(['OBS_HESLO', 'PIN', 'OPENAI_API_KEY', 'HUE_KLIC', 'II_RELACE', 'FREESOUND_KLIC']);
 
 const IPV4 = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
 /** Zařízení role: hue:<id světla na bridgi> nebo wiz:<IP lampy>. */
@@ -125,6 +126,8 @@ export class Nastaveni {
       zvukOtevrit: this.hodnoty.ZVUK_OTEVRIT !== '0',
       // Improved Initiative (otevřený bod 70): relace nikdy, jen jestli je vložená.
       iiRelaceNastavena: Boolean(this.hodnoty.II_RELACE),
+      // Zvuková sada (otevřený bod 86): klíč Freesound nikdy, jen jestli je vložený.
+      freesoundNastaven: Boolean(this.hodnoty.FREESOUND_KLIC),
     };
   }
 
@@ -199,6 +202,12 @@ export class Nastaveni {
       nove.II_RELACE = r;
     }
     if (z.smazatIiRelace) nove.II_RELACE = '';
+    if (z.freesoundKlic) {
+      const k = String(z.freesoundKlic).trim();
+      if (!/^[A-Za-z0-9]{20,64}$/.test(k)) throw Object.assign(new Error('To nevypadá jako klíč Freesound (Client secret/Api key z freesound.org/apiv2/apply).'), { status: 400 });
+      nove.FREESOUND_KLIC = k;
+    }
+    if (z.smazatFreesoundKlic) nove.FREESOUND_KLIC = '';
     await zapsatAtomicky(this.cesta, slozitEnv(nove));
     this.hodnoty = nove;
     this.existuje = true;

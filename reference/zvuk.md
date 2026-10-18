@@ -173,15 +173,28 @@ Soubory nemusíš stahovat, stříhat ani srovnávat ručně (otevřený bod 86)
 
 ### Zvuková sada
 
-1. Na [freesound.org](https://freesound.org) si založ účet (zdarma). Na `freesound.org/apiv2/apply` vytvoř klíč (popis třeba „DM Hub, osobní použití“) a zkopíruj *Client secret/Api key*.
-2. Vlož ho v **Nastavení → Zvuk → Zvuková sada z Freesoundu**. Zůstane jen v `hub/.env`.
-3. Klikni na **Doplnit chybějící zvuky**. Hub projde `kampan/zvuky-sada.yaml`, pro každou položku najde na Freesoundu nejlépe hodnocené zvuky s licencí **CC0** a zadanou délkou, stáhne je jako MP3 a pojmenuje podle sady (`nahodne\tabor\kun-1.mp3` …).
-4. V tabulce si každý soubor poslechneš (▶). Když se ti nelíbí, **Vyměnit** stáhne další v pořadí a ten starý už znovu nenabídne.
+Hub hledá zvuky ve dvou zdrojích (otevřené body 86 a 87):
 
-- Autory, názvy a odkazy Hub zapíše do `zdroje.json` ve složce zvuku. CC0 uvedení autora nevyžaduje, ale je dobré vědět, odkud co je.
-- Tvoje vlastní soubory se stejným jménem Hub nepřepíše. Přepíše je jen tlačítkem Vyměnit.
-- Co do sady patří, upravíš v `kampan/zvuky-sada.yaml` (`hledat` anglicky, `delka: [od, do]`, `variant`).
-- Freesound dovolí 2 000 požadavků denně. Celá sada je pár desítek požadavků.
+| Zdroj | Co v něm je | Klíč |
+| --- | --- | --- |
+| **Freesound** | největší knihovna zvukových efektů, hledá se jako první | ano, zdarma (`freesound.org/apiv2/apply`) |
+| **Openverse** | vyhledávač nad volně licencovanými zvuky: Freesound, Wikimedia Commons, Jamendo, ccMixter a další | ne |
+
+Třetí zdroj jsou **balíčky Kenney** (kenney.nl, CC0): položka sady s `balik: kenney/<balíček>` a `soubory: [jména]` vezme jmenované soubory z balíčku. ZIP se stáhne jednou do `baliky\kenney_<balíček>.zip` ve složce zvuku a dál se pracuje lokálně (balíček tam jde dát i ručně). Ve složce už jsou RPG Audio, Impact Sounds, Music Jingles a Voiceover Pack: Fighter.
+
+Bez klíče Freesound tedy sada funguje taky: Openverse najde i CC0 zvuky z Freesoundu, jen s menším výběrem. Pixabay ani Mixkit veřejné API na zvuky nemají, ty jdou jen ručně.
+
+1. (Nepovinně) Na [freesound.org](https://freesound.org) si založ účet a na `freesound.org/apiv2/apply` vytvoř klíč. Vlož ho v **Nastavení → Zvuk → Zvuková sada**. Zůstane jen v `hub/.env`.
+2. Klikni na **Doplnit chybějící zvuky**. Hub projde `kampan/zvuky-sada.yaml`, pro každou položku najde zvuky se zadanou délkou a povolenou licencí, stáhne je a pojmenuje podle sady (`nahodne\tabor\kun-1.mp3` …). Soubor z Wikimedia Commons může mít příponu `.ogg` nebo `.wav`; data i Hub ho najdou stejně.
+3. V tabulce si každý soubor poslechneš (▶, v popisku je autor, licence a zdroj). **Vyměnit** stáhne další v pořadí a ten starý už znovu nenabídne.
+
+- **Licence**: vždy CC0 a public domain. Položka může dovolit i CC BY (`licence: [cc0, by]`), třeba kvůli hudbě z Jamenda. Na soukromé hraní stačí, autory máš v `zdroje.json`.
+- Autory, názvy, odkazy a zdroj Hub zapíše do `zdroje.json` ve složce zvuku.
+- Tvoje vlastní soubory se stejným jménem Hub nepřepíše; přepíše je jen tlačítkem Vyměnit.
+- Když jeden zdroj nejde (špatný klíč, limit), Hub hledá dál v dalším a chybu napíše pod tlačítko.
+- Co do sady patří, upravíš v `kampan/zvuky-sada.yaml` (`hledat` anglicky, `delka: [od, do]`, `variant`, `licence`).
+- `hledat` může být i seznam náhradních dotazů (`hledat: [lute strum, harp strum]`). Když nic nenajde, Hub dotaz o 3 a víc slovech zkusí zkrátit.
+- Zvuk z balíčku nemá „další v pořadí“: vymění se přepsáním jména v `soubory`. Jména souborů najdeš v ZIPu ve složce `baliky`.
 
 ### Srovnání hlasitosti
 

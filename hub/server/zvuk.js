@@ -12,7 +12,8 @@ import { EventEmitter } from 'node:events';
 import YAML from 'yaml';
 import { zapsatAtomicky } from './zapis.js';
 import { sestavitKnihovnu, najitSkupinu, vybratVariantu, normalizujMapu, zvukTahu, odkazyMapy, platneId } from './zvuky-knihovna.js';
-import { normalizujSadu, souboryPolozky, Freesound } from './zvuky-sada.js';
+import { normalizujSadu, souboryPolozky, Freesound, Openverse, Kenney, hledatKandidaty, idKandidata, ZDROJE } from './zvuky-sada.js';
+import { polozkyZip, rozbalit } from './zip.js';
 import { HLADINY, ziskNaHladinu } from '../sdilene/mereni.js';
 
 /** Formáty, které umí přehrát prohlížeč v OBS i Chrome/Edge. */
@@ -204,7 +205,7 @@ export class Zvuk extends EventEmitter {
    * @param {() => object} volby.vrstvy vrstvy z kampan/sceny (sdílené se světly)
    * @param {() => Array<object>} volby.mista všechna místa (Kontrola dat)
    */
-  constructor({ cesty, nastaveni, misto, scena, vrstvy, mista, hodiny = () => Date.now(), nahodne = Math.random, fetchFreesound }) {
+  constructor({ cesty, nastaveni, misto, scena, vrstvy, mista, hodiny = () => Date.now(), nahodne = Math.random, fetchZvuky }) {
     super();
     this.c = cesty;
     this.nastaveni = nastaveni;
@@ -222,7 +223,7 @@ export class Zvuk extends EventEmitter {
     this.otisky = new Map(); // soubor → velikost:čas změny (změněný soubor se změří znovu)
     this.casovacMereni = null;
     // Zvuková sada (otevřený bod 86): kampan/zvuky-sada.yaml, stahování z Freesoundu.
-    this.fetchFreesound = fetchFreesound;
+    this.fetchZvuky = fetchZvuky; // testy: falešné zdroje zvuků
     this.sada = normalizujSadu();
     this.zdroje = { soubory: {}, vynechane: {} };
     this.prubehSady = { bezi: false, hotovo: 0, celkem: 0, text: null, chyba: null };
@@ -748,90 +749,187 @@ export class Zvuk extends EventEmitter {
   stavSady() {
     return {
       klic: Boolean(this.nastaveni().FREESOUND_KLIC),
+      zdroje: this.nastaveni().FREESOUND_KLIC ? ZDROJE : ZDROJE.filter((z) => z !== 'freesound'),
       chyby: this.sada.chyby,
       prubeh: this.prubehSady,
       polozky: this.sada.polozky.map((p) => {
         const soubory = souboryPolozky(p).map((f) => {
           const je = this.najit(f);
           const z = this.zdroje.soubory[f];
-          return { soubor: f, je: Boolean(je), ...(je ? { url: this.url(je) } : {}), ...(z ? { zdroj: { autor: z.autor, nazev: z.nazev, url: z.url, licence: z.licence } } : {}) };
+          return { soubor: f, je: Boolean(je), ...(je ? { url: this.url(je), skutecny: je } : {}), ...(z ? { zdroj: { autor: z.autor, nazev: z.nazev, url: z.url, licence: z.licence, odkud: z.zdroj ?? 'Freesound' } } : {}) };
         });
-        return { cil: p.cil, popis: p.popis, hledat: p.hledat, delka: p.delka, soubory, chybi: soubory.filter((f) => !f.je).length };
+        return {
+          cil: p.cil,
+          popis: p.popis,
+          hledat: p.hledat,
+          delka: p.delka,
+          ...(p.balik ? { balik: `Kenney: ${p.balik.nazev} (${p.balik.soubory.join(', ')})` } : {}),
+          soubory,
+          chybi: soubory.filter((f) => !f.je).length,
+        };
       }),
     };
   }
 
+  /** Zdroje zvuků v pořadí: Freesound (jen s klíčem), pak Openverse (bez klíče). Otevřený bod 87. */
+  zdrojeZvuku() {
+    const volby = this.fetchZvuky ? { fetch: this.fetchZvuky, odstupMs: 0 } : {};
+    const klic = this.nastaveni().FREESOUND_KLIC;
+    return [...(klic ? [new Freesound({ klic, ...volby })] : []), new Openverse(volby)];
+  }
+
   /**
-   * Doplní chybějící soubory sady z Freesoundu (CC0 náhledy MP3), nebo vymění soubory jedné položky
+   * Balíček Kenney (otevřený bod 88): ZIP se stáhne jednou do složky zvuku (baliky/kenney_<jméno>.zip)
+   * a dál se z něj jen vybírá. Vlastní ZIP stejného jména tam jde dát i ručně.
+   */
+  async balik(nazev) {
+    const soubor = path.join(this.slozka, 'baliky', `kenney_${nazev}.zip`);
+    try {
+      return await fs.readFile(soubor);
+    } catch {
+      /* ještě není: stáhne se */
+    }
+    this.prubehSady.text = `Stahuji balíček Kenney ${nazev}…`;
+    this.oznamStav();
+    const data = await new Kenney(this.fetchZvuky ? { fetch: this.fetchZvuky, odstupMs: 0 } : {}).stahnoutBalik(nazev);
+    await zapsatAtomicky(soubor, data);
+    return data;
+  }
+
+  /** Soubory položky z balíčku: jméno v balíčku (bez přípony, bez ohledu na velikost písmen) → cíl. */
+  async zBaliku(p, soubory, chyby) {
+    const kmen = (f) => f.slice(0, f.length - path.posix.extname(f).length);
+    let zip;
+    try {
+      zip = await this.balik(p.balik.nazev);
+    } catch (e) {
+      chyby.push(`${p.cil}: ${e.message}`);
+      this.prubehSady.hotovo += soubory.length;
+      return;
+    }
+    let polozky;
+    try {
+      polozky = polozkyZip(zip).filter((x) => !x.nazev.endsWith('/'));
+    } catch (e) {
+      chyby.push(`${p.cil}: balíček ${p.balik.nazev}: ${e.message}`);
+      this.prubehSady.hotovo += soubory.length;
+      return;
+    }
+    const vsechny = souboryPolozky(p);
+    for (const f of soubory) {
+      const jmeno = p.balik.soubory[vsechny.indexOf(f)];
+      const x = polozky.find((y) => {
+        const z = path.posix.basename(y.nazev);
+        return PRIPONY_ZVUKU.includes(path.posix.extname(z).toLowerCase()) && kmen(z).toLowerCase() === jmeno.toLowerCase();
+      });
+      if (!x) {
+        chyby.push(`${f}: v balíčku ${p.balik.nazev} není „${jmeno}“`);
+        this.prubehSady.hotovo++;
+        continue;
+      }
+      try {
+        const cilovy = `${kmen(f)}${path.posix.extname(x.nazev).toLowerCase()}`;
+        await zapsatAtomicky(path.join(this.slozka, ...cilovy.split('/')), rozbalit(zip, x));
+        this.zdroje.soubory[f] = {
+          id: `kenney:${p.balik.nazev}/${jmeno}`,
+          soubor: cilovy,
+          nazev: path.posix.basename(x.nazev),
+          autor: 'Kenney',
+          licence: 'CC0',
+          url: `https://kenney.nl/assets/${p.balik.nazev}`,
+          zdroj: `Kenney (${p.balik.nazev})`,
+          cil: p.cil,
+          stazeno: new Date(this.hodiny()).toISOString(),
+        };
+      } catch (e) {
+        chyby.push(`${f}: ${e.message}`);
+      }
+      this.prubehSady.hotovo++;
+    }
+    await zapsatAtomicky(this.souborZdroju, JSON.stringify(this.zdroje, null, 1));
+    await this.prohledat();
+  }
+
+  /**
+   * Doplní chybějící soubory sady (Freesound, Openverse), nebo vymění soubory jedné položky
    * za další v pořadí. Běží na pozadí; průběh je ve stavu (sada.prubeh).
    * @param {{cil?: string, vymenit?: boolean}} volby
    */
   doplnitSadu({ cil = null, vymenit = false } = {}) {
     if (this.prubehSady.bezi) throw chyba('Stahování už běží.', 409);
-    const klic = this.nastaveni().FREESOUND_KLIC;
-    if (!klic) throw chyba('Chybí klíč Freesound. Vlož ho v Nastavení → Zvuk.');
     if (!this.slozkaExistuje) throw chyba(`Složka zvuku ${this.slozka} neexistuje.`);
     const polozky = this.sada.polozky.filter((p) => (cil ? p.cil === cil : true));
     if (cil && !polozky.length) throw chyba('Taková položka v sadě není.', 404);
+    if (vymenit && polozky.some((p) => p.balik)) throw chyba('Zvuk z balíčku nejde vyměnit za další: změň jméno souboru v kampan/zvuky-sada.yaml.');
     const prace = polozky
       .map((p) => ({ p, soubory: souboryPolozky(p).filter((f) => vymenit || !this.najit(f)) }))
       .filter((x) => x.soubory.length);
     const celkem = prace.reduce((n, x) => n + x.soubory.length, 0);
-    this.prubehSady = { bezi: Boolean(celkem), hotovo: 0, celkem, text: celkem ? 'Hledám na Freesoundu…' : 'Všechny soubory sady ve složce jsou.', chyba: null };
+    this.prubehSady = { bezi: Boolean(celkem), hotovo: 0, celkem, text: celkem ? 'Hledám zvuky…' : 'Všechny soubory sady ve složce jsou.', chyba: null };
     this.oznamStav();
     if (!celkem) return { ok: true, celkem: 0 };
-    this.uloha = this.stahnoutSadu(prace, vymenit, new Freesound({ klic, ...(this.fetchFreesound ? { fetch: this.fetchFreesound, odstupMs: 0 } : {}) }));
+    this.uloha = this.stahnoutSadu(prace, vymenit, this.zdrojeZvuku());
     return { ok: true, celkem };
   }
 
-  async stahnoutSadu(prace, vymenit, fs_) {
+  async stahnoutSadu(prace, vymenit, zdroje) {
     const chyby = [];
+    const chybyZdroju = new Map(); // název zdroje → zpráva (každá jen jednou)
+    const kmen = (f) => f.slice(0, f.length - path.posix.extname(f).length);
     try {
       for (const { p, soubory } of prace) {
-        const vynechane = new Set(this.zdroje.vynechane[p.cil] ?? []);
-        if (vymenit) for (const f of soubory) if (this.zdroje.soubory[f]) vynechane.add(this.zdroje.soubory[f].id);
-        const pouzite = new Set(souboryPolozky(p).filter((f) => !soubory.includes(f)).map((f) => this.zdroje.soubory[f]?.id).filter(Boolean));
-        this.prubehSady.text = `Hledám „${p.hledat}“ pro ${p.cil}…`;
-        this.oznamStav();
-        let kandidati;
-        try {
-          kandidati = (await fs_.hledat(p)).filter((k) => !vynechane.has(k.id) && !pouzite.has(k.id));
-          if (kandidati.length < soubory.length) kandidati.push(...(await fs_.hledat(p, 2).catch(() => [])).filter((k) => !vynechane.has(k.id) && !pouzite.has(k.id)));
-        } catch (e) {
-          if (e.status === 400 || e.status === 429) throw e; // špatný klíč nebo limit: dál nemá smysl
-          chyby.push(`${p.cil}: ${e.message}`);
-          this.prubehSady.hotovo += soubory.length;
+        if (p.balik) {
+          await this.zBaliku(p, soubory, chyby);
           continue;
         }
+        const vynechane = new Set((this.zdroje.vynechane[p.cil] ?? []).map(idKandidata));
+        if (vymenit) for (const f of soubory) if (this.zdroje.soubory[f]) vynechane.add(idKandidata(this.zdroje.soubory[f].id));
+        const pouzite = souboryPolozky(p)
+          .filter((f) => !soubory.includes(f))
+          .map((f) => this.zdroje.soubory[f]?.id)
+          .filter(Boolean)
+          .map(idKandidata);
+        this.prubehSady.text = `Hledám „${p.hledat}“ pro ${p.cil}…`;
+        this.oznamStav();
+        const { kandidati, chyby: ch } = await hledatKandidaty(zdroje, p, { kolik: soubory.length, vynechat: new Set([...vynechane, ...pouzite]) });
+        for (const e of ch) chybyZdroju.set(e.message.split(':')[0], e.message);
         if (!kandidati.length) {
-          chyby.push(`${p.cil}: na Freesoundu nic dalšího (CC0, ${p.delka[0]}–${p.delka[1]} s). Zkus v sadě jiné hledat.`);
+          chyby.push(`${p.cil}: nic dalšího (${p.licence.join(', ').toUpperCase()}, ${p.delka[0]}–${p.delka[1]} s). Zkus v sadě jiné hledat, nebo víc dotazů: hledat: [první, druhý].`);
           this.prubehSady.hotovo += soubory.length;
           continue;
         }
         for (const f of soubory) {
-          const k = kandidati.shift();
-          if (!k) {
-            chyby.push(`${f}: došli kandidáti`);
-            this.prubehSady.hotovo++;
-            continue;
+          let hotovo = false;
+          // Když se soubor nestáhne (úložiště neodpovídá), zkusí se další kandidát.
+          while (!hotovo && kandidati.length) {
+            const k = kandidati.shift();
+            this.prubehSady.text = `Stahuji ${f} (${k.nazev}, ${k.autor}, ${k.zdroj})…`;
+            this.oznamStav();
+            try {
+              const zdroj = zdroje.find((z) => k.zdroj.startsWith(z.nazev)) ?? zdroje.at(-1);
+              const data = await zdroj.stahnout(k.nahled);
+              const cilovy = `${kmen(f)}${k.pripona}`;
+              // Starý soubor stejného jména s jinou příponou pryč, ať ve složce nejsou dva.
+              for (const stary of this.soubory.filter((x) => kmen(x).toLowerCase() === kmen(f).toLowerCase() && x !== cilovy)) {
+                await fs.rm(path.join(this.slozka, ...stary.split('/')), { force: true });
+              }
+              await zapsatAtomicky(path.join(this.slozka, ...cilovy.split('/')), data);
+              this.zdroje.soubory[f] = { id: k.id, soubor: cilovy, nazev: k.nazev, autor: k.autor, licence: k.licence, url: k.url, zdroj: k.zdroj, cil: p.cil, stazeno: new Date(this.hodiny()).toISOString() };
+              hotovo = true;
+            } catch (e) {
+              vynechane.add(k.id);
+              if (!kandidati.length) chyby.push(`${f}: ${e.message}`);
+            }
           }
-          this.prubehSady.text = `Stahuji ${f} (${k.nazev}, ${k.autor})…`;
-          this.oznamStav();
-          try {
-            const data = await fs_.stahnout(k.nahled);
-            await zapsatAtomicky(path.join(this.slozka, ...f.split('/')), data);
-            if (this.zdroje.soubory[f] && vymenit) vynechane.add(this.zdroje.soubory[f].id);
-            this.zdroje.soubory[f] = { id: k.id, nazev: k.nazev, autor: k.autor, licence: k.licence, url: k.url, cil: p.cil, stazeno: new Date(this.hodiny()).toISOString() };
-          } catch (e) {
-            chyby.push(`${f}: ${e.message}`);
-          }
+          if (!hotovo && !chyby.some((c) => c.startsWith(`${f}:`))) chyby.push(`${f}: došli kandidáti`);
           this.prubehSady.hotovo++;
         }
         if (vynechane.size) this.zdroje.vynechane[p.cil] = [...vynechane].slice(-50);
         await zapsatAtomicky(this.souborZdroju, JSON.stringify(this.zdroje, null, 1));
         await this.prohledat();
       }
-      this.prubehSady = { ...this.prubehSady, bezi: false, text: chyby.length ? `Hotovo, ${chyby.length}× problém.` : 'Hotovo. Zvuky jsou ve složce.', chyba: chyby.length ? chyby.join('\n') : null };
+      const problemy = [...chyby, ...chybyZdroju.values()];
+      this.prubehSady = { ...this.prubehSady, bezi: false, text: chyby.length ? `Hotovo, ${chyby.length}× problém.` : 'Hotovo. Zvuky jsou ve složce.', chyba: problemy.length ? problemy.join('\n') : null };
     } catch (e) {
       this.prubehSady = { ...this.prubehSady, bezi: false, text: 'Stahování se zastavilo.', chyba: e.message };
     }

@@ -44,7 +44,9 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Srovnání hlasitosti a přeskočení ticha na začátku | ◐ |
 | **Údržba** | Aktualizovat jedním tlačítkem, restart sám, Kontrola dat, Záznam událostí | ◐ |
 | **Kánon** (Blok 3) | Příprava převodu: audit zdrojů, mapa převodu, šablony, report `npm run kanon` | ◐ |
+| | Vztahy s popisem a postojem: formát, šablony, Kontrola dat | ◐ |
 | | Převedené karty (postavy, NPC, frakce, místa, předměty, rozhodnutí, sezení), hledání, karty v panelu | ✗ |
+| | Modul Kánon: mapa, malé úpravy, Otevřít v Obsidianu, pohled družiny, nástěnky | ✗ |
 | **Verze 2** | Editor entit, příprava Lazy DM, generátor obchodů, portréty, export do IIO | ✗ |
 
 ## Co je rozdělané (v tomto pořadí)
@@ -52,7 +54,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 1. **Vyzkoušet u stolu** všechno označené ◐ (sezení 3, tábor lupičů). Co projde, se v `ZADANI.md` uzavře.
 2. **Zjednodušit Kontrolu dat:** chybějící zvuky v jednom řádku s tlačítkem Doplnit, chyby nahoře.
 3. **Zvuk u stolu po restartu:** ověřit, jestli prohlížeč chce kliknutí; když ano, otevírat ho v samostatném okně.
-4. **Blok 3 Kánon:** DM rozhodne rozpory R1–R16 z `reference/kanon-audit.md` a zazálohuje Notion, pak převod po skupinách podle `reference/kanon-prevod.md`. Chybí zápis sezení 2.
+4. **Blok 3 Kánon:** DM rozhodne rozpory R1–R16 z `reference/kanon-audit.md` a zazálohuje Notion, pak převod po skupinách podle `reference/kanon-prevod.md` (včetně návrhů vztahů). Modul Kánon s mapou přijde po skupině postavy. Chybí zápis sezení 2.
 5. **Verze 2.**
 
 ## Vědomě vynecháno

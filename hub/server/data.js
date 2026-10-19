@@ -15,6 +15,41 @@ const POVINNE_ENTITY = ['schema', 'id', 'typ', 'nazev', 'verejne'];
 /** Stav záznamu v registru rozhodnutí (Blok 3, převod z Notionu). */
 export const STAVY_ROZHODNUTI = Object.freeze(['otevrene', 'rozhodnuto', 'zavrzeno']);
 
+/**
+ * Pole `vztahy` v hlavičce (ZADANI.md, Datový model → Vztahy; rozhodnutí 70).
+ * Vrátí problémy formátu a cíle vztahů (id bez [[ ]]), aby je Kontrola dat porovnala s ostatními soubory.
+ * @returns {{problemy: Array<{uroven:'chyba'|'varovani', zprava:string}>, cile: string[]}}
+ */
+export function overVztahy(data) {
+  const problemy = [];
+  const cile = [];
+  if (!('vztahy' in data) || data.vztahy == null) return { problemy, cile };
+  if (!Array.isArray(data.vztahy)) {
+    problemy.push({ uroven: 'chyba', zprava: 'vztahy musí být seznam' });
+    return { problemy, cile };
+  }
+  const vazby = new Set(odkazy(JSON.stringify(data.vazby ?? [])));
+  data.vztahy.forEach((v, i) => {
+    const kde = `Vztah ${i + 1}`;
+    if (!v || typeof v !== 'object' || Array.isArray(v)) {
+      problemy.push({ uroven: 'chyba', zprava: `${kde} musí mít tvar { s: "[[id]]", popis: … }` });
+      return;
+    }
+    const m = typeof v.s === 'string' ? /^\[\[([^\]|#]+)(?:[#|][^\]]*)?\]\]$/.exec(v.s.trim()) : null;
+    if (!m) problemy.push({ uroven: 'chyba', zprava: `${kde}: s musí být odkaz v uvozovkách, např. "[[dorn-treestone]]"` });
+    if (typeof v.popis !== 'string' || !v.popis.trim()) problemy.push({ uroven: 'chyba', zprava: `${kde}: chybí popis` });
+    if ('postoj' in v && !(Number.isInteger(v.postoj) && v.postoj >= -3 && v.postoj <= 3)) {
+      problemy.push({ uroven: 'chyba', zprava: `${kde}: postoj musí být celé číslo −3 až 3` });
+    }
+    if ('verejne' in v && typeof v.verejne !== 'boolean') problemy.push({ uroven: 'chyba', zprava: `${kde}: verejne musí být true nebo false` });
+    if (!m) return;
+    const cil = m[1].trim();
+    cile.push(cil);
+    if (!vazby.has(cil)) problemy.push({ uroven: 'varovani', zprava: `Vztah s [[${cil}]] chybí ve vazby (Obsidian ho neukáže v grafu)` });
+  });
+  return { problemy, cile };
+}
+
 /** Slug podle konvence v ZADANI.md: malá písmena bez diakritiky, pomlčky. */
 export function slug(text) {
   return String(text)
@@ -157,7 +192,9 @@ export async function kontrolaDat(c) {
     if (d.typ === 'rozhodnuti' && 'stav' in d && !STAVY_ROZHODNUTI.includes(d.stav)) {
       pridej(soubor, 'varovani', `stav rozhodnutí musí být ${STAVY_ROZHODNUTI.join(', ')}`);
     }
-    zaznamy.push({ soubor, data: d, telo: r.telo, slozka: path.dirname(soubor) });
+    const vztahy = overVztahy(d);
+    for (const p of vztahy.problemy) pridej(soubor, p.uroven, p.zprava);
+    zaznamy.push({ soubor, data: d, telo: r.telo, slozka: path.dirname(soubor), cileVztahu: vztahy.cile });
   }
 
   // Duplicitní id napříč kampaní
@@ -174,7 +211,7 @@ export async function kontrolaDat(c) {
 
   // Vazby a obrázky
   for (const z of zaznamy) {
-    const cile = new Set([...odkazy(JSON.stringify(z.data.vazby ?? [])), ...odkazy(z.telo)]);
+    const cile = new Set([...odkazy(JSON.stringify(z.data.vazby ?? [])), ...odkazy(z.telo), ...z.cileVztahu]);
     for (const cil of cile) if (!podleId.has(cil)) pridej(z.soubor, 'varovani', `Vazba [[${cil}]] vede na neexistující id`);
     const ilustrace = Array.isArray(z.data.ilustrace) ? z.data.ilustrace : [];
     for (const il of ilustrace) {

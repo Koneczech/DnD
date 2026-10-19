@@ -9,6 +9,7 @@ druh: # např. ork
 povolani: # např. barbar 3 (Path of the World Tree)
 aliases: []
 vazby: [] # ["[[koudur]]", "[[sidlo-treestoneu]]"]
+vztahy: [] # - { s: "[[id]]", popis: adoptivní otec, postoj: 3 }  postoj −3 až +3, verejne: true = zná družina
 tags: []
 ilustrace: [] # - { soubor: /Tusker.png, ucel: portret }
 zdroj: # odkaz na původní kartu v Notionu
@@ -22,6 +23,10 @@ zdroj: # odkaz na původní kartu v Notionu
 Kapitoly životopisu, jak vznikly s hráčem. Odkazy na lidi a místa jako [[id|Jméno]].
 
 ## Výchozí stav (před sezením 1)
+
+## Co ví družina
+
+Jen to, co hráči opravdu vědí. Tento oddíl ukáže pohled družiny.
 
 ## DM — co postava neví
 

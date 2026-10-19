@@ -1,6 +1,6 @@
 # CLAUDE.md — pravidla pro práci v tomto repu
 
-Repo `Koneczech/DnD` drží data kampaně D&D a aplikaci DM Hub. Zadání je v `ZADANI.md` a je to jediný master. Tento soubor říká, jak se v repu pracuje.
+Repo `Koneczech/DnD` drží data kampaně D&D a aplikaci DM Hub. Zadání je v `ZADANI.md` a je to jediný master. Stav funkcí (co umí, co je rozdělané, co vynecháno) je v `PREHLED.md`: po každé změně funkcí ho aktualizuj. Tento soubor říká, jak se v repu pracuje.
 
 ## Jazyk
 

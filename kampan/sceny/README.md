@@ -23,7 +23,10 @@ Klíč `zvuk` odkazuje jménem na soubory ve **složce zvuku mimo repo** (Nastav
   (0–1) a `nahodne: [ { zvuk, kazdych_s, nahodilost, hlasitost, vzdalenost } ]` (náhodné zvuky,
   zesílí s intenzitou stejně jako ambient; viz `reference/zvuk.md`).
 - Souboj: `hudba` (nahradí hudbu místa), volitelně `ambient`. Ambient počasí hraje dál, ambient
-  místa se ztlumí.
+  místa se ztlumí. `konec: { zvuk, dozvuk, prolnuti_s }` = úder na Konci souboje (buben v dozvuku)
+  a jak dlouho bojová hudba dozní.
+- `rezim/start.yaml`: hudba na scéně Start v OBS; místo a počasí na ní mlčí.
+- `hudba` všude může být soubor, složka s lomítkem na konci (`hudba/souboj/` = playlist) nebo seznam.
 
 Chybějící soubor ohlásí Kontrola dat; scéna pak hraje bez něj. Seznam souborů, které vrstvy
 čekají, je v `reference/zvuk.md`.

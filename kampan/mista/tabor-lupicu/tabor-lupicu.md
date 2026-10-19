@@ -52,12 +52,21 @@ svetla:
     lampa: { barva: [ 31, 35, 255 ], jas: 21 }
 zvuk:
   den:
+    hudba: hudba/divocina/
     ambient: tabor-ohen.mp3
     nahodne:
       - { zvuk: nahodne/tabor/kun, kazdych_s: 60, nahodilost: 0.8, hlasitost: 0.8, vzdalenost: 0.7 }
       - { zvuk: nahodne/tabor/kovadlina, kazdych_s: 45, nahodilost: 0.5, hlasitost: 0.8, vzdalenost: 0.7 }
       - { zvuk: nahodne/tabor/krkavec, kazdych_s: 90, nahodilost: 0.9, hlasitost: 0.7, vzdalenost: 0.5 }
       - { zvuk: nahodne/tabor/drevo, kazdych_s: 40, nahodilost: 0.6, hlasitost: 0.8, vzdalenost: 0.3 }
+  # Noc (DM 19. 10. 2026, ⚠ návrh): oheň dál, tábor spí; koně, sova a vlci v dálce.
+  noc:
+    hudba: hudba/divocina/
+    ambient: tabor-ohen.mp3
+    nahodne:
+      - { zvuk: nahodne/tabor/kun, kazdych_s: 90, nahodilost: 0.8, hlasitost: 0.6, vzdalenost: 0.6 }
+      - { zvuk: nahodne/noc/sova, kazdych_s: 75, nahodilost: 0.8, hlasitost: 0.6, vzdalenost: 0.6 }
+      - { zvuk: nahodne/noc/vlk, kazdych_s: 180, nahodilost: 0.9, hlasitost: 0.5, vzdalenost: 0.9 }
   souboj:
     ambient: tabor-bitva.mp3
     nahodne:

@@ -7,7 +7,7 @@ Všechen zvuk hraje stránka `vystupy/zvuk-u-stolu.html` do BT reproduktoru u st
 | **Hudba** scény, **ambient** místa a počasí, **hrom**, **efekty** | stránka `vystupy/zvuk-u-stolu.html` v okně prohlížeče | BT reproduktor u stolu |
 | **Hudba** (jen když ji přepneš) | výstup `vystupy/hudba.html` jako zdroj *Browser* v OBS | TV přes monitorování zvuku v OBS |
 
-Co hraje, určuje panel (místo, Den/Noc, počasí, souboj, Ticho). Stránky to jen plynule prolnou. Kde hraje hudba, přepneš v **Nastavení → Zvuk → Hudba hraje**.
+Co hraje, určuje panel (místo, Den/Noc, počasí, souboj, Ticho) a scéna v OBS (Start). Stránky to jen plynule prolnou. Kde hraje hudba, přepneš v **Nastavení → Zvuk → Hudba hraje**.
 
 **Ucpané uši při málo HP**: když je na tahu postava s 25 % HP a méně, hudba nezeslábne, ale zní tupě, jako přes ucpané uši (dolní propust, bod 73). V **Nastavení → Zvuk → Hudba a málo HP** zvolíš, jestli se tlumí jen hudba, nebo i ambient, a jak silně. **Vyzkoušet 12 s** pustí tlumení spolu s pulzem lampy.
 
@@ -28,11 +28,32 @@ Zvukové soubory do veřejného repa nepatří (licence, rozhodnutí 63). `.giti
 | `vitr-snih.mp3` | ambient při sněhu | sílí s intenzitou |
 | `bourka.mp3` | ambient při bouřce | déšť a vítr, bez hromů |
 | `hrom-1.mp3`, `hrom-2.mp3`, `hrom-3.mp3` | po každém blesku jeden náhodně | krátké (2–8 s); vzdálený Hub ztiší a utlumí |
-| `souboj.mp3` | hudba v souboji | nahradí hudbu místa |
-| `vitezstvi.mp3` | vítězná fanfára při Konci souboje | jednou, hudba uhne |
+| `souboj.mp3` + složka `hudba\souboj\` | playlist v souboji | nahradí hudbu místa |
+| `hudba\start\` | playlist na scéně Start v OBS | `kampan/sceny/rezim/start.yaml` |
+| `konec\buben-1.mp3` … | úder bubnu při Konci souboje | Hub přidá dozvuk jeskyně, hudba dozní |
 | `tahy/tusker.mp3`, `tahy/koudur.mp3`, `tahy/leta.mp3`, `tahy/alba.mp3`, `tahy/malk.mp3`, `tahy/nepritel.mp3` | zvuky na tah (`kampan/zvuky.yaml`) | krátké, do 2 s |
 
 Jména můžeš změnit přímo v `kampan/sceny/…yaml`. Hudbu a ambient míst vybíráš v **Místa → místo → Zvuk**. Chybějící soubor ohlásí Kontrola dat a Sezení → Před hrou. Scéna pak hraje bez něj.
+
+### Playlisty: složka místo jedné skladby
+
+Hudba nemusí být jeden soubor. Když v datech napíšeš **složku s lomítkem na konci**, je to playlist:
+
+```yaml
+hudba: hudba/souboj/                      # všechny skladby ve složce
+hudba: [souboj.mp3, hudba/souboj/]        # soubor i složka dohromady
+```
+
+- Skladby hrají v náhodném pořadí, každá jednou, než se začne znovu. Další naběhne 4 s před koncem předchozí, takže hudba nikdy neztichne a hodinový souboj nehraje pořád jednu písničku.
+- Novou skladbu prostě nahraj do složky. Hub ji do 30 s najde (hned tlačítkem **Načíst složku znovu**) a přijde na řadu bez přerušení.
+- Hlasitost každé skladby Hub srovná zvlášť (kap. 5).
+- V **Místa → místo → Zvuk** jsou složky pod `hudba\` v nabídce Hudba jako 📁 playlisty.
+- Prázdný playlist ohlásí Kontrola dat; scéna pak hraje bez hudby.
+- Playlisty v datech: Start `hudba\start\`, souboj `hudba\souboj\` (s původním `souboj.mp3`), Longsaddle `hudba\longsaddle\`, tábor lupičů `hudba\divocina\`, jeskyně `hudba\jeskyne\`. Skladby do nich stáhne zvuková sada (kap. 5), nebo je tam dej ručně (třeba z Incompetechu).
+
+### Scéna Start
+
+Dokud OBS ukazuje scénu s rolí **Start** (úvodní obrazovka, odpočet), hraje jen hudba z `kampan/sceny/rezim/start.yaml`. Zvuk místa, náhodné zvuky i počasí mlčí. Jakmile přepneš na jinou scénu, naběhne zvuk místa. Souboj má přednost.
 
 ## 2. Hudba v OBS (jen když hudba hraje v OBS)
 
@@ -94,7 +115,7 @@ zvuky:
 
 ### Zvuky na tahu
 
-Během souboje Hub každou sekundu čte Player View z Improved Initiative. Když se změní, kdo je na tahu, zahraje krátký zvuk podle `kampan/zvuky.yaml`:
+Během souboje je Hub připojený k Improved Initiative stejně jako Player View na TV: změnu tahu dostane hned, jakmile klikneš na Next Turn. Pro jistotu ho navíc každou sekundu čte. Zvuky tahů si stránka Zvuk u stolu na začátku souboje načte předem. Když se změní, kdo je na tahu, zahraje krátký zvuk podle `kampan/zvuky.yaml`:
 
 ```yaml
 tahy:
@@ -114,10 +135,20 @@ tahy:
 - Pořadí: tag postavy → tag pro kohokoli → výchozí zvuk postavy → společný zvuk nepřátel. Postava hráče bez zápisu zůstane potichu.
 - Vypínač **Zvuky tahů** je v záložce Souboj. **Jen postavy hráčů** (bez zvuku nepřátel) je v Nastavení → Zvuk.
 - Chybějící zvuky z mapy ohlásí Kontrola dat.
+- V Záznamu událostí je u tahu „(živě)“, když přišel živým spojením. Když živé spojení vypadne, Hub to zapíše a čte dál každou sekundu (zvuk pak může přijít až o 1 s později).
+- Zbývající zpoždění dělá Bluetooth reproduktor (asi 0,2 s). To Hub neovlivní.
 
-### Vítězná fanfára
+### Konec souboje: buben
 
-**Konec souboje** zahraje `vitezstvi.mp3` (`zvuk.konec` v `kampan/sceny/rezim/souboj.yaml`). Při útěku nebo prohře použij v záložce Souboj **Konec bez fanfáry**.
+**Konec souboje** zahraje jeden úder bubnu v ozvěně jeskyně a bojová hudba pod ním za 6 s dozní. Hudba a ambient místa mezitím naběhnou. Při útěku nebo prohře použij v záložce Souboj **Konec potichu**: bez bubnu, hudba dozní stejně pomalu.
+
+Nastavuje se v `kampan/sceny/rezim/souboj.yaml`:
+
+```yaml
+konec: { zvuk: konec/buben, dozvuk: jeskyne, prolnuti_s: 6 }
+```
+
+`zvuk` je soubor nebo skupina variant (`konec/buben-1.mp3`, `-2` … hraje náhodná), `dozvuk` jeden z prostorů místa (`mistnost`, `kobka`, `sal`, `jeskyne`, `zadny`), `prolnuti_s` jak dlouho hudba dozní (1–20 s).
 
 ### Náhodné zvuky, vzdálenost a dozvuk místa
 
@@ -140,7 +171,7 @@ Další pravidla:
 - Varianty `kun-1.mp3`, `kun-2.mp3` … se střídají (nikdy dvakrát stejná). Každé zaznění má trochu jinou výšku a přijde náhodně zleva nebo zprava.
 - Soubory dej do `nahodne\<kategorie>\` (třeba `nahodne\tabor\kun-1.mp3`). Vybrat jde i jednorázový zvuk soundboardu.
 - Náhodné zvuky hrají s hlasitostí Ambient a v souboji se ztlumí jako ambient místa. Ticho je vypne a ucpané uši s volbou „vše“ je utlumí.
-- **Dozvuk** platí pro náhodné zvuky a pro soundboard (tlačítka i smyčky). Ambient a hudba zůstávají, jak jsou nahrané, protože nahrávky z jeskyně svou ozvěnu už mají. Zvuky na tah, fanfára a hrom jdou bez dozvuku.
+- **Dozvuk** platí pro náhodné zvuky a pro soundboard (tlačítka i smyčky). Ambient a hudba zůstávají, jak jsou nahrané, protože nahrávky z jeskyně svou ozvěnu už mají. Zvuky na tah a hrom jdou bez dozvuku; buben na Konci souboje má vlastní dozvuk ze `souboj.yaml`.
 - Počasí může mít náhodné zvuky taky. Zapisují se ručně do `kampan/sceny/pocasi/*.yaml` (viz README tamtéž).
 - Chybějící náhodný zvuk ohlásí Kontrola dat. Stránka Zvuk u stolu ukáže, které náhodné zvuky hrají a jaký je dozvuk.
 
@@ -195,6 +226,8 @@ Bez klíče Freesound tedy sada funguje taky: Openverse najde i CC0 zvuky z Free
 - Když jeden zdroj nejde (špatný klíč, limit), Hub hledá dál v dalším a chybu napíše pod tlačítko.
 - Co do sady patří, upravíš v `kampan/zvuky-sada.yaml` (`hledat` anglicky, `delka: [od, do]`, `variant`, `licence`).
 - `hledat` může být i seznam náhradních dotazů (`hledat: [lute strum, harp strum]`). Když nic nenajde, Hub dotaz o 3 a víc slovech zkusí zkrátit.
+- `druh: hudba` hledá jen hudbu (Jamendo, ccMixter, hudba na Freesoundu), ne zvukové efekty. Tak sada plní playlisty (`hudba/souboj/boj` s `variant: 5` = `hudba\souboj\boj-1.mp3` … `boj-5.mp3`).
+- Výslovnost slov z Wikimedia Commons (třeba člověk, který říká „bagpiper“) Hub vynechá.
 - Zvuk z balíčku nemá „další v pořadí“: vymění se přepsáním jména v `soubory`. Jména souborů najdeš v ZIPu ve složce `baliky`.
 
 ### Srovnání hlasitosti
@@ -206,7 +239,7 @@ Stránka Zvuk u stolu každý soubor jednou změří (hlasitost v LUFS, špička
 | Hudba | −18 LUFS |
 | Ambient (déšť, bouřka, oheň) | −24 LUFS |
 | Náhodné zvuky | −24 LUFS (k tomu hlasitost a vzdálenost u místa) |
-| Soundboard, zvuky na tah, fanfára | −18 LUFS |
+| Soundboard, zvuky na tah, buben konce souboje | −18 LUFS |
 | Hrom | −16 LUFS |
 
 - Zesílení je nejvýš +12 dB a nikdy nepřekročí špičku souboru. Zeslabení je nejvýš −20 dB.

@@ -70,6 +70,7 @@
     let nahodne;
     let dozvukNahodnych;
     let dozvukSoundboardu;
+    let dozvukKonce; // úder konce souboje: zazní rovnou v dozvuku
     let posledni = null;
 
     const p = new Prehravac({
@@ -96,10 +97,18 @@
         vykreslit();
         setTimeout(() => p.hlasit(), 300);
         zmeritDalsi(s.zmerit ?? []);
+        // Zvuky tahů a konce souboje předem do paměti: první tah bez čekání na načtení.
+        if (s.predem?.length) p.predNacist(s.predem);
       },
       priEfektu: (e) => {
         if (e.test) return p.test(p.ctx.destination);
-        return p.efekt(e, e.prostor ? efektyProstor : efekty)
+        let cil = e.prostor ? efektyProstor : efekty;
+        if (e.dozvuk) {
+          // Konec souboje: úder (buben) s výraznou ozvěnou prostoru.
+          dozvukKonce.nastavitHned(e.dozvuk, 1.6);
+          cil = dozvukKonce.vstup;
+        }
+        return p.efekt(e, cil)
           .then((delka) => {
             if (e.uhnout) p.uhnout(uhybHudby, delka);
           })
@@ -115,6 +124,8 @@
     dozvukSoundboardu = new Dozvuk(p.ctx);
     efektyProstor.connect(dozvukSoundboardu.vstup);
     dozvukSoundboardu.vystup.connect(p.ctx.destination);
+    dozvukKonce = new Dozvuk(p.ctx);
+    dozvukKonce.vystup.connect(efekty);
     // Náhodné zvuky: hlasitost ambientu → dozvuk → stejné tlumení jako ambient (ucpané uši „vše“).
     sberniceNahodnych = p.ctx.createGain();
     sberniceNahodnych.gain.value = 0;
@@ -162,7 +173,7 @@
       $('#stav-nahodne').textContent = s?.nahodne?.length ? `Náhodné zvuky: ${s.nahodne.map((n) => `${n.zvuk.split('/').pop()} (~${n.kazdych_s} s)`).join(', ')}${s.dozvuk && s.dozvuk !== 'zadny' ? ` · dozvuk ${DOZVUKY_POPIS[s.dozvuk] ?? s.dozvuk}` : ''}` : '';
       $('#stav-smycky').hidden = !s?.smycky?.length;
       $('#stav-smycky').textContent = s?.smycky?.length ? `Smyčky: ${s.smycky.map((x) => x.soubor.split('/').pop()).join(', ')}` : '';
-      $('#stav-hudba').textContent = !s ? 'Hudba: čekám na Hub…' : s.hudbaKde === 'obs' ? 'Hudba hraje v OBS (Nastavení → Zvuk).' : `Hudba: ${s.hudba?.soubor ?? 'žádná'}`;
+      $('#stav-hudba').textContent = !s ? 'Hudba: čekám na Hub…' : s.hudbaKde === 'obs' ? 'Hudba hraje v OBS (Nastavení → Zvuk).' : `Hudba: ${s.hudba?.playlist ? `playlist ${s.hudba.soubor} (${s.hudba.skladby.length} ${s.hudba.skladby.length < 5 ? 'skladby' : 'skladeb'})` : s.hudba?.soubor ?? 'žádná'}`;
       $('#stav-ticho').hidden = !s?.ticho;
       $('#stav-tlumeni').hidden = !s?.tlumeni?.aktivni;
       $('#stav-chyba').hidden = !p.chyba;

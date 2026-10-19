@@ -28,6 +28,7 @@ import { Iniciativa } from './iniciativa.js';
 import { PruchodIniciativy } from './iniciativa-pruchod.js';
 import { SledovaniHp } from './iniciativa-hp.js';
 import { CteniPlayerView } from './iniciativa-cteni.js';
+import { ZivyPlayerView } from './iniciativa-zive.js';
 import { Udery } from './udery.js';
 import { Zaznam } from './zaznam.js';
 import { createReadStream } from 'node:fs';
@@ -126,7 +127,7 @@ export class Hub {
    * @param {object} [volby.obsKlient] náhrada klienta OBS (testy)
    * @param {boolean} [volby.gitSit] kontrolovat GitHub při startu (výchozí true)
    */
-  constructor({ cesty = vychoziCesty(), obsKlient, gitSit = true, port, ovladaceSvetel, sparovatHue, fetchZvuky } = {}) {
+  constructor({ cesty = vychoziCesty(), obsKlient, gitSit = true, port, ovladaceSvetel, sparovatHue, fetchZvuky, ziveIniciativa } = {}) {
     this.c = cesty;
     this.gitSit = gitSit;
     this.portPrepis = port;
@@ -160,6 +161,8 @@ export class Hub {
       scena: () => this.scena.stav,
       vrstvy: () => this.svetla.vrstvy,
       mista: () => [...this.mista.mista.values()],
+      // Scéna Start v OBS: hraje hudba ze kampan/sceny/rezim/start.yaml (⚠ návrh DM 19. 10. 2026).
+      start: () => Boolean(this.obs.aktualniScena) && this.obs.aktualniScena === this.nastaveni.hodnoty.OBS_SCENA_START,
       fetchZvuky,
     });
     this.data.dalsiKontroly = () => this.zvuk.kontrola();
@@ -167,9 +170,11 @@ export class Hub {
     // Záznam událostí (bod 84): co se dělo a co selhalo, i do hub/.stav/zaznam/.
     this.zaznam = new Zaznam({ slozka: path.join(this.c.lokalniStav, 'zaznam') });
     // Player View se čte jen během souboje, jednou za sekundu pro celý Hub (bod 75).
+    // Živé spojení (socket.io jako Player View na TV) přinese změnu tahu hned; čtení je pojistka.
     this.cteniPlayerView = new CteniPlayerView({
       odkaz: () => this.iniciativa.odkaz,
       aktivni: () => this.scena.stav.rezim === 'souboj',
+      zive: ziveIniciativa === undefined ? new ZivyPlayerView() : ziveIniciativa,
     });
     // Světla podle HP (bod 72) a zvuky na tahu (bod 76): ze stavu, který přečetlo cteniPlayerView.
     this.sledovaniHp = new SledovaniHp({
@@ -308,7 +313,8 @@ export class Hub {
     this.svetla.on('blesk', (b) => z.info('svetla', `Blesk (${b.vzdalenost})`));
     this.cteniPlayerView.on('chyba', (t) => z.zmena('pv-chyba', 'iniciativa', t ? 'varovani' : 'info', t ?? 'Player View se čte bez chyby'));
     this.udery.on('uder', (u) => z.info('iniciativa', `Zásah: ${u.utocnik?.jmeno ?? '?'} → ${u.cile.map((c) => `${c.jmeno} ${c.druh === 'leceni' ? '+' : '−'}${c.o ?? (Number.isFinite(c.podil) ? `${Math.round(c.podil * 100)} %` : '?')}${c.padl ? ' (k zemi)' : ''}`).join(', ')}`));
-    this.sledovaniHp.on('tah', (k) => z.info('iniciativa', `Na tahu: ${k.jmeno}${k.tagy.length ? ` [${k.tagy.join(', ')}]` : ''}`));
+    this.sledovaniHp.on('tah', (k) => z.info('iniciativa', `Na tahu: ${k.jmeno}${k.tagy.length ? ` [${k.tagy.join(', ')}]` : ''}${this.cteniPlayerView.zdroj === 'zive' ? ' (živě)' : ''}`));
+    this.cteniPlayerView.zive?.on('spojeni', (ano) => z.zmena('iniciativa-zive', 'iniciativa', 'info', ano ? 'Živé spojení s Improved Initiative: připojeno' : 'Živé spojení s Improved Initiative: odpojeno (tahy se čtou každou sekundu)'));
     this.iniciativa.on('stav', () => {
       const i = this.stavIniciativy();
       z.zmena('ii-odkaz', 'iniciativa', i.chyba ? 'varovani' : 'info', `Player View ${i.odkaz ?? 'bez odkazu'}${i.chyba ? `: ${i.chyba}` : ''}`);
@@ -346,13 +352,19 @@ export class Hub {
     this.data.on('kontrola', (k) => this.vysilac.vyslat('kontrola', k));
     this.obs.on('stav', (s) => {
       this.vysilac.vyslat('obs', s);
+      // Přepnutí na scénu Start (a z ní) mění hudbu; stránky dostanou jen skutečnou změnu.
+      this.zvuk.zmenaSceny();
       if (s.pripojeno) this.hlidatOdpocet();
       // Po (opětovném) připojení OBS dostane poslední odkaz na Player View.
       if (s.pripojeno && !this.obsBylPripojen) this.iniciativa.doObs().catch(() => {});
       this.obsBylPripojen = s.pripojeno;
     });
     this.iniciativa.on('stav', () => this.vysilac.vyslat('iniciativa', this.stavIniciativy()));
-    this.cteniPlayerView.on('stav', (id, stav) => this.udery.zpracovat(id, stav));
+    this.cteniPlayerView.on('stav', (id, stav) => {
+      this.udery.zpracovat(id, stav);
+      // Změna tahu a málo HP hned s novým stavem, ne až s dalším tikem časovače (zvuky tahů bez zpoždění).
+      this.sledovaniHp.krok().catch(() => {});
+    });
     this.cteniPlayerView.on('chyba', (text) => this.udery.nastavitChybu(text));
     this.udery.on('uder', (u) => this.vysilac.vyslat('uder', u));
     this.udery.on('stav', (s) => this.vysilac.vyslat('uder-stav', s));
@@ -774,7 +786,7 @@ export class Hub {
     if ((p === '/api/souboj' || p === '/api/obs/souboj') && m === 'POST') {
       const telo = await nacistJson(req);
       const v = await this.souboj(telo.zapnout !== false, { fanfara: telo.fanfara !== false });
-      this.zaznam[v.chybaObs ? 'varovani' : 'info']('souboj', `${telo.zapnout !== false ? 'Souboj začal' : `Konec souboje${telo.fanfara === false ? ' bez fanfáry' : ''}`}${v.chybaObs ? `: ${v.chybaObs}` : ''}`);
+      this.zaznam[v.chybaObs ? 'varovani' : 'info']('souboj', `${telo.zapnout !== false ? 'Souboj začal' : `Konec souboje${telo.fanfara === false ? ' potichu' : ''}`}${v.chybaObs ? `: ${v.chybaObs}` : ''}`);
       return poslatJson(res, 200, v);
     }
     if (p.startsWith('/api/zvuk')) {
@@ -886,9 +898,10 @@ export class Hub {
       if (predtim !== undefined) this.scena.zahajitSouboj({ obsScena: predtim === scenaObs ? null : predtim });
     } else {
       const bezel = this.scena.stav.rezim === 'souboj';
+      // Konec souboje (⚠ návrh DM 19. 10. 2026): buben v dozvuku a bojová hudba pomalu dozní.
+      // Musí být před přepnutím scény, aby přepnutí už mělo delší prolnutí. „Konec potichu“ jen dozní.
+      if (bezel) this.zvuk.konecSouboje({ zvuk: fanfara });
       scenaObs = this.scena.ukoncitSouboj().obsScena;
-      // Vítězná fanfára (bod 76); „Konec bez fanfáry“ pro útěk nebo prohru.
-      if (bezel && fanfara) this.zvuk.fanfara();
     }
     const zacatek = Date.now();
     if (scenaObs) {

@@ -11,7 +11,7 @@ import path from 'node:path';
 import { EventEmitter } from 'node:events';
 import YAML from 'yaml';
 import { zapsatAtomicky } from './zapis.js';
-import { sestavitKnihovnu, najitSkupinu, vybratVariantu, normalizujMapu, zvukTahu, odkazyMapy, platneId } from './zvuky-knihovna.js';
+import { sestavitKnihovnu, najitSkupinu, vybratVariantu, normalizujMapu, zvukTahu, odkazyMapy, platneId, idSkupiny } from './zvuky-knihovna.js';
 import { normalizujSadu, souboryPolozky, Freesound, Openverse, Kenney, hledatKandidaty, idKandidata, ZDROJE } from './zvuky-sada.js';
 import { polozkyZip, rozbalit } from './zip.js';
 import { HLADINY, ziskNaHladinu, VERZE_MERENI } from '../sdilene/mereni.js';
@@ -28,6 +28,10 @@ export const TYPY_ZVUKU = Object.freeze({
 });
 /** Prolnutí při přepnutí scény (Blok 5, Pravidla). */
 export const PROLNUTI_MS = 2000;
+/** Konec souboje: bojová hudba pomalu dozní a svět se vrátí (⚠ návrh, DM 19. 10. 2026). */
+export const KONEC_PROLNUTI_MS = 6000;
+/** Playlist hudby: nejvýš tolik položek (souborů a složek) v jednom seznamu. */
+export const MAX_POLOZEK_HUDBY = 20;
 /** Hlasitost ambientu počasí podle intenzity, když vrstva chce `hlasitost_podle_intenzity`. */
 const HLASITOST_INTENZITY = [0.55, 0.7, 0.85, 1];
 /** Souboj ztlumí ambient místa (ambient počasí nechá). */
@@ -76,6 +80,49 @@ export function platneJmeno(jmeno) {
   if (s.startsWith('/') || /^[a-z]:/i.test(s) || s.split('/').some((x) => x === '..' || x === '' || x === '.')) return null;
   if (!PRIPONY_ZVUKU.includes(path.posix.extname(s).toLowerCase())) return null;
   return s;
+}
+
+/**
+ * Hudba z dat: jeden soubor (`souboj.mp3`, hraje dokola), složka jako playlist (`hudba/souboj/`,
+ * hrají všechny skladby ve složce v náhodném pořadí), nebo seznam obojího. Jinak null.
+ * @returns {string|string[]|null}
+ */
+export function platnaHudba(x) {
+  const jedna = (y) => {
+    if (typeof y !== 'string') return null;
+    const t = y.replace(/\\/g, '/').trim();
+    if (t.endsWith('/')) {
+      const id = platneId(t.slice(0, -1));
+      return id ? `${id}/` : null;
+    }
+    return platneJmeno(t);
+  };
+  if (Array.isArray(x)) {
+    const seznam = [...new Set(x.map(jedna).filter(Boolean))].slice(0, MAX_POLOZEK_HUDBY);
+    return seznam.length === 0 ? null : seznam.length === 1 ? seznam[0] : seznam;
+  }
+  return jedna(x);
+}
+
+/** Je hudba playlist (složka nebo seznam), ne jeden soubor? */
+export const jePlaylist = (h) => Array.isArray(h) || (typeof h === 'string' && h.endsWith('/'));
+
+/**
+ * Zvuk konce souboje (`zvuk.konec` v kampan/sceny/rezim/souboj.yaml): soubor nebo skupina variant
+ * (`konec/buben` = buben-1, buben-2 …), dozvuk, ve kterém zazní, a jak dlouho dozní bojová hudba.
+ * Starší zápis `konec: vitezstvi.mp3` platí dál.
+ */
+export function normalizujKonec(x) {
+  const d = typeof x === 'string' ? { zvuk: x } : x;
+  if (!d || typeof d !== 'object') return null;
+  const zvuk = platneId(d.zvuk);
+  if (!zvuk) return null;
+  const s = Number(d.prolnuti_s);
+  return {
+    zvuk,
+    dozvuk: DOZVUKY.includes(d.dozvuk) ? d.dozvuk : 'zadny',
+    prolnutiMs: Number.isFinite(s) && s >= 1 && s <= 20 ? Math.round(s * 1000) : KONEC_PROLNUTI_MS,
+  };
 }
 
 const cislo01 = (x, vychozi) => {
@@ -127,7 +174,7 @@ export function normalizujZvukMista(zvuk) {
     const x = zvuk[v];
     if (!x || typeof x !== 'object') continue;
     const z = {};
-    if (platneJmeno(x.hudba)) z.hudba = platneJmeno(x.hudba);
+    if (platnaHudba(x.hudba)) z.hudba = platnaHudba(x.hudba);
     if (platneJmeno(x.ambient)) z.ambient = platneJmeno(x.ambient);
     // Vzdálenost ambientu místa (bod 85): 0 = u stolu, 1 = hodně daleko (tišší a tupější).
     if (platnaVzdalenost(x.vzdalenost)) z.vzdalenost = platnaVzdalenost(x.vzdalenost);
@@ -145,10 +192,21 @@ const seznamJmen = (x) => (Array.isArray(x) ? x : x ? [x] : []).map(platneJmeno)
  * Co má hrát (čistá funkce). Hudba z místa, v souboji z režimu; počasí hudbu nemění.
  * Ambient místa a ambienty efektů počasí hrají současně jako vrstvy, k nim náhodné zvuky místa
  * a počasí. V souboji místo ztichne (ambient i náhodné zvuky), počasí ne.
- * @returns {{hudba: string|null, ambient: Array<{soubor:string, hlasitost:number, zdroj:string, vzdalenost?:number}>,
+ * Na scéně Start v OBS (`start`) hraje jen zvuk vrstvy kampan/sceny/rezim/start.yaml, místo a počasí mlčí.
+ * @returns {{hudba: string|string[]|null, ambient: Array<{soubor:string, hlasitost:number, zdroj:string, vzdalenost?:number}>,
  *   nahodne: Array<object>, dozvuk: string, hrom: string[]}}
  */
-export function slozitZvuk({ misto, scena, vrstvy }) {
+export function slozitZvuk({ misto, scena, vrstvy, start = false }) {
+  const zStartu = vrstvy.rezim?.start?.zvuk;
+  if (start && scena.rezim !== 'souboj' && zStartu && typeof zStartu === 'object') {
+    return {
+      hudba: platnaHudba(zStartu.hudba),
+      ambient: seznamJmen(zStartu.ambient).map((soubor) => ({ soubor, hlasitost: 1, zdroj: 'start' })),
+      nahodne: [],
+      dozvuk: 'zadny',
+      hrom: [],
+    };
+  }
   const zm = misto?.zvuk ?? null;
   const varianta = scena.varianta === 'noc' ? 'noc' : 'den';
   // Noc bez vlastního zvuku vezme den (stejně jako světla).
@@ -157,7 +215,7 @@ export function slozitZvuk({ misto, scena, vrstvy }) {
   const zSouboje = souboj ? vrstvy.rezim?.souboj?.zvuk ?? {} : {};
   // Vlastní zvuk místa v souboji (`zvuk.souboj`): co nastaví, nahradí; co ne, platí jako dřív.
   const zBoje = souboj ? zm?.souboj ?? {} : {};
-  const hudba = zBoje.hudba || (souboj && platneJmeno(zSouboje.hudba)) || zMista.hudba || null;
+  const hudba = zBoje.hudba || (souboj && platnaHudba(zSouboje.hudba)) || zMista.hudba || null;
 
   const ambient = [];
   const pridat = (soubor, hlasitost, zdroj, vzdalenost = null) => {
@@ -205,8 +263,10 @@ export class Zvuk extends EventEmitter {
    * @param {() => object} volby.vrstvy vrstvy z kampan/sceny (sdílené se světly)
    * @param {() => Array<object>} volby.mista všechna místa (Kontrola dat)
    */
-  constructor({ cesty, nastaveni, misto, scena, vrstvy, mista, hodiny = () => Date.now(), nahodne = Math.random, fetchZvuky }) {
+  constructor({ cesty, nastaveni, misto, scena, vrstvy, mista, start = () => false, hodiny = () => Date.now(), nahodne = Math.random, fetchZvuky }) {
     super();
+    this.start = start; // () => OBS ukazuje scénu Start
+    this.prolnutiKonce = null; // { ms, do }: delší prolnutí po konci souboje
     this.c = cesty;
     this.nastaveni = nastaveni;
     this.misto = misto;
@@ -380,7 +440,67 @@ export class Zvuk extends EventEmitter {
 
   cil() {
     const s = this.scena();
-    return slozitZvuk({ misto: s.misto ? this.misto(s.misto) : null, scena: s, vrstvy: this.vrstvy() });
+    return slozitZvuk({ misto: s.misto ? this.misto(s.misto) : null, scena: s, vrstvy: this.vrstvy(), start: this.start() });
+  }
+
+  /**
+   * Skladby hudby ve složce: soubor podle jména (na příponě nezáleží), u složky všechny zvukové
+   * soubory v ní i v podsložkách. Každý soubor jen jednou, v pořadí ze seznamu.
+   */
+  souboryHudby(hudba) {
+    const vysledek = [];
+    for (const h of Array.isArray(hudba) ? hudba : hudba ? [hudba] : []) {
+      if (h.endsWith('/')) {
+        const predpona = h.toLowerCase();
+        for (const f of this.soubory) if (f.toLowerCase().startsWith(predpona) && !vysledek.includes(f)) vysledek.push(f);
+      } else {
+        const f = this.najit(h);
+        if (f && !vysledek.includes(f)) vysledek.push(f);
+      }
+    }
+    return vysledek;
+  }
+
+  /**
+   * Hudba pro stránky: jeden soubor hraje dokola jako dřív; playlist (složka nebo seznam) se dvěma
+   * a více skladbami hraje skladby v náhodném pořadí s prolnutím mezi nimi.
+   */
+  hudbaProStranky(hudba) {
+    const soubory = this.souboryHudby(hudba);
+    if (!soubory.length) return null;
+    if (!jePlaylist(hudba) || soubory.length === 1) return this.zvukovy(soubory[0], 'hudba');
+    return {
+      soubor: Array.isArray(hudba) ? hudba.join(' + ') : hudba,
+      playlist: true,
+      skladby: soubory.map((f) => this.zvukovy(f, 'hudba')),
+    };
+  }
+
+  /** Soubory skupiny variant (`konec/buben` = buben-1, buben-2 …) nebo jeden soubor podle jména. */
+  souboryVariant(id) {
+    const n = najitSkupinu(this.knihovna, id);
+    if (n) return n.skupina.soubory;
+    const k = String(id).toLowerCase();
+    const varianty = this.soubory.filter((f) => idSkupiny(f).toLowerCase() === k);
+    if (varianty.length) return varianty;
+    const f = platneJmeno(id) && this.najit(id);
+    return f ? [f] : [];
+  }
+
+  /**
+   * Zvuky, které stránka u stolu načte předem (během souboje): zvuky tahů a zvuk konce souboje.
+   * První zvuk tahu tak nečeká na stažení a dekódování.
+   */
+  souboryPredem() {
+    const tahy = this.knihovna.tahy.flatMap((g) => g.soubory);
+    const mapa = odkazyMapy(this.mapa).flatMap((id) => this.souboryVariant(id));
+    const konec = normalizujKonec(this.vrstvy().rezim?.souboj?.zvuk?.konec);
+    return [...new Set([...tahy, ...mapa, ...(konec ? this.souboryVariant(konec.zvuk) : [])])].slice(0, 40);
+  }
+
+  /** Prolnutí pro stránky: po konci souboje delší (bojová hudba dozní), jinak výchozí. */
+  get prolnutiMs() {
+    return this.prolnutiKonce && this.hodiny() < this.prolnutiKonce.do ? this.prolnutiKonce.ms : PROLNUTI_MS;
   }
 
   /**
@@ -402,11 +522,11 @@ export class Zvuk extends EventEmitter {
   /** Pro stránky: co hrát a jak hlasitě. Soubory, které ve složce nejsou, se vynechají. */
   verejny() {
     const c = this.cil();
-    const hudba = this.najit(c.hudba);
+    const souboj = this.scena().rezim === 'souboj';
     return {
       ticho: this.mistni.ticho,
       hlasitost: { hudba: this.mistni.hudba, ambient: this.mistni.ambient, efekty: this.mistni.efekty },
-      hudba: hudba ? this.zvukovy(hudba, 'hudba') : null,
+      hudba: this.hudbaProStranky(c.hudba),
       ambient: c.ambient
         .map((a) => ({ ...a, soubor: this.najit(a.soubor) }))
         .filter((a) => a.soubor)
@@ -416,7 +536,9 @@ export class Zvuk extends EventEmitter {
         .map((n) => ({ ...n, soubory: this.souboryZvuku(n.zvuk).map((f) => this.zvukovy(f, 'nahodne')) }))
         .filter((n) => n.soubory.length),
       dozvuk: c.dozvuk,
-      prolnutiMs: PROLNUTI_MS,
+      prolnutiMs: this.prolnutiMs,
+      // Během souboje stránka u stolu načte zvuky tahů předem (první tah bez zpoždění).
+      predem: souboj ? this.souboryPredem().map((f) => this.url(f)) : [],
       // Ručně zapnuté smyčky soundboardu (hraje je stránka Zvuk u stolu na sběrnici efektů).
       smycky: [...this.smycky.entries()].map(([id, x]) => ({ ...this.zvukovy(x.soubor, 'efekty'), soubor: id, hlasitost: x.hlasitost })),
       // Soubory, které stránka u stolu ještě nezměřila (měří je postupně na pozadí).
@@ -521,7 +643,8 @@ export class Zvuk extends EventEmitter {
       pocetSouboru: this.soubory.length,
       efekty: this.soubory.filter((s) => s.startsWith('efekty/')),
       chybiTed: [
-        ...[c.hudba, ...c.ambient.map((a) => a.soubor), ...c.hrom].filter((s) => s && !this.najit(s)),
+        ...(Array.isArray(c.hudba) ? c.hudba : c.hudba ? [c.hudba] : []).filter((h) => !this.souboryHudby(h).length).map((h) => (h.endsWith('/') ? `${h} (prázdný playlist)` : h)),
+        ...[...c.ambient.map((a) => a.soubor), ...c.hrom].filter((s) => s && !this.najit(s)),
         ...c.nahodne.map((n) => n.zvuk).filter((id) => !this.souboryZvuku(id).length),
       ],
       hrom: c.hrom.map((s) => this.najit(s)).filter(Boolean),
@@ -730,13 +853,28 @@ export class Zvuk extends EventEmitter {
     return this.zahratSkupinu(n.skupina, { maxS: MAX_TAH_S });
   }
 
-  /** Vítězná fanfára při Konci souboje: `zvuk.konec` ve vrstvě kampan/sceny/rezim/souboj.yaml. */
-  fanfara() {
-    const jmeno = platneJmeno(this.vrstvy().rezim?.souboj?.zvuk?.konec);
-    const soubor = jmeno && this.najit(jmeno);
-    if (!soubor) return false;
-    this.emit('efekt', { cil: 'stul', ...this.zvukovy(soubor, 'efekty'), hlasitost: 1, uhnout: true });
+  /**
+   * Konec souboje (`zvuk.konec` v kampan/sceny/rezim/souboj.yaml, ⚠ návrh DM 19. 10. 2026): místo
+   * fanfáry jeden úder (buben) v dozvuku a bojová hudba pod ním pomalu dozní. Volá se před přepnutím
+   * scény, aby přepnutí už mělo delší prolnutí. `zvuk: false` = Konec potichu (útěk, prohra): jen doznění.
+   * @returns {boolean} zda zazněl zvuk konce
+   */
+  konecSouboje({ zvuk = true } = {}) {
+    const k = normalizujKonec(this.vrstvy().rezim?.souboj?.zvuk?.konec);
+    const ms = k?.prolnutiMs ?? KONEC_PROLNUTI_MS;
+    this.prolnutiKonce = { ms, do: this.hodiny() + ms + 2000 };
+    if (!zvuk || !k) return false;
+    const soubory = this.souboryVariant(k.zvuk);
+    if (!soubory.length) return false;
+    const soubor = vybratVariantu({ soubory }, this.posledniVarianta.get('konec'), this.nahodne);
+    this.posledniVarianta.set('konec', soubor);
+    this.emit('efekt', { cil: 'stul', ...this.zvukovy(soubor, 'efekty'), hlasitost: 1, ...(k.dozvuk !== 'zadny' ? { dozvuk: k.dozvuk } : {}) });
     return true;
+  }
+
+  /** Starší jméno (vítězná fanfára): zvuk konce souboje. */
+  fanfara() {
+    return this.konecSouboje();
   }
 
   /** Hrom po blesku (Blok 4, tabulka Blesky): zpoždění podle vzdálenosti, hlasitost a filtr. */
@@ -964,9 +1102,15 @@ export class Zvuk extends EventEmitter {
   kontrola() {
     const odkazy = []; // [souborDat, jménoZvuku]
     const nahodneOdkazy = []; // [souborDat, skupina nebo soubor] (bod 85)
+    const playlisty = []; // [souborDat, složka] (playlist hudby)
+    const konce = []; // [souborDat, zvuk konce souboje]
+    const pridatHudbu = (soubor, h) => {
+      for (const x of Array.isArray(h) ? h : h ? [h] : []) (x.endsWith('/') ? playlisty : odkazy).push([soubor, x]);
+    };
     for (const m of this.mista()) {
       for (const v of CASTI_ZVUKU_MISTA) {
-        for (const k of ['hudba', 'ambient']) if (m.zvuk?.[v]?.[k]) odkazy.push([`kampan/mista/${m.id}/${m.id}.md`, m.zvuk[v][k]]);
+        pridatHudbu(`kampan/mista/${m.id}/${m.id}.md`, m.zvuk?.[v]?.hudba);
+        if (m.zvuk?.[v]?.ambient) odkazy.push([`kampan/mista/${m.id}/${m.id}.md`, m.zvuk[v].ambient]);
         for (const n of m.zvuk?.[v]?.nahodne ?? []) nahodneOdkazy.push([`kampan/mista/${m.id}/${m.id}.md`, n.zvuk]);
       }
     }
@@ -976,13 +1120,15 @@ export class Zvuk extends EventEmitter {
       for (const [id, d] of Object.entries(vrstvy[druh] ?? {})) {
         const z = d?.zvuk;
         if (!z) continue;
-        for (const s of [...seznamJmen(z.ambient), ...seznamJmen(z.hudba), ...seznamJmen(z.hrom), ...seznamJmen(z.konec)]) odkazy.push([`kampan/sceny/${druh}/${id}.yaml`, s]);
-        for (const n of normalizujNahodne(z.nahodne)) nahodneOdkazy.push([`kampan/sceny/${druh}/${id}.yaml`, n.zvuk]);
+        for (const s of [...seznamJmen(z.ambient), ...seznamJmen(z.hrom)]) odkazy.push([`kampan/sceny/${druh}/${id}.yaml`, s]);
+        pridatHudbu(`kampan/sceny/${druh}/${id}.yaml`, platnaHudba(z.hudba));
+        const konec = normalizujKonec(z.konec);
+        if (konec) konce.push([`kampan/sceny/${druh}/${id}.yaml`, konec.zvuk]);
       }
     }
     const tahy = odkazyMapy(this.mapa);
     const sada = this.sada.chyby.map((zprava) => ({ soubor: 'kampan/zvuky-sada.yaml', uroven: 'varovani', zprava }));
-    if (!odkazy.length && !tahy.length && !nahodneOdkazy.length && !this.chybaMapy) return sada;
+    if (!odkazy.length && !tahy.length && !nahodneOdkazy.length && !playlisty.length && !konce.length && !this.chybaMapy) return sada;
     const mapa = [
       ...sada,
       ...(this.chybaMapy ? [{ soubor: 'kampan/zvuky.yaml', uroven: 'chyba', zprava: this.chybaMapy }] : []),
@@ -990,17 +1136,25 @@ export class Zvuk extends EventEmitter {
       ...(this.slozkaExistuje
         ? nahodneOdkazy.filter(([, id]) => !this.souboryZvuku(id).length).map(([soubor, id]) => ({ soubor, uroven: 'varovani', zprava: `Náhodný zvuk „${id}“ není ve složce zvuku` }))
         : []),
+      ...(this.slozkaExistuje
+        ? konce.filter(([, id]) => !this.souboryVariant(id).length).map(([soubor, id]) => ({ soubor, uroven: 'varovani', zprava: `Zvuk konce souboje „${id}“ není ve složce zvuku` }))
+        : []),
+      ...(this.slozkaExistuje
+        ? playlisty.filter(([, h]) => !this.souboryHudby(h).length).map(([soubor, h]) => ({ soubor, uroven: 'varovani', zprava: `Playlist „${h}“ je prázdný: ve složce zvuku v něm nejsou žádné skladby` }))
+        : []),
     ];
-    if (!odkazy.length && !nahodneOdkazy.length) return mapa;
+    if (!odkazy.length && !nahodneOdkazy.length && !playlisty.length && !konce.length) return mapa;
     if (!this.slozkaExistuje) {
       return [{ soubor: 'hub/.env', uroven: 'varovani', zprava: `Složka zvuku ${this.slozka} neexistuje. Nastav ji v Nastavení → Zvuk.` }];
     }
-    return [
+    const vse = [
       ...mapa,
       ...odkazy
         .filter(([, s]) => !this.najit(s))
         .map(([soubor, s]) => ({ soubor, uroven: 'varovani', zprava: `Zvuk „${s}“ není ve složce zvuku` })),
     ];
+    // Stejný zvuk ve dne i v noci je v jednom souboru jedno hlášení.
+    return vse.filter((x, i) => vse.findIndex((y) => y.soubor === x.soubor && y.zprava === x.zprava) === i);
   }
 
   zastavit() {

@@ -7,7 +7,7 @@ import { EventEmitter } from 'node:events';
 import YAML from 'yaml';
 import { rozebrat, upravitDokument } from './frontmatter.js';
 import { zapsatAtomicky } from './zapis.js';
-import { normalizujZvukMista, platneJmeno, platnaVzdalenost, normalizujNahodne, DOZVUKY, NAHODNE, CASTI_ZVUKU_MISTA } from './zvuk.js';
+import { normalizujZvukMista, platneJmeno, platnaHudba, platnaVzdalenost, normalizujNahodne, DOZVUKY, NAHODNE, CASTI_ZVUKU_MISTA } from './zvuk.js';
 import { platneId } from './zvuky-knihovna.js';
 
 export const UCELY = Object.freeze(['scena', 'portret', 'token', 'karta']);
@@ -182,8 +182,9 @@ export class Mista extends EventEmitter {
       if (!(k in zmeny)) continue;
       if (zmeny[k] === null || zmeny[k] === '') nastavit[k] = null;
       else {
-        const j = platneJmeno(zmeny[k]);
-        if (!j) throw chyba('Zvuk je jméno souboru ve složce zvuku (mp3, ogg, wav …).');
+        // Hudba může být i playlist: složka ve složce zvuku zakončená lomítkem (`hudba/souboj/`).
+        const j = k === 'hudba' ? platnaHudba(zmeny[k]) : platneJmeno(zmeny[k]);
+        if (!j) throw chyba(k === 'hudba' ? 'Hudba je soubor (mp3, ogg, wav …) nebo složka s playlistem (hudba/souboj/).' : 'Zvuk je jméno souboru ve složce zvuku (mp3, ogg, wav …).');
         nastavit[k] = j;
       }
     }

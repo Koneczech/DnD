@@ -25,6 +25,25 @@ svetla:
     hlavni: { barva: [ 47, 128, 255 ], jas: 65 }
     pozadi: { barva: [ 129, 255, 0 ], jas: 100 }
     lampa: { barva: [ 31, 35, 255 ], jas: 21 }
+# Zvuk (DM 19. 10. 2026, ⚠ návrh): klidná vesnice na Long Road. Přes den ruch, koně a kovář, občas
+# pes nebo povoz; tu a tam zapraskání kouzla od Harpellů. V noci cvrčci, psi a sova. Hudba je playlist.
+zvuk:
+  den:
+    hudba: hudba/longsaddle/
+    ambient: longsaddle-den.mp3
+    nahodne:
+      - { zvuk: nahodne/tabor/kun, kazdych_s: 70, nahodilost: 0.8, hlasitost: 0.6, vzdalenost: 0.6 }
+      - { zvuk: nahodne/tabor/kovadlina, kazdych_s: 55, nahodilost: 0.6, hlasitost: 0.5, vzdalenost: 0.8 }
+      - { zvuk: nahodne/mesto/pes, kazdych_s: 90, nahodilost: 0.9, hlasitost: 0.5, vzdalenost: 0.8 }
+      - { zvuk: nahodne/mesto/povoz, kazdych_s: 120, nahodilost: 0.8, hlasitost: 0.6, vzdalenost: 0.4 }
+      - { zvuk: nahodne/longsaddle/kouzlo, kazdych_s: 240, nahodilost: 0.9, hlasitost: 0.4, vzdalenost: 0.8 }
+  noc:
+    hudba: hudba/longsaddle/
+    ambient: longsaddle-noc.mp3
+    nahodne:
+      - { zvuk: nahodne/mesto/pes, kazdych_s: 120, nahodilost: 0.9, hlasitost: 0.4, vzdalenost: 0.9 }
+      - { zvuk: nahodne/noc/sova, kazdych_s: 90, nahodilost: 0.8, hlasitost: 0.5, vzdalenost: 0.7 }
+      - { zvuk: nahodne/longsaddle/kouzlo, kazdych_s: 300, nahodilost: 0.9, hlasitost: 0.4, vzdalenost: 0.8 }
 ---
 # Longsaddle
 

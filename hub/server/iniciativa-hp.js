@@ -69,8 +69,16 @@ export class SledovaniHp extends EventEmitter {
     clearInterval(this.casovac);
   }
 
+  /**
+   * Jeden krok: přečte poslední stav a ohlásí změnu tahu a málo HP. Volá ho časovač i každý nový stav
+   * Player View (iniciativa-cteni.js), takže změna tahu nečeká na další tik. Když krok zrovna běží,
+   * proběhne po něm ještě jednou: nový stav se tak nikdy neztratí.
+   */
   async krok() {
-    if (this.bezi) return;
+    if (this.bezi) {
+      this.znovu = true;
+      return;
+    }
     this.bezi = true;
     try {
       const id = idSetkani(this.odkaz());
@@ -88,6 +96,10 @@ export class SledovaniHp extends EventEmitter {
       }
     } finally {
       this.bezi = false;
+    }
+    if (this.znovu) {
+      this.znovu = false;
+      await this.krok();
     }
   }
 }

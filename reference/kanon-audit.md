@@ -12,20 +12,20 @@ Všechno se jen četlo. V Notionu, v projektu v Claude ani v `kampan/` se nic ne
   | Skupina | Souborů |
   | --- | --- |
   | Postavy | 4 |
-  | Padouši a frakce | 5 |
-  | NPC | 23 |
+  | Padouši a frakce | 6 |
+  | NPC | 22 |
   | Místa | 16 (z toho jedno sloučení do existujícího Longsaddle) |
   | Předměty | 6 |
   | Rozhodnutí | 39 |
   | Zápis sezení 1 | 1 |
 
 - **Nepřevede se 12 stránek Notionu:** vzorové karty šablony, prázdné stránky šablony a anglické nástroje Sly Flourish. Každá má v mapě důvod.
-- **11 položek kánonu žije mimo Notion**, hlavně v chatech z přípravy sezení 2 a 3: Malk Orren, lidé z Longsaddle, váček se semeny a další. Soubory vzniknou, až DM potvrdí jejich text.
-- **16 rozporů a zastaralých míst.** Většina je drobná. Převod ale zdrží čtyři:
-  - kde je Thirilův prsten (R3),
-  - kdo je kontakt v Longsaddle (R1),
-  - Torva: typ a smrt (R2),
-  - kterým směrem šel Bifron (R11).
+- **10 položek kánonu žije mimo Notion**, hlavně v chatech z přípravy sezení 2 a 3: lidé z Longsaddle, váček se semeny, Hlídač kruhu a další. (Malka Orrena tvoří karta „Kontakt v Longsaddle“ doplněná z chatu.) Soubory vzniknou, až DM potvrdí jejich text.
+- **16 rozporů a zastaralých míst.** Většina je drobná. Čtyři hlavní DM rozhodl 19. 10. 2026:
+  - Thirilův prsten má v sezení 3 na prstu kapitán lupičů (R3),
+  - kontaktem v Longsaddle byl Malk Orren (R1),
+  - Torva je NPC i padouch, patří k padouchům (R2),
+  - Bifron šel po Lurkwoodu do Neverwinterského hvozdu (R11).
 - **Dvě díry:**
   - Zápis sezení 2 neexistuje nikde.
   - Databáze „Hraci kanon“ v Notionu je prázdná, takže hráčský kánon zatím nemá co převést.
@@ -115,13 +115,13 @@ Stejná fakta o sezeních 2–4 drží paměť projektu v Claude. V mapě mají 
 
 ## Rozpory a zastaralá místa
 
-Každý rozpor rozhodne DM před převodem příslušné skupiny. Převod text nepřepisuje, opraví jen to, co tady DM potvrdí.
+Každý rozpor rozhodne DM před převodem příslušné skupiny. Převod text nepřepisuje, opraví jen to, co tady DM potvrdí. Rozhodnuté rozpory jsou i v `reference/kanon-mapa.yaml` (`rozhodnute_rozpory`).
 
 | # | Kde | Co si odporuje | Návrh |
 | --- | --- | --- | --- |
-| R1 | Kontakt v Longsaddle (karta), Longsaddle, 2 otevřená rozhodnutí | Notion: kontakt bez jména, Leta ho najde podle hesla „úplně poslední zakázka z Mirabaru“. Příprava sezení 2: kontaktem je **Malk Orren** a „žádné heslo neexistuje“ | Kartu sloučit do nové karty Malka Orrena (alias „Kontakt v Longsaddle“), obě otevřená rozhodnutí zavřít jako rozhodnutá |
-| R2 | Torva | Notion: tag Villain, „když prohraje, nepadne mrtvá“. ZADANI: `npc/torva`. Sezení 1: Torva je mrtvá | Typ `npc`. Na začátek karty: „V sezení 1 zemřela.“ |
-| R3 | Thirilův prsten, Ordwinův dopis, Thiril, Ordwin | Prsten má v Notionu tři polohy: „Ordwin ho vykoupil a drží ho“, „v obálce s dopisem jako vzorek“ (2. 9.) a „kapitán lupičů ho nosí na malíčku“ (12. 10.). Příprava sezení 2 a místo Tábor lupičů: na ruce kapitána | Platí nejnovější: prsten má kapitán. Staré věty označit jako přípravu před sezením 2 |
+| R1 | Kontakt v Longsaddle (karta), Longsaddle, 2 otevřená rozhodnutí | Notion: kontakt bez jména, Leta ho najde podle hesla „úplně poslední zakázka z Mirabaru“. Příprava sezení 2: kontaktem je **Malk Orren** a „žádné heslo neexistuje“ | **Rozhodnuto 19. 10.:** kontaktem byl Malk Orren. Karta se převede jako `malk-orren` (alias Kontakt v Longsaddle) a doplní z přípravy sezení 2. Rozhodnutí o jménu kontaktu je zavřené. Zbývá: platí heslo z karty? |
+| R2 | Torva | Notion: tag Villain, „když prohraje, nepadne mrtvá“. ZADANI: `npc/torva`. Sezení 1: Torva je mrtvá | **Rozhodnuto 19. 10.:** NPC i padouch jako Bifron a Grimsdal, tedy typ `padouch` (`padouchove/torva/`). Na začátek karty: „V sezení 1 zemřela.“ |
+| R3 | Thirilův prsten, Ordwinův dopis, Thiril, Ordwin | Prsten má v Notionu tři polohy: „Ordwin ho vykoupil a drží ho“, „v obálce s dopisem jako vzorek“ (2. 9.) a „kapitán lupičů ho nosí na malíčku“ (12. 10.). Příprava sezení 2 a místo Tábor lupičů: na ruce kapitána | **Rozhodnuto 19. 10.:** v sezení 3 ho má na prstu kapitán lupičů. Staré věty dostanou poznámku „příprava před sezením 2, neplatí“ |
 | R4 | Nováček kruhu (17 let), zápis sezení 1 | Zápis jmenuje **Tavise**, ukecaného nováčka, kterého zabila Leta. Karta popisuje sedmnáctiletého kluka, který „mluví víc, než by měl“. Jeden nováček navíc utekl | Rozhodnout, jestli je Tavis ten kluk. Když ano, Tavis je alias karty |
 | R5 | Koudur (kap. 7), U Kamenné mísy × Norra, Hedwiga | Pozvánka „přišla před dvěma, třemi dny“ × „předává se na scéně v den pilotu 12. Eleintu“ (doplněno 26. 8.) | Platí novější. U Koudura a U Kamenné mísy připsat poznámku |
 | R6 | Ordwinův dopis | Poznámka DM: jméno, „které jí za čtrnáct let neřekl“. Leta je u Thirila od 7 do 25 let, tedy 18 let | Opravit na osmnáct |
@@ -129,7 +129,7 @@ Každý rozpor rozhodne DM před převodem příslušné skupiny. Převod text n
 | R8 | Longsaddle | „Osada na Long Road **severně** od Mirabaru“. Longsaddle leží jižně, cesta kampaně vede Mirabar → Longsaddle → Triboar | Opravit na „jižně“ |
 | R9 | Jazyky postav | Tusker: Notion Common, **Orc**, Dwarvish × list postavy Common, **Common Sign Language**, Dwarvish. Alba a Leta mají v listu navíc **Elvish** | Platí list postavy (mechanika). Vlastnost Languages z Notionu nepřevádět |
 | R10 | Ordwinův dopis | „Otevřené: jméno na obálce“ × příprava sezení 2: adresát je označený Letiným symbolem, ne jménem | Zavřít podle přípravy sezení 2 |
-| R11 | Stopa do Yartaru × Alba, rozhodnutí „Jak se Alba připojí“, Bifron | Bifronova další zastávka po Lurkwoodu: „Moonwood, na východ“ × „Neverwinterský hvozd, na západ“. Plán sázení je Lurkwood → Moonwood → Neverwinter | Rozhodnout, kam Bifron šel |
+| R11 | Stopa do Yartaru × Alba, rozhodnutí „Jak se Alba připojí“, Bifron | Bifronova další zastávka po Lurkwoodu: „Moonwood, na východ“ × „Neverwinterský hvozd, na západ“. Plán sázení je Lurkwood → Moonwood → Neverwinter | **Rozhodnuto 19. 10.:** do Neverwinterského hvozdu. Stopa do Yartaru se opraví. Zbývá: pořadí sázení v kartě Bifrona (Lurkwood → Moonwood → Neverwinter) se tím mění, nebo jde do Neverwinteru z jiného důvodu? |
 | R12 | Corvain × Alba | Corvain dal směr „mezi Mirabarem a Lurkwoodem“ × Alba: „mezi Glimmerwoodem a Lurkwoodem“ | Drobnost, sjednotit |
 | R13 | Tábor kruhu v Lurkwoodu × `mista/lurkwood` | Notion má tábor jako samostatné místo. Jeho ilustrace (tabor-zoldaku, tabor-vuz, tabor-zajatci) leží v Lurkwoodu | Samostatné místo s vazbou `[[lurkwood]]`, ilustrace nechat v Lurkwoodu |
 | R14 | Bifron (karta a rozhodnutí) | První řádek „Lidský... ne, Aasimařin otec.“ je nedopsaný. V rozhodnutí je překlep „obykčejná“ | Opravit při převodu |
@@ -141,7 +141,6 @@ Každý rozpor rozhodne DM před převodem příslušné skupiny. Převod text n
 1. **Zápis sezení 2.** Je jen příprava (chat a čtyřstránkové PDF). Bez zápisu nebude v repu, co se v Longsaddle stalo a co hráči ví. Potřebuje poznámky DM, nebo přepis z WhisperX.
 2. **Hráčský kánon.** Notion „Hraci kanon“ je prázdný. Hráčské shrnutí sezení 1 je jen v chatu. Návrh: od sezení 3 zapisovat do `kanon/` podle šablony `sablony/kanon.md`; zpětně jen sezení 1 a 2, pokud DM chce.
 3. **Karty, které chybí, i když se o nich mluví jako o kánonu:**
-   - Malk Orren,
    - Hlídač kruhu (statblok a ilustrace existují),
    - Tavis,
    - kapitán lupičů,

@@ -15,6 +15,14 @@ schema: 1
 stav_k: 2026-10-19
 notion: https://app.notion.com/p/3c39ed2267368185bdc2f02d0b397d7c
 
+# Rozpory, které DM rozhodl. Při převodu se text karet opraví jen podle nich; neplatná věta dostane
+# za sebe poznámku v kurzívě, např. „*(Příprava před sezením 2, neplatí: prsten má kapitán lupičů.)*“
+rozhodnute_rozpory:
+  R1: { kdy: 2026-10-19, rozhodnuti: "Kontaktem v Longsaddle byl Malk Orren. Karta Notionu „Kontakt v Longsaddle“ se převede jako malk-orren (alias Kontakt v Longsaddle) a doplní se z přípravy sezení 2. Rozhodnutí „Jméno a řemeslo kontaktu“ je rozhodnuté." }
+  R2: { kdy: 2026-10-19, rozhodnuti: "Torva je NPC i padouch, stejně jako Bifron a Grimsdal: typ padouch, složka padouchove/. Na začátek karty: V sezení 1 zemřela." }
+  R3: { kdy: 2026-10-19, rozhodnuti: "Thirilův prsten má na prstu kapitán lupičů (v sezení 3). Věty, že ho drží Ordwin nebo že je v obálce s dopisem, dostanou poznámku: příprava před sezením 2, neplatí." }
+  R11: { kdy: 2026-10-19, rozhodnuti: "Bifronova další zastávka po Lurkwoodu je Neverwinterský hvozd (na západ). Ve Stopě do Yartaru se „Moonwood, na východ“ opraví na Neverwinterský hvozd, na západ. Otevřené: pořadí sázení v kartě Bifrona (Lurkwood → Moonwood → Neverwinter)." }
+
 skupiny:
   - { id: postavy, nazev: "Postavy hráčů", poradi: 1 }
   - { id: padousi-frakce, nazev: "Padouši a frakce", poradi: 2 }
@@ -72,7 +80,7 @@ polozky:
     zdroj: https://app.notion.com/p/3c49ed2267368143bd9ff7848df10e1a
     zdroje_navic: [projekt Claude postavy/anna-halfling-rogue.md, dotazník (Anna, 21. 8. 2026)]
     aliases: [Leta, Let, Quickfinger]
-    vazby: [thiril-ambersedge, chovna-stanice, komora-nad-kozeluznou, u-roztaveneho-grose, ordwin-sohla, halvar-grimsdal, vezeni-pod-radnici, longsaddle, kontakt-v-longsaddle, letin-amulet, thiriluv-prsten, ordwinuv-dopis, tabor-kruhu, torva]
+    vazby: [thiril-ambersedge, chovna-stanice, komora-nad-kozeluznou, u-roztaveneho-grose, ordwin-sohla, halvar-grimsdal, vezeni-pod-radnici, longsaddle, malk-orren, letin-amulet, thiriluv-prsten, ordwinuv-dopis, tabor-kruhu, torva]
     hrac: Anna (v Notionu „Anička“)
     rozpory: [R6, R9]
     ilustrace: /Leta.png
@@ -125,16 +133,16 @@ polozky:
 
   # ── 3. NPC ──────────────────────────────────────────────────────────────────────────────────
   - id: torva
-    typ: npc
+    typ: padouch
     nazev: Torva
-    skupina: npc
+    skupina: padousi-frakce
     akce: prevest
     zdroj: https://app.notion.com/p/3c89ed226736817f8a77fc1a9dc59199
     aliases: []
     vazby: [kruh, tabor-kruhu, novacek-kruhu, lurkwood]
     ilustrace: /monsters/torva.png
     rozpory: [R2]
-    poznamka: V Notionu tag Villain; ZADANI ji vede jako npc (příklad entity i tabulka Migrace). V sezení 1 zemřela.
+    poznamka: NPC a padouch zároveň jako Bifron a Grimsdal (DM 19. 10. 2026), proto padouchove/. V sezení 1 zemřela.
   - { id: corvain-thornroot, typ: npc, nazev: "Corvain Thornroot", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c79ed22673681b7a4ede5a64cedd138", aliases: [Corvain], vazby: [bifron-nox, alba, albina-matka, praotec, tichy-hvozd, lurkwood], rozpory: [R12] }
   - { id: albina-matka, typ: npc, nazev: "Albina matka", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c79ed22673681119e03c98f1656f071", aliases: [], vazby: [alba, bifron-nox, corvain-thornroot, albin-privesek, praotec, tichy-hvozd], poznamka: "Jméno záměrně neurčené." }
   - { id: osric-redgrave, typ: npc, nazev: "Osric Redgrave", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c79ed22673681edb049ff25a262a205", aliases: [Osric], vazby: [rod-redgrave, krkavci-prapor, praotec, tarnwick, bifron-nox], poznamka: "Mrtvý." }
@@ -154,8 +162,8 @@ polozky:
   - { id: neznamy-muz-tusker, typ: npc, nazev: "Neznámý muž, který přinesl Tuskera", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c79ed22673681bf98cedc2172b1162f", aliases: [Neznámý muž], vazby: [tusker, dorn-treestone, krkavci-prapor, tuskeruv-nahrdelnik], poznamka: "Bez jména záměrně." }
   - { id: stary-trhovec, typ: npc, nazev: "Starý trhovec", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c79ed2267368105ac21e78811a57a2e", aliases: [Starý trhovec (Mirabar)], vazby: [tusker, mirabar] }
   - { id: thiril-ambersedge, typ: npc, nazev: "Thiril Ambersedge", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c49ed22673681b9885af7c41ceeaf26", aliases: [Thiril, starý brusič], vazby: [leta, ordwin-sohla, halvar-grimsdal, vezeni-pod-radnici, komora-nad-kozeluznou, thiriluv-prsten, letin-amulet, ordwinuv-dopis, longsaddle], rozpory: [R3] }
-  - { id: ordwin-sohla, typ: npc, nazev: "Ordwin Sohla", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c49ed226736818f9adedfbd4d8588d5", aliases: [Ordwin], vazby: [thiril-ambersedge, leta, halvar-grimsdal, kontakt-v-longsaddle, thiriluv-prsten, ordwinuv-dopis, u-roztaveneho-grose], rozpory: [R3, R7] }
-  - { id: kontakt-v-longsaddle, typ: npc, nazev: "Kontakt v Longsaddle", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c49ed226736818ca0a3f971cd6e6994", aliases: [Kontakt v Longsaddle (bez jména)], vazby: [ordwin-sohla, thiril-ambersedge, leta, longsaddle], rozpory: [R1], poznamka: "Podle přípravy sezení 2 je to Malk Orren. DM rozhodne, jestli kartu sloučit do malk-orren." }
+  - { id: ordwin-sohla, typ: npc, nazev: "Ordwin Sohla", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c49ed226736818f9adedfbd4d8588d5", aliases: [Ordwin], vazby: [thiril-ambersedge, leta, halvar-grimsdal, malk-orren, thiriluv-prsten, ordwinuv-dopis, u-roztaveneho-grose], rozpory: [R3, R7] }
+  - { id: malk-orren, typ: npc, nazev: "Malk Orren", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c49ed226736818ca0a3f971cd6e6994", zdroje_navic: ["chat „Komplikovaná cesta k dopisu v Longsaddle“ (11. 9. 2026)"], aliases: [Malk, Kontakt v Longsaddle], vazby: [ordwin-sohla, thiril-ambersedge, leta, koudur, longsaddle, tabor-lupicu, na-zvonici], ilustrace: /monsters/malk-orren.png, rozpory: [R1], poznamka: "Karta Notionu „Kontakt v Longsaddle (bez jména)“ je Malk Orren (DM 19. 10. 2026). Z chatu přibude: kurýr, statblok SRD Spy (CR 1) s rysy Nezapamatovatelný a Nebojuje za cizí, v sezení 3 bojuje s družinou." }
   - { id: novacek-kruhu, typ: npc, nazev: "Nováček kruhu (17 let)", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c89ed22673681ccac00e4cdbc939b31", aliases: [Nováček kruhu, kluk z kruhu], vazby: [kruh, koudur, torva, tabor-kruhu, stopa-do-yartaru], ilustrace: /monsters/novacek-kruhu.png, rozpory: [R4] }
 
   # ── 4. Místa ────────────────────────────────────────────────────────────────────────────────
@@ -167,7 +175,7 @@ polozky:
     do: kampan/mista/longsaddle/longsaddle.md
     zdroj: https://app.notion.com/p/3c49ed22673681af9ef7d5d6a2958cc8
     aliases: []
-    vazby: [leta, thiril-ambersedge, kontakt-v-longsaddle, ordwin-sohla]
+    vazby: [leta, thiril-ambersedge, malk-orren, ordwin-sohla]
     rozpory: [R8, R1]
     poznamka: Místo s ilustracemi už v repu je. Text z Notionu nahradí zástupný popis, ilustrace a zvuk zůstanou.
   - { id: tabor-kruhu, typ: misto, nazev: "Tábor kruhu v Lurkwoodu", skupina: mista, akce: prevest, zdroj: "https://app.notion.com/p/3c89ed226736817cb3f0d4d6ac4295cc", aliases: [Tábor kruhu], vazby: [lurkwood, torva, novacek-kruhu, kruh, alba, tusker, koudur, leta], rozpory: [R13], poznamka: "Ilustrace tábora (tabor-zoldaku, tabor-vuz, tabor-zajatci) leží v mista/lurkwood." }
@@ -222,8 +230,8 @@ polozky:
   - { id: zprava-o-thirilove-smrti, typ: rozhodnuti, nazev: "Jak se Leta dozví o Thirilově smrti?", skupina: rozhodnuti, akce: prevest, stav: otevrene, oblast: leta, zdroj: "https://app.notion.com/p/3c49ed22673681258fb9e9c262ed4610", vazby: [leta, thiril-ambersedge, ordwin-sohla, ordwinuv-dopis], rozpory: [R15] }
   - { id: rod-ambersedge-zanik, typ: rozhodnuti, nazev: "Rod Ambersedge — vymřel, nebo se rozpadl až po Thirilově odchodu?", skupina: rozhodnuti, akce: prevest, stav: otevrene, oblast: leta, zdroj: "https://app.notion.com/p/3c49ed226736813c8b81dde74397a071", vazby: [thiril-ambersedge] }
   - { id: scena-s-ditetem, typ: rozhodnuti, nazev: "Scéna s dítětem v domě v horní čtvrti", skupina: rozhodnuti, akce: prevest, stav: zavrzeno, oblast: leta, zdroj: "https://app.notion.com/p/3c49ed22673681559fced5ce3bbead9f", vazby: [leta] }
-  - { id: kontakt-jmeno-a-remeslo, typ: rozhodnuti, nazev: "Jméno a řemeslo kontaktu v Longsaddle", skupina: rozhodnuti, akce: prevest, stav: otevrene, oblast: leta, zdroj: "https://app.notion.com/p/3c49ed22673681608560f2a5da633463", vazby: [kontakt-v-longsaddle, ordwin-sohla], rozpory: [R1, R15] }
-  - { id: co-longsaddle-vyda, typ: rozhodnuti, nazev: "Co Longsaddle vydá a co si nechá?", skupina: rozhodnuti, akce: prevest, stav: otevrene, oblast: leta, zdroj: "https://app.notion.com/p/3c49ed2267368196a55dcf57f710449a", vazby: [kontakt-v-longsaddle, leta, longsaddle], rozpory: [R1, R15] }
+  - { id: kontakt-jmeno-a-remeslo, typ: rozhodnuti, nazev: "Jméno a řemeslo kontaktu v Longsaddle", skupina: rozhodnuti, akce: prevest, stav: rozhodnuto, oblast: leta, zdroj: "https://app.notion.com/p/3c49ed22673681608560f2a5da633463", vazby: [malk-orren, ordwin-sohla], rozpory: [R1], poznamka: "Rozhodnuto 19. 10. 2026: kontaktem je Malk Orren, kurýr. Původní stav v Notionu: Otevřené." }
+  - { id: co-longsaddle-vyda, typ: rozhodnuti, nazev: "Co Longsaddle vydá a co si nechá?", skupina: rozhodnuti, akce: prevest, stav: otevrene, oblast: leta, zdroj: "https://app.notion.com/p/3c49ed2267368196a55dcf57f710449a", vazby: [malk-orren, leta, longsaddle], rozpory: [R1, R15] }
   - { id: kdo-prozradil-letu, typ: rozhodnuti, nazev: "Kdo Letu prozradil únoscům?", skupina: rozhodnuti, akce: prevest, stav: rozhodnuto, oblast: leta, zdroj: "https://app.notion.com/p/3c89ed22673681d5a40bca1ea21aa6c4", vazby: [leta, u-roztaveneho-grose, kruh] }
   - { id: treestoneove-zchudli, typ: rozhodnuti, nazev: "Treestoneovi jsou starý zchudlý šlechtický rod", skupina: rozhodnuti, akce: prevest, stav: rozhodnuto, oblast: tusker, zdroj: "https://app.notion.com/p/3c69ed22673681ac91d1d2b089667702", vazby: [tusker, dorn-treestone, sidlo-treestoneu] }
   - { id: orci-tabor-v-cragach, typ: rozhodnuti, nazev: "Odkud byl orčí tábor v Cragách", skupina: rozhodnuti, akce: prevest, stav: otevrene, oblast: tusker, zdroj: "https://app.notion.com/p/3c79ed2267368129ac11ea7b19b801f5", vazby: [tusker, krkavci-prapor] }
@@ -266,7 +274,6 @@ polozky:
   - { id: sablona-original, typ: vzor, nazev: "Lazy RPG Campaign Template (originál)", skupina: sablony, akce: vynechat, zdroj: "https://app.notion.com/p/acc9ed22673682d982c481d6910dd222", proc: "Nedotčená kopie šablony se vzorovými daty; kampaň je v kopii (1)." }
 
   # ── Kánon mimo Notion: doplnit, až DM potvrdí text ────────────────────────────────────────────
-  - { id: malk-orren, typ: npc, nazev: "Malk Orren", skupina: npc, akce: doplnit, zdroj: "chat „Komplikovaná cesta k dopisu v Longsaddle“ (11. 9. 2026)", aliases: [Malk], vazby: [ordwin-sohla, leta, koudur, longsaddle, tabor-lupicu, na-zvonici], ilustrace: /monsters/malk-orren.png, rozpory: [R1], poznamka: "Kurýr a Ordwinův kontakt; statblok SRD Spy (CR 1) s rysy Nezapamatovatelný a Nebojuje za cizí; v sezení 3 bojuje s družinou." }
   - { id: hlidac-kruhu, typ: npc, nazev: "Hlídač kruhu", skupina: npc, akce: doplnit, zdroj: "chat „Custom CSS pro Improved Initiative“ (statblok)", aliases: [], vazby: [kruh, tabor-kruhu, torva], ilustrace: /monsters/hlidac-kruhu.png, poznamka: "Statblok a ilustrace existují, karta v Notionu ne." }
   - { id: tavis, typ: npc, nazev: "Tavis", skupina: npc, akce: doplnit, zdroj: "Notion Sezení 1", aliases: [], vazby: [kruh, tabor-kruhu, leta], rozpory: [R4], poznamka: "Nováček z tábora kruhu, zabit Letou v sezení 1. Možná totožný s Nováčkem kruhu (17 let)." }
   - { id: kapitan-lupicu, typ: npc, nazev: "Kapitán lupičů", skupina: npc, akce: doplnit, zdroj: "chat příprava sezení 2 a 3", aliases: [], vazby: [tabor-lupicu, thiriluv-prsten], ilustrace: /monsters/bandit-captain.png, poznamka: "Nosí Thirilův prsten na malíčku (karta prstenu). Bez jména." }

@@ -6,7 +6,7 @@ Návod, jak kánon z Notionu, projektu v Claude a dotazníku převést do `kampa
 
 ## Jednou před převodem
 
-1. **DM rozhodne rozpory R1–R16** z auditu. Stačí odpovědět u každého „návrh platí“ nebo napsat jinak. Rozhodnutí se zapíšou do mapy, například typ Torvy nebo sloučení kontaktu v Longsaddle do Malka.
+1. **DM rozhodne rozpory R1–R16** z auditu (R1, R2, R3 a R11 jsou rozhodnuté 19. 10. 2026). Stačí odpovědět u každého „návrh platí“ nebo napsat jinak. Rozhodnutí se zapíšou do mapy, například typ Torvy nebo sloučení kontaktu v Longsaddle do Malka.
 2. **Záloha Notionu.** Postup:
    1. Otevři stránku „Lazy RPG Campaign Template (1)“.
    2. Klikni na `•••` vpravo nahoře a zvol **Export**.
@@ -23,13 +23,13 @@ Po každé skupině běží `npm run kanon -- <skupina>` a DM skupinu potvrdí. 
 | # | Skupina | Souborů | Co DM u skupiny kontroluje |
 | --- | --- | --- | --- |
 | 1 | `postavy` | 4 | Sloučení tří zdrojů, jazyky (R9), oddíl Výchozí stav (R16) |
-| 2 | `padousi-frakce` | 5 | Bifron, Grimsdal, Krkavčí prapor, kruh, Rod Redgrave |
-| 3 | `npc` | 23 | Torva (R2), Kontakt v Longsaddle (R1), Nováček a Tavis (R4) |
+| 2 | `padousi-frakce` | 6 | Bifron, Grimsdal, Torva (R2), Krkavčí prapor, kruh, Rod Redgrave |
+| 3 | `npc` | 22 | Malk Orren z karty Kontakt v Longsaddle (R1), Nováček a Tavis (R4) |
 | 4 | `mista` | 16 | Longsaddle se sloučí do existujícího souboru (R8), Tábor kruhu (R13) |
 | 5 | `predmety` | 6 | Thirilův prsten a Ordwinův dopis (R3, R6, R10) |
 | 6 | `rozhodnuti` | 39 | Zastaralé otevřené otázky (R15) |
 | 7 | `sezeni` | 1 | Zápis sezení 1 |
-| 8 | doplnit | 11 | Malk Orren, váček se semeny, Hlídač kruhu … Text předloží Claude a soubor vznikne po potvrzení |
+| 8 | doplnit | 10 | Váček se semeny, Hlídač kruhu, Tavis, lidé z Longsaddle … Text předloží Claude a soubor vznikne po potvrzení |
 
 Report je hotový, když platí všechno z tohoto seznamu:
 
@@ -142,7 +142,7 @@ nazev: Ordwin Sohla
 verejne: false
 ikona: 🪙
 aliases: [Ordwin]
-vazby: ["[[thiril-ambersedge]]", "[[leta]]", "[[halvar-grimsdal]]", "[[kontakt-v-longsaddle]]", "[[thiriluv-prsten]]", "[[ordwinuv-dopis]]", "[[u-roztaveneho-grose]]"]
+vazby: ["[[thiril-ambersedge]]", "[[leta]]", "[[halvar-grimsdal]]", "[[malk-orren]]", "[[thiriluv-prsten]]", "[[ordwinuv-dopis]]", "[[u-roztaveneho-grose]]"]
 tags: [aktualni]
 zdroj: https://app.notion.com/p/3c49ed226736818f9adedfbd4d8588d5
 ---

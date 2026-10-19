@@ -204,7 +204,7 @@ Repo je jediný zdroj pravdy a data v něm mají tři tvary s jednou konvencí. 
 
 | Tvar | Kdy | Podoba | Příklad |
 | --- | --- | --- | --- |
-| Entita | Věc s vlastními obrázky nebo vazbami | Složka `<typ>/<id>/` s hlavním souborem `<id>.md` a obrázky | `npc/torva/torva.md` + `portret.png` |
+| Entita | Věc s vlastními obrázky nebo vazbami | Složka `<typ>/<id>/` s hlavním souborem `<id>.md` a obrázky | `padouchove/torva/torva.md` + `portret.png` |
 | Záznam | Čistě textová položka bez obrázků | Jeden soubor `<typ>/<id>.md` | `rozhodnuti/kruh-bez-jmena.md` |
 | Kolekce | Mnoho malých položek stejného druhu | Jeden soubor se seznamem | `kalendar/udalosti.yaml`, `obchody/polozky.json` |
 
@@ -276,18 +276,18 @@ Nový typ entity (například `lode/` nebo `bohove/`) znamená novou složku a j
 | `ilustrace` | ne | Seznam obrázků (viz místo níže) |
 | `zdroj` | ne | Odkaz na původní kartu v Notionu nebo jiný zdroj |
 
-Příklad entity (`kampan/npc/torva/torva.md`):
+Příklad entity (`kampan/padouchove/torva/torva.md`):
 
 ```yaml
 ---
 schema: 1
 id: torva
-typ: npc
+typ: padouch
 nazev: Torva
 verejne: true
 vazby: ["[[lurkwood]]"]
 ilustrace:
-  - soubor: /monsters/torva.png   # do npc/torva/ se přesune s exportem do IIO ve verzi 2
+  - soubor: /monsters/torva.png   # do padouchove/torva/ se přesune s exportem do IIO ve verzi 2
     ucel: portret
 zdroj: <odkaz na kartu v Notionu>
 ---
@@ -352,7 +352,7 @@ Každý existující zdroj má cíl v repu a blok, ve kterém se přesune. Pravi
 | Notion: Single-Page Lazy DM Prep Template | `sablony/priprava-lazy-dm.md` | Blok 3 | Do verze 2 se podle ní připravuje v Obsidianu |
 | Notion: Forge of Foes, Dice Roller | odkazy v panelu | Blok 3 | |
 | Portréty `Alba.png`, `Koudur.png`, `Leta.png`, `Tusker.png` v kořeni | `postavy/<id>/portret.png` | Verze 2 | Do té doby odkaz `/Alba.png`; přesun spolu s exportem do IIO |
-| `monsters/torva.png`, `monsters/malk-orren.png` | `npc/<id>/portret.png` | Verze 2 | Totéž |
+| `monsters/torva.png`, `monsters/malk-orren.png` | `padouchove/torva/portret.png`, `npc/malk-orren/portret.png` | Verze 2 | Totéž |
 | Ostatní `monsters/` | `bytosti/<id>/` | Verze 2 | Totéž; do té doby zmrazeno |
 
 Po převodu Claude projekt soubory postav nedrží; Claude čte repo. Verze 1 duplicitu se statbloky v IIO neodstraní.
@@ -761,7 +761,7 @@ Nic z této sekce zatím neplatí. Každý bod se rozhodne nejpozději na začá
 | 91 | ⚠ Aktualizovat a restart sám | Jedno tlačítko **Aktualizovat** (karta GitHub v Sezení, rozbalovací Systém, upozornění) nahrazuje Uložit, Stáhnout změny a Sloučit (body 42, 46): uloží rozdělané změny kampaně (commit kampan/), stáhne GitHub přes `pull --rebase` (ostatní neuložené věci jdou do úschovny a vrátí se), odešle. Při konfliktu se nic neztratí, úpravy zůstanou v lokálním commitu. Ukládání na GitHub zůstává ruční (DM 18. 10. 2026). Když aktualizace přinese nový kód Hubu, Hub se za 5 s restartuje sám (panel ukáže odpočet a Teď ne); během sezení jen nabídne restart; bez zástupce DM Hub poradí spustit znovu. `git pull` mimo Hub Hub pozná do 15 s a nabídne restart. Rozbalovací Systém má Aktualizovat, Kontrolu dat (počet), Restartovat Hub a Záznam událostí. Zvuk u stolu bez mikrofonu: selectAudioOutput, jinak návod na Směšovač hlasitosti ve Windows. | návrh |
 | 92 | ⚠ Vyměněný zvuk bez F5 | Adresa zvukového souboru pro stránky má `?v=<velikost:čas změny>`. Vyměněný soubor (Vyměnit, ↻, nový se stejným jménem) má jinou adresu: stránka u stolu ho načte znovu a smyčka s novým souborem se prolne místo staré. | návrh |
 | 93 | ⚠ Mapa převodu kánonu a report | `reference/kanon-mapa.yaml` má každou položku ze zdrojů kánonu: id, typ, skupinu, akci (`prevest`, `sloucit` do existujícího souboru, `vynechat` s důvodem, `doplnit` = kánon mimo Notion čekající na potvrzení DM, `ponechat` = už v repu), odkaz na kartu, aliasy, vazby a čísla rozporů z `reference/kanon-audit.md`. `npm run kanon [-- <skupina>]` porovná mapu se soubory v `kampan/`: počet ve zdroji a v repu, chybějící, soubory bez `zdroj`, nesoulad id/typu, hlášení Kontroly dat, soubory mimo mapu. Skupiny v pořadí postavy, padouši a frakce, NPC, místa, předměty, rozhodnutí, sezení, šablony | Blok 3 |
-| 94 | ⚠ Typy a id karet z Notionu | Postavy mají krátké id podle Improved Initiative a zvuků tahů (`tusker`, `koudur`, `alba`, `leta`), ostatní entity slug celého jména (`halvar-grimsdal`, aliasy s krátkým jménem). Torva je `npc` (příklad v Datovém modelu, Migrace), padouši jsou jen Bifron a Grimsdal. Krkavčí prapor, kruh (buňka) a Rod Redgrave jsou `frakce` (v Notionu tagy NPC/Villain). Karta „Praotec a Kruh pod Praotcem“ je jedno místo `praotec` s aliasy Grandfather Tree a Kruh pod Praotcem. Karty jen s tagem Current („Rok a kalendář kampaně“, „Stopa do Yartaru“) jsou rozhodnutí. Longsaddle se sloučí do existujícího místa | Blok 3 |
+| 94 | ⚠ Typy a id karet z Notionu | Postavy mají krátké id podle Improved Initiative a zvuků tahů (`tusker`, `koudur`, `alba`, `leta`), ostatní entity slug celého jména (`halvar-grimsdal`, aliasy s krátkým jménem). Padouši jsou NPC, která jsou zároveň padouchy: Bifron, Grimsdal a Torva (DM 19. 10. 2026; příklad v Datovém modelu a Migrace upraveny). Krkavčí prapor, kruh (buňka) a Rod Redgrave jsou `frakce` (v Notionu tagy NPC/Villain). Karta „Praotec a Kruh pod Praotcem“ je jedno místo `praotec` s aliasy Grandfather Tree a Kruh pod Praotcem. Karty jen s tagem Current („Rok a kalendář kampaně“, „Stopa do Yartaru“) jsou rozhodnutí. Longsaddle se sloučí do existujícího místa | Blok 3 |
 | 95 | ⚠ Záloha Notionu mimo repo | Úplný export (Markdown & CSV) se uloží jako ZIP mimo repo (např. `Dokumenty\DnD\zalohy\`), ne do `archiv/notion-<datum>/`: repo je veřejné a export obsahuje šablonu, obrázky a texty Sly Flourish. V repu zůstanou převedené soubory s `zdroj` na kartu | Začátek převodu |
 | 96 | ⚠ Formát záznamů kánonu | Všechny převedené soubory `verejne: false` (karty obsahují tajemství DM), existující místa si nechají `true`. Hlavička navíc `ikona` (emoji karty) a `tags: [aktualni]` z tagu Current. **Postava:** `hrac`, `druh`, `povolani`; tělo Příběh, Výchozí stav (před sezením 1), DM — co postava neví, List postavy (z projektu v Claude), Dotazník (celý). Mechaniku (jazyky, dovednosti) drží list postavy. **Rozhodnutí:** `stav` (otevrene, rozhodnuto, zavrzeno; Kontrola dat ho hlídá), `oblast` (kampan nebo id postavy), `zaznamenano`, oddíly Kontext a Dopad. **Hráčský kánon:** `sezeni`, `kdo`, `doresit`, `verejne: true`, oddíly Co se stalo a Důsledek. **Text** se nepřepisuje; první zmínka entity v oddílu je `[[id\|Jméno]]` | Blok 3 |
 | 97 | ⚠ Místa bez ilustrace U stolu | Dlaždice U stolu → Místo ukazují jen místa s aspoň jednou ilustrací scény (a místo, které je právě v OBS nebo vybrané). Místa z kánonu bez obrázků jsou dál v modulu Místa, kde jim dílna může ilustraci přidat | Blok 3 |

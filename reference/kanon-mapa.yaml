@@ -1,0 +1,293 @@
+# Mapa převodu kánonu (Blok 3). Každá položka ze zdrojů kánonu má tady své id, typ a cíl v repu.
+# Postup a pravidla jsou v reference/kanon-prevod.md, zjištění auditu v reference/kanon-audit.md.
+#
+# Tuhle mapu čte nástroj `npm run kanon` (hub/nastroje/kanon.js): u každé skupiny porovná počet
+# položek ve zdroji se soubory v kampan/, ukáže chybějící a navíc, soubory bez `zdroj` a hlášení
+# z Kontroly dat. Mapa se mění jen tehdy, když DM rozhodne jinak (typ, id, sloučení, vynechání).
+#
+# akce: prevest  = nový soubor v kampan/
+#       sloucit  = obsah se přidá do existujícího souboru (pole `do`)
+#       vynechat = nepřevádí se; `proc` vysvětlí rozdíl v počtu
+#       doplnit  = kánon mimo Notion (chat, paměť); soubor vznikne, až DM potvrdí text
+#       ponechat = soubor už v repu je a s Notionem nesouvisí (místa z Bloku 2, poznámky mimo sezení)
+# rozpory: čísla rozporů z reference/kanon-audit.md (R1, R2 …); před převodem je rozhodne DM.
+schema: 1
+stav_k: 2026-10-19
+notion: https://app.notion.com/p/3c39ed2267368185bdc2f02d0b397d7c
+
+# Rozpory, které DM rozhodl. Při převodu se text karet opraví jen podle nich; neplatná věta dostane
+# za sebe poznámku v kurzívě, např. „*(Příprava před sezením 2, neplatí: prsten má kapitán lupičů.)*“
+rozhodnute_rozpory:
+  R1: { kdy: 2026-10-19, rozhodnuti: "Kontaktem v Longsaddle byl Malk Orren. Karta Notionu „Kontakt v Longsaddle“ se převede jako malk-orren (alias Kontakt v Longsaddle) a doplní se z přípravy sezení 2. Rozhodnutí „Jméno a řemeslo kontaktu“ je rozhodnuté." }
+  R2: { kdy: 2026-10-19, rozhodnuti: "Torva je NPC i padouch, stejně jako Bifron a Grimsdal: typ padouch, složka padouchove/. Na začátek karty: V sezení 1 zemřela." }
+  R3: { kdy: 2026-10-19, rozhodnuti: "Thirilův prsten má na prstu kapitán lupičů (v sezení 3). Věty, že ho drží Ordwin nebo že je v obálce s dopisem, dostanou poznámku: příprava před sezením 2, neplatí." }
+  R11: { kdy: 2026-10-19, rozhodnuti: "Bifronova další zastávka po Lurkwoodu je Neverwinterský hvozd (na západ). Ve Stopě do Yartaru se „Moonwood, na východ“ opraví na Neverwinterský hvozd, na západ. Otevřené: pořadí sázení v kartě Bifrona (Lurkwood → Moonwood → Neverwinter)." }
+
+skupiny:
+  - { id: postavy, nazev: "Postavy hráčů", poradi: 1 }
+  - { id: padousi-frakce, nazev: "Padouši a frakce", poradi: 2 }
+  - { id: npc, nazev: "NPC", poradi: 3 }
+  - { id: mista, nazev: "Místa", poradi: 4 }
+  - { id: predmety, nazev: "Předměty", poradi: 5 }
+  - { id: rozhodnuti, nazev: "Registr rozhodnutí", poradi: 6 }
+  - { id: sezeni, nazev: "Zápisy sezení a hráčský kánon", poradi: 7 }
+  - { id: sablony, nazev: "Šablony a odkazy", poradi: 8 }
+
+polozky:
+  # ── 1. Postavy: Notion Characters + projekt v Claude (postavy/*.md) + dotazník (xlsx) ──────────
+  - id: tusker
+    typ: postava
+    nazev: Tusker Treestone
+    skupina: postavy
+    akce: prevest
+    zdroj: https://app.notion.com/p/3c79ed226736814ba009f59934f5fd91
+    zdroje_navic: [projekt Claude postavy/martin-barbar-orc.md, dotazník (Martin, 18. 8. 2026)]
+    aliases: [Tusker, Treestone]
+    vazby: [koudur, dorn-treestone, vendla-treestone, sidlo-treestoneu, rurik-tarn, stary-trhovec, bruna-ironvale, treestoneovska-stola, krkavci-prapor, neznamy-muz-tusker, tuskeruv-nahrdelnik, tabor-kruhu, torva]
+    hrac: Martin
+    rozpory: [R9]
+    ilustrace: /Tusker.png
+  - id: koudur
+    typ: postava
+    nazev: Koudur Hardbeard
+    skupina: postavy
+    akce: prevest
+    zdroj: https://app.notion.com/p/3c69ed22673681ae92c9f4ddb3ab85fe
+    zdroje_navic: [projekt Claude postavy/zaky-bard-dwarf.md, dotazník (Zaky, 18. 8. 2026)]
+    aliases: [Koudur, Hardbeard]
+    vazby: [tusker, balgur-hardbeard, helga-hardbeard, hedwiga-hardbeard, sidlo-hardbeardu, stola-hardbeardu, halvar-grimsdal, dagnar-stonewhen, bruna-ironvale, brann-kettleborn, na-zvonici, ulfgar-tinbarrel, vira-stonewhen, norra-ambleforge, u-kamenne-misy, kouduruv-nahrdelnik, novacek-kruhu, tabor-kruhu, torva, stopa-do-yartaru]
+    hrac: Zaky
+    rozpory: [R5]
+    ilustrace: /Koudur.png
+  - id: alba
+    typ: postava
+    nazev: Albalunna „Alba“ Nox
+    skupina: postavy
+    akce: prevest
+    zdroj: https://app.notion.com/p/3c79ed22673681d28d10e5b68c977bab
+    zdroje_navic: [projekt Claude postavy/adriana-aasimar-druid.md, dotazník (Adriana, 19. 8. 2026)]
+    aliases: [Alba, Albalunna, Albalunna Nox]
+    vazby: [bifron-nox, tichy-hvozd, patyk, albin-privesek, tarnwick, uhliri-a-lovci, corvain-thornroot, albina-matka, praotec, lurkwood, tabor-kruhu, torva, stopa-do-yartaru]
+    hrac: Adriana
+    rozpory: [R9, R11]
+    poznamka: Složka kampan/postavy/alba/ už existuje (podoby zlovlk.png, medved.png, rozhodnutí 74); přidá se jen alba.md.
+    ilustrace: /Alba.png
+  - id: leta
+    typ: postava
+    nazev: Leta Quickfinger
+    skupina: postavy
+    akce: prevest
+    zdroj: https://app.notion.com/p/3c49ed2267368143bd9ff7848df10e1a
+    zdroje_navic: [projekt Claude postavy/anna-halfling-rogue.md, dotazník (Anna, 21. 8. 2026)]
+    aliases: [Leta, Let, Quickfinger]
+    vazby: [thiril-ambersedge, chovna-stanice, komora-nad-kozeluznou, u-roztaveneho-grose, ordwin-sohla, halvar-grimsdal, vezeni-pod-radnici, longsaddle, malk-orren, letin-amulet, thiriluv-prsten, ordwinuv-dopis, tabor-kruhu, torva]
+    hrac: Anna (v Notionu „Anička“)
+    rozpory: [R6, R9]
+    ilustrace: /Leta.png
+
+  # ── 2. Padouši a frakce ─────────────────────────────────────────────────────────────────────
+  - id: bifron-nox
+    typ: padouch
+    nazev: Bifron Nox
+    skupina: padousi-frakce
+    akce: prevest
+    zdroj: https://app.notion.com/p/3c79ed2267368133badef82539eb23c6
+    aliases: [Bifron, „on“]
+    vazby: [alba, albina-matka, praotec, rod-redgrave, tarnwick, krkavci-prapor, osric-redgrave, corvain-thornroot, bruna-ironvale, kruh, lurkwood, tichy-hvozd]
+    rozpory: [R11, R14]
+  - id: halvar-grimsdal
+    typ: padouch
+    nazev: Halvar Grimsdal
+    skupina: padousi-frakce
+    akce: prevest
+    zdroj: https://app.notion.com/p/3c49ed22673681139ec6d006048ae511
+    aliases: [Grimsdal]
+    vazby: [leta, thiril-ambersedge, balgur-hardbeard, koudur, sidlo-hardbeardu, stola-hardbeardu, vezeni-pod-radnici]
+  - id: krkavci-prapor
+    typ: frakce
+    nazev: Krkavčí prapor
+    skupina: padousi-frakce
+    akce: prevest
+    zdroj: https://app.notion.com/p/3c79ed226736810cb919ea78e977e59a
+    aliases: [Ravenmark Company, Krkavci]
+    vazby: [osric-redgrave, praotec, rod-redgrave, bruna-ironvale, tusker, bifron-nox, alba, neznamy-muz-tusker]
+    poznamka: V Notionu s tagy NPC + Villain; je to rota, tedy frakce.
+  - id: kruh
+    typ: frakce
+    nazev: kruh (buňka)
+    skupina: padousi-frakce
+    akce: prevest
+    zdroj: https://app.notion.com/p/3c89ed22673681dcb6b8cb9c803787e1
+    aliases: [kruh, buňka kruhu]
+    vazby: [bifron-nox, praotec, tabor-kruhu, torva, novacek-kruhu]
+    poznamka: Malé písmeno je záměr (karta to vysvětluje). Tag Villain.
+  - id: rod-redgrave
+    typ: frakce
+    nazev: Rod Redgrave
+    skupina: padousi-frakce
+    akce: prevest
+    zdroj: https://app.notion.com/p/3c79ed226736811097a0f6209597eee1
+    aliases: [Redgrave, Redgraveové]
+    vazby: [praotec, krkavci-prapor, osric-redgrave, tarnwick, bifron-nox]
+    poznamka: V Notionu s tagem NPC; je to rod, tedy frakce.
+
+  # ── 3. NPC ──────────────────────────────────────────────────────────────────────────────────
+  - id: torva
+    typ: padouch
+    nazev: Torva
+    skupina: padousi-frakce
+    akce: prevest
+    zdroj: https://app.notion.com/p/3c89ed226736817f8a77fc1a9dc59199
+    aliases: []
+    vazby: [kruh, tabor-kruhu, novacek-kruhu, lurkwood]
+    ilustrace: /monsters/torva.png
+    rozpory: [R2]
+    poznamka: NPC a padouch zároveň jako Bifron a Grimsdal (DM 19. 10. 2026), proto padouchove/. V sezení 1 zemřela.
+  - { id: corvain-thornroot, typ: npc, nazev: "Corvain Thornroot", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c79ed22673681b7a4ede5a64cedd138", aliases: [Corvain], vazby: [bifron-nox, alba, albina-matka, praotec, tichy-hvozd, lurkwood], rozpory: [R12] }
+  - { id: albina-matka, typ: npc, nazev: "Albina matka", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c79ed22673681119e03c98f1656f071", aliases: [], vazby: [alba, bifron-nox, corvain-thornroot, albin-privesek, praotec, tichy-hvozd], poznamka: "Jméno záměrně neurčené." }
+  - { id: osric-redgrave, typ: npc, nazev: "Osric Redgrave", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c79ed22673681edb049ff25a262a205", aliases: [Osric], vazby: [rod-redgrave, krkavci-prapor, praotec, tarnwick, bifron-nox], poznamka: "Mrtvý." }
+  - { id: balgur-hardbeard, typ: npc, nazev: "Balgur Hardbeard", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c69ed2267368140a550cf0c6102b2a4", aliases: [Balgur], vazby: [koudur, helga-hardbeard, hedwiga-hardbeard, halvar-grimsdal, dagnar-stonewhen, bruna-ironvale, vira-stonewhen, sidlo-hardbeardu, stola-hardbeardu] }
+  - { id: helga-hardbeard, typ: npc, nazev: "Helga Hardbeard", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c69ed22673681f2b653ce8f55879d92", aliases: [Helga], vazby: [koudur, balgur-hardbeard, hedwiga-hardbeard, norra-ambleforge, u-kamenne-misy] }
+  - { id: hedwiga-hardbeard, typ: npc, nazev: "Hedwiga Hardbeard", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c69ed22673681fba3dfc39036d64f8b", aliases: [Hedwiga], vazby: [koudur, helga-hardbeard, balgur-hardbeard, norra-ambleforge, tusker, sidlo-hardbeardu, hedwigin-vek] }
+  - { id: brann-kettleborn, typ: npc, nazev: "Brann Kettleborn", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c69ed22673681259f3efac25dec688f", aliases: [Brann], vazby: [koudur, na-zvonici, ci-dudy] }
+  - { id: ulfgar-tinbarrel, typ: npc, nazev: "Ulfgar Tinbarrel", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c69ed22673681bf8328e9d910a19279", aliases: [Ulfgar], vazby: [koudur, na-zvonici] }
+  - { id: vira-stonewhen, typ: npc, nazev: "Vira Stonewhen", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c69ed2267368170a297ffc54936ca57", aliases: [Vira], vazby: [koudur, balgur-hardbeard, dagnar-stonewhen] }
+  - { id: dagnar-stonewhen, typ: npc, nazev: "Dagnar Stonewhen", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c69ed226736811ab793c8b5696c7905", aliases: [Dagnar], vazby: [vira-stonewhen, balgur-hardbeard, koudur, sidlo-hardbeardu] }
+  - { id: bruna-ironvale, typ: npc, nazev: "Bruna Ironvale", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c69ed22673681d1938de1d357496d97", aliases: [Bruna, Ironvale], vazby: [krkavci-prapor, praotec, rod-redgrave, tusker, dorn-treestone, treestoneovska-stola, sidlo-hardbeardu, rod-ironvale-historie] }
+  - { id: norra-ambleforge, typ: npc, nazev: "Norra Ambleforge", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c69ed2267368116bc39ff720d834e7e", aliases: [Norra, Nora], vazby: [u-kamenne-misy, helga-hardbeard, koudur, hedwiga-hardbeard], rozpory: [R5] }
+  - { id: dorn-treestone, typ: npc, nazev: "Dorn Treestone", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c79ed22673681b0b5b3ed8a5126fd54", aliases: [Dorn], vazby: [tusker, vendla-treestone, sidlo-treestoneu, bruna-ironvale, treestoneovska-stola, rurik-tarn, neznamy-muz-tusker] }
+  - { id: vendla-treestone, typ: npc, nazev: "Vendla Treestone", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c79ed22673681379b48e92f29982253", aliases: [Vendla], vazby: [tusker, dorn-treestone, sidlo-treestoneu] }
+  - { id: rurik-tarn, typ: npc, nazev: "Rurik Tarn", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c79ed2267368118bfa0f94705313931", aliases: [Rurik], vazby: [tusker, dorn-treestone] }
+  - { id: patyk, typ: npc, nazev: "Patyk", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c79ed22673681099c2eef489e89aaf1", aliases: [], vazby: [alba, bifron-nox, tichy-hvozd], poznamka: "Los." }
+  - { id: neznamy-muz-tusker, typ: npc, nazev: "Neznámý muž, který přinesl Tuskera", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c79ed22673681bf98cedc2172b1162f", aliases: [Neznámý muž], vazby: [tusker, dorn-treestone, krkavci-prapor, tuskeruv-nahrdelnik], poznamka: "Bez jména záměrně." }
+  - { id: stary-trhovec, typ: npc, nazev: "Starý trhovec", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c79ed2267368105ac21e78811a57a2e", aliases: [Starý trhovec (Mirabar)], vazby: [tusker, mirabar] }
+  - { id: thiril-ambersedge, typ: npc, nazev: "Thiril Ambersedge", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c49ed22673681b9885af7c41ceeaf26", aliases: [Thiril, starý brusič], vazby: [leta, ordwin-sohla, halvar-grimsdal, vezeni-pod-radnici, komora-nad-kozeluznou, thiriluv-prsten, letin-amulet, ordwinuv-dopis, longsaddle], rozpory: [R3] }
+  - { id: ordwin-sohla, typ: npc, nazev: "Ordwin Sohla", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c49ed226736818f9adedfbd4d8588d5", aliases: [Ordwin], vazby: [thiril-ambersedge, leta, halvar-grimsdal, malk-orren, thiriluv-prsten, ordwinuv-dopis, u-roztaveneho-grose], rozpory: [R3, R7] }
+  - { id: malk-orren, typ: npc, nazev: "Malk Orren", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c49ed226736818ca0a3f971cd6e6994", zdroje_navic: ["chat „Komplikovaná cesta k dopisu v Longsaddle“ (11. 9. 2026)"], aliases: [Malk, Kontakt v Longsaddle], vazby: [ordwin-sohla, thiril-ambersedge, leta, koudur, longsaddle, tabor-lupicu, na-zvonici], ilustrace: /monsters/malk-orren.png, rozpory: [R1], poznamka: "Karta Notionu „Kontakt v Longsaddle (bez jména)“ je Malk Orren (DM 19. 10. 2026). Z chatu přibude: kurýr, statblok SRD Spy (CR 1) s rysy Nezapamatovatelný a Nebojuje za cizí, v sezení 3 bojuje s družinou." }
+  - { id: novacek-kruhu, typ: npc, nazev: "Nováček kruhu (17 let)", skupina: npc, akce: prevest, zdroj: "https://app.notion.com/p/3c89ed22673681ccac00e4cdbc939b31", aliases: [Nováček kruhu, kluk z kruhu], vazby: [kruh, koudur, torva, tabor-kruhu, stopa-do-yartaru], ilustrace: /monsters/novacek-kruhu.png, rozpory: [R4] }
+
+  # ── 4. Místa ────────────────────────────────────────────────────────────────────────────────
+  - id: longsaddle
+    typ: misto
+    nazev: Longsaddle
+    skupina: mista
+    akce: sloucit
+    do: kampan/mista/longsaddle/longsaddle.md
+    zdroj: https://app.notion.com/p/3c49ed22673681af9ef7d5d6a2958cc8
+    aliases: []
+    vazby: [leta, thiril-ambersedge, malk-orren, ordwin-sohla]
+    rozpory: [R8, R1]
+    poznamka: Místo s ilustracemi už v repu je. Text z Notionu nahradí zástupný popis, ilustrace a zvuk zůstanou.
+  - { id: tabor-kruhu, typ: misto, nazev: "Tábor kruhu v Lurkwoodu", skupina: mista, akce: prevest, zdroj: "https://app.notion.com/p/3c89ed226736817cb3f0d4d6ac4295cc", aliases: [Tábor kruhu], vazby: [lurkwood, torva, novacek-kruhu, kruh, alba, tusker, koudur, leta], rozpory: [R13], poznamka: "Ilustrace tábora (tabor-zoldaku, tabor-vuz, tabor-zajatci) leží v mista/lurkwood." }
+  - { id: tichy-hvozd, typ: misto, nazev: "Tichý hvozd", skupina: mista, akce: prevest, zdroj: "https://app.notion.com/p/3c79ed22673681e896a8d2e49b8c9c04", aliases: [], vazby: [alba, bifron-nox, corvain-thornroot, albin-privesek, tarnwick, uhliri-a-lovci, patyk] }
+  - { id: u-kamenne-misy, typ: misto, nazev: "U Kamenné mísy", skupina: mista, akce: prevest, zdroj: "https://app.notion.com/p/3c69ed22673681c5abe0e94daa5e2cb2", aliases: [U Kamenné mísy (Triboar)], vazby: [norra-ambleforge, helga-hardbeard, koudur, hedwiga-hardbeard], rozpory: [R5] }
+  - { id: na-zvonici, typ: misto, nazev: "Na Zvonici", skupina: mista, akce: prevest, zdroj: "https://app.notion.com/p/3c69ed22673681d189f4d88aceca503d", aliases: [Zvonice], vazby: [koudur, ulfgar-tinbarrel, brann-kettleborn, tusker, mirabar] }
+  - { id: komora-nad-kozeluznou, typ: misto, nazev: "Komora nad koželužnou", skupina: mista, akce: prevest, zdroj: "https://app.notion.com/p/3c49ed2267368191b415c89a9408f8e5", aliases: [], vazby: [leta, thiril-ambersedge, ordwinuv-dopis, mirabar] }
+  - { id: chovna-stanice, typ: misto, nazev: "Chovná stanice pro hutě", skupina: mista, akce: prevest, zdroj: "https://app.notion.com/p/3c49ed22673681fca027e90123e48dc4", aliases: [sirotčinec], vazby: [leta, mirabar] }
+  - { id: sidlo-hardbeardu, typ: misto, nazev: "Sídlo Hardbeardů", skupina: mista, akce: prevest, zdroj: "https://app.notion.com/p/3c69ed226736818fafefc7f80ddd02d3", aliases: [], vazby: [koudur, balgur-hardbeard, hedwiga-hardbeard, halvar-grimsdal, dagnar-stonewhen, bruna-ironvale, mirabar] }
+  - { id: sidlo-treestoneu, typ: misto, nazev: "Sídlo Treestoneů", skupina: mista, akce: prevest, zdroj: "https://app.notion.com/p/3c79ed226736819a94e8e620f7457dad", aliases: [], vazby: [tusker, dorn-treestone, vendla-treestone, rurik-tarn, sidlo-hardbeardu, mirabar] }
+  - { id: treestoneovska-stola, typ: misto, nazev: "Treestoneovská štola v Cragách", skupina: mista, akce: prevest, zdroj: "https://app.notion.com/p/3c79ed2267368115ab3adf5ce8a98d77", aliases: [], vazby: [dorn-treestone, bruna-ironvale, tusker, poloha-treestoneovske-stoly] }
+  - { id: u-roztaveneho-grose, typ: misto, nazev: "U Roztaveného groše", skupina: mista, akce: prevest, zdroj: "https://app.notion.com/p/3c49ed22673681fb9a31f51de40775f7", aliases: [], vazby: [leta, ordwin-sohla, halvar-grimsdal, mirabar], rozpory: [R7] }
+  - { id: uhliri-a-lovci, typ: misto, nazev: "Uhlíři a lovci na kraji hvozdu", skupina: mista, akce: prevest, zdroj: "https://app.notion.com/p/3c79ed22673681199747de8c91643896", aliases: [], vazby: [alba, bifron-nox, tichy-hvozd] }
+  - { id: vezeni-pod-radnici, typ: misto, nazev: "Věznice pod radnicí", skupina: mista, akce: prevest, zdroj: "https://app.notion.com/p/3c49ed226736815f8d05d34ef4d6b754", aliases: [věznice], vazby: [thiril-ambersedge, leta, ordwin-sohla, longsaddle, mirabar] }
+  - { id: stola-hardbeardu, typ: misto, nazev: "Štola Hardbeardů", skupina: mista, akce: prevest, zdroj: "https://app.notion.com/p/3c69ed22673681519c92d7a8ab7fb404", aliases: [Štola Hardbeardů (Undercity)], vazby: [koudur, balgur-hardbeard, halvar-grimsdal, kouduruv-nahrdelnik, mirabar] }
+  - { id: praotec, typ: misto, nazev: "Praotec", skupina: mista, akce: prevest, zdroj: "https://app.notion.com/p/3c79ed22673681889c51d1928e78d63e", aliases: [Grandfather Tree, Kruh pod Praotcem], vazby: [bifron-nox, alba, corvain-thornroot, krkavci-prapor, osric-redgrave, rod-redgrave, tusker], poznamka: "Karta popisuje strom i zaniklý Kruh pod Praotcem; navrženo jako jedno místo s aliasem." }
+  - { id: tarnwick, typ: misto, nazev: "Tarnwick", skupina: mista, akce: prevest, zdroj: "https://app.notion.com/p/3c79ed22673681198696fe966bccb0eb", aliases: [Pohlcené město], vazby: [rod-redgrave, praotec, alba, bifron-nox, osric-redgrave] }
+
+  # ── 5. Předměty ─────────────────────────────────────────────────────────────────────────────
+  - { id: thiriluv-prsten, typ: predmet, nazev: "Thirilův prsten", skupina: predmety, akce: prevest, zdroj: "https://app.notion.com/p/3c49ed22673681679848cb69d8ba2cdf", aliases: [pečeť rodu Ambersedge, useknutá kapka], vazby: [thiril-ambersedge, leta, ordwin-sohla, ordwinuv-dopis, tabor-lupicu], rozpory: [R3] }
+  - { id: ordwinuv-dopis, typ: predmet, nazev: "Ordwinův dopis", skupina: predmety, akce: prevest, zdroj: "https://app.notion.com/p/3cf9ed2267368189a9d4e8c19b6d5eb1", aliases: [řeč vah, oznámení o Thirilově smrti], vazby: [ordwin-sohla, thiril-ambersedge, leta, thiriluv-prsten, longsaddle, tabor-lupicu], rozpory: [R3, R10], poznamka: "Obsahuje oba handouty (dopis a klíč)." }
+  - { id: letin-amulet, typ: predmet, nazev: "Letin amulet", skupina: predmety, akce: prevest, zdroj: "https://app.notion.com/p/3c49ed226736815292efc6d99956b2d6", aliases: [L se šípem], vazby: [leta, thiril-ambersedge, thiriluv-prsten] }
+  - { id: kouduruv-nahrdelnik, typ: predmet, nazev: "Koudurův safírový náhrdelník", skupina: predmety, akce: prevest, zdroj: "https://app.notion.com/p/3c69ed226736819abe3bddfd7961d63b", aliases: [], vazby: [koudur, stola-hardbeardu, helga-hardbeard, balgur-hardbeard, hedwiga-hardbeard, tusker] }
+  - { id: tuskeruv-nahrdelnik, typ: predmet, nazev: "Tuskerův náhrdelník se špičákem", skupina: predmety, akce: prevest, zdroj: "https://app.notion.com/p/3c79ed22673681f1900adc395d02ac8c", aliases: [špičák], vazby: [tusker, neznamy-muz-tusker] }
+  - { id: albin-privesek, typ: predmet, nazev: "Albin přívěsek po matce", skupina: predmety, akce: prevest, zdroj: "https://app.notion.com/p/3c79ed22673681daa8a4ca2e8588d8bd", aliases: [přívěsek], vazby: [alba, bifron-nox, albina-matka] }
+
+  # ── 6. Registr rozhodnutí (Notion „Registr rozhodnuti“, 37 řádků) + 2 karty jen s tagem Current ──
+  # stav: rozhodnuto | otevrene | zavrzeno; oblast: id postavy nebo kampan
+  - { id: bifron-linka-odlozena, typ: rozhodnuti, nazev: "Bifron Nox — celá linka odložena", skupina: rozhodnuti, akce: prevest, stav: rozhodnuto, oblast: alba, zdroj: "https://app.notion.com/p/3c69ed22673681cfac48f19bb2f699bb", vazby: [bifron-nox, bifron-oblouk] }
+  - { id: druhy-zajatec, typ: rozhodnuti, nazev: "Kdo je ten druhý zajatec v banditském táboře", skupina: rozhodnuti, akce: prevest, stav: otevrene, oblast: alba, zdroj: "https://app.notion.com/p/3c79ed2267368178af50e8acee5acba8", vazby: [alba, tabor-kruhu], rozpory: [R15] }
+  - { id: alba-pripojeni, typ: rozhodnuti, nazev: "Jak se Alba připojí k partě a proč s ní zůstane", skupina: rozhodnuti, akce: prevest, stav: rozhodnuto, oblast: alba, zdroj: "https://app.notion.com/p/3c79ed226736819f81a0e7f965d1d4ae", vazby: [alba, corvain-thornroot, lurkwood, tabor-kruhu], rozpory: [R11] }
+  - { id: corvain-za-bifronem, typ: rozhodnuti, nazev: "Muž, který přišel za Bifronem, byl Corvain Thornroot", skupina: rozhodnuti, akce: prevest, stav: rozhodnuto, oblast: alba, zdroj: "https://app.notion.com/p/3c79ed22673681a79e8cf13aeabfcf8f", vazby: [corvain-thornroot, bifron-nox, alba] }
+  - { id: alba-na-zacatku, typ: rozhodnuti, nazev: "Kde je Alba na začátku kampaně?", skupina: rozhodnuti, akce: prevest, stav: rozhodnuto, oblast: alba, zdroj: "https://app.notion.com/p/3c89ed226736813b8d84cb23c1d40691", vazby: [alba, lurkwood, tichy-hvozd, corvain-thornroot] }
+  - { id: kruh-nevi-o-albe, typ: rozhodnuti, nazev: "Zjistí kruh, že veze Bifronovu dceru?", skupina: rozhodnuti, akce: prevest, stav: rozhodnuto, oblast: alba, zdroj: "https://app.notion.com/p/3c89ed2267368185bad8d7c6914e30e5", vazby: [kruh, alba, bifron-nox] }
+  - { id: jmeno-radniho, typ: rozhodnuti, nazev: "Jméno radního, kterému Leta ukradla prsten", skupina: rozhodnuti, akce: prevest, stav: rozhodnuto, oblast: kampan, zdroj: "https://app.notion.com/p/3c69ed22673681dabd51e322ab619412", vazby: [halvar-grimsdal, leta] }
+  - { id: orsik-hammerstriker, typ: rozhodnuti, nazev: "Orsik Hammerstriker jako radní", skupina: rozhodnuti, akce: prevest, stav: zavrzeno, oblast: kampan, zdroj: "https://app.notion.com/p/3c69ed22673681e5a790d37b3d332974", vazby: [halvar-grimsdal] }
+  - { id: tema-kampane, typ: rozhodnuti, nazev: "Téma kampaně", skupina: rozhodnuti, akce: prevest, stav: rozhodnuto, oblast: kampan, zdroj: "https://app.notion.com/p/3c69ed22673681ea93f6e075549b243c" }
+  - { id: bifron-oblouk, typ: rozhodnuti, nazev: "Bifron Nox — celý oblouk hlavního záporáka", skupina: rozhodnuti, akce: prevest, stav: rozhodnuto, oblast: kampan, zdroj: "https://app.notion.com/p/3c79ed22673681ecb9bbd439575b96a4", vazby: [bifron-nox, corvain-thornroot, albina-matka, osric-redgrave, rod-redgrave, krkavci-prapor, tarnwick, praotec, bruna-ironvale, tusker], rozpory: [R14] }
+  - { id: termin-yartarske-stopy, typ: rozhodnuti, nazev: "Termín u yartarské stopy", skupina: rozhodnuti, akce: prevest, stav: zavrzeno, oblast: kampan, zdroj: "https://app.notion.com/p/3c89ed226736810c972ce5998b1d4173", vazby: [stopa-do-yartaru] }
+  - { id: cesta-do-lurkwoodu, typ: rozhodnuti, nazev: "Jak a jak dlouho parta cestuje z Mirabaru do Lurkwoodu?", skupina: rozhodnuti, akce: prevest, stav: otevrene, oblast: kampan, zdroj: "https://app.notion.com/p/3c89ed2267368115be63cb31ba9056fc", vazby: [mirabar, lurkwood, tabor-kruhu], rozpory: [R15] }
+  - { id: hlidaci-v-pilotu, typ: rozhodnuti, nazev: "Kolik toho hlídači v pilotu vyzradí?", skupina: rozhodnuti, akce: prevest, stav: rozhodnuto, oblast: kampan, zdroj: "https://app.notion.com/p/3c89ed226736813aae30f457e623d1e8", vazby: [kruh, bifron-nox, novacek-kruhu] }
+  - { id: kaceni-jako-duvod, typ: rozhodnuti, nazev: "Kácení a stavba jako důvod, proč kruh potřebuje lidi", skupina: rozhodnuti, akce: prevest, stav: zavrzeno, oblast: kampan, zdroj: "https://app.notion.com/p/3c89ed2267368158a9b4d2b31adc9b57", vazby: [kruh] }
+  - { id: zmizeni-v-mirabaru, typ: rozhodnuti, nazev: "Řeší někdo v Mirabaru zmizení tří lidí?", skupina: rozhodnuti, akce: prevest, stav: rozhodnuto, oblast: kampan, zdroj: "https://app.notion.com/p/3c89ed226736815c9862f9c961b4de76", vazby: [koudur, tusker, leta, mirabar] }
+  - { id: obri-krize, typ: rozhodnuti, nazev: "Použít obří krizi na Severu (Storm King's Thunder, 1490–92)?", skupina: rozhodnuti, akce: prevest, stav: otevrene, oblast: kampan, zdroj: "https://app.notion.com/p/3c89ed2267368160aeedf669731290a9", vazby: [rok-kampane] }
+  - { id: hedwigin-vek, typ: rozhodnuti, nazev: "Hedwigin věk", skupina: rozhodnuti, akce: prevest, stav: otevrene, oblast: koudur, zdroj: "https://app.notion.com/p/3c69ed22673681239d10d2fed9ea7fef", vazby: [hedwiga-hardbeard, koudur] }
+  - { id: ci-dudy, typ: rozhodnuti, nazev: "Čí dudy Brann Koudurovi prodal", skupina: rozhodnuti, akce: prevest, stav: otevrene, oblast: koudur, zdroj: "https://app.notion.com/p/3c69ed2267368186ae05f1bfc2f8767a", vazby: [brann-kettleborn, koudur] }
+  - { id: koudur-zavrzene-varianty, typ: rozhodnuti, nazev: "Zavržené varianty Koudurovy linky", skupina: rozhodnuti, akce: prevest, stav: zavrzeno, oblast: koudur, zdroj: "https://app.notion.com/p/3c69ed22673681a8aa61f6611c8f8639", vazby: [koudur, balgur-hardbeard, helga-hardbeard, halvar-grimsdal] }
+  - { id: rod-ironvale-historie, typ: rozhodnuti, nazev: "Rod Ironvale — historie", skupina: rozhodnuti, akce: prevest, stav: otevrene, oblast: koudur, zdroj: "https://app.notion.com/p/3c69ed22673681f1837dc73796ba711e", vazby: [bruna-ironvale] }
+  - { id: mirabarska-plomba, typ: rozhodnuti, nazev: "Mirabarská plomba na zásobách kruhu jako Koudurova stopa", skupina: rozhodnuti, akce: prevest, stav: zavrzeno, oblast: koudur, zdroj: "https://app.notion.com/p/3c89ed2267368176a1a7da4b79dd1003", vazby: [koudur, kruh] }
+  - { id: koudur-moment-v-pilotu, typ: rozhodnuti, nazev: "Jaký má Koudur v pilotu vlastní moment?", skupina: rozhodnuti, akce: prevest, stav: rozhodnuto, oblast: koudur, zdroj: "https://app.notion.com/p/3c89ed22673681d3a62ef4f966828f5b", vazby: [koudur, novacek-kruhu, stopa-do-yartaru] }
+  - { id: grimsdaluv-prsten, typ: rozhodnuti, nazev: "Byl Grimsdalův prsten obyčejný šperk, nebo úřední pečeť?", skupina: rozhodnuti, akce: prevest, stav: otevrene, oblast: leta, zdroj: "https://app.notion.com/p/3c49ed226736811e9f70c39698b382a0", vazby: [halvar-grimsdal, leta] }
+  - { id: zprava-o-thirilove-smrti, typ: rozhodnuti, nazev: "Jak se Leta dozví o Thirilově smrti?", skupina: rozhodnuti, akce: prevest, stav: otevrene, oblast: leta, zdroj: "https://app.notion.com/p/3c49ed22673681258fb9e9c262ed4610", vazby: [leta, thiril-ambersedge, ordwin-sohla, ordwinuv-dopis], rozpory: [R15] }
+  - { id: rod-ambersedge-zanik, typ: rozhodnuti, nazev: "Rod Ambersedge — vymřel, nebo se rozpadl až po Thirilově odchodu?", skupina: rozhodnuti, akce: prevest, stav: otevrene, oblast: leta, zdroj: "https://app.notion.com/p/3c49ed226736813c8b81dde74397a071", vazby: [thiril-ambersedge] }
+  - { id: scena-s-ditetem, typ: rozhodnuti, nazev: "Scéna s dítětem v domě v horní čtvrti", skupina: rozhodnuti, akce: prevest, stav: zavrzeno, oblast: leta, zdroj: "https://app.notion.com/p/3c49ed22673681559fced5ce3bbead9f", vazby: [leta] }
+  - { id: kontakt-jmeno-a-remeslo, typ: rozhodnuti, nazev: "Jméno a řemeslo kontaktu v Longsaddle", skupina: rozhodnuti, akce: prevest, stav: rozhodnuto, oblast: leta, zdroj: "https://app.notion.com/p/3c49ed22673681608560f2a5da633463", vazby: [malk-orren, ordwin-sohla], rozpory: [R1], poznamka: "Rozhodnuto 19. 10. 2026: kontaktem je Malk Orren, kurýr. Původní stav v Notionu: Otevřené." }
+  - { id: co-longsaddle-vyda, typ: rozhodnuti, nazev: "Co Longsaddle vydá a co si nechá?", skupina: rozhodnuti, akce: prevest, stav: otevrene, oblast: leta, zdroj: "https://app.notion.com/p/3c49ed2267368196a55dcf57f710449a", vazby: [malk-orren, leta, longsaddle], rozpory: [R1, R15] }
+  - { id: kdo-prozradil-letu, typ: rozhodnuti, nazev: "Kdo Letu prozradil únoscům?", skupina: rozhodnuti, akce: prevest, stav: rozhodnuto, oblast: leta, zdroj: "https://app.notion.com/p/3c89ed22673681d5a40bca1ea21aa6c4", vazby: [leta, u-roztaveneho-grose, kruh] }
+  - { id: treestoneove-zchudli, typ: rozhodnuti, nazev: "Treestoneovi jsou starý zchudlý šlechtický rod", skupina: rozhodnuti, akce: prevest, stav: rozhodnuto, oblast: tusker, zdroj: "https://app.notion.com/p/3c69ed22673681ac91d1d2b089667702", vazby: [tusker, dorn-treestone, sidlo-treestoneu] }
+  - { id: orci-tabor-v-cragach, typ: rozhodnuti, nazev: "Odkud byl orčí tábor v Cragách", skupina: rozhodnuti, akce: prevest, stav: otevrene, oblast: tusker, zdroj: "https://app.notion.com/p/3c79ed2267368129ac11ea7b19b801f5", vazby: [tusker, krkavci-prapor] }
+  - { id: poloha-treestoneovske-stoly, typ: rozhodnuti, nazev: "Kde přesně v Cragách stála treestoneovská štola", skupina: rozhodnuti, akce: prevest, stav: otevrene, oblast: tusker, zdroj: "https://app.notion.com/p/3c79ed226736815899c4d8d16b6e908a", vazby: [treestoneovska-stola, bruna-ironvale, dorn-treestone] }
+  - { id: dalsi-radni-v-cragach, typ: rozhodnuti, nazev: "Kteří další radní jednali v Cragách na vlastní pěst", skupina: rozhodnuti, akce: prevest, stav: otevrene, oblast: tusker, zdroj: "https://app.notion.com/p/3c79ed22673681d8a7d9cd69dd5e1b5c", vazby: [bruna-ironvale, krkavci-prapor, halvar-grimsdal] }
+  - { id: kdo-prinesl-tuskera, typ: rozhodnuti, nazev: "Kdo je muž, který přinesl Tuskera", skupina: rozhodnuti, akce: prevest, stav: otevrene, oblast: tusker, zdroj: "https://app.notion.com/p/3c79ed22673681ef94cfef955fe61710", vazby: [neznamy-muz-tusker, dorn-treestone, krkavci-prapor] }
+  - { id: vendlino-dite, typ: rozhodnuti, nazev: "Vendlino mrtvě narozené dítě — podrobnosti", skupina: rozhodnuti, akce: prevest, stav: rozhodnuto, oblast: tusker, zdroj: "https://app.notion.com/p/3c79ed22673681f6881dc9b7d3d7224a", vazby: [vendla-treestone, dorn-treestone, tusker] }
+  - { id: proc-tusker-doprovazi, typ: rozhodnuti, nazev: "Proč Tusker Koudura doprovází?", skupina: rozhodnuti, akce: prevest, stav: rozhodnuto, oblast: tusker, zdroj: "https://app.notion.com/p/3c89ed226736819ebc64ed5b2b547e52", vazby: [tusker, koudur, balgur-hardbeard, helga-hardbeard] }
+  - { id: tusker-prohra-v-ulicce, typ: rozhodnuti, nazev: "Jak Tusker prohraje souboj 1v3 v uličce?", skupina: rozhodnuti, akce: prevest, stav: rozhodnuto, oblast: tusker, zdroj: "https://app.notion.com/p/3c89ed22673681a19ce3d3cecd74cf50", vazby: [tusker, kruh] }
+  # Karty z Campaign Database jen s tagem Current: nejsou to entity, ale rozhodnutí DM o kampani.
+  - { id: rok-kampane, typ: rozhodnuti, nazev: "Rok a kalendář kampaně (1491 DR)", skupina: rozhodnuti, akce: prevest, stav: rozhodnuto, oblast: kampan, zdroj: "https://app.notion.com/p/3c89ed22673681bfb21dc8060edd2d5c", vazby: [alba, koudur, tusker, leta, praotec, krkavci-prapor, u-kamenne-misy, obri-krize], poznamka: "Z Campaign Database (tag Current)." }
+  - { id: stopa-do-yartaru, typ: rozhodnuti, nazev: "Stopa do Yartaru", skupina: rozhodnuti, akce: prevest, stav: rozhodnuto, oblast: kampan, zdroj: "https://app.notion.com/p/3c89ed22673681afb23ce8f354b468e7", vazby: [koudur, alba, novacek-kruhu, tabor-kruhu, bifron-nox, termin-yartarske-stopy], rozpory: [R11], poznamka: "Z Campaign Database (tag Current)." }
+
+  # ── 7. Zápisy sezení a hráčský kánon ────────────────────────────────────────────────────────
+  - id: s01
+    typ: sezeni
+    nazev: Sezení 1 — Mirabar → Lurkwood
+    skupina: sezeni
+    akce: prevest
+    zdroj: https://app.notion.com/p/3cf9ed22673681568e9dd7d97578765a
+    vazby: [koudur, tusker, leta, alba, mirabar, lurkwood, tabor-kruhu, torva, novacek-kruhu, norra-ambleforge]
+    rozpory: [R4]
+    poznamka: Hlavička podle otevřeného bodu 14 (cislo 1, datum_realne doplní DM, pritomni všichni čtyři).
+
+  # ── 8. Šablony a odkazy ────────────────────────────────────────────────────────────────────
+  - { id: priprava-lazy-dm, typ: sablona, nazev: "Single-Page Lazy DM Prep Template", skupina: sablony, akce: vynechat, zdroj: "https://app.notion.com/p/0599ed22673683e6be39015a7f9028d4", proc: "Anglická šablona Sly Flourish beze změn. Nahrazuje ji česká osnova sablony/priprava-lazy-dm.md (hotová v přípravě Bloku 3)." }
+  - { id: forge-of-foes, typ: odkaz, nazev: "Forge of Foes Monster Stats", skupina: sablony, akce: vynechat, zdroj: "https://app.notion.com/p/6169ed226736831581a581e68b45b07d", proc: "Tabulka Sly Flourish, ne kánon. Do panelu jen odkaz (ZADANI, Migrace)." }
+  - { id: dice-roller, typ: odkaz, nazev: "Dice Roller", skupina: sablony, akce: vynechat, zdroj: "https://dice.adamw.uk/?sound=true&font=serif", proc: "Vložená webová stránka; do panelu jen odkaz." }
+
+  # ── Nepřevádí se (rozdíly v počtech) ────────────────────────────────────────────────────────
+  - { id: vzor-indithir, typ: vzor, nazev: "[SMAZAT – vzorová karta] Indithir", skupina: npc, akce: vynechat, zdroj: "https://app.notion.com/p/8059ed226736827a8fd601b93a43a5e7", proc: "Vzorová data šablony." }
+  - { id: vzor-lhaak, typ: vzor, nazev: "[SMAZAT – vzorová karta] Lhaak", skupina: npc, akce: vynechat, zdroj: "https://app.notion.com/p/f0a9ed22673683b69cdf019495eb128f", proc: "Vzorová data šablony." }
+  - { id: vzor-rose-point-manor, typ: vzor, nazev: "[SMAZAT – vzorová karta] Rose Point Manor", skupina: mista, akce: vynechat, zdroj: "https://app.notion.com/p/9789ed226736827d9a6081e3dd96d431", proc: "Vzorová data šablony." }
+  - { id: vzor-thava, typ: vzor, nazev: "[SMAZAT – vzorová karta] Thava Thricecursed", skupina: padousi-frakce, akce: vynechat, zdroj: "https://app.notion.com/p/54c9ed22673683549e00818fba77fa54", proc: "Vzorová data šablony." }
+  - { id: hraci-kanon-db, typ: kanon, nazev: "Hraci kanon (databáze)", skupina: sezeni, akce: vynechat, zdroj: "https://app.notion.com/p/910aadb0bfdd41dd8c64617df2724a0a", proc: "Databáze je prázdná (0 řádků). Složka kanon/ zůstane prázdná, dokud se nezačne zapisovat ze sezení." }
+  - { id: session-zero-notes, typ: sezeni, nazev: "Session Zero Notes", skupina: sezeni, akce: vynechat, zdroj: "https://app.notion.com/p/aee9ed22673683f8839a81f2d6d21a23", proc: "Nevyplněná šablona." }
+  - { id: old-session-notes, typ: sezeni, nazev: "Old Session Notes", skupina: sezeni, akce: vynechat, zdroj: "https://app.notion.com/p/f1d9ed226736828f921e814b92d488b6", proc: "Prázdná stránka šablony." }
+  - { id: session-notes-template, typ: sezeni, nazev: "Session Notes Template Example", skupina: sezeni, akce: vynechat, zdroj: "https://app.notion.com/p/9719ed22673683279428812a2b57569e", proc: "Ukázka šablony, beze změn." }
+  - { id: party-info, typ: postava, nazev: "Characters → Party Info", skupina: postavy, akce: vynechat, zdroj: "https://app.notion.com/p/a5b9ed226736824fa067017739686265", proc: "Prázdná sekce šablony." }
+  - { id: sablona-original, typ: vzor, nazev: "Lazy RPG Campaign Template (originál)", skupina: sablony, akce: vynechat, zdroj: "https://app.notion.com/p/acc9ed22673682d982c481d6910dd222", proc: "Nedotčená kopie šablony se vzorovými daty; kampaň je v kopii (1)." }
+
+  # ── Kánon mimo Notion: doplnit, až DM potvrdí text ────────────────────────────────────────────
+  - { id: hlidac-kruhu, typ: npc, nazev: "Hlídač kruhu", skupina: npc, akce: doplnit, zdroj: "chat „Custom CSS pro Improved Initiative“ (statblok)", aliases: [], vazby: [kruh, tabor-kruhu, torva], ilustrace: /monsters/hlidac-kruhu.png, poznamka: "Statblok a ilustrace existují, karta v Notionu ne." }
+  - { id: tavis, typ: npc, nazev: "Tavis", skupina: npc, akce: doplnit, zdroj: "Notion Sezení 1", aliases: [], vazby: [kruh, tabor-kruhu, leta], rozpory: [R4], poznamka: "Nováček z tábora kruhu, zabit Letou v sezení 1. Možná totožný s Nováčkem kruhu (17 let)." }
+  - { id: kapitan-lupicu, typ: npc, nazev: "Kapitán lupičů", skupina: npc, akce: doplnit, zdroj: "chat příprava sezení 2 a 3", aliases: [], vazby: [tabor-lupicu, thiriluv-prsten], ilustrace: /monsters/bandit-captain.png, poznamka: "Nosí Thirilův prsten na malíčku (karta prstenu). Bez jména." }
+  - { id: ilma-dunwarova, typ: npc, nazev: "Ilma Dunwarová", skupina: npc, akce: doplnit, zdroj: "chat „Komplikovaná cesta k dopisu v Longsaddle“", aliases: [Ilma], vazby: [u-zlomeneho-sedla, longsaddle], poznamka: "Hostinská. Další lidé z přípravy sezení 2: Gerd (stájník), Marwen, Ondrik, Roswyn. DM rozhodne, zda je zakládat." }
+  - { id: u-zlomeneho-sedla, typ: misto, nazev: "U Zlomeného sedla", skupina: mista, akce: doplnit, zdroj: "chat „Komplikovaná cesta k dopisu v Longsaddle“", aliases: [], vazby: [longsaddle, ilma-dunwarova] }
+  - { id: previs-nad-long-road, typ: misto, nazev: "Převis nad Long Road", skupina: mista, akce: doplnit, zdroj: "Notion Sezení 1 („vhodné založit kartu“)", aliases: [], vazby: [cesta, tabor-kruhu] }
+  - { id: vacek-se-semeny, typ: predmet, nazev: "Váček s podivnými semeny", skupina: predmety, akce: doplnit, zdroj: "Notion Sezení 1 (Treasure)", aliases: [semena], vazby: [tusker, torva, praotec, bifron-nox], poznamka: "Klíčový předmět, Tusker ho nese. Karta chybí." }
+  - { id: s02, typ: sezeni, nazev: "Sezení 2 — Long Road → Longsaddle → tábor lupičů", skupina: sezeni, akce: doplnit, zdroj: "zápis neexistuje (jen příprava v chatu a PDF)", vazby: [malk-orren, longsaddle, tabor-lupicu], poznamka: "Potřebuje DM (poznámky nebo přepis WhisperX)." }
+  - { id: znak-krkavciho-praporu, typ: rozhodnuti, nazev: "Kdo pozná znak Krkavčího praporu", skupina: rozhodnuti, akce: doplnit, stav: rozhodnuto, oblast: tusker, zdroj: "chat „Odbočky a selhání v pilotní session“ (27. 8. 2026)", vazby: [tusker, alba, krkavci-prapor, bifron-nox], poznamka: "Tusker zná znak z mirabarské stráže (rota najímaná Radou), Alba ne; Bifron jí o minulosti kruhu nevyprávěl." }
+  - { id: sezeni-3-zacatek, typ: rozhodnuti, nazev: "Sezení 3 začíná iniciativou v táboře lupičů", skupina: rozhodnuti, akce: doplnit, stav: rozhodnuto, oblast: kampan, zdroj: "chat „Zlepšení bandity tábora“ (14. 9.) a „Návrh bojového sezení“ (12. 10. 2026)", vazby: [tabor-lupicu, malk-orren], poznamka: "Do tábora přišli s Malkem, hlídka je zaslechla, příchod pozdě odpoledne, Malk bojuje s družinou." }
+
+  # ── Už v repu, mimo Notion ─────────────────────────────────────────────────────────────────
+  - { id: mirabar, typ: misto, nazev: Mirabar, skupina: mista, akce: ponechat, zdroj: "Blok 2 (Places/Mirabar)", poznamka: "Popis doplní DM; v Notionu karta Mirabaru není (jen jeho podniky a domy)." }
+  - { id: lurkwood, typ: misto, nazev: Lurkwood, skupina: mista, akce: ponechat, zdroj: "Blok 2 (src/places/Lurkwood)" }
+  - { id: cesta, typ: misto, nazev: Cesta, skupina: mista, akce: ponechat, zdroj: "Blok 2" }
+  - { id: tabor-lupicu, typ: misto, nazev: Tábor lupičů, skupina: mista, akce: ponechat, zdroj: "Blok 2 (rozhodnutí 37)" }
+  - { id: priprava, typ: sezeni, nazev: Poznámky mimo sezení, skupina: sezeni, akce: ponechat, zdroj: "Hub (poznámky bez běžícího sezení)", cil: kampan/sezeni/priprava.md }

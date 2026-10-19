@@ -1,6 +1,6 @@
 # DM Hub v kostce
 
-Stav k 18. 10. 2026. Tenhle soubor odpovídá na tři otázky: **co Hub umí, co je rozdělané a co jsme vědomě vynechali.** Podrobná pravidla a rozhodnutí jsou v `ZADANI.md`, návody v `reference/`.
+Stav k 19. 10. 2026. Tenhle soubor odpovídá na tři otázky: **co Hub umí, co je rozdělané a co jsme vědomě vynechali.** Podrobná pravidla a rozhodnutí jsou v `ZADANI.md`, návody v `reference/`.
 
 ## Hub jednou větou
 
@@ -43,7 +43,8 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Zvuková sada: Freesound, Openverse, balíčky Kenney, Vyměnit a ↻ | ◐ |
 | | Srovnání hlasitosti a přeskočení ticha na začátku | ◐ |
 | **Údržba** | Aktualizovat jedním tlačítkem, restart sám, Kontrola dat, Záznam událostí | ◐ |
-| **Kánon** (Blok 3) | Postavy, NPC, frakce a deník v repu, hledání, karty v panelu | ✗ |
+| **Kánon** (Blok 3) | Příprava převodu: audit zdrojů, mapa převodu, šablony, report `npm run kanon` | ◐ |
+| | Převedené karty (postavy, NPC, frakce, místa, předměty, rozhodnutí, sezení), hledání, karty v panelu | ✗ |
 | **Verze 2** | Editor entit, příprava Lazy DM, generátor obchodů, portréty, export do IIO | ✗ |
 
 ## Co je rozdělané (v tomto pořadí)
@@ -51,7 +52,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 1. **Vyzkoušet u stolu** všechno označené ◐ (sezení 3, tábor lupičů). Co projde, se v `ZADANI.md` uzavře.
 2. **Zjednodušit Kontrolu dat:** chybějící zvuky v jednom řádku s tlačítkem Doplnit, chyby nahoře.
 3. **Zvuk u stolu po restartu:** ověřit, jestli prohlížeč chce kliknutí; když ano, otevírat ho v samostatném okně.
-4. **Blok 3 Kánon:** převod z Notionu po skupinách.
+4. **Blok 3 Kánon:** DM rozhodne rozpory R1–R16 z `reference/kanon-audit.md` a zazálohuje Notion, pak převod po skupinách podle `reference/kanon-prevod.md`. Chybí zápis sezení 2.
 5. **Verze 2.**
 
 ## Vědomě vynecháno
@@ -73,6 +74,8 @@ Vlastní combat tracker, sledování zdrojů postav (BV, kouzla, Zuřivost), mix
 | Zadání, rozhodnutí, otevřené body | `ZADANI.md` |
 | Návody (zvuk, OBS, ilustrace) | `reference/` |
 | Data kampaně | `kampan/` |
+| Šablony pro nové soubory (Obsidian) | `sablony/` |
+| Kánon: audit, mapa a návod na převod | `reference/kanon-audit.md`, `reference/kanon-mapa.yaml`, `reference/kanon-prevod.md` |
 | Kód Hubu a testy | `hub/` |
 | Zvuky (mimo repo) | `Dokumenty\DnD\audio` |
 | Záznam událostí (mimo repo) | `hub\.stav\zaznam\` |

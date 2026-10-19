@@ -11,7 +11,8 @@
     "start": "node spoustec.js",
     "server": "node server/index.js",
     "test": "node --test --test-concurrency=1 \"test/**/*.test.js\"",
-    "check:node": "node skripty/check-node.js"
+    "check:node": "node skripty/check-node.js",
+    "kanon": "node skripty/kanon.js"
   },
   "dependencies": {
     "chokidar": "^5.0.0",

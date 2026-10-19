@@ -12,6 +12,8 @@ import { Harptos } from '../sdilene/harptos.js';
 export const SCHEMA = 1;
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const POVINNE_ENTITY = ['schema', 'id', 'typ', 'nazev', 'verejne'];
+/** Stav záznamu v registru rozhodnutí (Blok 3, převod z Notionu). */
+export const STAVY_ROZHODNUTI = Object.freeze(['otevrene', 'rozhodnuto', 'zavrzeno']);
 
 /** Slug podle konvence v ZADANI.md: malá písmena bez diakritiky, pomlčky. */
 export function slug(text) {
@@ -152,6 +154,9 @@ export async function kontrolaDat(c) {
       else if (d.typ !== typSlozky) pridej(soubor, 'chyba', `Typ „${d.typ}“ nepatří do složky ${casti[0]}/ (čeká se „${typSlozky}“)`);
     }
     if ('verejne' in d && typeof d.verejne !== 'boolean') pridej(soubor, 'chyba', 'verejne musí být true nebo false');
+    if (d.typ === 'rozhodnuti' && 'stav' in d && !STAVY_ROZHODNUTI.includes(d.stav)) {
+      pridej(soubor, 'varovani', `stav rozhodnutí musí být ${STAVY_ROZHODNUTI.join(', ')}`);
+    }
     zaznamy.push({ soubor, data: d, telo: r.telo, slozka: path.dirname(soubor) });
   }
 

@@ -1944,8 +1944,11 @@ function vykresliMista() {
   if (stav.stulMisto === zive?.id) stav.stulMisto = null;
   const vybrane = seznam.find((x) => x.id === stav.stulMisto) ?? zive;
   const volby = { varianta: s?.varianta ?? 'den', stav: null };
+  // Na dlaždicích jsou jen místa se scénou pro OBS. Místa z kánonu bez ilustrací (komora, sídla, štoly)
+  // by tu jen překážela; najdeš je v modulu Místa, kde jim dílna může ilustraci přidat.
+  const naStul = seznam.filter((m) => m.id === zive?.id || m.id === vybrane?.id || (m.ilustrace ?? []).some((il) => il.ucel === 'scena'));
   $('#stul-mista').replaceChildren(
-    ...seznam.map((m) => {
+    ...naStul.map((m) => {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'polozka-mista';

@@ -1,4 +1,4 @@
-# Zvuková sada (ZADANI.md, otevřené body 86–88): jaké zvuky má mít složka zvuku a odkud je Hub vezme
+# Zvuková sada (ZADANI.md, body 86–88): jaké zvuky má mít složka zvuku a odkud je Hub vezme
 # (Freesound, Openverse, balíčky Kenney). Soubory do repa nepatří; Hub je stáhne do složky zvuku
 # (Nastavení → Zvuk → Doplnit chybějící zvuky) a autory zapíše do zdroje.json ve složce zvuku.
 #

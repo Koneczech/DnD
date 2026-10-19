@@ -83,7 +83,7 @@
         p.nastavHlasitost(efektyProstor, s.ticho ? 0 : s.hlasitost.efekty);
         p.nastavHlasitost(sberniceNahodnych, s.ticho ? 0 : s.hlasitost.ambient);
         ambient.nastavit(s.ambient, s.prolnutiMs);
-        // Náhodné zvuky a dozvuk místa (otevřený bod 85).
+        // Náhodné zvuky a dozvuk místa (bod 85).
         nahodne.nastavit(s.nahodne ?? []);
         dozvukNahodnych.nastavit(s.dozvuk);
         dozvukSoundboardu.nastavit(s.dozvuk);
@@ -131,7 +131,7 @@
     smycky = new Vrstvy(p.ctx, efektyProstor, priChybe);
     p.hraje = () => [...hudba.hraje(), ...ambient.hraje(), ...smycky.hraje()];
 
-    /* ---------- Srovnání hlasitosti (otevřený bod 86): soubory se změří jednou, postupně na pozadí ---------- */
+    /* ---------- Srovnání hlasitosti (bod 86): soubory se změří jednou, postupně na pozadí ---------- */
     let meri = false;
     const nemeritZnovu = new Set();
     async function zmeritDalsi(seznam) {

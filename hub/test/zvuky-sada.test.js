@@ -1,4 +1,4 @@
-// Zvuková sada z Freesoundu a srovnání hlasitosti (otevřený bod 86).
+// Zvuková sada z Freesoundu a srovnání hlasitosti (bod 86).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';

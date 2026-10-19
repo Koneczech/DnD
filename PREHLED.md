@@ -51,10 +51,10 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 
 ## Co je rozdělané (v tomto pořadí)
 
-1. **Vyzkoušet u stolu** všechno označené ◐ (sezení 3, tábor lupičů). Co projde, se v `ZADANI.md` uzavře.
+1. **Vyzkoušet u stolu** všechno označené ◐ (sezení 3, tábor lupičů). Návrhy v `ZADANI.md` DM potvrdil 19. 10.; co u stolu nefunguje, se opraví.
 2. **Zjednodušit Kontrolu dat:** chybějící zvuky v jednom řádku s tlačítkem Doplnit, chyby nahoře.
 3. **Zvuk u stolu po restartu:** ověřit, jestli prohlížeč chce kliknutí; když ano, otevírat ho v samostatném okně.
-4. **Blok 3 Kánon:** DM rozhodne rozpory R1–R16 z `reference/kanon-audit.md` a zazálohuje Notion, pak převod po skupinách podle `reference/kanon-prevod.md` (včetně návrhů vztahů). Modul Kánon s mapou přijde po skupině postavy. Chybí zápis sezení 2.
+4. **Blok 3 Kánon:** rozpory R1–R16 jsou rozhodnuté (19. 10.). DM zazálohuje Notion, pak převod po skupinách podle `reference/kanon-prevod.md` (včetně návrhů vztahů). Modul Kánon s mapou přijde po skupině postavy. Zápis sezení 2 vznikne z přepisu nahrávky, kterou DM dodá.
 5. **Verze 2.**
 
 ## Vědomě vynecháno

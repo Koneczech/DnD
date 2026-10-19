@@ -4,7 +4,7 @@
 // server nejvýš 6 běžných spojení. Trvalá spojení SSE je vyčerpala a nové obrázky se pak
 // nenačetly (audit K1). WebSocket se do tohoto limitu nepočítá.
 
-// Chyby stránky (panel, výstupy v OBS) jdou do záznamu Hubu (otevřený bod 84): v OBS konzoli nikdo nevidí.
+// Chyby stránky (panel, výstupy v OBS) jdou do záznamu Hubu (bod 84): v OBS konzoli nikdo nevidí.
 if (!globalThis.__dmhubChyby) {
   globalThis.__dmhubChyby = true;
   let pocet = 0;

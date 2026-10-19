@@ -1,4 +1,4 @@
-// Světla podle HP (otevřený bod 72): během souboje Hub čte stav Player View z Improved Initiative
+// Světla podle HP (bod 72): během souboje Hub čte stav Player View z Improved Initiative
 // (veřejný, stejný jako na TV). Když je na tahu postava hráče s 25 % HP a méně, ohlásí to světlům.
 import https from 'node:https';
 import { EventEmitter } from 'node:events';
@@ -44,7 +44,7 @@ export function idSetkani(odkaz) {
 
 /**
  * Události: 'zmena' ({jmeno, hp, max} nebo null) pro málo HP, 'tah' ({id, jmeno, hrac, tagy}) při změně
- * postavy na tahu (zvuky na tahu, otevřený bod 76).
+ * postavy na tahu (zvuky na tahu, bod 76).
  */
 export class SledovaniHp extends EventEmitter {
   constructor({ odkaz, aktivni, hlidatHp = () => true, intervalMs = 1000, nacist }) {

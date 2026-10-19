@@ -43,22 +43,22 @@ export const PLATNOST_HLASENI_MS = 12000;
 export const STRANKY = Object.freeze(['hudba', 'stul']);
 /** Kde hraje hudba: z reproduktoru u stolu (výchozí, rozhodnutí 67), nebo v OBS. */
 export const HUDBA_KDE = Object.freeze(['stul', 'obs']);
-/** Ucpané uši při málo HP (otevřený bod 73): co se tlumí a jak silně (dolní propust v Hz). */
+/** Ucpané uši při málo HP (bod 73): co se tlumí a jak silně (dolní propust v Hz). */
 export const TLUMENI = Object.freeze(['hudba', 'vse', 'vypnuto']);
 export const TLUMENI_HZ = Object.freeze({ min: 200, max: 2000, vychozi: 500 });
 const MAX_SOUBORU = 3000;
-/** Srovnání hlasitosti (otevřený bod 86): hladiny podle druhu zvuku v LUFS a jejich meze. */
+/** Srovnání hlasitosti (bod 86): hladiny podle druhu zvuku v LUFS a jejich meze. */
 export const DRUHY_HLADIN = Object.freeze(Object.keys(HLADINY));
 export const HLADINA_MEZE = Object.freeze({ min: -40, max: -6 });
 /** Zvuk na tah déle než 2,5 s se plynule ztlumí (stříhat soubory není potřeba). */
 export const MAX_TAH_S = 2.5;
 /**
- * Dozvuk místa (otevřený bod 85): prostor, ve kterém zní náhodné zvuky a soundboard. Stránka u stolu
+ * Dozvuk místa (bod 85): prostor, ve kterém zní náhodné zvuky a soundboard. Stránka u stolu
  * si dozvuk spočítá sama (Web Audio, bez souborů). `zadny` = venku, bez dozvuku.
  */
 export const DOZVUKY = Object.freeze(['zadny', 'mistnost', 'kobka', 'sal', 'jeskyne']);
-/** Náhodné zvuky prostředí (otevřený bod 85): nejvýš 8 na den nebo noc místa, interval 3 s až 10 min. */
-/** Části zvuku místa: den a noc, a souboj (vlastní zvuk místa v boji, otevřený bod 85). */
+/** Náhodné zvuky prostředí (bod 85): nejvýš 8 na den nebo noc místa, interval 3 s až 10 min. */
+/** Části zvuku místa: den a noc, a souboj (vlastní zvuk místa v boji, bod 85). */
 export const CASTI_ZVUKU_MISTA = Object.freeze(['den', 'noc', 'souboj']);
 export const NAHODNE = Object.freeze({ max: 8, minS: 3, maxS: 600, kazdychS: 30, nahodilost: 0.5, hlasitost: 0.8, vzdalenost: 0 });
 
@@ -118,7 +118,7 @@ export function normalizujNahodne(seznam) {
 export function normalizujZvukMista(zvuk) {
   if (!zvuk || typeof zvuk !== 'object') return null;
   const vysledek = {};
-  // Připnuté zvuky soundboardu pro toto místo (otevřený bod 76): ID skupin, nejvýš 24.
+  // Připnuté zvuky soundboardu pro toto místo (bod 76): ID skupin, nejvýš 24.
   if (Array.isArray(zvuk.pripnute)) {
     const p = [...new Set(zvuk.pripnute.map(platneId).filter(Boolean))].slice(0, 24);
     if (p.length) vysledek.pripnute = p;
@@ -129,7 +129,7 @@ export function normalizujZvukMista(zvuk) {
     const z = {};
     if (platneJmeno(x.hudba)) z.hudba = platneJmeno(x.hudba);
     if (platneJmeno(x.ambient)) z.ambient = platneJmeno(x.ambient);
-    // Vzdálenost ambientu místa (otevřený bod 85): 0 = u stolu, 1 = hodně daleko (tišší a tupější).
+    // Vzdálenost ambientu místa (bod 85): 0 = u stolu, 1 = hodně daleko (tišší a tupější).
     if (platnaVzdalenost(x.vzdalenost)) z.vzdalenost = platnaVzdalenost(x.vzdalenost);
     const nahodne = normalizujNahodne(x.nahodne);
     if (nahodne.length) z.nahodne = nahodne;
@@ -217,12 +217,12 @@ export class Zvuk extends EventEmitter {
     this.nahodne = nahodne;
     this.soubor = path.join(cesty.lokalniStav, 'zvuk.json');
     this.mistni = { ticho: false, hudba: 0.8, ambient: 0.8, efekty: 1, hudbaKde: 'stul', tlumeni: 'hudba', tlumeniHz: TLUMENI_HZ.vychozi, tahy: true, tahyJenHraci: false, srovnat: true, hladiny: { ...HLADINY } };
-    // Srovnání hlasitosti (otevřený bod 86): změřené soubory (stránka u stolu je měří a posílá).
+    // Srovnání hlasitosti (bod 86): změřené soubory (stránka u stolu je měří a posílá).
     this.souborMereni = path.join(cesty.lokalniStav, 'zvuk-mereni.json');
     this.mereni = new Map(); // soubor → { klic, lufs, spicka, zacatek, konec, delka, chyba? }
     this.otisky = new Map(); // soubor → velikost:čas změny (změněný soubor se změří znovu)
     this.casovacMereni = null;
-    // Zvuková sada (otevřený bod 86): kampan/zvuky-sada.yaml, stahování z Freesoundu.
+    // Zvuková sada (bod 86): kampan/zvuky-sada.yaml, stahování z Freesoundu.
     this.fetchZvuky = fetchZvuky; // testy: falešné zdroje zvuků
     this.sada = normalizujSadu();
     this.zdroje = { soubory: {}, vynechane: {} };
@@ -291,7 +291,7 @@ export class Zvuk extends EventEmitter {
     return this.mapa;
   }
 
-  /** Zvuková sada z kampan/zvuky-sada.yaml (otevřený bod 86). */
+  /** Zvuková sada z kampan/zvuky-sada.yaml (bod 86). */
   async nacistSadu() {
     if (!this.c.kampan) return this.sada;
     try {
@@ -411,7 +411,7 @@ export class Zvuk extends EventEmitter {
         .map((a) => ({ ...a, soubor: this.najit(a.soubor) }))
         .filter((a) => a.soubor)
         .map((a) => ({ ...a, ...this.zvukovy(a.soubor, 'ambient') })),
-      // Náhodné zvuky prostředí (otevřený bod 85): kdy je zahrát, si počítá stránka u stolu.
+      // Náhodné zvuky prostředí (bod 85): kdy je zahrát, si počítá stránka u stolu.
       nahodne: c.nahodne
         .map((n) => ({ ...n, soubory: this.souboryZvuku(n.zvuk).map((f) => this.zvukovy(f, 'nahodne')) }))
         .filter((n) => n.soubory.length),
@@ -528,12 +528,12 @@ export class Zvuk extends EventEmitter {
       stranky,
       // Stránka Hudba v OBS je potřeba, jen když hudba hraje v OBS.
       potrebne: this.mistni.hudbaKde === 'obs' ? ['hudba', 'stul'] : ['stul'],
-      // Soundboard (otevřený bod 76): knihovna podle složek a co z ní teď hraje.
+      // Soundboard (bod 76): knihovna podle složek a co z ní teď hraje.
       knihovna: { jednorazove: this.knihovna.jednorazove, smycky: this.knihovna.smycky, nahodne: this.knihovna.nahodne },
       zapnuteSmycky: [...this.smycky.keys()],
       tahy: { zapnuto: this.mistni.tahy, jenHraci: this.mistni.tahyJenHraci },
       chybaMapy: this.chybaMapy,
-      // Srovnání hlasitosti a zvuková sada (otevřený bod 86).
+      // Srovnání hlasitosti a zvuková sada (bod 86).
       srovnani: {
         zapnuto: this.mistni.srovnat,
         hladiny: this.mistni.hladiny,
@@ -649,7 +649,7 @@ export class Zvuk extends EventEmitter {
       const n = najitSkupinu(this.knihovna, zvuk);
       if (!n) throw chyba('Zvuk ve složce není.', 404);
       if (n.druh === 'smycky') return this.smycka({ zvuk, zap: !this.smycky.has(n.skupina.id) });
-      // Tlačítko soundboardu zní v prostoru místa (dozvuk, otevřený bod 85); zvuky na tah a fanfára ne.
+      // Tlačítko soundboardu zní v prostoru místa (dozvuk, bod 85); zvuky na tah a fanfára ne.
       this.zahratSkupinu(n.skupina, { uhnout: true, prostor: true });
       return { ok: true };
     }
@@ -717,7 +717,7 @@ export class Zvuk extends EventEmitter {
   }
 
   /**
-   * Zvuk na tah v souboji (otevřený bod 76): podle jména a tagů z Player View a mapy v kampan/zvuky.yaml.
+   * Zvuk na tah v souboji (bod 76): podle jména a tagů z Player View a mapy v kampan/zvuky.yaml.
    * @param {{jmeno: string, hrac: boolean, tagy: string[]}} kdo
    * @returns {string|null} zahraný soubor
    */
@@ -788,7 +788,7 @@ export class Zvuk extends EventEmitter {
   }
 
   /**
-   * Balíček Kenney (otevřený bod 88): ZIP se stáhne jednou do složky zvuku (baliky/kenney_<jméno>.zip)
+   * Balíček Kenney (bod 88): ZIP se stáhne jednou do složky zvuku (baliky/kenney_<jméno>.zip)
    * a dál se z něj jen vybírá. Vlastní ZIP stejného jména tam jde dát i ručně.
    */
   async balik(nazev) {
@@ -963,7 +963,7 @@ export class Zvuk extends EventEmitter {
    */
   kontrola() {
     const odkazy = []; // [souborDat, jménoZvuku]
-    const nahodneOdkazy = []; // [souborDat, skupina nebo soubor] (otevřený bod 85)
+    const nahodneOdkazy = []; // [souborDat, skupina nebo soubor] (bod 85)
     for (const m of this.mista()) {
       for (const v of CASTI_ZVUKU_MISTA) {
         for (const k of ['hudba', 'ambient']) if (m.zvuk?.[v]?.[k]) odkazy.push([`kampan/mista/${m.id}/${m.id}.md`, m.zvuk[v][k]]);

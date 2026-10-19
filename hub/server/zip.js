@@ -1,4 +1,4 @@
-// Čtení ZIP archivů bez dalších knihoven (otevřený bod 88): balíčky zvuků (Kenney) se stáhnou jednou
+// Čtení ZIP archivů bez dalších knihoven (bod 88): balíčky zvuků (Kenney) se stáhnou jednou
 // do složky zvuku a Hub z nich vybírá jednotlivé soubory. Umí uložené i deflate položky, ne ZIP64
 // ani šifrování (zvukové balíčky je nepoužívají).
 import zlib from 'node:zlib';

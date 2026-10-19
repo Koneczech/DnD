@@ -257,7 +257,7 @@ export class Git {
   }
 
   /**
-   * Aktualizovat (otevřený bod 91): jedno tlačítko místo Uložit, Stáhnout a Sloučit. Uloží rozdělané
+   * Aktualizovat (bod 91): jedno tlačítko místo Uložit, Stáhnout a Sloučit. Uloží rozdělané
    * změny kampaně (commit kampan/), stáhne novinky z GitHubu a přeskládá za ně, odešle. Nic nemaže:
    * při konfliktu zůstane tvůj commit lokálně a pracovní složka beze změny.
    * @returns {Promise<{ulozeno:boolean, stazeno:number, push:boolean, uschovnaNevracena:boolean, vracenoZGitHubu:string[]}>}

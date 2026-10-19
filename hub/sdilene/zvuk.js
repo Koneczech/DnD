@@ -10,7 +10,7 @@ const PROLNUTI_SMYCKY_S = 3;
 const KRATKA_SMYCKA_S = 8;
 
 /**
- * Vzdálenost zvuku (otevřený bod 85): 0 = u stolu, 1 = hodně daleko. Vzdálený zvuk je tišší a tupější
+ * Vzdálenost zvuku (bod 85): 0 = u stolu, 1 = hodně daleko. Vzdálený zvuk je tišší a tupější
  * (dolní propust ubírá výšky), jako když se ozývá přes tábor nebo zpoza zdi.
  */
 export class Vzdalenost {
@@ -177,7 +177,7 @@ export class Vrstvy {
       this.smycky.delete(soubor);
     }
     for (const [soubor, x] of chci) {
-      // Srovnání hlasitosti (otevřený bod 86): `zisk` dorovná soubor na výchozí hladinu svého druhu.
+      // Srovnání hlasitosti (bod 86): `zisk` dorovná soubor na výchozí hladinu svého druhu.
       const cil = (x.hlasitost ?? 1) * (x.zisk ?? 1);
       let jiz = this.smycky.get(soubor);
       // Soubor se vyměnil (jiný otisk v adrese): stará smyčka doběhne, nová naběhne.
@@ -217,7 +217,7 @@ export class Vrstvy {
 }
 
 /**
- * Náhodné zvuky prostředí (otevřený bod 85): krátké zvuky, které se samy občas ozvou pod ambientem
+ * Náhodné zvuky prostředí (bod 85): krátké zvuky, které se samy občas ozvou pod ambientem
  * (hlasy v táboře, kůň, kovadlina, krkavec). Každý má průměrný odstup `kazdych_s` a `nahodilost`
  * (0 = přesně pravidelně, 1 = kdykoli mezi 0 a dvojnásobkem). Varianta se nikdy neopakuje dvakrát
  * za sebou, výška a hlasitost se trochu mění a zvuk přijde náhodně zleva nebo zprava.
@@ -287,7 +287,7 @@ export class NahodneZvuky {
 }
 
 /**
- * Dozvuk místa (otevřený bod 85): ozvěna prostoru spočítaná přímo v prohlížeči (konvoluce s uměle
+ * Dozvuk místa (bod 85): ozvěna prostoru spočítaná přímo v prohlížeči (konvoluce s uměle
  * vytvořenou odezvou místnosti, bez souborů). Přímý zvuk zůstává, přidá se jen „ocas“ prostoru.
  */
 export class Dozvuk {
@@ -363,7 +363,7 @@ export class Dozvuk {
 }
 
 /**
- * Ucpané uši (málo HP, otevřený bod 73): dvě dolní propusti za sebou (strmý ořez výšek), mírně
+ * Ucpané uši (málo HP, bod 73): dvě dolní propusti za sebou (strmý ořez výšek), mírně
  * zesílené basy a vyrovnání hlasitosti. Hudba nezní tišeji, ale tupě a „zpoza zdi“.
  * Bez tlumení je propust na 20 kHz a nic nemění.
  */
@@ -518,7 +518,7 @@ export class Prehravac {
       uzel = uzel.connect(f);
     }
     if (vzdalenost > 0) {
-      // Náhodný zvuk z dálky (otevřený bod 85): tišší a tupější.
+      // Náhodný zvuk z dálky (bod 85): tišší a tupější.
       const { hz, zisk } = Vzdalenost.parametry(vzdalenost);
       const f = this.ctx.createBiquadFilter();
       f.type = 'lowpass';
@@ -533,7 +533,7 @@ export class Prehravac {
       uzel = uzel.connect(s);
     }
     uzel.connect(g).connect(cil);
-    // Ticho na začátku souboru se přeskočí (změřené, otevřený bod 86); dlouhý zvuk se po maxS ztlumí.
+    // Ticho na začátku souboru se přeskočí (změřené, bod 86); dlouhý zvuk se po maxS ztlumí.
     const od = Math.min(Math.max(0, zacatek), Math.max(0, buffer.duration - 0.05));
     zdroj.start(0, od);
     let delka = (buffer.duration - od) / zdroj.playbackRate.value;

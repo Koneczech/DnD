@@ -1,4 +1,4 @@
-// Ucpané uši při málo HP a hudba z reproduktoru u stolu (rozhodnutí 67, otevřený bod 73).
+// Ucpané uši při málo HP a hudba z reproduktoru u stolu (rozhodnutí 67, bod 73).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';

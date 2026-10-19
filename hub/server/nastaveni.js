@@ -27,6 +27,7 @@ export const VYCHOZI = Object.freeze({
   II_RELACE: '',
   HP_SVETLA: '1',
   FREESOUND_KLIC: '',
+  OBSIDIAN_TREZOR: '',
 });
 
 /** Klíče, jejichž hodnoty jsou tajné: nikdy neopustí server a hook je hlídá v commitech. */
@@ -128,6 +129,8 @@ export class Nastaveni {
       iiRelaceNastavena: Boolean(this.hodnoty.II_RELACE),
       // Zvuková sada (bod 86): klíč Freesound nikdy, jen jestli je vložený.
       freesoundNastaven: Boolean(this.hodnoty.FREESOUND_KLIC),
+      // Odkaz Otevřít v Obsidianu (bod 101): prázdné = jméno složky repa.
+      obsidianTrezor: this.hodnoty.OBSIDIAN_TREZOR || '',
     };
   }
 
@@ -208,6 +211,11 @@ export class Nastaveni {
       nove.FREESOUND_KLIC = k;
     }
     if (z.smazatFreesoundKlic) nove.FREESOUND_KLIC = '';
+    if (z.obsidianTrezor !== undefined) {
+      const t = String(z.obsidianTrezor).trim();
+      if (t.length > 120 || /[\0-\x1f]/.test(t)) throw Object.assign(new Error('Jméno trezoru Obsidianu je příliš dlouhé nebo obsahuje neplatné znaky.'), { status: 400 });
+      nove.OBSIDIAN_TREZOR = t;
+    }
     await zapsatAtomicky(this.cesta, slozitEnv(nove));
     this.hodnoty = nove;
     this.existuje = true;

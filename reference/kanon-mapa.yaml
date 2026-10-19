@@ -303,4 +303,5 @@ polozky:
   - { id: lurkwood, typ: misto, nazev: Lurkwood, skupina: mista, akce: ponechat, zdroj: "Blok 2 (src/places/Lurkwood)" }
   - { id: cesta, typ: misto, nazev: Cesta, skupina: mista, akce: ponechat, zdroj: "Blok 2" }
   - { id: tabor-lupicu, typ: misto, nazev: Tábor lupičů, skupina: mista, akce: ponechat, zdroj: "Blok 2 (rozhodnutí 37)" }
+  - { id: jeskyne-u-taboru, typ: misto, nazev: Jeskyně u tábora lupičů, skupina: mista, akce: ponechat, zdroj: "DM v chatu 19. 10. 2026 (zvuk místa)", poznamka: "Založeno kvůli zvuku; popis a ilustrace doplní DM." }
   - { id: priprava, typ: sezeni, nazev: Poznámky mimo sezení, skupina: sezeni, akce: ponechat, zdroj: "Hub (poznámky bez běžícího sezení)", cil: kampan/sezeni/priprava.md }

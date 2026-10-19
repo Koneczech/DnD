@@ -24,14 +24,16 @@ export const ZDROJE = Object.freeze(['freesound', 'openverse']);
 const POVOLENE_HOSTY = /(^|\.)(freesound\.org|wikimedia\.org|jamendo\.com|ccmixter\.org|openverse\.org|kenney\.nl)$/i;
 const PRIPONY = Object.freeze(['.mp3', '.ogg', '.opus', '.wav', '.flac']);
 const MAX_BAJTU = 40 * 1024 * 1024;
+/** Kategorie Openverse, které do hry nepatří (výslovnost slov, podcasty, audioknihy, zprávy). */
+const NEHERNI_KATEGORIE = new Set(['pronunciation', 'podcast', 'audiobook', 'news']);
 
 const chyba = (zprava, status = 400) => Object.assign(new Error(zprava), { status });
 
 /**
  * Položky sady z YAML. Klíč = cíl ve složce zvuku bez přípony (`nahodne/tabor/kun`, `vitezstvi`).
  * Hodnota: `hledat` (anglicky; text, nebo seznam náhradních dotazů), `delka: [od, do]` v sekundách,
- * `variant` (1 = jeden soubor, víc = `cil-1` …), volitelně `popis` (česky pro panel)
- * a `licence: [cc0, by]` (výchozí jen CC0).
+ * `variant` (1 = jeden soubor, víc = `cil-1` …), volitelně `popis` (česky pro panel),
+ * `licence: [cc0, by]` (výchozí jen CC0) a `druh: hudba` (hledá jen hudbu, ne zvukové efekty).
  * Nebo z balíčku: `balik: kenney/<balíček>` a `soubory: [jméno, …]` (jména v balíčku bez přípony;
  * počet souborů = počet variant).
  */
@@ -90,6 +92,7 @@ export function normalizujSadu(d) {
       variant: Number.isInteger(v) && v >= 1 ? Math.min(MAX_VARIANT, v) : 1,
       popis: typeof x.popis === 'string' ? x.popis.trim().slice(0, 80) : null,
       licence: licence.filter((l) => LICENCE.includes(l)).length ? licence.filter((l) => LICENCE.includes(l)) : ['cc0'],
+      ...(x.druh === 'hudba' ? { hudba: true } : {}),
     });
     if (polozky.length >= MAX_POLOZEK) break;
   }
@@ -123,11 +126,11 @@ export function idKandidata(x) {
 }
 
 /** Dotaz Freesoundu: licence z položky, délka v mezích, nejlépe hodnocené. */
-export function adresaHledani({ hledat, delka, licence = ['cc0'] }, klic, strana = 1) {
+export function adresaHledani({ hledat, delka, licence = ['cc0'], hudba = false }, klic, strana = 1) {
   const u = new URL(`${FREESOUND_API}/search/text/`);
   const lic = licence.map((l) => (l === 'by' ? '"Attribution"' : '"Creative Commons 0"'));
   u.searchParams.set('query', hledat);
-  u.searchParams.set('filter', `license:${lic.length > 1 ? `(${lic.join(' OR ')})` : lic[0]} duration:[${delka[0]} TO ${delka[1]}]`);
+  u.searchParams.set('filter', `license:${lic.length > 1 ? `(${lic.join(' OR ')})` : lic[0]} duration:[${delka[0]} TO ${delka[1]}]${hudba ? ' tag:music' : ''}`);
   // Podle shody s dotazem, ne podle hodnocení: hodnocení vynášelo dobře hodnocené, ale cizí zvuky
   // („battle ambience“ našlo vesmírnou loď).
   u.searchParams.set('sort', 'score');
@@ -252,12 +255,19 @@ export class Openverse extends Zdroj {
           zdroj: `Openverse (${String(x.source ?? x.provider ?? '?').slice(0, 30)})`,
           velikost: x.filesize ?? null,
           licenceKod: String(x.license ?? '').toLowerCase(),
+          kategorie: String(x.category ?? '').toLowerCase(),
+          ceho: String(x.source ?? x.provider ?? '').toLowerCase(),
         };
       })
       .filter((k) => k.nahled && k.pripona && k.delka !== null && k.delka >= od && k.delka <= do_)
+      // Výslovnost slov (Wikimedia, Lingua Libre „LL-Q…“), podcasty a audioknihy nejsou zvuky do hry:
+      // „bagpipe“ jinak najde člověka, který vyslovuje slovo bagpiper.
+      .filter((k) => !NEHERNI_KATEGORIE.has(k.kategorie) && !/^LL-Q\d/.test(k.nazev))
+      // Položka s `druh: hudba` chce hudbu: kategorie music, nebo hudební úložiště (Jamendo, ccMixter).
+      .filter((k) => !polozka.hudba || k.kategorie === 'music' || /jamendo|ccmixter/.test(k.ceho))
       .filter((k) => !k.velikost || k.velikost <= MAX_BAJTU)
       .filter((k) => k.licenceKod === 'pdm' || polozka.licence.includes(k.licenceKod))
-      .map(({ velikost, licenceKod, ...k }) => k);
+      .map(({ velikost, licenceKod, kategorie, ceho, ...k }) => k);
   }
 }
 

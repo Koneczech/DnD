@@ -1,0 +1,5 @@
+# Start: scéna Start v OBS (úvodní obrazovka a odpočet před hrou). Dokud OBS ukazuje scénu Start,
+# hraje jen tahle hudba; zvuk místa a počasí mlčí (⚠ návrh, DM 19. 10. 2026). Světla řídí místo a odpočet.
+# Playlist = složka ve složce zvuku zakončená lomítkem: hrají všechny skladby v ní v náhodném pořadí.
+zvuk:
+  hudba: hudba/start/

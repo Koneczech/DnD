@@ -3430,7 +3430,10 @@ function prehratUkazku(soubor, tlacitko) {
     ukazka = null;
     if (stejne) return;
   }
-  const a = new Audio(`/audio/${soubor.split('/').map(encodeURIComponent).join('/')}`);
+  // Playlist (složka): ukázka zahraje první skladbu z něj.
+  const skutecny = soubor.endsWith('/') ? (stav.zvukoveSoubory ?? []).find((x) => x.toLowerCase().startsWith(soubor.toLowerCase())) : soubor;
+  if (!skutecny) return toast('Playlist je zatím prázdný.', { chyba: true });
+  const a = new Audio(`/audio/${skutecny.split('/').map(encodeURIComponent).join('/')}`);
   a.volume = 0.8;
   a.play().catch((e) => toast(`Ukázka nehraje: ${e.message}`, { chyba: true }));
   a.addEventListener('ended', () => prehratUkazku(soubor, tlacitko));
@@ -3481,6 +3484,12 @@ function vykresliZvukMista(m) {
   const soubory = stav.zvukoveSoubory ?? [];
   // Hrom hraje Hub sám po blesku, do hudby ani ambientu místa nepatří (⚠ návrh).
   const bezEfektu = soubory.filter((x) => !x.startsWith('efekty/') && !x.startsWith('nahodne/') && !/^hrom/i.test(kmenZvuku(x)));
+  // Playlisty: složky se skladbami pod hudba/ (hudba/souboj/ …). Vybírají se jen pro hudbu.
+  const playlisty = new Map();
+  for (const f of soubory.filter((x) => x.startsWith('hudba/') && x.includes('/', 6))) {
+    const slozka = `${f.split('/').slice(0, 2).join('/')}/`;
+    playlisty.set(slozka, (playlisty.get(slozka) ?? 0) + 1);
+  }
   const ulozitZvuk = async (cesta, telo, hlaseni) => {
     const vysledek = $('#misto-zvuk-vysledek');
     try {
@@ -3523,14 +3532,23 @@ function vykresliZvukMista(m) {
     radek.append(Object.assign(document.createElement('strong'), { textContent: NAZVY[varianta] }));
     const kdy = varianta;
     for (const [k, popis] of [['hudba', 'Hudba'], ['ambient', 'Ambient']]) {
-      const aktualni = m.zvuk?.[varianta]?.[k] ?? '';
+      const hodnota = m.zvuk?.[varianta]?.[k] ?? '';
+      // Seznam (víc playlistů nebo souborů) jde zapsat jen v datech; tady se ukáže jako jedna volba.
+      const aktualni = Array.isArray(hodnota) ? hodnota.join(' + ') : hodnota;
       const label = document.createElement('label');
       label.textContent = popis;
       const select = document.createElement('select');
-      const moznosti = [...new Set([...bezEfektu, ...(aktualni ? [aktualni] : [])])];
+      const souboryVolby = k === 'hudba' ? bezEfektu.filter((x) => !x.startsWith('hudba/') || !x.includes('/', 6)) : bezEfektu;
+      const moznosti = [...new Set([...souboryVolby, ...(aktualni && !playlisty.has(aktualni) ? [aktualni] : [])])];
       // Souboj bez vlastní volby: hudba souboje z kampan/sceny/rezim/souboj.yaml, ambient místa ztlumený.
       const prazdna = varianta === 'souboj' ? (k === 'hudba' ? '— hudba souboje —' : '— ambient místa, ztlumený —') : varianta === 'noc' && m.zvuk?.den?.[k] ? '— jako ve dne —' : '— žádná —';
-      select.append(new Option(prazdna, ''), ...moznosti.map((x) => new Option(soubory.includes(x) || soubory.some((y) => kmenZvuku(y) === kmenZvuku(x)) ? x : `${x} (ve složce chybí)`, x)));
+      select.append(new Option(prazdna, ''));
+      if (k === 'hudba' && playlisty.size) {
+        const skupina = Object.assign(document.createElement('optgroup'), { label: 'Playlisty (složky v hudba/)' });
+        skupina.append(...[...playlisty].map(([slozka, n]) => new Option(`📁 ${slozka} (${n} ${n === 1 ? 'skladba' : n < 5 ? 'skladby' : 'skladeb'})`, slozka)));
+        select.append(skupina);
+      }
+      select.append(...moznosti.map((x) => new Option(x.endsWith('/') ? `📁 ${x} (prázdný)` : x.includes(' + ') || soubory.includes(x) || soubory.some((y) => kmenZvuku(y) === kmenZvuku(x)) ? x : `${x} (ve složce chybí)`, x)));
       select.value = aktualni;
       select.addEventListener('change', () => ulozitZvuk(`/api/mista/${m.id}/zvuk/${varianta}`, { [k]: select.value || null }, `${popis} pro ${kdy} uložen${k === 'hudba' ? 'a' : ''}`));
       const prehrat = document.createElement('button');

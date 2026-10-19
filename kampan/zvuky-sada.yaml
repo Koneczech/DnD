@@ -8,41 +8,67 @@
 # balik: kenney/<balíček> + soubory: [jména v balíčku] = zvuky z balíčku Kenney (CC0); ZIP se stáhne
 # jednou do složky zvuku (baliky/) a dál se pracuje lokálně.
 # Hlasitost se neřeší: Hub soubory změří a srovná (Nastavení → Zvuk → Srovnání hlasitosti).
+# druh: hudba = hledá jen hudbu (Jamendo, ccMixter, hudba na Freesoundu), ne zvukové efekty.
+# Playlist (hudba/souboj/ …) = složka: Hub stáhne N skladeb, další můžeš do složky přidat ručně.
 schema: 1
 
 zvuky:
-  # Souboj: konec a poplach
-  vitezstvi: { hledat: medieval fanfare trumpet, delka: [3, 15], popis: Vítězná fanfára (Konec souboje) }
-  smycky/poplasny-zvon: { hledat: bell ringing alarm, delka: [8, 60], popis: Poplašný zvon (soundboard, sám skončí po 20 s) }
+  # Hudba: playlisty (složky). Licence i CC BY: hudba bez ní skoro není; na soukromé hraní stačí.
+  hudba/start/start: { druh: hudba, hledat: [medieval fantasy music, celtic folk instrumental, medieval lute music, fantasy adventure music], delka: [90, 480], variant: 4, licence: [cc0, by], popis: Úvodní hudba (scéna Start) }
+  hudba/souboj/boj: { druh: hudba, hledat: [epic battle music, fantasy battle music, orchestral battle music, epic medieval battle], delka: [90, 480], variant: 5, licence: [cc0, by], popis: Bojová hudba (playlist souboje) }
+  hudba/longsaddle/longsaddle: { druh: hudba, hledat: [medieval tavern music, celtic folk instrumental, renaissance lute, medieval village music], delka: [90, 480], variant: 4, licence: [cc0, by], popis: Hudba Longsaddle }
+  hudba/divocina/divocina: { druh: hudba, hledat: [fantasy forest music, celtic ambient music, mysterious forest music, medieval travel music], delka: [90, 480], variant: 4, licence: [cc0, by], popis: Hudba divočiny (tábor lupičů) }
+  hudba/jeskyne/jeskyne: { druh: hudba, hledat: [dark ambient music, dungeon music, dark fantasy music, cave ambient music], delka: [90, 480], variant: 3, licence: [cc0, by], popis: Temná hudba (jeskyně) }
+
+  # Souboj: konec a poplach. Konec = jeden úder bubnu, dozvuk jeskyně přidá Hub sám.
+  konec/buben: { hledat: [taiko drum hit, big drum hit, war drum single hit, bass drum boom], delka: [0.8, 6], variant: 3, popis: Úder bubnu při Konci souboje }
+  smycky/poplasny-zvon: { hledat: [church bell ringing, bell tower ringing, alarm bell ringing, handbell ringing], delka: [8, 60], popis: Poplašný zvon (soundboard, sám skončí po 20 s) }
 
   # Zvuky na tah (kampan/zvuky.yaml): krátké, Hub je po 2,5 s ztlumí
   tahy/tusker: { hledat: [war drum hit, tribal drum hit, big drum hit, taiko drum], delka: [0.3, 3], popis: Tusker }
-  tahy/koudur: { hledat: [bagpipe, bagpipes, bagpipe drone, bagpipe note], delka: [0.5, 6], popis: Koudur (dudy) }
+  tahy/koudur: { hledat: [bagpipes, bagpipe, bagpipe drone, bagpipe note], delka: [0.5, 15], licence: [cc0, by], popis: Koudur (dudy; Hub ho po 2,5 s ztlumí) }
   tahy/leta: { hledat: dagger unsheathe, delka: [0.3, 3], popis: Leta }
   tahy/alba: { hledat: [magic nature chime, wind chimes, magic sparkle, chimes], delka: [0.5, 4], popis: Alba }
   tahy/malk: { hledat: sword unsheathe, delka: [0.3, 3], popis: Malk Orren }
   tahy/nepritel: { hledat: deep drum impact, delka: [0.3, 3], popis: Společný zvuk nepřátel }
-  tahy/srdce: { hledat: heartbeat, delka: [1, 4], popis: Tlukot srdce (tag Unconscious, zatím nezapojený) }
+  tahy/srdce: { hledat: heartbeat, delka: [1, 4], popis: Tlukot srdce (tag Unconscious) }
 
   # Tábor lupičů mimo boj: ambient a náhodné zvuky
-  tabor-ohen: { hledat: [campfire crackling, campfire, fire crackling], delka: [60, 600], popis: Ambient tábora (oheň) }
+  tabor-ohen: { hledat: [campfire crackling, campfire, fire crackling, bonfire crackling], delka: [60, 600], popis: Ambient tábora (oheň) }
   nahodne/tabor/kun: { hledat: horse whinny, delka: [1, 6], variant: 3, popis: Kůň }
   nahodne/tabor/kovadlina: { hledat: anvil hammer strike, delka: [0.5, 5], variant: 3, popis: Kovadlina }
   nahodne/tabor/krkavec: { hledat: raven call, delka: [0.5, 4], variant: 3, popis: Krkavec }
   nahodne/tabor/drevo: { hledat: wood chopping axe, delka: [0.5, 4], variant: 3, popis: Sekání dřeva }
-  smycky/tabor/hori: { hledat: large fire burning, delka: [20, 300], popis: Požár (stav Hoří, soundboard) }
+  smycky/tabor/hori: { hledat: [large fire burning, house fire burning, bonfire roaring, fire burning loop], delka: [20, 300], popis: Požár (stav Hoří, soundboard) }
+
+  # Tábor lupičů v noci a Longsaddle v noci
+  nahodne/noc/sova: { hledat: [owl hoot, tawny owl, owl call], delka: [0.5, 5], variant: 3, popis: Sova }
+  nahodne/noc/vlk: { hledat: [wolf howl distant, wolf howl, wolves howling], delka: [2, 10], variant: 2, popis: Vytí vlka v dálce }
 
   # Tábor lupičů v souboji: ambient a náhodné zvuky
-  tabor-bitva: { hledat: [medieval battle ambience, battle ambience, sword battle crowd, war battle], delka: [30, 600], popis: Ambient bitvy }
+  tabor-bitva: { hledat: [medieval battle ambience, sword battle ambience, battle crowd swords, army battle ambience], delka: [30, 600], popis: Ambient bitvy }
   nahodne/boj/rinceni: { hledat: sword clash, delka: [0.3, 3], variant: 4, popis: Řinčení zbraní }
   nahodne/boj/sip: { hledat: arrow whoosh impact, delka: [0.3, 3], variant: 3, popis: Šípy }
-  nahodne/boj/pokrik: { hledat: [war cry shout, battle cry, war cry, warrior shout, man yelling], delka: [0.5, 3], variant: 3, popis: Válečný pokřik }
+  nahodne/boj/pokrik: { hledat: [battle cry, war cry, warrior shout, medieval war cry, viking shout], delka: [0.5, 3], variant: 3, popis: Válečný pokřik }
+
+  # Longsaddle (vesnice na Long Road). Kůň a kovadlina jsou společné s táborem.
+  longsaddle-den: { hledat: [medieval village ambience, village ambience birds, rural village ambience, small village day ambience], delka: [60, 600], popis: Ambient Longsaddle ve dne }
+  longsaddle-noc: { hledat: [village night ambience crickets, night crickets countryside, summer night ambience], delka: [60, 600], popis: Ambient Longsaddle v noci }
+  nahodne/mesto/pes: { hledat: [dog bark distant, dog barking, dog barking outside], delka: [0.5, 4], variant: 3, popis: Pes }
+  nahodne/mesto/povoz: { hledat: [horse cart wooden wheels, horse carriage passing, horse cart], delka: [3, 15], variant: 2, popis: Povoz s koněm }
+  nahodne/longsaddle/kouzlo: { hledat: [magic spell whoosh, magic sparkle burst, magic zap], delka: [0.5, 4], variant: 3, popis: Kouzlo od Harpellů }
+
+  # Jeskyně u tábora: dozvuk jeskyně přidá Hub sám
+  jeskyne-kapani: { hledat: [cave ambience water drips, cave ambience, underground cave dripping, cave dripping water], delka: [60, 600], popis: Ambient jeskyně (kapání) }
+  nahodne/jeskyne/kapka: { hledat: [water drip cave, water drop echo, water drip], delka: [0.2, 3], variant: 4, popis: Kapka vody }
+  nahodne/jeskyne/netopyri: { hledat: [bats flapping, bat wings flutter, bats flying], delka: [1, 6], variant: 2, popis: Netopýři }
+  nahodne/jeskyne/kaminky: { hledat: [pebbles falling, small rocks falling, gravel falling], delka: [0.5, 4], variant: 3, popis: Padající kamínky }
 
   # Soundboard
   jednorazove/boj/mec: { hledat: sword hit, delka: [0.2, 2], variant: 3, popis: Úder mečem }
   jednorazove/boj/stit: { balik: kenney/impact-sounds, soubory: [impactPlank_medium_000, impactPlank_medium_001, impactWood_heavy_000], popis: Rána do dřevěného štítu }
-  jednorazove/zvirata/vlk-vroceni: { hledat: wolf growl, delka: [1, 5], variant: 2, popis: Vrčení vlka (Alba) }
-  jednorazove/zvirata/medved-rev: { hledat: bear roar, delka: [1, 5], variant: 2, popis: Řev medvěda (Alba) }
+  jednorazove/zvirata/vlk-vroceni: { hledat: [wolf growl, wolf snarl, wolf growling], delka: [1, 5], variant: 2, popis: Vrčení vlka (Alba ve zlovlčí podobě) }
+  jednorazove/zvirata/medved-rev: { hledat: [bear roar, bear growl, grizzly bear roar], delka: [1, 5], variant: 2, popis: Řev medvěda (Alba v medvědí podobě) }
 
   # Soundboard z balíčků Kenney (CC0): dveře, předměty, boj
   jednorazove/predmety/dvere-otevrit: { balik: kenney/rpg-audio, soubory: [doorOpen_1, doorOpen_2], popis: Otevření dveří }

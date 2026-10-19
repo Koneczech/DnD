@@ -37,11 +37,13 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Málo HP: lampa i hlavní světlo pulzují červeně | ◐ |
 | **Souboj** | Improved Initiative v záložce (Epic účet přes Hub), Player View hlídaný Hubem | ✓ |
 | | Animace zásahu (velký zásah, rozpad poražených, šedé karty) | ◐ |
-| | Zvuky na tah podle postavy a podoby Alby | ◐ |
+| | Zvuky na tah podle postavy a podoby Alby, živě bez zpoždění (spojení jako Player View) | ◐ |
 | **Zvuk** | Hudba, ambient a efekty do BT reproduktoru, Ticho, ucpané uši při málo HP | ✓ |
 | | Soundboard s variantami, smyčky, klávesy 1–9 | ◐ |
 | | Náhodné zvuky, vzdálenost, dozvuk, vlastní zvuk místa v souboji | ◐ |
-| | Zvuková sada: Freesound, Openverse, balíčky Kenney, Vyměnit a ↻ | ◐ |
+| | Playlisty hudby (složka = playlist), hudba scény Start, konec souboje bubnem v dozvuku | ◐ |
+| | Zvuk míst Longsaddle, Tábor lupičů (den i noc) a Jeskyně u tábora | ◐ |
+| | Zvuková sada: Freesound, Openverse, balíčky Kenney, hudba, Vyměnit a ↻ | ◐ |
 | | Srovnání hlasitosti a přeskočení ticha na začátku | ◐ |
 | **Údržba** | Aktualizovat jedním tlačítkem, restart sám, Kontrola dat, Záznam událostí | ◐ |
 | **Kánon** (Blok 3) | Příprava převodu: audit zdrojů, mapa převodu, šablony, report `npm run kanon` | ◐ |
@@ -59,8 +61,9 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 1. **Vyzkoušet u stolu** všechno označené ◐ (sezení 3, tábor lupičů). Návrhy v `ZADANI.md` DM potvrdil 19. 10.; co u stolu nefunguje, se opraví.
 2. **Zjednodušit Kontrolu dat:** chybějící zvuky v jednom řádku s tlačítkem Doplnit, chyby nahoře.
 3. **Zvuk u stolu po restartu:** ověřit, jestli prohlížeč chce kliknutí; když ano, otevírat ho v samostatném okně.
-4. **Blok 3 Kánon:** rozpory R1–R16 jsou rozhodnuté (19. 10.). DM zazálohuje Notion, pak převod po skupinách podle `reference/kanon-prevod.md` (včetně návrhů vztahů). Modul Kánon s mapou je hotový (◐), vyzkoušet ho a doplnit Družina zná u entit a vztahů. Zápis sezení 2 vznikne z přepisu nahrávky, kterou DM dodá.
-5. **Verze 2.**
+4. **Zvuk před sezením 3:** stáhnout sadu (Nastavení → Zvuk → Doplnit chybějící zvuky), vyměnit zvuky, které vyšly špatně, a poslechnout playlisty. Nápad **Spotify** (hudba ze Spotify místo složky) čeká na rozhodnutí DM: chce Premium a vlastní aplikaci u Spotify.
+5. **Blok 3 Kánon:** rozpory R1–R16 jsou rozhodnuté (19. 10.). DM zazálohuje Notion, pak převod po skupinách podle `reference/kanon-prevod.md` (včetně návrhů vztahů). Modul Kánon s mapou je hotový (◐), vyzkoušet ho a doplnit Družina zná u entit a vztahů. Zápis sezení 2 vznikne z přepisu nahrávky, kterou DM dodá.
+6. **Verze 2.**
 
 ## Vědomě vynecháno
 

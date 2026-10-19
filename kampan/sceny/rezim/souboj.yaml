@@ -3,5 +3,10 @@ svetla:
   hlavni: { barva: [255, 90, 60], jas: 45 }
   lampa: { wiz_scena: fireplace, rychlost: 80 }
 obs_role: souboj
-# konec: vítězná fanfára při Konci souboje (tlačítko Konec bez fanfáry ji vynechá)
-zvuk: { hudba: souboj.mp3, konec: vitezstvi.mp3 }
+# Hudba: playlist. Původní souboj.mp3 a všechny skladby ve složce hudba/souboj/ v náhodném pořadí,
+# takže ani hodinový souboj nehraje pořád dokola jednu písničku (DM 19. 10. 2026).
+# Konec souboje: místo fanfáry jeden úder bubnu v dozvuku jeskyně a bojová hudba pod ním za 6 s dozní.
+# Tlačítko Konec potichu buben vynechá (útěk, prohra). konec/buben = varianty buben-1, buben-2 …
+zvuk:
+  hudba: [souboj.mp3, hudba/souboj/]
+  konec: { zvuk: konec/buben, dozvuk: jeskyne, prolnuti_s: 6 }

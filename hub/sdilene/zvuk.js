@@ -8,6 +8,10 @@ import { odebirat } from '/sdilene/zive.js';
 
 const PROLNUTI_SMYCKY_S = 3;
 const KRATKA_SMYCKA_S = 8;
+/** Playlist: další skladba naběhne tolik sekund před koncem předchozí (prolnutí skladeb). */
+const PROLNUTI_SKLADEB_S = 4;
+/** Kolik dekódovaných krátkých zvuků drží stránka v paměti (zvuky tahů, soundboard, hromy). */
+const MAX_BUFFERU = 60;
 
 /**
  * Vzdálenost zvuku (bod 85): 0 = u stolu, 1 = hodně daleko. Vzdálený zvuk je tišší a tupější
@@ -159,6 +163,157 @@ class Smycka {
   }
 }
 
+/**
+ * Playlist hudby: skladby ze složky (`hudba/souboj/`) v náhodném pořadí, každá jednou, než se
+ * začne znovu (a nová runda nezačne skladbou, která právě dohrála). Kousek před koncem skladby
+ * naběhne další a obě se prolnou, takže hudba nikdy neztichne. Hraje jako Smycka (dva prvky <audio>),
+ * každá skladba má vlastní zesílení ze srovnání hlasitosti.
+ */
+export class Playlist {
+  constructor(ctx, cil, { soubor, skladby }, priChybe) {
+    this.ctx = ctx;
+    this.soubor = soubor;
+    this.priChybe = priChybe;
+    this.skladby = skladby;
+    this.url = Playlist.klic(skladby);
+    this.vystup = ctx.createGain();
+    this.vystup.gain.value = 0;
+    // Stejné rozhraní jako Smycka: vzdálenost se u hudby nepoužívá, ale Vrstvy ji nastavují.
+    this.vzdalenost = new Vzdalenost(ctx, 0);
+    this.vystup.connect(this.vzdalenost.vstup);
+    this.vzdalenost.vystup.connect(cil);
+    this.prvky = [0, 1].map(() => {
+      const a = new Audio();
+      a.preload = 'auto';
+      const g = ctx.createGain();
+      g.gain.value = 0;
+      ctx.createMediaElementSource(a).connect(g).connect(this.vystup);
+      a.addEventListener('error', () => {
+        if (this.zastaveno || !a.getAttribute('src')) return;
+        this.priChybe?.(`Skladba ${a.dataset.soubor ?? ''} se nepodařilo přehrát.`);
+        // Rozbitá skladba nesmí zastavit hudbu: rovnou další.
+        if (a === this.prvky[this.aktivni].a) this.dalsi(0.5);
+      });
+      return { a, g, zisk: 1 };
+    });
+    this.aktivni = 0;
+    this.poradi = [];
+    this.posledni = null;
+    this.prechod = false;
+    this.zastaveno = false;
+    this.casovac = setInterval(() => this.hlidat(), 200);
+  }
+
+  /** Otisk seznamu skladeb (změna = nová skladba ve složce). */
+  static klic(skladby) {
+    return skladby.map((x) => x.url).join('|');
+  }
+
+  get hraje() {
+    return !this.zastaveno && this.prvky.some((p) => !p.a.paused);
+  }
+
+  /** Další skladba v náhodném pořadí, každá jednou za kolo. */
+  vybrat() {
+    if (!this.poradi.length) {
+      this.poradi = this.skladby.map((_, i) => i);
+      for (let i = this.poradi.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [this.poradi[i], this.poradi[j]] = [this.poradi[j], this.poradi[i]];
+      }
+      // Nové kolo nezačne skladbou, která právě dohrála.
+      if (this.poradi.length > 1 && this.skladby[this.poradi[0]]?.url === this.posledni) this.poradi.push(this.poradi.shift());
+    }
+    const x = this.skladby[this.poradi.shift()] ?? this.skladby[0];
+    this.posledni = x.url;
+    return x;
+  }
+
+  nacist(p, x) {
+    p.a.src = x.url;
+    p.a.dataset.soubor = x.soubor;
+    p.zisk = x.zisk ?? 1;
+    p.a.currentTime = 0;
+  }
+
+  async spustit() {
+    const p = this.prvky[0];
+    this.nacist(p, this.vybrat());
+    p.g.gain.setValueAtTime(p.zisk, this.ctx.currentTime);
+    await p.a.play();
+    this.spustena = true;
+  }
+
+  /** Seznam skladeb se změnil (nová skladba ve složce): hraje dál, novinka přijde v dalším kole. */
+  aktualizovat(skladby) {
+    this.skladby = skladby;
+    this.url = Playlist.klic(skladby);
+    this.poradi = this.poradi.filter((i) => i < skladby.length);
+  }
+
+  /** Prolne na další skladbu za `s` sekund. */
+  dalsi(s = PROLNUTI_SKLADEB_S) {
+    if (this.zastaveno || this.prechod) return;
+    this.prechod = true;
+    const p = this.prvky[this.aktivni];
+    const q = this.prvky[1 - this.aktivni];
+    this.nacist(q, this.vybrat());
+    q.a.play().catch(() => {});
+    const t = this.ctx.currentTime;
+    q.g.gain.cancelScheduledValues(t);
+    q.g.gain.setValueAtTime(0, t);
+    q.g.gain.linearRampToValueAtTime(q.zisk, t + s);
+    p.g.gain.cancelScheduledValues(t);
+    p.g.gain.setValueAtTime(p.g.gain.value, t);
+    p.g.gain.linearRampToValueAtTime(0, t + s);
+    setTimeout(() => {
+      p.a.pause();
+      this.aktivni = 1 - this.aktivni;
+      this.prechod = false;
+    }, s * 1000 + 150);
+  }
+
+  hlidat() {
+    if (this.zastaveno || this.prechod) return;
+    const p = this.prvky[this.aktivni];
+    if (p.a.ended) return this.dalsi(0.3);
+    if (p.a.paused) {
+      if (this.spustena && performance.now() - (this.posledniOziveni ?? 0) > 2000) {
+        this.posledniOziveni = performance.now();
+        p.a.play().catch(() => {});
+      }
+      return;
+    }
+    const d = p.a.duration;
+    if (!Number.isFinite(d)) return;
+    const x = Math.min(PROLNUTI_SKLADEB_S, d / 4);
+    if (d - p.a.currentTime <= x) this.dalsi(x);
+  }
+
+  hlasitost(v, ms) {
+    const t = this.ctx.currentTime;
+    const g = this.vystup.gain;
+    g.cancelScheduledValues(t);
+    g.setValueAtTime(g.value, t);
+    g.linearRampToValueAtTime(v, t + ms / 1000);
+  }
+
+  zastavit(ms) {
+    this.zastaveno = true;
+    this.hlasitost(0, ms);
+    setTimeout(() => {
+      clearInterval(this.casovac);
+      for (const { a } of this.prvky) {
+        a.pause();
+        a.removeAttribute('src');
+        a.load();
+      }
+      this.vystup.disconnect();
+      this.vzdalenost.vystup.disconnect();
+    }, ms + 100);
+  }
+}
+
 /** Sada smyček, které mají hrát současně (ambient místa + počasí, nebo jedna hudba). */
 export class Vrstvy {
   constructor(ctx, cil, priChybe) {
@@ -178,20 +333,30 @@ export class Vrstvy {
     }
     for (const [soubor, x] of chci) {
       // Srovnání hlasitosti (bod 86): `zisk` dorovná soubor na výchozí hladinu svého druhu.
-      const cil = (x.hlasitost ?? 1) * (x.zisk ?? 1);
+      // U playlistu má zisk každá skladba zvlášť.
+      const cil = (x.hlasitost ?? 1) * (x.playlist ? 1 : x.zisk ?? 1);
       let jiz = this.smycky.get(soubor);
-      // Soubor se vyměnil (jiný otisk v adrese): stará smyčka doběhne, nová naběhne.
-      if (jiz && x.url && jiz.url !== x.url) {
+      if (jiz && x.playlist && jiz instanceof Playlist) {
+        // Playlist hraje dál; nová nebo vyměněná skladba ve složce přijde na řadu sama.
+        if (jiz.url !== Playlist.klic(x.skladby)) jiz.aktualizovat(x.skladby);
+      } else if (jiz && (Boolean(x.playlist) !== jiz instanceof Playlist || (x.url && jiz.url !== x.url))) {
+        // Soubor se vyměnil (jiný otisk v adrese): stará smyčka doběhne, nová naběhne.
         jiz.zastavit(prolnutiMs);
         this.smycky.delete(soubor);
         jiz = null;
       }
       if (jiz) {
-        jiz.hlasitost(cil, 600);
+        // Hlasitost jen při skutečné změně: jinak by každé nové hlášení Hubu (měření, soubory)
+        // zkrátilo právě běžící pomalé prolnutí (konec souboje).
+        if (jiz.cil !== cil) {
+          jiz.cil = cil;
+          jiz.hlasitost(cil, 600);
+        }
         jiz.vzdalenost.nastavit(x.vzdalenost ?? 0);
         continue;
       }
-      const s = new Smycka(this.ctx, this.cil, x, this.priChybe);
+      const s = x.playlist ? new Playlist(this.ctx, this.cil, x, this.priChybe) : new Smycka(this.ctx, this.cil, x, this.priChybe);
+      s.cil = cil;
       this.smycky.set(soubor, s);
       // Prolnutí začne až s prvním zvukem nové smyčky: stará mezitím dohrává, ticho nevznikne.
       // AbortError („play() interrupted by pause()“): přehrávání přerušil prohlížeč (přepnutí výstupu,
@@ -337,6 +502,24 @@ export class Dozvuk {
     this.vstup.connect(this.konvoluce).connect(this.mokry).connect(this.vystup);
     this.prostor = 'zadny';
     this.casovac = null;
+  }
+
+  /**
+   * Prostor hned, bez prolnutí: pro jednorázový zvuk, který má zaznít rovnou v dozvuku (úder konce
+   * souboje). `sila` násobí podíl dozvuku (dramatický úder chce víc ozvěny než soundboard).
+   */
+  nastavitHned(nazev, sila = 1) {
+    const p = Dozvuk.PROSTORY[nazev];
+    this.prostor = p ? nazev : 'zadny';
+    clearTimeout(this.casovac);
+    const t = this.ctx.currentTime;
+    this.mokry.gain.cancelScheduledValues(t);
+    if (!p) {
+      this.mokry.gain.setValueAtTime(0, t);
+      return;
+    }
+    this.konvoluce.buffer = Dozvuk.odezva(this.ctx, nazev);
+    this.mokry.gain.setValueAtTime(Math.min(0.7, p.mokry * sila), t);
   }
 
   /** Plynule přepne prostor: dozvuk starého doběhne, nový naběhne. */
@@ -500,7 +683,7 @@ export class Prehravac {
     if (!buffer) {
       const data = await (await fetch(url)).arrayBuffer();
       buffer = await this.ctx.decodeAudioData(data);
-      if (this.buffery.size > 30) this.buffery.delete(this.buffery.keys().next().value);
+      if (this.buffery.size > MAX_BUFFERU) this.buffery.delete(this.buffery.keys().next().value);
       this.buffery.set(url, buffer);
     }
     const zdroj = this.ctx.createBufferSource();
@@ -545,6 +728,22 @@ export class Prehravac {
       delka = maxS;
     }
     return delka;
+  }
+
+  /**
+   * Načte a dekóduje zvuky předem (zvuky tahů během souboje): první přehrání pak nečeká na síť
+   * ani dekódování. Načítá postupně, ať nezdrží hraní.
+   */
+  async predNacist(urls = []) {
+    for (const url of urls) {
+      if (this.buffery.has(url)) continue;
+      try {
+        const data = await (await fetch(url)).arrayBuffer();
+        if (!this.buffery.has(url)) this.buffery.set(url, await this.ctx.decodeAudioData(data));
+      } catch {
+        /* chybu ohlásí až skutečné přehrání */
+      }
+    }
   }
 
   /** Zkušební tón bez souboru: tři stoupající tóny. */

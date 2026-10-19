@@ -22,11 +22,12 @@ tahy:
     Malk Orren: tahy/malk
     Alba:
       vychozi: tahy/alba
-      # Divoká podoba: DM přidá Albě v Improved Initiative viditelný tag s názvem podoby.
-      # Doplň podle Albiných známých podob, např.:
-      # podle_tagu:
-      #   Vlk: zvirata/vlk-vyti
-  # Tagy pro kohokoli na tahu, např. tlukot srdce u postavy v bezvědomí:
-  # tagy:
-  #   Unconscious: tahy/srdce
+      # Divoká podoba: DM přidá Albě v Improved Initiative viditelný tag s názvem podoby
+      # (stejně jako varianty portrétu: medved, zlovlk). Na velikosti písmen nezáleží.
+      podle_tagu:
+        medved: zvirata/medved-rev
+        zlovlk: zvirata/vlk-vroceni
+  # Tagy pro kohokoli na tahu: postava v bezvědomí (tag Unconscious v Improved Initiative) má tlukot srdce.
+  tagy:
+    Unconscious: tahy/srdce
   nepratele: tahy/nepritel

@@ -10,7 +10,7 @@ vazby: ["[[kruh]]", "[[tabor-kruhu]]", "[[novacek-kruhu]]", "[[lurkwood]]", "[[h
 vztahy:
   - { s: "[[novacek-kruhu]]", popis: "nováčci, kteří přivezli zajatce; považuje to za průšvih" }
   - { s: "[[kruh]]", popis: "buňka, ve které rozhoduje" }
-tags: [aktualni]
+tags: []
 ilustrace:
   - { soubor: /monsters/torva.png, ucel: portret }
 zdroj: https://app.notion.com/p/3c89ed226736817f8a77fc1a9dc59199

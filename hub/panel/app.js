@@ -1,6 +1,7 @@
 // Ovládací panel DM Hubu. Bez build kroku, čistý JavaScript.
 import { Harptos, MESICE, SVATKY, dnyText, zbyvaText } from '/sdilene/harptos.js';
 import { odebirat } from '/sdilene/zive.js';
+import { vytvoritKanon } from '/panel/kanon.js';
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -74,7 +75,17 @@ function cas() {
 const PRESMEROVANI = { odpocet: ['sceny', 'start'] };
 
 function ukazObrazovku(jmeno) {
-  const platne = ['prehled', 'sceny', 'kalendar', 'mista', 'obchody', 'dilna', 'kontrola', 'nastaveni'];
+  const platne = ['prehled', 'sceny', 'kanon', 'kalendar', 'mista', 'obchody', 'dilna', 'kontrola', 'nastaveni'];
+  // #kanon/<id>: Kánon s vybranou entitou (odkazy z hledání a z textu karet).
+  let entita;
+  if (jmeno.startsWith('kanon/')) {
+    try {
+      entita = decodeURIComponent(jmeno.slice(6));
+    } catch {
+      entita = '';
+    }
+    jmeno = 'kanon';
+  } else if (jmeno === 'kanon') entita = undefined;
   if (PRESMEROVANI[jmeno]) {
     stav.stulVyber = PRESMEROVANI[jmeno][1];
     jmeno = PRESMEROVANI[jmeno][0];
@@ -93,6 +104,8 @@ function ukazObrazovku(jmeno) {
     else a.removeAttribute('aria-current');
   }
   if (cil === 'nastaveni') ukazKategorii(KATEGORIE_KOTVY[kotva] ?? stav.nastaveniKat ?? 'obs', kotva);
+  if (cil === 'kanon') kanon.ukazat(entita);
+  else kanon.skryt();
   vykresliSceny();
   if (kotva && cil !== 'nastaveni') document.getElementById(kotva)?.scrollIntoView({ block: 'start' });
 }
@@ -589,6 +602,9 @@ function vykresliNastaveni(n) {
     : n.hueSparovano ? `Bridge ${n.hueBridge} je spárovaný.` : `Bridge ${n.hueBridge} zatím není spárovaný: stiskni na něm kulaté tlačítko a do 30 s klikni na Spárovat.`;
   if (n.hueSparovano && !stav.hueSvetla) nactiHueSvetla();
   if (document.activeElement !== $('#pole-zvuk-slozka')) $('#pole-zvuk-slozka').value = n.zvukSlozka ?? '';
+  if (n.obsidianTrezorVychozi) stav.obsidianVychozi = n.obsidianTrezorVychozi;
+  if (document.activeElement !== $('#pole-obsidian')) $('#pole-obsidian').value = n.obsidianTrezor ?? '';
+  $('#pole-obsidian').placeholder = stav.obsidianVychozi ? `${stav.obsidianVychozi} (jméno složky repa)` : 'jméno složky repa';
   $('#pole-zvuk-otevrit').checked = n.zvukOtevrit !== false;
   vykresliVyberSouboje();
   const srv = stav.prehled?.server;
@@ -760,6 +776,7 @@ function pripojitUdalosti() {
       vykresliObrazovkuSezeni();
     },
     zaznam: (data) => pridatDoZaznamu(data),
+    kanon: (data) => kanon.zmena(data),
     odpocet: (data) => {
       if (!stav.prehled) return;
       stav.prehled.odpocet = data;
@@ -791,6 +808,88 @@ function toast(text, { chyba = false } = {}) {
   clearTimeout(casovacToastu);
   casovacToastu = setTimeout(() => (t.hidden = true), chyba ? 7000 : 3500);
 }
+
+/* ---------- Kánon (Blok 3): mapa, karta, hledání v liště ---------- */
+
+const kanon = vytvoritKanon({ api, toast, otevritPoznamku });
+
+{
+  const vstup = $('#hledat-kanon');
+  const seznam = $('#hledat-vysledky');
+  let vysledky = [];
+  let aktivni = 0;
+  let poradi = 0;
+  const zavrit = () => {
+    seznam.hidden = true;
+    vstup.setAttribute('aria-expanded', 'false');
+  };
+  const otevrit = (id) => {
+    zavrit();
+    vstup.value = '';
+    kanon.hledat('');
+    location.hash = `kanon/${encodeURIComponent(id)}`;
+    if (location.hash === `#kanon/${encodeURIComponent(id)}`) kanon.vybrat(id);
+    vstup.blur();
+  };
+  const vykreslit = () => {
+    seznam.replaceChildren(
+      ...(vysledky.length
+        ? vysledky.map((e, i) => {
+          const li = document.createElement('li');
+          li.setAttribute('role', 'option');
+          li.setAttribute('aria-selected', String(i === aktivni));
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'polozka-hledani';
+          b.style.setProperty('--c', e.barva);
+          const tecka = document.createElement('span');
+          tecka.className = 'tecka';
+          const typ = document.createElement('small');
+          typ.textContent = ` ${e.typText}`;
+          b.append(tecka, `${e.ikona ? `${e.ikona} ` : ''}${e.nazev}`, typ);
+          b.addEventListener('mousedown', (ev) => ev.preventDefault());
+          b.addEventListener('click', () => otevrit(e.id));
+          li.append(b);
+          return li;
+        })
+        : [Object.assign(document.createElement('li'), { className: 'poznamka', textContent: 'Nic nenalezeno.' })]),
+    );
+    seznam.hidden = false;
+    vstup.setAttribute('aria-expanded', 'true');
+  };
+  vstup.addEventListener('input', async () => {
+    const dotaz = vstup.value;
+    const moje = ++poradi;
+    const r = await kanon.hledat(dotaz);
+    if (moje !== poradi) return;
+    vysledky = r;
+    aktivni = 0;
+    if (!dotaz.trim()) zavrit();
+    else vykreslit();
+  });
+  vstup.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!vysledky.length) return;
+      aktivni = (aktivni + (e.key === 'ArrowDown' ? 1 : -1) + vysledky.length) % vysledky.length;
+      vykreslit();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (vysledky[aktivni]) otevrit(vysledky[aktivni].id);
+    } else if (e.key === 'Escape') {
+      vstup.value = '';
+      kanon.hledat('');
+      zavrit();
+      vstup.blur();
+    }
+  });
+  vstup.addEventListener('blur', () => setTimeout(zavrit, 150));
+  vstup.addEventListener('focus', () => {
+    if (vstup.value.trim() && vysledky.length) vykreslit();
+  });
+}
+
+$('#pole-obsidian').addEventListener('change', (e) => ulozitNastaveni({ obsidianTrezor: e.target.value.trim() }, e.target));
 
 /* ---------- Sezení: Zahájit / Ukončit ---------- */
 
@@ -1137,9 +1236,12 @@ $('#tlacitko-souboj').addEventListener('click', async () => {
 
 /* ---------- Poznámka (F2) ---------- */
 
-function otevritPoznamku() {
+function otevritPoznamku(predvyplnit = '') {
   const d = $('#dialog-poznamka');
   if (d.open) return;
+  // Z karty v Kánonu: poznámka začne odkazem [[id]] na entitu (Blok 3).
+  const pole = $('#pole-poznamka');
+  if (typeof predvyplnit === 'string' && predvyplnit && !pole.value.includes(predvyplnit.trim())) pole.value = `${predvyplnit}${pole.value}`;
   const s = stav.prehled?.sezeni;
   $('#poznamka-kam').textContent = s?.bezi
     ? `Zapíše se do sezení ${s.cislo} s aktuálním časem.`
@@ -1178,11 +1280,19 @@ $('#pole-poznamka').addEventListener('keydown', (e) => {
     zapsatPoznamku();
   }
 });
-$('#tlacitko-poznamka').addEventListener('click', otevritPoznamku);
+$('#tlacitko-poznamka').addEventListener('click', () => otevritPoznamku(kanon.odkazProPoznamku()));
 document.addEventListener('keydown', (e) => {
   if (e.key === 'F2') {
     e.preventDefault();
-    otevritPoznamku();
+    otevritPoznamku(kanon.odkazProPoznamku());
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    $('#hledat-kanon').focus();
+    $('#hledat-kanon').select();
+  }
+  if (e.key === 'Escape' && !$('#obrazovka-kanon').hidden && !document.querySelector('dialog[open]') && !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement)) {
+    kanon.zrusitVyber();
   }
   if (e.key === 'F4') {
     e.preventDefault();

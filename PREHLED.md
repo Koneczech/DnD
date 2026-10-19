@@ -17,6 +17,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | Souboj | **Souboj** nahoře → Improved Initiative, zvuky tahů, animace zásahů, málo HP | U stolu → Souboj |
 | Konec | **Ukončit sezení** → kontrolní seznam → uložení na GitHub | Sezení |
 | Nová verze | Slouč PR na GitHubu → **Systém → Aktualizovat** → Hub se restartuje sám | Systém (vpravo nahoře) |
+| Kdo je kdo | **Hledat v kánonu** nahoře (Ctrl+K) nebo **Kánon**: mapa, karta, Pohled družiny | Kánon |
 | Něco nejde | **Systém → Záznam událostí → Stáhnout** a pošli Claudovi | Systém |
 
 ## Co Hub umí
@@ -47,8 +48,9 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Vztahy s popisem a postojem: formát, šablony, Kontrola dat | ◐ |
 | | Převedené karty: postavy (4), padouši a frakce (6), NPC (23), místa (16), předměty (6), registr rozhodnutí (39), zápis sezení 1 | ◐ |
 | | Karty mimo Notion (8), hráčský kánon sezení 1 | ◐ |
-| | Zápis a hráčský kánon sezení 2; hledání a karty v panelu | ✗ |
-| | Modul Kánon: mapa, malé úpravy, Otevřít v Obsidianu, pohled družiny, nástěnky | ✗ |
+| | Zápis a hráčský kánon sezení 2 | ✗ |
+| | Modul Kánon: mapa vazeb a vztahů, karta s textem, hledání v liště, Pohled družiny | ◐ |
+| | Malé úpravy z karty a mapy (vazby, vztahy, přezdívky, Ve hře, Družina zná), Otevřít v Obsidianu, F2 s odkazem, nástěnky | ◐ |
 | | Hráčská stránka na GitHub Pages (pohled družiny) | ✗ |
 | **Verze 2** | Editor entit, příprava Lazy DM, generátor obchodů, portréty, export do IIO | ✗ |
 
@@ -57,7 +59,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 1. **Vyzkoušet u stolu** všechno označené ◐ (sezení 3, tábor lupičů). Návrhy v `ZADANI.md` DM potvrdil 19. 10.; co u stolu nefunguje, se opraví.
 2. **Zjednodušit Kontrolu dat:** chybějící zvuky v jednom řádku s tlačítkem Doplnit, chyby nahoře.
 3. **Zvuk u stolu po restartu:** ověřit, jestli prohlížeč chce kliknutí; když ano, otevírat ho v samostatném okně.
-4. **Blok 3 Kánon:** rozpory R1–R16 jsou rozhodnuté (19. 10.). DM zazálohuje Notion, pak převod po skupinách podle `reference/kanon-prevod.md` (včetně návrhů vztahů). Modul Kánon s mapou přijde po skupině postavy. Zápis sezení 2 vznikne z přepisu nahrávky, kterou DM dodá.
+4. **Blok 3 Kánon:** rozpory R1–R16 jsou rozhodnuté (19. 10.). DM zazálohuje Notion, pak převod po skupinách podle `reference/kanon-prevod.md` (včetně návrhů vztahů). Modul Kánon s mapou je hotový (◐), vyzkoušet ho a doplnit Družina zná u entit a vztahů. Zápis sezení 2 vznikne z přepisu nahrávky, kterou DM dodá.
 5. **Verze 2.**
 
 ## Vědomě vynecháno
@@ -80,6 +82,7 @@ Vlastní combat tracker, sledování zdrojů postav (BV, kouzla, Zuřivost), mix
 | Návody (zvuk, OBS, ilustrace) | `reference/` |
 | Data kampaně | `kampan/` |
 | Šablony pro nové soubory (Obsidian) | `sablony/` |
+| Nástěnky mapy kánonu (uložená rozložení) | `kampan/nastenky/` |
 | Kánon: audit, mapa a návod na převod | `reference/kanon-audit.md`, `reference/kanon-mapa.yaml`, `reference/kanon-prevod.md` |
 | Kód Hubu a testy | `hub/` |
 | Zvuky (mimo repo) | `Dokumenty\DnD\audio` |

@@ -19,6 +19,7 @@ import { DalsiDen } from './dalsiden.js';
 import { Obchody } from './obchody.js';
 import { HUB_DIR } from './cesty.js';
 import { Mista } from './mista.js';
+import { Kanon } from './kanon-modul.js';
 import { Scena } from './scena.js';
 import { Svetla, ROLE as ROLE_SVETEL } from './svetla.js';
 import { Hue } from './zarizeni/hue.js';
@@ -142,6 +143,8 @@ export class Hub {
     this.dalsiDen = new DalsiDen({ cesty: this.c, kalendar: this.kalendar, sezeni: this.sezeni });
     this.obchody = new Obchody({ cesty: this.c, zapisovac: this.zapisovac });
     this.mista = new Mista({ cesty: this.c, zapisovac: this.zapisovac });
+    // Modul Kánon (Blok 3): mapa entit, karty, pohled družiny, nástěnky.
+    this.kanon = new Kanon({ cesty: this.c, zapisovac: this.zapisovac, nastaveni: () => this.nastaveni.hodnoty });
     this.scena = new Scena({ soubor: path.join(this.c.lokalniStav, 'scena.json'), mista: this.mista });
     this.svetla = new Svetla({
       cesty: this.c,
@@ -361,6 +364,7 @@ export class Hub {
     this.kalendar.on('zmena', (k) => this.vysilac.vyslat('kalendar-dm', k));
     this.kalendar.on('verejne', (k) => this.vyslatKalendar(k));
     this.obchody.on('zmena', (o) => this.vysilac.vyslat('obchody', o));
+    this.kanon.on('zmena', (k) => this.vysilac.vyslat('kanon', k));
     this.obchody.on('ceniky', (c) => this.vysilac.vyslat('ceniky', c));
     this.mista.on('zmena', (m) => {
       this.vysilac.vyslat('mista', m);
@@ -387,6 +391,7 @@ export class Hub {
     await this.kalendar.nacist();
     await this.obchody.nacist();
     await this.mista.nacist();
+    await this.kanon.nacist();
     await this.scena.nacist();
     await this.svetla.nacist();
     await this.zvuk.nacist();
@@ -430,6 +435,8 @@ export class Hub {
   }
 
   async souborZmenen(soubor) {
+    // Kánon čte všechny karty (i místa), takže se dozví o každé změně a ostatní moduly pokračují.
+    this.kanon.souborZmenen(soubor);
     // Vrstvy světel (kampan/sceny/…): načíst znovu a poslat na světla.
     const relSceny = path.relative(path.join(this.c.kampan, 'sceny'), path.resolve(soubor));
     if (!relSceny.startsWith('..') && !path.isAbsolute(relSceny)) {
@@ -541,7 +548,7 @@ export class Hub {
       obs: this.obs.verejnyStav(),
       iniciativa: this.stavIniciativy(),
       git: this.git.stav,
-      nastaveni: this.nastaveni.verejne(),
+      nastaveni: { ...this.nastaveni.verejne(), obsidianTrezorVychozi: path.basename(this.c.koren) },
       prostredi: this.prostredi,
       server: this.infoServeru(),
     };
@@ -788,6 +795,10 @@ export class Hub {
     }
     if (p.startsWith('/api/obchody')) {
       const v = await this.apiObchody(req, m, p);
+      if (v !== undefined) return poslatJson(res, 200, v);
+    }
+    if (p.startsWith('/api/kanon')) {
+      const v = await this.apiKanon(req, m, p, url);
       if (v !== undefined) return poslatJson(res, 200, v);
     }
     if (p === '/api/restart' && m === 'POST') {
@@ -1136,6 +1147,36 @@ export class Hub {
       });
     }
     return undefined;
+  }
+
+  /** Modul Kánon (rozhodnutí 69–71): mapa, karty, malé úpravy hlavičky, nástěnky. */
+  async apiKanon(req, m, p, url) {
+    const k = this.kanon;
+    const pohled = url.searchParams.get('pohled') === 'druzina' ? 'druzina' : 'dm';
+    if (p === '/api/kanon' && m === 'GET') return k.seznam(pohled);
+    const ent = /^\/api\/kanon\/entita\/([a-z0-9-]{1,80})$/.exec(p);
+    if (ent && m === 'GET') return k.karta(ent[1], pohled);
+    if (ent && m === 'PUT') return this.poUpraveKanonu(await k.nastavit(ent[1], await nacistJson(req)));
+    const vazby = /^\/api\/kanon\/entita\/([a-z0-9-]{1,80})\/vazby$/.exec(p);
+    if (vazby && m === 'POST') return this.poUpraveKanonu(await k.pridatVazbu(vazby[1], String((await nacistJson(req)).cil ?? '')));
+    const vazba = /^\/api\/kanon\/entita\/([a-z0-9-]{1,80})\/vazby\/([a-z0-9-]{1,80})$/.exec(p);
+    if (vazba && m === 'DELETE') return this.poUpraveKanonu(await k.odebratVazbu(vazba[1], vazba[2]));
+    const vztah = /^\/api\/kanon\/entita\/([a-z0-9-]{1,80})\/vztahy\/([a-z0-9-]{1,80})$/.exec(p);
+    if (vztah && m === 'PUT') return this.poUpraveKanonu(await k.nastavitVztah(vztah[1], vztah[2], await nacistJson(req)));
+    if (vztah && m === 'DELETE') return this.poUpraveKanonu(await k.odebratVztah(vztah[1], vztah[2]));
+    if (p === '/api/kanon/nastenky' && m === 'POST') return k.ulozitNastenku(null, await nacistJson(req, 512 * 1024));
+    const nast = /^\/api\/kanon\/nastenky\/([a-z0-9-]{1,60})$/.exec(p);
+    if (nast && m === 'GET') return k.nastenka(nast[1]);
+    if (nast && m === 'PUT') return k.ulozitNastenku(nast[1], await nacistJson(req, 512 * 1024));
+    if (nast && m === 'DELETE') return k.smazatNastenku(nast[1]);
+    return undefined;
+  }
+
+  /** Po úpravě karty: Kontrola dat hned (vztah bez vazby, neexistující cíl) a stav zápisu do lišty. */
+  poUpraveKanonu(v) {
+    this.data.naplanovatKontrolu();
+    if (v.vysledek === 'odlozeno') this.vyslatStav();
+    return v;
   }
 
   async apiObchody(req, m, p) {

@@ -15,6 +15,7 @@ Repo `Koneczech/DnD` drží data kampaně D&D a aplikaci DM Hub. Zadání je v `
 - Co zadání neřeší a má vliv na **data, chování nebo UI**, rozhodni rozumně, v popisu PR to označ jako **⚠ návrh** a přidej do Otevřených bodů v `ZADANI.md`.
 - Interní detaily kódu (názvy funkcí, struktura testů, pomocné moduly) rozhoduj sám.
 - Nedoplňuj herní obsah (jména, události, vazby, statistiky), který DM nepotvrdil.
+- Kánon převáděj podle `reference/kanon-prevod.md` a `reference/kanon-mapa.yaml`: text karet nepřepisuj, opravuj jen rozpory, které DM potvrdil, a po každé skupině pusť `npm run kanon -- <skupina>`.
 
 ## Repo je veřejné
 

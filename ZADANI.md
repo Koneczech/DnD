@@ -29,7 +29,7 @@ Verze 1 převede do repa kánon, kalendář, obchody, postavy a ilustrace míst.
 
 ## Potvrzená rozhodnutí
 
-Rozhodnutí 1–12 potvrdil DM 2. 10. 2026. Rozhodnutí 13–24 vzešla z první oponentury zadání, 25–32 z oponentury postupu výroby; DM je přijal týž den. Rozhodnutí 39–42 potvrdil DM 3. 10. 2026 (akceptace Bloku 1b a start Bloku 2). Rozhodnutí 33–38 potvrdil DM 2. 10. 2026 při kontrole ⚠ návrhů Bloku 0. Rozhodnutí 55–64 (světla a zvuk) potvrdil DM 10. 10. 2026, rozhodnutí 65 (audit UI) 11. 10. 2026, rozhodnutí 69–71 (mapa kánonu) 19. 10. 2026; tehdy potvrdil i všechny návrhy z Otevřených bodů (tabulka Potvrzené návrhy níže); podobu přepínače Řídit světla (59) a zvukových výstupů s BT reproduktorem (62) navrhl Claude a ověří ji akceptace Bloků 4 a 5. Nepotvrzené návrhy jsou výslovně označené a shrnuté v Otevřených bodech.
+Rozhodnutí 1–12 potvrdil DM 2. 10. 2026. Rozhodnutí 13–24 vzešla z první oponentury zadání, 25–32 z oponentury postupu výroby; DM je přijal týž den. Rozhodnutí 39–42 potvrdil DM 3. 10. 2026 (akceptace Bloku 1b a start Bloku 2). Rozhodnutí 33–38 potvrdil DM 2. 10. 2026 při kontrole ⚠ návrhů Bloku 0. Rozhodnutí 55–64 (světla a zvuk) potvrdil DM 10. 10. 2026, rozhodnutí 65 (audit UI) 11. 10. 2026, rozhodnutí 69–72 (mapa kánonu, hráčská stránka) 19. 10. 2026; tehdy potvrdil i všechny návrhy z Otevřených bodů (tabulka Potvrzené návrhy níže); podobu přepínače Řídit světla (59) a zvukových výstupů s BT reproduktorem (62) navrhl Claude a ověří ji akceptace Bloků 4 a 5. Nepotvrzené návrhy jsou výslovně označené a shrnuté v Otevřených bodech.
 
 | # | Rozhodnutí | Důsledek |
 | --- | --- | --- |
@@ -104,6 +104,7 @@ Rozhodnutí 1–12 potvrdil DM 2. 10. 2026. Rozhodnutí 13–24 vzešla z první
 | 69 | Mapa kánonu a malé úpravy v Hubu (DM 19. 10. 2026) | Blok 3 má modul **Kánon**: síť entit a jejich vazeb, karta vybrané entity, filtry a hledání. Kreslí se ze souborů v `kampan/` a funguje bez internetu. V Hubu jdou upravit vazby a vztahy, přezdívky, štítek `aktualni` (Ve hře) a `verejne` (Družina zná), rozložení mapy se dá uložit. Text karty se dál píše v Obsidianu, karta má tlačítko Otevřít v Obsidianu. Plný editor entit zůstává ve verzi 2 |
 | 70 | Vztahy s popisem a postojem (DM 19. 10. 2026) | Inspirace Kankou. Vedle `vazby` nepovinné pole `vztahy`: komu, popis („adoptivní otec“), postoj −3 až +3 a jestli vztah zná družina. Mapa barví čáry podle postoje. `vazby` zůstávají kvůli grafu Obsidianu; Hub při úpravě zapisuje obojí. Rozhoduje se před převodem kánonu, aby se popisy vztahů doplnily rovnou z karet |
 | 71 | Pohled družiny (DM 19. 10. 2026) | Přepínač v modulu Kánon ukáže jen to, co zná družina: entity s `verejne: true`, vztahy se `verejne: true` a v kartě jen oddíl Co ví družina. Slouží k rekapitulaci a je základem hráčské stránky. Jde o filtr, ne ochranu (rozhodnutí 2) |
+| 72 | Hráčská stránka v Bloku 3 (DM 19. 10. 2026) | Mění rozhodnutí 8: hráčská stránka vznikne hned po převodu kánonu, ne až ve výhledu. Generuje se na GitHub Pages stejně jako čtecí verze pro DM, s filtrem pohledu družiny (rozhodnutí 71). Obsah: postavy hráčů (jméno, portrét a oddíl Co ví družina; příběhy a DM oddíly ne), entity s `verejne: true` jen s oddílem Co ví družina a vztahy, které družina zná, hráčský kánon, kalendář s veřejnými událostmi a mapa kánonu v pohledu družiny. Repo zůstává veřejné: stránka tajemství jen nezobrazí (rozhodnutí 2) |
 
 ### Potvrzené návrhy (DM 19. 10. 2026)
 
@@ -747,6 +748,7 @@ Obsah
 - Globální vyhledávání v liště podle názvu i aliasů
 - Z karty místa jde jedním klikem pustit jeho scénu (napojení na Blok 2)
 - Čtecí verze pro DM na GitHub Pages: statické stránky generované z `kampan/` po každém pushi (GitHub Actions)
+- Hráčská stránka (rozhodnutí 72): stejný generátor s pohledem družiny, česky a čitelná na telefonu
 
 Postup převodu
 
@@ -769,6 +771,7 @@ Akceptační kritéria
 - Úprava vazby, vztahu nebo přepínače v Hubu změní jen to pole: `git diff` ukáže jediný změněný řádek hlavičky (u vztahů a vazeb jejich řádky), tělo karty se nezmění
 - Pohled družiny neukáže žádnou entitu s `verejne: false`, žádný vztah bez `verejne: true` ani text mimo oddíl Co ví družina
 - Čtecí verze na GitHub Pages se do 5 minut po pushi aktualizuje
+- Hráčská stránka neukáže nic z oddílů DM, příběhy postav, entitu s `verejne: false` ani vztah bez `verejne: true`
 
 ## Verze 2 — Příprava a výhled
 
@@ -781,7 +784,7 @@ Verze 2 přenese do Hubu přípravu sezení. Podrobné zadání vznikne, až bud
 | Generátor obchodů | Plné převzetí `generator.html` do panelu | Verze 2 |
 | Dílna pro portréty | Portréty postav, NPC a bytostí (1080×1500, odstranění pozadí) z `pripravit_ilustraci.py` | Verze 2 |
 | Export do IIO | Vlastní bytosti, NPC a postavy jako JSON k importu do IIO, včetně URL ilustrace. Ve stejném kroku přesun portrétů z kořene a z `monsters/` do složek entit | Verze 2 |
-| Hráčská stránka | Na GitHub Pages: kalendář s veřejnými událostmi, postavy, potkané NPC a místa, hráčský kánon | Výhled, bez termínu |
+| Hráčská stránka | Přesunuta do Bloku 3 (rozhodnutí 72) | Blok 3 |
 | Archiv sezení | Zápisy, přepisy WhisperX a statistiky z karet A5 ve složce `sezeni/sNN/` | Výhled, bez termínu |
 
 ## Mimo rozsah

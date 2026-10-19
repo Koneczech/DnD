@@ -47,6 +47,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Vztahy s popisem a postojem: formát, šablony, Kontrola dat | ◐ |
 | | Převedené karty (postavy, NPC, frakce, místa, předměty, rozhodnutí, sezení), hledání, karty v panelu | ✗ |
 | | Modul Kánon: mapa, malé úpravy, Otevřít v Obsidianu, pohled družiny, nástěnky | ✗ |
+| | Hráčská stránka na GitHub Pages (pohled družiny) | ✗ |
 | **Verze 2** | Editor entit, příprava Lazy DM, generátor obchodů, portréty, export do IIO | ✗ |
 
 ## Co je rozdělané (v tomto pořadí)

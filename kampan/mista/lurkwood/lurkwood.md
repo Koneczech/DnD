@@ -20,6 +20,7 @@ ilustrace:
     ucel: scena
     skryta: true
     puvod: src/places/Lurkwood/les-tabor.png
+    varianta: noc
   - soubor: tabor-vuz.png
     ucel: scena
     skryta: true
@@ -28,6 +29,7 @@ ilustrace:
     ucel: scena
     skryta: true
     puvod: src/places/Lurkwood/les-zajatci.png
+    varianta: noc
   - soubor: les-prokleti.png
     ucel: scena
     skryta: false

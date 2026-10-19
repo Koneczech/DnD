@@ -3,7 +3,7 @@ schema: 1
 id: tabor-kruhu
 typ: misto
 nazev: "Tábor kruhu v Lurkwoodu"
-verejne: false
+verejne: true
 ikona: 🔥
 aliases: ["Tábor kruhu"]
 vazby: ["[[lurkwood]]", "[[torva]]", "[[novacek-kruhu]]", "[[kruh]]", "[[alba]]", "[[tusker]]", "[[koudur]]", "[[leta]]", "[[tavis]]"]

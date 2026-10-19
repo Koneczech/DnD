@@ -30,12 +30,12 @@ ilustrace:
   - soubor: opusteny.png
     ucel: scena
     stav: po boji
-    skryta: false
+    skryta: true
     puvod: Abandoned Camp Beneath Stormy Dusk.png
   - soubor: mapa-shora.png
     ucel: scena
     stav: mapa
-    skryta: false
+    skryta: true
     puvod: Autumn Woodland Camp with Horses and Treehouse.png
   - soubor: spalene-dopisy.png
     ucel: scena

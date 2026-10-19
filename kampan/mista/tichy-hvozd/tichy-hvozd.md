@@ -7,7 +7,7 @@ verejne: false
 ikona: 🌲
 aliases: []
 vazby: ["[[alba]]", "[[bifron-nox]]", "[[corvain-thornroot]]", "[[albin-privesek]]", "[[tarnwick]]", "[[uhliri-a-lovci]]", "[[patyk]]"]
-tags: [aktualni]
+tags: []
 popis_obrazu: ""
 ilustrace: []
 zdroj: https://app.notion.com/p/3c79ed22673681e896a8d2e49b8c9c04

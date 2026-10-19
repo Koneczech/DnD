@@ -14,7 +14,7 @@ vztahy:
   - { s: "[[thiril-ambersedge]]", popis: "„otec“, který se jí ujal", postoj: 3 }
   - { s: "[[ordwin-sohla]]", popis: "překupník, jediný kontakt do podsvětí", postoj: -1 }
   - { s: "[[halvar-grimsdal]]", popis: "hlavní radní, kterému ukradla a vrátila prsten" }
-  - { s: "[[koudur]]", popis: "bohatý synek, kterého chce okrást" }
+  - { s: "[[koudur]]", popis: "bohatý synek, kterého okradla", verejne: true }
 tags: [aktualni]
 ilustrace:
   - { soubor: /Leta.png, ucel: portret }

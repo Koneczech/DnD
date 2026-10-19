@@ -8,6 +8,7 @@ verejne: false
 popis_obrazu: ""
 aliases: []
 vazby: []
+vztahy: [] # - { s: "[[id]]", popis: adoptivní otec, postoj: 3 }  postoj −3 až +3, verejne: true = zná družina
 tags: []
 ilustrace: [] # přidá ilustrační dílna; bez ilustrace se místo na dlaždicích U stolu neukazuje
 zdroj:
@@ -17,5 +18,9 @@ zdroj:
 Jak místo vypadá a k čemu slouží.
 
 ## Co se tu stalo
+
+## Co ví družina
+
+Jen to, co hráči opravdu vědí. Tento oddíl ukáže pohled družiny.
 
 ## DM

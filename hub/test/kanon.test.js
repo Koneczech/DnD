@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cilPolozky, idNotionu, nacistMapu, overitMapu, reportPrevodu } from '../server/kanon.js';
 import { docasneRepo } from './pomoc.js';
+import { overVztahy } from '../server/data.js';
 
 const KOREN_REPA = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const N1 = 'https://app.notion.com/p/3c49ed22673681139ec6d006048ae511';
@@ -140,6 +141,40 @@ test('Kontrola dat hlídá stav rozhodnutí', async () => {
     assert.equal(zpravy.length, 1);
     assert.equal(zpravy[0].soubor, 'kampan/rozhodnuti/spatne.md');
     assert.match(zpravy[0].zprava, /otevrene, rozhodnuto, zavrzeno/);
+  } finally {
+    await smazat();
+  }
+});
+
+test('vztahy: formát, postoj −3 až 3 a cíl ve vazby', () => {
+  const ok = overVztahy({ vazby: ['[[dorn-treestone]]'], vztahy: [{ s: '[[dorn-treestone]]', popis: 'adoptivní otec', postoj: 3, verejne: true }] });
+  assert.deepEqual(ok, { problemy: [], cile: ['dorn-treestone'] });
+  assert.deepEqual(overVztahy({}).problemy, []);
+  assert.deepEqual(overVztahy({ vztahy: [] }).problemy, []);
+
+  const zpravy = (data) => overVztahy(data).problemy.map((p) => `${p.uroven}: ${p.zprava}`);
+  assert.deepEqual(zpravy({ vztahy: 'dorn' }), ['chyba: vztahy musí být seznam']);
+  // Odkaz bez uvozovek YAML přečte jako vnořený seznam.
+  assert.match(zpravy({ vztahy: [{ s: [['dorn']], popis: 'x' }] })[0], /odkaz v uvozovkách/);
+  const z = zpravy({ vazby: [], vztahy: [{ s: '[[bruna|Bruna]]', postoj: 5, verejne: 'ano' }, 'text'] });
+  assert.ok(z.some((x) => x.startsWith('chyba') && x.includes('chybí popis')));
+  assert.ok(z.some((x) => x.includes('postoj musí být celé číslo')));
+  assert.ok(z.some((x) => x.includes('verejne musí být')));
+  assert.ok(z.some((x) => x.startsWith('varovani') && x.includes('[[bruna]] chybí ve vazby')));
+  assert.ok(z.some((x) => x.startsWith('chyba: Vztah 2')));
+  assert.ok(zpravy({ vztahy: [{ s: '[[a]]', popis: 'x', postoj: 1.5 }] }).some((x) => x.includes('postoj')));
+});
+
+test('Kontrola dat hlásí vztah na neexistující id', async () => {
+  const { c, smazat } = await docasneRepo();
+  try {
+    const { kontrolaDat } = await import('../server/data.js');
+    const hlavicka = (id, navic) => `---\nschema: 1\nid: ${id}\ntyp: npc\nnazev: ${id}\nverejne: false\n${navic}---\n`;
+    await zapis(c.koren, 'kampan/npc/dorn/dorn.md', hlavicka('dorn', ''));
+    await zapis(c.koren, 'kampan/npc/vendla/vendla.md', hlavicka('vendla', 'vazby: ["[[dorn]]", "[[nikdo]]"]\nvztahy:\n  - { s: "[[dorn]]", popis: manžel, postoj: 2 }\n  - { s: "[[nikdo]]", popis: soused }\n'));
+    const k = await kontrolaDat(c);
+    const zpravy = k.problemy.filter((p) => p.soubor === 'kampan/npc/vendla/vendla.md').map((p) => p.zprava);
+    assert.deepEqual(zpravy, ['Vazba [[nikdo]] vede na neexistující id']);
   } finally {
     await smazat();
   }

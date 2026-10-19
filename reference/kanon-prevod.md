@@ -49,6 +49,8 @@ To jsou akceptační kritéria Bloku 3.
 - Tabulky z Notionu se převedou na markdown tabulky. Citace `>` a odrážky zůstanou.
 - **Odkazy:** první zmínka o jiné entitě v každém oddílu se změní na `[[id|Jméno]]`. Například „**Ordwinem Sohlou**“ se změní na `**[[ordwin-sohla|Ordwinem Sohlou]]**`. Další zmínky ve stejném oddílu zůstanou textem. Id bere z mapy.
 - Oddíly „Dnes“, „Současný stav“ a „Teď“, které popisují stav před sezením 1, dostanou nadpis **Výchozí stav (před sezením 1)** (R16). Text pod nimi zůstane.
+- Oddíly jen pro DM mají nadpis začínající `DM`: „Co Leta neví (DM)“ se změní na **DM — co Leta neví**, „DM sekce — co Tusker neví“ na **DM — co Tusker neví**. Hub podle toho pozná, co do pohledu družiny nikdy nepatří (otevřený bod 99).
+- Oddíl **Co ví družina** se při převodu nezakládá. Napíše ho DM, až bude chtít entitu ukázat v pohledu družiny.
 
 ### Hlavička (všechny typy)
 
@@ -62,9 +64,21 @@ To jsou akceptační kritéria Bloku 3.
 | `ikona` | emoji karty z Notionu (⚠ návrh, pro budoucí karty v panelu) |
 | `aliases` | z mapy |
 | `vazby` | z mapy jako `["[[id]]", …]` |
+| `vztahy` | návrh Claude z textu karty, jen kde karta vztah říká (viz níže) |
 | `tags` | tag Notionu Current → `aktualni`; Villain, NPC, Location a Item se nepřevádí, ty už vyjadřuje typ |
 | `ilustrace` | z mapy (`/monsters/torva.png`, `/Tusker.png`) s `ucel: portret` |
 | `zdroj` | odkaz na kartu `https://app.notion.com/p/<id>` |
+
+### Vztahy (rozhodnutí 70)
+
+Formát je v `ZADANI.md` → Datový model → Vztahy. Při převodu platí:
+
+- Vztah se zapíše jen tam, kde ho karta říká. Popis se vezme z karty („adoptivní otec“, „dluží mu“, „bývalá snoubenka“), nevymýšlí se.
+- `postoj` se uvede jen u výslovného postoje v textu (miluje, nenávidí, nevěří). Jinak se pole vynechá a čára zůstane šedá.
+- Vztah se zapíše na kartu, *od které* vede: „Leta nevěří Ordwinovi“ patří do `leta.md`. Opačný směr se zapíše jen tehdy, když ho říká i druhá karta.
+- Všechny vztahy začínají bez `verejne` (družina je nezná). Družina zná nastaví DM v Hubu.
+- Cíl každého vztahu je i ve `vazby`.
+- V PR je u skupiny tabulka navržených vztahů (kdo, komu, popis, postoj, věta z karty), aby je DM prošel najednou.
 
 ### Postava (`postavy/<id>/<id>.md`)
 
@@ -156,7 +170,7 @@ Jediný kontakt do podsvětí, se kterým [[thiril-ambersedge|Thiril]] [[leta|Le
 
 Nevěří mu. Počítá s tím, že ji hodí přes palubu, jakmile bude odměna za její hlavu vyšší než jejich kšefty.
 
-## Co Leta neví (DM)
+## DM — co Leta neví
 
 - Ordwin se dozvěděl o sázce s [[halvar-grimsdal|Grimsdalovým]] prstenem a **šel s tím za Thirilem** — …
 - …

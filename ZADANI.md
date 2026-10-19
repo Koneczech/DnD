@@ -29,7 +29,7 @@ Verze 1 převede do repa kánon, kalendář, obchody, postavy a ilustrace míst.
 
 ## Potvrzená rozhodnutí
 
-Rozhodnutí 1–12 potvrdil DM 2. 10. 2026. Rozhodnutí 13–24 vzešla z první oponentury zadání, 25–32 z oponentury postupu výroby; DM je přijal týž den. Rozhodnutí 39–42 potvrdil DM 3. 10. 2026 (akceptace Bloku 1b a start Bloku 2). Rozhodnutí 33–38 potvrdil DM 2. 10. 2026 při kontrole ⚠ návrhů Bloku 0. Rozhodnutí 55–64 (světla a zvuk) potvrdil DM 10. 10. 2026, rozhodnutí 65 (audit UI) 11. 10. 2026; podobu přepínače Řídit světla (59) a zvukových výstupů s BT reproduktorem (62) navrhl Claude a ověří ji akceptace Bloků 4 a 5. Nepotvrzené návrhy jsou výslovně označené a shrnuté v Otevřených bodech.
+Rozhodnutí 1–12 potvrdil DM 2. 10. 2026. Rozhodnutí 13–24 vzešla z první oponentury zadání, 25–32 z oponentury postupu výroby; DM je přijal týž den. Rozhodnutí 39–42 potvrdil DM 3. 10. 2026 (akceptace Bloku 1b a start Bloku 2). Rozhodnutí 33–38 potvrdil DM 2. 10. 2026 při kontrole ⚠ návrhů Bloku 0. Rozhodnutí 55–64 (světla a zvuk) potvrdil DM 10. 10. 2026, rozhodnutí 65 (audit UI) 11. 10. 2026, rozhodnutí 69–71 (mapa kánonu) 19. 10. 2026; podobu přepínače Řídit světla (59) a zvukových výstupů s BT reproduktorem (62) navrhl Claude a ověří ji akceptace Bloků 4 a 5. Nepotvrzené návrhy jsou výslovně označené a shrnuté v Otevřených bodech.
 
 | # | Rozhodnutí | Důsledek |
 | --- | --- | --- |
@@ -101,6 +101,9 @@ Rozhodnutí 1–12 potvrdil DM 2. 10. 2026. Rozhodnutí 13–24 vzešla z první
 | 66 | Každá obrazovka do jednoho okna (rozložení v2, 11. 10. 2026) | Doplňuje rozhodnutí 65. Měřítko je okno 1920 × 960 na PC u stolu: obrazovka se vejde bez posouvání stránky, posouvá se nanejvýš seznam uvnitř karty (poznámky). **U stolu**: vlevo záložka scény, vpravo vždy stejný sloupec **Ve hře teď** (náhled, doba, počasí, bouřka, intenzita, stav, světla, zvuk); Místo = svislý seznam míst a jedna mřížka ilustrací, skryté ztlumené s Odkrýt. **Odpočet**: čas nebo předvolba a jedno Spustit odpočet, Pauza a Zrušit až když běží, výběr Po doběhnutí přepnout u odpočtu. **Sezení**: problémy jako řádky s jednou akcí, ostatní štítky. **Místa**: karta ilustrace jen vybírá, úpravy v panelu vybrané ilustrace. **Nastavení**: karty vedle sebe, Role scén jako tabulka, WiZ lampy jako řádky s Přidat a ×. Drátěné modely: plátno Nové uspořádání panelu, stránka Rozložení v2 |
 | 67 | Všechen zvuk z reproduktoru u stolu (DM 11. 10. 2026) | Mění rozhodnutí 62. Hudbu, ambient i efekty hraje stránka `zvuk-u-stolu.html` do BT reproduktoru. Hudba v OBS (`vystupy/hudba.html`) zůstává jako volba v Nastavení → Zvuk → Hudba hraje |
 | 68 | Soundboard, zvuky na tahu a vítězná fanfára (DM 12. 10. 2026) | Inspirace Pocket Bardem. **Soundboard**: jednorázové zvuky a smyčky ze složky zvuku, připnuté k místu. **Zvuky na tahu**: při změně tahu v souboji zvuk postavy podle jména v Improved Initiative, ostatní bytosti jeden společný zvuk nepřátel; Albiny podoby podle tagů, které v Improved Initiative přidává DM. **Fanfára** při Konci souboje, Konec bez fanfáry ji vynechá. Na sezení 3 nejdřív tyto tři části; Uvnitř / venku a tlukot srdce při 0 BV později |
+| 69 | Mapa kánonu a malé úpravy v Hubu (DM 19. 10. 2026) | Blok 3 má modul **Kánon**: síť entit a jejich vazeb, karta vybrané entity, filtry a hledání. Kreslí se ze souborů v `kampan/` a funguje bez internetu. V Hubu jdou upravit vazby a vztahy, přezdívky, štítek `aktualni` (Ve hře) a `verejne` (Družina zná), rozložení mapy se dá uložit. Text karty se dál píše v Obsidianu, karta má tlačítko Otevřít v Obsidianu. Plný editor entit zůstává ve verzi 2 |
+| 70 | Vztahy s popisem a postojem (DM 19. 10. 2026) | Inspirace Kankou. Vedle `vazby` nepovinné pole `vztahy`: komu, popis („adoptivní otec“), postoj −3 až +3 a jestli vztah zná družina. Mapa barví čáry podle postoje. `vazby` zůstávají kvůli grafu Obsidianu; Hub při úpravě zapisuje obojí. Rozhoduje se před převodem kánonu, aby se popisy vztahů doplnily rovnou z karet |
+| 71 | Pohled družiny (DM 19. 10. 2026) | Přepínač v modulu Kánon ukáže jen to, co zná družina: entity s `verejne: true`, vztahy se `verejne: true` a v kartě jen oddíl Co ví družina. Slouží k rekapitulaci a je základem hráčské stránky. Jde o filtr, ne ochranu (rozhodnutí 2) |
 
 ## Architektura
 
@@ -249,6 +252,7 @@ Koneczech/DnD/
 │  ├─ sezeni/s01/             s01.md: zápis a poznámky ze stolu; později přepis a statistiky
 │  ├─ rozhodnuti/<id>.md      registr rozhodnutí DM
 │  ├─ kanon/<id>.md           hráčský kánon
+│  ├─ nastenky/<id>.yaml      uložená rozložení mapy kánonu
 │  ├─ kalendar/udalosti.yaml
 │  └─ obchody/
 │     ├─ polozky.json         formát beze změny
@@ -272,6 +276,7 @@ Nový typ entity (například `lode/` nebo `bohove/`) znamená novou složku a j
 | `verejne` | ano | `true` = smí do OBS a na hráčskou stránku |
 | `aliases` | ne | Další jména pro hledání |
 | `vazby` | ne | Seznam `[[id]]` |
+| `vztahy` | ne | Vztahy s popisem a postojem (viz níže). Každý cíl vztahu je i ve `vazby` |
 | `tags` | ne | Volné štítky |
 | `ilustrace` | ne | Seznam obrázků (viz místo níže) |
 | `zdroj` | ne | Odkaz na původní kartu v Notionu nebo jiný zdroj |
@@ -313,6 +318,28 @@ ilustrace:
     ucel: scena
     skryta: true         # stopa k zápletce, DM odkryje u stolu
 ```
+
+**Vztahy** (rozhodnutí 70) doplňují `vazby` o to, co čára znamená. Zapisují se na kartu entity, *od které* vztah vede:
+
+```yaml
+vazby: ["[[dorn-treestone]]", "[[bruna-ironvale]]"]
+vztahy:
+  - { s: "[[dorn-treestone]]", popis: adoptivní otec, postoj: 3, verejne: true }
+  - { s: "[[bruna-ironvale]]", popis: dluží jí, postoj: -1 }
+```
+
+| Pole | Povinné | Význam |
+| --- | --- | --- |
+| `s` | ano | Cíl vztahu `[[id]]` |
+| `popis` | ano | Kým je cíl pro tuto entitu, krátce a s malým písmenem |
+| `postoj` | ne | Celé číslo −3 (nepřítel) až +3 (blízký), 0 = neutrální. Bez pole se čára nebarví |
+| `verejne` | ne | `true` = vztah zná družina. Výchozí `false` |
+
+Opačný směr (Dorn → Tusker) je samostatný vztah na kartě Dorna, s vlastním popisem a postojem.
+
+**Oddíly karty pro DM a pro družinu.** Nadpis oddílu začínající `DM` (`## DM`, `## DM — co postava neví`) je jen pro DM. Oddíl `## Co ví družina` je jediný text, který ukáže pohled družiny a později hráčská stránka. Karta bez něj ukáže v pohledu družiny jen název, ilustraci a veřejné vztahy.
+
+**Nástěnky** (`kampan/nastenky/<id>.yaml`) jsou uložená rozložení mapy kánonu: název, pohled (`dm` nebo `druzina`), seznam entit a jejich pozice. Entity, které nástěnka nezná, rozmístí mapa sama.
 
 **Připomínky pro Další den** (`kampan/pripominky.yaml`), potvrzený obsah:
 
@@ -621,6 +648,12 @@ Obsah
 - Sloučení zdrojů postav: Notion Characters, Claude projekt a dotazník do jednoho souboru na postavu
 - Oddělení DM rozhodnutí od hráčského kánonu se zachová (dvě složky)
 - Karty entit v panelu: název, ilustrace, hlavní údaje z hlavičky, text
+- Modul **Kánon** (rozhodnutí 69): mapa entit a vazeb vlevo, karta vybrané entity vpravo, filtry podle typu a štítku `aktualni`. Kreslí se ze souborů v `kampan/`, změna z Obsidianu se ukáže do 1 s. Knihovna pro kreslení sítě je součástí Hubu, ne z internetu
+- Malé úpravy z karty i z mapy přes `zapis.js`: přidat a odebrat vazbu nebo vztah (výběrem nebo přetažením mezi uzly), přezdívky, přepínače Ve hře (`aktualni`) a Družina zná (`verejne`). Hub mění jen tato pole hlavičky, zbytek souboru zůstane, jak ho DM napsal
+- Tlačítko Otevřít v Obsidianu u každé karty (odkaz `obsidian://`)
+- Vztahy s popisem a postojem (rozhodnutí 70): čáry na mapě mají barvu podle postoje a popis při najetí
+- Pohled družiny (rozhodnutí 71) a nástěnky: uložené rozložení mapy, například jen Mirabarská politika
+- Z karty jde F2 poznámka s odkazem `[[id]]` na tu entitu
 - Globální vyhledávání v liště podle názvu i aliasů
 - Z karty místa jde jedním klikem pustit jeho scénu (napojení na Blok 2)
 - Čtecí verze pro DM na GitHub Pages: statické stránky generované z `kampan/` po každém pushi (GitHub Actions)
@@ -642,6 +675,9 @@ Akceptační kritéria
 - Kontrola dat po převodu nehlásí žádnou chybějící vazbu ani duplicitní `id`
 - Hledání ukazuje výsledky do 200 ms během psaní a najde entitu i bez diakritiky („krkavci“ najde Krkavčí prapor)
 - Vazby mezi entitami jsou v kartě proklikávací a Obsidian je ukazuje v grafu
+- Mapa kánonu ukáže všechny entity z `kampan/` a funguje bez internetu
+- Úprava vazby, vztahu nebo přepínače v Hubu změní jen to pole: `git diff` ukáže jediný změněný řádek hlavičky (u vztahů a vazeb jejich řádky), tělo karty se nezmění
+- Pohled družiny neukáže žádnou entitu s `verejne: false`, žádný vztah bez `verejne: true` ani text mimo oddíl Co ví družina
 - Čtecí verze na GitHub Pages se do 5 minut po pushi aktualizuje
 
 ## Verze 2 — Příprava a výhled
@@ -650,7 +686,7 @@ Verze 2 přenese do Hubu přípravu sezení. Podrobné zadání vznikne, až bud
 
 | Část | Obsah | Kdy |
 | --- | --- | --- |
-| Editor entit | Vytváření a úprava postav, NPC, míst a bytostí v panelu | Verze 2 |
+| Editor entit | Vytváření entit a úprava celé karty (text, hlavička) v panelu. Vazby, vztahy, přezdívky a přepínače jde upravit už v Bloku 3 (rozhodnutí 69) | Verze 2 |
 | Šablona Lazy DM | Příprava sezení v osmi krocích nad `sablony/priprava-lazy-dm.md`, výstup do `sezeni/sNN/` | Verze 2 |
 | Generátor obchodů | Plné převzetí `generator.html` do panelu | Verze 2 |
 | Dílna pro portréty | Portréty postav, NPC a bytostí (1080×1500, odstranění pozadí) z `pripravit_ilustraci.py` | Verze 2 |
@@ -766,3 +802,7 @@ Nic z této sekce zatím neplatí. Každý bod se rozhodne nejpozději na začá
 | 96 | ⚠ Formát záznamů kánonu | Všechny převedené soubory `verejne: false` (karty obsahují tajemství DM), existující místa si nechají `true`. Hlavička navíc `ikona` (emoji karty) a `tags: [aktualni]` z tagu Current. **Postava:** `hrac`, `druh`, `povolani`; tělo Příběh, Výchozí stav (před sezením 1), DM — co postava neví, List postavy (z projektu v Claude), Dotazník (celý). Mechaniku (jazyky, dovednosti) drží list postavy. **Rozhodnutí:** `stav` (otevrene, rozhodnuto, zavrzeno; Kontrola dat ho hlídá), `oblast` (kampan nebo id postavy), `zaznamenano`, oddíly Kontext a Dopad. **Hráčský kánon:** `sezeni`, `kdo`, `doresit`, `verejne: true`, oddíly Co se stalo a Důsledek. **Text** se nepřepisuje; první zmínka entity v oddílu je `[[id\|Jméno]]` | Blok 3 |
 | 97 | ⚠ Místa bez ilustrace U stolu | Dlaždice U stolu → Místo ukazují jen místa s aspoň jednou ilustrací scény (a místo, které je právě v OBS nebo vybrané). Místa z kánonu bez obrázků jsou dál v modulu Místa, kde jim dílna může ilustraci přidat | Blok 3 |
 | 98 | ⚠ Šablony entit a příprava Lazy DM | `sablony/` má šablonu pro každý typ (postava, npc, padouch, frakce, misto, predmet, bytost, rozhodnuti, kanon, sezeni) a českou osnovu přípravy v osmi krocích `priprava-lazy-dm.md` místo anglické šablony z Notionu. Obsidian je použije přes Nastavení → Šablony se složkou `sablony` | Blok 3 |
+| 99 | ⚠ Vztahy při převodu kánonu | Claude navrhne `vztahy` jen tam, kde karta vztah říká („adoptivní otec“, „dluží“). Popis vezme z karty, postoj uvede jen u výslovně vyjádřeného postoje (láska, nenávist, nedůvěra), jinak pole vynechá. Všechny vztahy začnou s `verejne: false`, Družina zná nastaví DM. Oddíly s „(DM)“ v nadpisu se přejmenují na `## DM — …` (např. „Co Leta neví (DM)“ → „DM — co Leta neví“). Oddíl Co ví družina se při převodu nezakládá | Převod skupiny postavy |
+| 100 | ⚠ Kontrola dat u vztahů | Chyba: vztah bez `s` nebo `popis`, `postoj` mimo −3 až +3, `verejne` jiné než true/false. Varování: cíl vztahu neexistuje, nebo chybí ve `vazby` (Obsidian by ho neukázal v grafu) | Blok 3 |
+| 101 | ⚠ Odkaz Otevřít v Obsidianu | `obsidian://open?vault=<trezor>&file=<cesta>`. Jméno trezoru je nastavení tohoto PC v Nastavení → Hub (`OBSIDIAN_TREZOR` v `hub/.env`), výchozí je jméno složky repa. Obsidian musí mít repo otevřené jako trezor | Blok 3 |
+| 102 | ⚠ Mapa kánonu: podoba | Rozložení jako mapa kánonu z 19. 10. 2026 (samostatná stránka): síť vlevo, karta vpravo, barva uzlu podle typu, portrét v uzlu. Přetažení s klávesou Alt z uzlu na uzel založí vazbu a otevře popis vztahu. Hledání v liště zvýrazní uzel. Pohled družiny je přepínač v hlavičce modulu, ne samostatná obrazovka | Blok 3 |

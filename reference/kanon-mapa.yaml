@@ -127,11 +127,11 @@ polozky:
     poznamka: V Notionu s tagy NPC + Villain; je to rota, tedy frakce.
   - id: kruh
     typ: frakce
-    nazev: kruh (buňka)
+    nazev: kruh
     skupina: padousi-frakce
     akce: prevest
     zdroj: https://app.notion.com/p/3c89ed22673681dcb6b8cb9c803787e1
-    aliases: [kruh, buňka kruhu]
+    aliases: [kruh (buňka), buňka kruhu]
     vazby: [bifron-nox, praotec, tabor-kruhu, torva, novacek-kruhu]
     poznamka: Malé písmeno je záměr (karta to vysvětluje). Tag Villain.
   - id: rod-redgrave

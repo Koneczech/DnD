@@ -11,6 +11,7 @@ ilustrace:
     ucel: scena
     skryta: false
     puvod: src/places/Lurkwood/lesok.png
+    varianta: den
   - soubor: hloubka-lesa.png
     ucel: scena
     skryta: false

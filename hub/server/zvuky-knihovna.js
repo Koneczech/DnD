@@ -1,11 +1,11 @@
-// Soundboard a zvuky na tahu (otevřený bod 76): čisté funkce nad seznamem souborů ve složce zvuku
+// Soundboard a zvuky na tahu (bod 76): čisté funkce nad seznamem souborů ve složce zvuku
 // a nad mapou `kampan/zvuky.yaml`. Soubory zůstávají mimo repo (rozhodnutí 63); repo zná jen jména.
 //
 // Složky ve složce zvuku:
 //   jednorazove/<kategorie>/…  jednorázové zvuky (klik = jedno přehrání); stará složka efekty/ platí taky
 //   smycky/<kategorie>/…       smyčky (klik = zapnout, další klik = vypnout)
 //   tahy/…                     zvuky na tah v souboji
-//   nahodne/<kategorie>/…      náhodné zvuky prostředí (otevřený bod 85): hrají samy občas pod ambientem
+//   nahodne/<kategorie>/…      náhodné zvuky prostředí (bod 85): hrají samy občas pod ambientem
 // Varianty jednoho zvuku: `vlk-1.mp3`, `vlk-2.mp3` … jsou jedno tlačítko „vlk“, hraje náhodná varianta.
 import path from 'node:path';
 

@@ -1,4 +1,4 @@
-// Rozpoznání zásahů ze stavu Player View (otevřený bod 75). Sdílený modul: server porovnává stavy
+// Rozpoznání zásahů ze stavu Player View (bod 75). Sdílený modul: server porovnává stavy
 // přečtené z /playerviews, zkouška ve výstupu uder.html pouští stejnou logiku nad vymyšlenými stavy.
 //
 // Improved Initiative neposílá, kdo na koho útočil. Pozná se to ze dvou po sobě jdoucích stavů:
@@ -74,7 +74,7 @@ export function mistniObrazek(url) {
 }
 
 /**
- * Podoby postav podle tagu v Improved Initiative (otevřený bod 74): stejný obrázek, jaký ukazuje
+ * Podoby postav podle tagu v Improved Initiative (bod 74): stejný obrázek, jaký ukazuje
  * carousel přes vlastní CSS.
  */
 export const PODOBY = { zlovlk: '/kampan/postavy/alba/zlovlk.png', medved: '/kampan/postavy/alba/medved.png' };
@@ -96,7 +96,7 @@ export function karta(c) {
     tagy: t,
     hp: m?.druh === 'cisla' ? { hp: m.hp, docasne: m.docasne, max: m.max } : null,
     barvaHp: /^rgb\(/.test(String(c.HPColor ?? '')) ? c.HPColor : null,
-    // Poražený (0 HP nebo Defeated): výstup kartu ukáže zašedlou (otevřený bod 79).
+    // Poražený (0 HP nebo Defeated): výstup kartu ukáže zašedlou (bod 79).
     porazeny: padly(c, m),
   };
 }
@@ -131,7 +131,7 @@ export function zjistitUdery(stary, novy) {
     const presne = mc.druh === 'cisla' || mc.druh === 'ztrata';
     // Podíl maxima HP, který zásah ubral (nebo léčení vrátilo). U Colored Label ho prozradí zelená
     // složka barvy (⌊HP / max × 170⌋), i když Player View číslo neukazuje: velký zásah jde poznat
-    // i u nestvůr, aniž by hráči viděli jejich HP (otevřený bod 81).
+    // i u nestvůr, aniž by hráči viděli jejich HP (bod 81).
     const podil = mc.druh === 'cisla' && mc.max ? Math.abs(rozdil) / mc.max
       : mc.druh === 'barva' ? Math.abs(rozdil) / 170
         : null;

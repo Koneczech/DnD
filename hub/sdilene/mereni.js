@@ -1,4 +1,4 @@
-// Měření hlasitosti zvukových souborů (otevřený bod 86). Stránka Zvuk u stolu soubor jednou dekóduje,
+// Měření hlasitosti zvukových souborů (bod 86). Stránka Zvuk u stolu soubor jednou dekóduje,
 // změří a pošle výsledek Hubu; Hub pak každému souboru přidá zesílení na výchozí hladinu podle druhu.
 // Soubory se nemění.
 //

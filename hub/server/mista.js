@@ -171,7 +171,7 @@ export class Mista extends EventEmitter {
 
   /**
    * Zvuk místa pro den, noc, nebo souboj: hudba a ambient (jméno souboru ve složce zvuku, null = žádný),
-   * vzdálenost ambientu (0–1, 0 = smazat) a náhodné zvuky (seznam, prázdný = smazat; otevřený bod 85).
+   * vzdálenost ambientu (0–1, 0 = smazat) a náhodné zvuky (seznam, prázdný = smazat; bod 85).
    * Mění jen tyto klíče v `zvuk.<varianta>`, zbytek hlavičky zůstává.
    */
   async nastavitZvuk(id, varianta, zmeny) {
@@ -228,7 +228,7 @@ export class Mista extends EventEmitter {
     return { misto: this.get(id) };
   }
 
-  /** Dozvuk místa (`zvuk.dozvuk`, otevřený bod 85): prostor pro náhodné zvuky a soundboard. */
+  /** Dozvuk místa (`zvuk.dozvuk`, bod 85): prostor pro náhodné zvuky a soundboard. */
   async nastavitDozvuk(id, dozvuk) {
     this.get(id);
     if (!DOZVUKY.includes(dozvuk)) throw chyba(`Dozvuk je jeden z: ${DOZVUKY.join(', ')}.`);
@@ -246,7 +246,7 @@ export class Mista extends EventEmitter {
     return { misto: this.get(id) };
   }
 
-  /** Připnuté zvuky soundboardu pro místo (`zvuk.pripnute`, otevřený bod 76): ID skupin v pořadí tlačítek. */
+  /** Připnuté zvuky soundboardu pro místo (`zvuk.pripnute`, bod 76): ID skupin v pořadí tlačítek. */
   async nastavitPripnute(id, seznam) {
     this.get(id);
     if (!Array.isArray(seznam) || seznam.length > 24) throw chyba('Připnout jde nejvýš 24 zvuků.');

@@ -1,4 +1,4 @@
-// Jedno čtení Player View pro celý Hub (otevřený bod 75). Během souboje Hub každou sekundu přečte
+// Jedno čtení Player View pro celý Hub (bod 75). Během souboje Hub každou sekundu přečte
 // veřejný stav /playerviews/<ID>; z téhož stavu pak pracují světla podle HP (bod 72) i animace zásahu.
 // Improved Initiative tak dostane jeden dotaz za sekundu, ne jeden za každou funkci.
 import { EventEmitter } from 'node:events';

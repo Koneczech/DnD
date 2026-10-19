@@ -1,4 +1,4 @@
-// Odkaz na Player View z Improved Initiative (otevřený bod 69). Improved Initiative dává pro každé
+// Odkaz na Player View z Improved Initiative (bod 69). Improved Initiative dává pro každé
 // setkání nový odkaz; DM ho vloží do Hubu a Hub ho dosadí do zdroje Browser v OBS (ten má svoje CSS
 // carouselu, takže se mění jen adresa) a do náhledu na U stolu. Tracker zůstává jeho (rozhodnutí 6).
 import fs from 'node:fs/promises';

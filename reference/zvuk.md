@@ -9,7 +9,7 @@ Všechen zvuk hraje stránka `vystupy/zvuk-u-stolu.html` do BT reproduktoru u st
 
 Co hraje, určuje panel (místo, Den/Noc, počasí, souboj, Ticho). Stránky to jen plynule prolnou. Kde hraje hudba, přepneš v **Nastavení → Zvuk → Hudba hraje**.
 
-**Ucpané uši při málo HP**: když je na tahu postava s 25 % HP a méně, hudba nezeslábne, ale zní tupě, jako přes ucpané uši (dolní propust, otevřený bod 73). V **Nastavení → Zvuk → Hudba a málo HP** zvolíš, jestli se tlumí jen hudba, nebo i ambient, a jak silně. **Vyzkoušet 12 s** pustí tlumení spolu s pulzem lampy.
+**Ucpané uši při málo HP**: když je na tahu postava s 25 % HP a méně, hudba nezeslábne, ale zní tupě, jako přes ucpané uši (dolní propust, bod 73). V **Nastavení → Zvuk → Hudba a málo HP** zvolíš, jestli se tlumí jen hudba, nebo i ambient, a jak silně. **Vyzkoušet 12 s** pustí tlumení spolu s pulzem lampy.
 
 ## 1. Složka zvuku (jednou)
 
@@ -121,7 +121,7 @@ tahy:
 
 ### Náhodné zvuky, vzdálenost a dozvuk místa
 
-Nastavuje se v **Místa → místo → Zvuk** (otevřený bod 85):
+Nastavuje se v **Místa → místo → Zvuk** (bod 85):
 
 | Co | Kde | Jak zní |
 | --- | --- | --- |
@@ -170,11 +170,11 @@ zvuk:
 
 ## 5. Zvuková sada z Freesoundu a srovnání hlasitosti
 
-Soubory nemusíš stahovat, stříhat ani srovnávat ručně (otevřený bod 86).
+Soubory nemusíš stahovat, stříhat ani srovnávat ručně (bod 86).
 
 ### Zvuková sada
 
-Hub hledá zvuky ve dvou zdrojích (otevřené body 86 a 87):
+Hub hledá zvuky ve dvou zdrojích (body 86 a 87):
 
 | Zdroj | Co v něm je | Klíč |
 | --- | --- | --- |

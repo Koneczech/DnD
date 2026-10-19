@@ -22,7 +22,7 @@ export const STROP_SYTOSTI = 0.45;
 /** Blesky nejvýš 3 záblesky za sekundu (hranice fotosenzitivity). */
 export const MAX_ZABLESKU_ZA_S = 3;
 /*
- * Málo HP (otevřený bod 72): nastavení v Nastavení → Světla, uložené v hub/.stav/svetla.json.
+ * Málo HP (bod 72): nastavení v Nastavení → Světla, uložené v hub/.stav/svetla.json.
  * Lampa: režim „barvy“ (fáze A a B mají vlastní barvu, jas a délku) nebo „intenzita“ (barva A,
  * mění se jen jas). Čisté barvy bez bílé, ať lampa nejde do růžova; místo žluté teplá oranžová,
  * žlutá je na WiZ zelenkavá. Pozadí jednou barvou s náběhem.
@@ -33,7 +33,7 @@ export const VYCHOZI_HP = Object.freeze({
   a: { rgb: [255, 0, 0], jas: 100, s: 3 },
   b: { rgb: [255, 110, 0], jas: 70, s: 1 },
   pozadi: { rgb: [255, 0, 0], jas: 100, nabeh_s: 3 },
-  // Hlavní světlo v herně (otevřený bod 82): zčervená se stejným náběhem jako pozadí. Plná barva
+  // Hlavní světlo v herně (bod 82): zčervená se stejným náběhem jako pozadí. Plná barva
   // na přání DM (výjimka ze stropu sytosti, rozhodnutí 64), jas nejméně podlaha jasu kvůli deníkům.
   hlavni: { zap: true, rgb: [255, 0, 0], jas: 60 },
 });
@@ -217,7 +217,7 @@ export class Svetla extends EventEmitter {
     this.opakovaniMs = opakovaniMs;
     this.soubor = path.join(cesty.lokalniStav, 'svetla.json');
     this.mistni = { ridit: false, vychozi: { ...VYCHOZI_SVETLA }, hp: normalizujHp(), nabehStartu: true };
-    this.nabeh = null; // odpočet na scéně Start: světla se přelévají do výchozího stavu (otevřený bod 77)
+    this.nabeh = null; // odpočet na scéně Start: světla se přelévají do výchozího stavu (bod 77)
     this.vrstvy = { pocasi: {}, rezim: {} };
     this.chybyVrstev = [];
     this.zarizeni = new Map(); // klic → { klic, role, typ, ovladac, id, ok, chyba, posledni }
@@ -225,7 +225,7 @@ export class Svetla extends EventEmitter {
     this.casovacBlesku = null;
     this.casovacOpakovani = null;
     this.fronta = Promise.resolve();
-    this.kritickeHp = null; // postava na tahu s málo HP: lampa pulzuje (otevřený bod 72)
+    this.kritickeHp = null; // postava na tahu s málo HP: lampa pulzuje (bod 72)
     this.casovacPulzu = null;
   }
 
@@ -434,7 +434,7 @@ export class Svetla extends EventEmitter {
   }
 
   /**
-   * Odpočet do začátku hry (otevřený bod 77): podle stavu odpočtu spustí, pozastaví, nebo ukončí přelévání
+   * Odpočet do začátku hry (bod 77): podle stavu odpočtu spustí, pozastaví, nebo ukončí přelévání
    * světel do výchozího stavu. Volá app.js při každé změně odpočtu.
    */
   odpocet(s) {
@@ -658,7 +658,7 @@ export class Svetla extends EventEmitter {
     return { blesk: true };
   }
 
-  /* ---------- Světla podle HP (otevřený bod 72) ---------- */
+  /* ---------- Světla podle HP (bod 72) ---------- */
 
   /**
    * Postava hráče na tahu s málo HP (nebo null): lampa střídá fázi A a B (barvy, nebo jen jas)

@@ -6,14 +6,14 @@ Návod, jak kánon z Notionu, projektu v Claude a dotazníku převést do `kampa
 
 ## Jednou před převodem
 
-1. **DM rozhodne rozpory R1–R16** z auditu (R1, R2, R3 a R11 jsou rozhodnuté 19. 10. 2026). Stačí odpovědět u každého „návrh platí“ nebo napsat jinak. Rozhodnutí se zapíšou do mapy, například typ Torvy nebo sloučení kontaktu v Longsaddle do Malka.
+1. **Rozpory R1–R16 jsou rozhodnuté** (DM 19. 10. 2026, `reference/kanon-audit.md`). Rozhodnutí jsou v mapě v `rozhodnute_rozpory`; text karet se opraví jen podle nich.
 2. **Záloha Notionu.** Postup:
    1. Otevři stránku „Lazy RPG Campaign Template (1)“.
    2. Klikni na `•••` vpravo nahoře a zvol **Export**.
    3. Nastav formát **Markdown & CSV** a zapni **Include subpages** a **Create folders for subpages**.
    4. Export. Notion pošle odkaz na ZIP e-mailem nebo ho rovnou stáhne.
 
-   ZIP ulož **mimo repo**, třeba do `Dokumenty\DnD\zalohy\notion-2026-10-xx.zip`. Repo je veřejné a export obsahuje i šablonu, obrázky a texty Sly Flourish, které do veřejného repa nepatří. ZADANI předpokládalo `archiv/notion-<datum>/` v repu, proto je to otevřený bod 95.
+   ZIP ulož **mimo repo**, třeba do `Dokumenty\DnD\zalohy\notion-2026-10-xx.zip`. Repo je veřejné a export obsahuje i šablonu, obrázky a texty Sly Flourish, které do veřejného repa nepatří. ZADANI předpokládalo `archiv/notion-<datum>/` v repu, proto je to bod 95.
 3. **Sloučit PR s přípravou** (šablony, mapa, report) přes Systém → Aktualizovat.
 
 ## Pořadí skupin
@@ -30,6 +30,7 @@ Po každé skupině běží `npm run kanon -- <skupina>` a DM skupinu potvrdí. 
 | 6 | `rozhodnuti` | 39 | Zastaralé otevřené otázky (R15) |
 | 7 | `sezeni` | 1 | Zápis sezení 1 |
 | 8 | doplnit | 10 | Váček se semeny, Hlídač kruhu, Tavis, lidé z Longsaddle … Text předloží Claude a soubor vznikne po potvrzení |
+| 9 | hráčský kánon | — | Záznamy `kanon/` pro sezení 1 a 2 (DM 19. 10.). Navrhne je Claude ze zápisů, zápis sezení 2 vznikne z přepisu nahrávky |
 
 Report je hotový, když platí všechno z tohoto seznamu:
 
@@ -49,7 +50,7 @@ To jsou akceptační kritéria Bloku 3.
 - Tabulky z Notionu se převedou na markdown tabulky. Citace `>` a odrážky zůstanou.
 - **Odkazy:** první zmínka o jiné entitě v každém oddílu se změní na `[[id|Jméno]]`. Například „**Ordwinem Sohlou**“ se změní na `**[[ordwin-sohla|Ordwinem Sohlou]]**`. Další zmínky ve stejném oddílu zůstanou textem. Id bere z mapy.
 - Oddíly „Dnes“, „Současný stav“ a „Teď“, které popisují stav před sezením 1, dostanou nadpis **Výchozí stav (před sezením 1)** (R16). Text pod nimi zůstane.
-- Oddíly jen pro DM mají nadpis začínající `DM`: „Co Leta neví (DM)“ se změní na **DM — co Leta neví**, „DM sekce — co Tusker neví“ na **DM — co Tusker neví**. Hub podle toho pozná, co do pohledu družiny nikdy nepatří (otevřený bod 99).
+- Oddíly jen pro DM mají nadpis začínající `DM`: „Co Leta neví (DM)“ se změní na **DM — co Leta neví**, „DM sekce — co Tusker neví“ na **DM — co Tusker neví**. Hub podle toho pozná, co do pohledu družiny nikdy nepatří (bod 99).
 - Oddíl **Co ví družina** se při převodu nezakládá. Napíše ho DM, až bude chtít entitu ukázat v pohledu družiny.
 
 ### Hlavička (všechny typy)

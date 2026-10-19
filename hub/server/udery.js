@@ -1,4 +1,4 @@
-// Animace zásahu (otevřený bod 75): porovnává po sobě jdoucí stavy Player View a ohlásí zásah,
+// Animace zásahu (bod 75): porovnává po sobě jdoucí stavy Player View a ohlásí zásah,
 // léčení nebo pád. Výstup uder.html podle toho ukáže karty a animaci.
 import { EventEmitter } from 'node:events';
 import { zjistitUdery, rezimHp } from '../sdilene/udery.js';

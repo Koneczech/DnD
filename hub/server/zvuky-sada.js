@@ -1,4 +1,4 @@
-// Zvuková sada (otevřené body 86 a 87): `kampan/zvuky-sada.yaml` říká, jaké zvuky má složka zvuku mít
+// Zvuková sada (body 86 a 87): `kampan/zvuky-sada.yaml` říká, jaké zvuky má složka zvuku mít
 // a jak je najít. Repo drží jen popis (hledaný text, délku, počet variant, licence); samotné soubory
 // Hub stáhne do složky zvuku mimo repo (rozhodnutí 63) a autory zapíše do `zdroje.json`.
 //
@@ -6,7 +6,7 @@
 //   Freesound  APIv2 s klíčem (token), náhledy MP3 bez OAuth; jen když je klíč vložený
 //   Openverse  vyhledávač WordPressu nad volně licencovanými zvuky (Wikimedia Commons, Jamendo,
 //              ccMixter, Freesound …), bez klíče
-//   Kenney     balíčky CC0 z kenney.nl (otevřený bod 88): položka s `balik` vezme jmenované soubory
+//   Kenney     balíčky CC0 z kenney.nl (bod 88): položka s `balik` vezme jmenované soubory
 //              z balíčku; ZIP se stáhne jednou do složky zvuku (baliky/) a dál se pracuje lokálně
 import path from 'node:path';
 import { platneId } from './zvuky-knihovna.js';

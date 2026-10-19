@@ -1,4 +1,4 @@
-// Záznam událostí Hubu (otevřený bod 84): co se dělo a co selhalo, aby šly chyby u stolu dohledat.
+// Záznam událostí Hubu (bod 84): co se dělo a co selhalo, aby šly chyby u stolu dohledat.
 // Posledních 2000 záznamů drží v paměti (panel, /api/zaznam) a zapisuje je i do denního souboru
 // hub/.stav/zaznam/hub-RRRR-MM-DD.log (mimo Git, staré soubory po 14 dnech maže).
 // Do záznamu nikdy nejde nic tajného: hesla, klíče, relace ani PIN se sem nepředávají.

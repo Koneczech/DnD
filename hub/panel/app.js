@@ -222,7 +222,7 @@ function vykresliUpozorneni() {
   }
   if (!p) return;
   if (p.server?.restartV) {
-    // Restart po aktualizaci (otevřený bod 91): odpočet s možností odložit.
+    // Restart po aktualizaci (bod 91): odpočet s možností odložit.
     const zbyva = Math.max(0, Math.ceil((p.server.restartV - Date.now() - (stav.odchylkaHodin ?? 0)) / 1000));
     const z = zprava(`Nová verze Hubu je stažená. Hub se za ${zbyva} s restartuje sám; panel i výstupy v OBS se pak načtou znovu.`, { tlacitko: { text: 'Restartovat hned', akce: restartovatHub } });
     const odlozit = Object.assign(document.createElement('button'), { type: 'button', className: 'tiche', textContent: 'Teď ne' });
@@ -298,7 +298,7 @@ $('#tlacitko-restart').addEventListener('click', restartovatHub);
 
 function vykresliKontrolky() {
   const p = stav.prehled;
-  // Údržba v rozbalovacím Systému (otevřený bod 91): Kontrola dat a restart vždy po ruce.
+  // Údržba v rozbalovacím Systému (bod 91): Kontrola dat a restart vždy po ruce.
   {
     const problemy = p?.kontrola?.problemy ?? [];
     const chyby = problemy.filter((x) => x.uroven === 'chyba').length;
@@ -1058,7 +1058,7 @@ function vykresliSouboj() {
 
 $('#souboj-prepnout').addEventListener('click', () => $('#tlacitko-souboj').click());
 
-/* Player View: Improved Initiative dává pro každé setkání nový odkaz (otevřený bod 69). */
+/* Player View: Improved Initiative dává pro každé setkání nový odkaz (bod 69). */
 function vykresliIniciativu() {
   const i = stav.prehled?.iniciativa;
   // Nastavení → Hub: přihlášení Epic přes průchod.
@@ -1079,7 +1079,7 @@ function vykresliIniciativu() {
   el.className = stav.iniciativaChyba ? 'ulozeni chyba' : i?.chyba ? 'ulozeni varovani' : 'ulozeni';
   el.textContent = stav.iniciativaChyba
     ?? (!i?.odkaz ? 'Vlož odkaz na Player View: Hub ho dá do OBS i do náhledu.' : i.chyba ?? `V OBS: ${i.zdroje.join(', ')}`);
-  // Nastavení Player View v účtu Epic (otevřený bod 78): typicky je přepíše druhé okno editoru s jiným nastavením.
+  // Nastavení Player View v účtu Epic (bod 78): typicky je přepíše druhé okno editoru s jiným nastavením.
   const ucet = pr?.prihlasen ? pr.ucet : null;
   const idOdkazu = i?.odkaz?.match(/\/p\/([A-Za-z0-9_-]+)/)?.[1];
   const varovani = [];
@@ -1205,7 +1205,7 @@ function otevritIniciativu() {
     }
     // Přes průchod Hubu: stejné přihlášení, stejné úložiště a nastavení z účtu jako editor v panelu.
     // Přímá adresa improvedinitiative.app má vlastní úložiště prohlížeče a po uložení by do účtu
-    // poslala jiná nastavení Player View (otevřený bod 78).
+    // poslala jiná nastavení Player View (bod 78).
     if (prazdne) oknoIniciativy.location.href = adresaVlozeneIniciativy() ?? ADRESA_INICIATIVY;
   }
   oknoIniciativy.focus();
@@ -1304,7 +1304,7 @@ for (const [id, akce] of [['#odpocet-spustit', 'spustit'], ['#odpocet-pauza', 'p
 }
 
 
-/* ---------- GitHub: Aktualizovat (otevřený bod 91) ---------- */
+/* ---------- GitHub: Aktualizovat (bod 91) ---------- */
 
 function popisTlacitkaAktualizovat(g) {
   if (!g?.dostupny) return 'Aktualizovat';
@@ -2438,7 +2438,7 @@ for (const b of document.querySelectorAll('[data-kopirovat]')) {
 
 $('#adresa-vystupu').textContent = `${location.origin}/vystupy/test.html`;
 
-/* ---------- Záznam událostí (otevřený bod 84) ---------- */
+/* ---------- Záznam událostí (bod 84) ---------- */
 
 const MAX_ZAZNAMU_V_PANELU = 300;
 let zaznamPolozky = [];
@@ -2930,7 +2930,7 @@ function vykresliZvuk() {
   );
 }
 
-/* ---------- Zvuková sada a srovnání hlasitosti (otevřený bod 86) ---------- */
+/* ---------- Zvuková sada a srovnání hlasitosti (bod 86) ---------- */
 
 function vykresliSadu(z) {
   const sada = z.sada;
@@ -3126,7 +3126,7 @@ $('#zvuk-prohledat').addEventListener('click', async () => {
   }
 });
 
-/* ---------- Soundboard (otevřený bod 76) ---------- */
+/* ---------- Soundboard (bod 76) ---------- */
 
 /** Všechny zvuky knihovny (jednorázové i smyčky) s druhem. */
 function zvukyKnihovny() {
@@ -3383,7 +3383,7 @@ function vykresliZvukMista(m) {
     }
   };
 
-  // Dozvuk místa: platí pro den i noc (otevřený bod 85).
+  // Dozvuk místa: platí pro den i noc (bod 85).
   const prostor = document.createElement('div');
   prostor.className = 'zvuk-radek';
   prostor.append(Object.assign(document.createElement('strong'), { textContent: 'Prostor' }));
@@ -3431,7 +3431,7 @@ function vykresliZvukMista(m) {
       label.append(select);
       radek.append(label, prehrat);
     }
-    // Vzdálenost ambientu (otevřený bod 85): tišší a tupější, jako by se ozýval zdálky.
+    // Vzdálenost ambientu (bod 85): tišší a tupější, jako by se ozýval zdálky.
     const { label: lVzd } = posuvnikZvuku('Vzdálenost ambientu', m.zvuk?.[varianta]?.vzdalenost ?? 0, popisVzdalenosti, (v) =>
       ulozitZvuk(`/api/mista/${m.id}/zvuk/${varianta}`, { vzdalenost: v }, `Vzdálenost ambientu pro ${kdy} uložena`),
     );
@@ -3447,7 +3447,7 @@ function vykresliZvukMista(m) {
 }
 
 /**
- * Náhodné zvuky místa pro den, nebo noc (otevřený bod 85): krátké zvuky, které se samy občas ozvou
+ * Náhodné zvuky místa pro den, nebo noc (bod 85): krátké zvuky, které se samy občas ozvou
  * pod ambientem. Každá změna uloží celý seznam.
  */
 function vykresliNahodne(m, varianta, ulozitZvuk) {

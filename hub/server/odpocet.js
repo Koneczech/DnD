@@ -33,7 +33,7 @@ export class Odpocet extends EventEmitter {
   }
 
   static prazdny() {
-    // prepnuti: záznam o přepnutí scény po doběhnutí (otevřený bod 21), aby se přepnulo jen jednou
+    // prepnuti: záznam o přepnutí scény po doběhnutí (bod 21), aby se přepnulo jen jednou
     return { stav: 'zadny', konec: null, zbyvaMs: null, celkemMs: null, cilovyCas: null, prepnuti: null };
   }
 

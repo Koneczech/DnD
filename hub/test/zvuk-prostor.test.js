@@ -1,4 +1,4 @@
-// Zvuk prostoru (otevřený bod 85): náhodné zvuky, vzdálenost a dozvuk místa.
+// Zvuk prostoru (bod 85): náhodné zvuky, vzdálenost a dozvuk místa.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';

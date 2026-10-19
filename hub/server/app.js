@@ -56,7 +56,7 @@ export async function otiskKodu(slozky) {
   return hash.digest('hex').slice(0, 12);
 }
 
-/** Po kolika ms od konce odpočtu se scéna po restartu Hubu ještě přepne (otevřený bod 21). */
+/** Po kolika ms od konce odpočtu se scéna po restartu Hubu ještě přepne (bod 21). */
 export const PREPNUTI_PO_RESTARTU_MS = 10 * 60 * 1000;
 
 const TYPY_SOUBORU = {
@@ -161,14 +161,14 @@ export class Hub {
     });
     this.data.dalsiKontroly = () => this.zvuk.kontrola();
     this.iniciativa = new Iniciativa({ cesty: this.c, obs: this.obs });
-    // Záznam událostí (otevřený bod 84): co se dělo a co selhalo, i do hub/.stav/zaznam/.
+    // Záznam událostí (bod 84): co se dělo a co selhalo, i do hub/.stav/zaznam/.
     this.zaznam = new Zaznam({ slozka: path.join(this.c.lokalniStav, 'zaznam') });
-    // Player View se čte jen během souboje, jednou za sekundu pro celý Hub (otevřený bod 75).
+    // Player View se čte jen během souboje, jednou za sekundu pro celý Hub (bod 75).
     this.cteniPlayerView = new CteniPlayerView({
       odkaz: () => this.iniciativa.odkaz,
       aktivni: () => this.scena.stav.rezim === 'souboj',
     });
-    // Světla podle HP (otevřený bod 72) a zvuky na tahu (bod 76): ze stavu, který přečetlo cteniPlayerView.
+    // Světla podle HP (bod 72) a zvuky na tahu (bod 76): ze stavu, který přečetlo cteniPlayerView.
     this.sledovaniHp = new SledovaniHp({
       odkaz: () => this.iniciativa.odkaz,
       // Player View se čte celý souboj (zvuky na tahu); málo HP jen se zapnutým vypínačem.
@@ -177,7 +177,7 @@ export class Hub {
       hlidatHp: () => this.nastaveni.hodnoty.HP_SVETLA !== '0',
       nacist: () => this.cteniPlayerView.posledni(),
     });
-    // Animace zásahu (otevřený bod 75): výstup uder.html.
+    // Animace zásahu (bod 75): výstup uder.html.
     this.udery = new Udery();
     this.sledovaniHp.on('zmena', (k) => this.svetla.nastavitKritickeHp(k));
     this.sledovaniHp.on('tah', (kdo) => this.zvuk.tah(kdo));
@@ -198,7 +198,7 @@ export class Hub {
     this.restartovat = null;
     /** Proč je potřeba restart (stažený nový kód, změna portu), nebo null. */
     this.restartNutny = null;
-    /** Naplánovaný restart po Aktualizovat (otevřený bod 91): čas v ms, nebo null. */
+    /** Naplánovaný restart po Aktualizovat (bod 91): čas v ms, nebo null. */
     this.restartV = null;
     this.casovacRestartu = null;
     /** Commit, se kterým Hub běží: `git pull` mimo Hub (PowerShell) se pozná podle změny. */
@@ -252,7 +252,7 @@ export class Hub {
   }
 
   /**
-   * Záznam událostí (otevřený bod 84): poslouchá části Hubu a zapisuje změny a chyby. Stavy, které se
+   * Záznam událostí (bod 84): poslouchá části Hubu a zapisuje změny a chyby. Stavy, které se
    * hlásí opakovaně (stránky zvuku, OBS, světla), se zapisují jen při změně.
    */
   pripojitZaznam() {
@@ -876,7 +876,7 @@ export class Hub {
     } else {
       const bezel = this.scena.stav.rezim === 'souboj';
       scenaObs = this.scena.ukoncitSouboj().obsScena;
-      // Vítězná fanfára (otevřený bod 76); „Konec bez fanfáry“ pro útěk nebo prohru.
+      // Vítězná fanfára (bod 76); „Konec bez fanfáry“ pro útěk nebo prohru.
       if (bezel && fanfara) this.zvuk.fanfara();
     }
     const zacatek = Date.now();
@@ -909,7 +909,7 @@ export class Hub {
       return z.hlasit(String(telo.stranka), telo);
     }
     if (p === '/api/zvuk/efekt' && m === 'POST') return z.efekt(await nacistJson(req));
-    // Srovnání hlasitosti a zvuková sada (otevřený bod 86).
+    // Srovnání hlasitosti a zvuková sada (bod 86).
     if (p === '/api/zvuk/mereni' && m === 'POST') return z.zapsatMereni(await nacistJson(req));
     if (p === '/api/zvuk/sada/doplnit' && m === 'POST') {
       const telo = await nacistJson(req);
@@ -1253,7 +1253,7 @@ export class Hub {
   }
 
   /**
-   * Průchod k Improved Initiative s relací DM (otevřený bod 70): běží, jen když je relace vložená.
+   * Průchod k Improved Initiative s relací DM (bod 70): běží, jen když je relace vložená.
    * Selhání (obsazený port) Hub neshodí, jen ho ohlásí.
    */
   async zajistitPruchod() {

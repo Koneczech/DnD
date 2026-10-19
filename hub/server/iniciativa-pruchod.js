@@ -1,4 +1,4 @@
-// Průchod k Improved Initiative s přihlášením (otevřený bod 70). Vložený Improved Initiative se sám
+// Průchod k Improved Initiative s přihlášením (bod 70). Vložený Improved Initiative se sám
 // nepřihlásí: jeho cookie relace nemá SameSite, a prohlížeč ji do stránky vložené na jiném webu nepošle.
 // Průchod běží jen na tomto počítači (127.0.0.1, port Hubu + 1), posílá požadavky na improvedinitiative.app
 // a přidává k nim relaci DM (connect.sid z hub/.env). Prohlížeč relaci nikdy nedostane.
@@ -82,7 +82,7 @@ export class PruchodIniciativy extends EventEmitter {
     this.pripojit = pripojit;
     this.server = null;
     this.prihlasen = null; // true / false / null (nezjištěno)
-    // Nastavení Player View v účtu (otevřený bod 78): bez vlastního Encounter ID se Player View v OBS
+    // Nastavení Player View v účtu (bod 78): bez vlastního Encounter ID se Player View v OBS
     // přestane hýbat, bez portrétů karty nemají ilustrace. Panel na to upozorní.
     this.ucet = null; // { encounterId, portrety }
   }

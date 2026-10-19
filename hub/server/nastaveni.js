@@ -124,9 +124,9 @@ export class Nastaveni {
       // Zvuk (Blok 5): složka mimo repo, prázdná = Dokumenty\DnD\audio.
       zvukSlozka: this.hodnoty.ZVUK_SLOZKA || '',
       zvukOtevrit: this.hodnoty.ZVUK_OTEVRIT !== '0',
-      // Improved Initiative (otevřený bod 70): relace nikdy, jen jestli je vložená.
+      // Improved Initiative (bod 70): relace nikdy, jen jestli je vložená.
       iiRelaceNastavena: Boolean(this.hodnoty.II_RELACE),
-      // Zvuková sada (otevřený bod 86): klíč Freesound nikdy, jen jestli je vložený.
+      // Zvuková sada (bod 86): klíč Freesound nikdy, jen jestli je vložený.
       freesoundNastaven: Boolean(this.hodnoty.FREESOUND_KLIC),
     };
   }

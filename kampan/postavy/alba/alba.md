@@ -3,7 +3,7 @@ schema: 1
 id: alba
 typ: postava
 nazev: "Albalunna „Alba“ Nox"
-verejne: false
+verejne: true
 ikona: 🌙
 hrac: Adriana
 druh: ásimar
@@ -15,7 +15,7 @@ vztahy:
   - { s: "[[patyk]]", popis: "los, kamarád z dětství" }
   - { s: "[[corvain-thornroot]]", popis: "hraničář, který jí dal směr do Lurkwoodu" }
   - { s: "[[albina-matka]]", popis: "matka, kterou má za mrtvou" }
-tags: []
+tags: [aktualni]
 ilustrace:
   - { soubor: /Alba.png, ucel: portret }
   - { soubor: zlovlk.png, ucel: portret, varianta: zlovlk }

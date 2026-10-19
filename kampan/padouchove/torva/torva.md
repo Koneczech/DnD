@@ -3,7 +3,7 @@ schema: 1
 id: torva
 typ: padouch
 nazev: "Torva"
-verejne: false
+verejne: true
 ikona: 🌿
 aliases: []
 vazby: ["[[kruh]]", "[[tabor-kruhu]]", "[[novacek-kruhu]]", "[[lurkwood]]", "[[hlidac-kruhu]]", "[[tusker]]", "[[koudur]]", "[[alba]]", "[[leta]]"]

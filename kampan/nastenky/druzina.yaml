@@ -1,0 +1,23 @@
+# Nástěnka mapy kánonu (rozhodnutí 69). Ukládá ji Hub tlačítkem Uložit rozložení.
+nazev: Družina
+pohled: druzina
+jen_tyto: false
+entity:
+  - { id: alba, x: -339, y: 2 }
+  - { id: koudur, x: -220, y: 1 }
+  - { id: leta, x: -343, y: 98 }
+  - { id: tusker, x: -222, y: 90 }
+  - { id: novacek-kruhu, x: 80, y: -73 }
+  - { id: torva, x: 191, y: -83 }
+  - { id: cesta, x: 365, y: -3 }
+  - { id: longsaddle, x: 251, y: -4 }
+  - { id: lurkwood, x: 191, y: -3 }
+  - { id: mirabar, x: 84, y: -6 }
+  - { id: tabor-lupicu, x: 310, y: -3 }
+  - { id: s01-alba-omracena-v-lurkwoodu, x: 87, y: 62 }
+  - { id: s01-boj-v-tabore-kruhu, x: 186, y: 62 }
+  - { id: s01-cesta-na-jih, x: 197, y: 319 }
+  - { id: s01-co-druzina-zjistila-v-tabore, x: 281, y: 60 }
+  - { id: s01-leta-okradla-koudura, x: 115, y: 270 }
+  - { id: s01-tusker-vzal-semena, x: 257, y: 245 }
+  - { id: s01-zajeti-v-ulicce, x: 96, y: 203 }

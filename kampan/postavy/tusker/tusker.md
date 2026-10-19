@@ -3,7 +3,7 @@ schema: 1
 id: tusker
 typ: postava
 nazev: "Tusker Treestone"
-verejne: false
+verejne: true
 ikona: 🪵
 hrac: Martin
 druh: ork
@@ -17,7 +17,7 @@ vztahy:
   - { s: "[[rurik-tarn]]", popis: "kolega od stráže, který ho měsíce ponižoval" }
   - { s: "[[stary-trhovec]]", popis: "zachránil mu na hlídce život" }
   - { s: "[[neznamy-muz-tusker]]", popis: "přinesl ho jako nemluvně k Treestoneům" }
-tags: []
+tags: [aktualni]
 ilustrace:
   - { soubor: /Tusker.png, ucel: portret }
 zdroj: https://app.notion.com/p/3c79ed226736814ba009f59934f5fd91

@@ -3,7 +3,7 @@ schema: 1
 id: novacek-kruhu
 typ: npc
 nazev: "Nováček kruhu"
-verejne: false
+verejne: true
 ikona: 🪕
 aliases: ["Nováček kruhu", "kluk z kruhu"]
 vazby: ["[[kruh]]", "[[koudur]]", "[[torva]]", "[[tabor-kruhu]]", "[[stopa-do-yartaru]]", "[[tavis]]"]

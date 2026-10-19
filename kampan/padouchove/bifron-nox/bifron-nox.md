@@ -5,7 +5,7 @@ typ: padouch
 nazev: "Bifron Nox"
 verejne: false
 ikona: 🌳
-aliases: ["Bifron", "„on“"]
+aliases: ["Bifron"]
 vazby: ["[[alba]]", "[[albina-matka]]", "[[praotec]]", "[[rod-redgrave]]", "[[tarnwick]]", "[[krkavci-prapor]]", "[[osric-redgrave]]", "[[corvain-thornroot]]", "[[bruna-ironvale]]", "[[kruh]]", "[[lurkwood]]", "[[tichy-hvozd]]"]
 vztahy:
   - { s: "[[alba]]", popis: "dcera" }

@@ -3,7 +3,7 @@ schema: 1
 id: koudur
 typ: postava
 nazev: "Koudur Hardbeard"
-verejne: false
+verejne: true
 ikona: 🎶
 hrac: Zaky
 druh: trpaslík
@@ -19,7 +19,7 @@ vztahy:
   - { s: "[[brann-kettleborn]]", popis: "prodal mu dudy a učil ho na ně hrát" }
   - { s: "[[ulfgar-tinbarrel]]", popis: "šenkýr, který ho nechal tajně hrát Na Zvonici" }
   - { s: "[[norra-ambleforge]]", popis: "matčina kamarádka, pozvala ho hrát do Triboaru" }
-tags: []
+tags: [aktualni]
 ilustrace:
   - { soubor: /Koudur.png, ucel: portret }
 zdroj: https://app.notion.com/p/3c69ed22673681ae92c9f4ddb3ab85fe

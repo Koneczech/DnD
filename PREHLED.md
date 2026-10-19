@@ -45,8 +45,8 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | **Údržba** | Aktualizovat jedním tlačítkem, restart sám, Kontrola dat, Záznam událostí | ◐ |
 | **Kánon** (Blok 3) | Příprava převodu: audit zdrojů, mapa převodu, šablony, report `npm run kanon` | ◐ |
 | | Vztahy s popisem a postojem: formát, šablony, Kontrola dat | ◐ |
-| | Převedené karty: postavy (4), padouši a frakce (6), NPC (23), místa (16), předměty (6) | ◐ |
-| | Převedené karty: místa, předměty, rozhodnutí, sezení; hledání, karty v panelu | ✗ |
+| | Převedené karty: postavy (4), padouši a frakce (6), NPC (23), místa (16), předměty (6), registr rozhodnutí (39), zápis sezení 1 | ◐ |
+| | Doplnit mimo Notion (7 karet), hráčský kánon sezení 1 a 2, zápis sezení 2; hledání a karty v panelu | ✗ |
 | | Modul Kánon: mapa, malé úpravy, Otevřít v Obsidianu, pohled družiny, nástěnky | ✗ |
 | | Hráčská stránka na GitHub Pages (pohled družiny) | ✗ |
 | **Verze 2** | Editor entit, příprava Lazy DM, generátor obchodů, portréty, export do IIO | ✗ |

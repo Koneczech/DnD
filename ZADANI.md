@@ -194,6 +194,8 @@ Dřívější otevřené body s návrhem. DM je potvrdil 19. 10. 2026 a čísla 
 | 100 | Kontrola dat u vztahů | Chyba: vztah bez `s` nebo `popis`, `postoj` mimo −3 až +3, `verejne` jiné než true/false. Varování: cíl vztahu neexistuje, nebo chybí ve `vazby` (Obsidian by ho neukázal v grafu) |
 | 101 | Odkaz Otevřít v Obsidianu | `obsidian://open?vault=<trezor>&file=<cesta>`. Jméno trezoru je nastavení tohoto PC v Nastavení → Hub (`OBSIDIAN_TREZOR` v `hub/.env`), výchozí je jméno složky repa. Obsidian musí mít repo otevřené jako trezor |
 | 102 | Mapa kánonu: podoba | Rozložení jako mapa kánonu z 19. 10. 2026 (samostatná stránka): síť vlevo, karta vpravo, barva uzlu podle typu, portrét v uzlu. Přetažení s klávesou Alt z uzlu na uzel založí vazbu a otevře popis vztahu. Hledání v liště zvýrazní uzel. Pohled družiny je přepínač v hlavičce modulu, ne samostatná obrazovka |
+| 103 | Podoby Alby v hlavičce | `alba.md` má v `ilustrace` vedle portrétu `/Alba.png` i `zlovlk.png` a `medved.png` s `ucel: portret` a `varianta` podle tagu v Improved Initiative (bod 74) |
+| 104 | Hlavička postav a oddíl Výchozí stav | `druh` a `povolani` česky podle překladového klíče (ork, trpaslík, ásimar, hobit; Barbar 3 (Cesta Stromu světa), Bard 3 (Kolej znalostí), Druid 3 (Kruh Měsíce), Tulák 3 (Zloděj)); text karty zůstává, jak je (půlčice, Rogue). Koudur nemá oddíl Výchozí stav: jeho „Dnes“ je bod 7 uvnitř kapitoly Odjezd a zůstává tam. Dotazník obsahuje všechny vyplněné otázky včetně jména hráče, bez časové značky |
 
 ## Architektura
 
@@ -813,5 +815,3 @@ Nic z této sekce zatím neplatí. Každý bod se rozhodne nejpozději na začá
 | 45 | Zdroje hudby a ambientu | Soubory zůstávají jen doma (rozhodnutí 63), stačí licence pro soukromé hraní. Kandidáti: Tabletop Audio (ambienty pro RPG), Freesound.org (zvuky s licencí CC0 nebo CC BY, u každého souboru zvlášť), Incompetech Kevina MacLeoda (hudba CC BY), YouTube Audio Library. Podmínky každého zdroje DM ověří před stažením | Blok 5 |
 | 46 | Druhá WiZ lampa | Role `lampa` bere seznam zařízení; dopíše se v Nastavení bez změny dat | Až bude |
 | 47 | Které BT reproduktory a PC | Reproduktor spárovaný s herním PC, nejlépe se síťovým napájením (bateriové se uspávají). Ověřit, že Windows na tomto PC umí výstup podle aplikace | Blok 5 |
-| 103 | ⚠ Podoby Alby v hlavičce | `alba.md` má v `ilustrace` vedle portrétu `/Alba.png` i `zlovlk.png` a `medved.png` s `ucel: portret` a `varianta` podle tagu v Improved Initiative (bod 74) | Převod skupiny postavy |
-| 104 | ⚠ Hlavička postav a oddíl Výchozí stav | `druh` a `povolani` česky podle překladového klíče (ork, trpaslík, ásimar, hobit; Barbar 3 (Cesta Stromu světa), Bard 3 (Kolej znalostí), Druid 3 (Kruh Měsíce), Tulák 3 (Zloděj)); text karty zůstává, jak je (půlčice, Rogue). Koudur nemá oddíl Výchozí stav: jeho „Dnes“ je bod 7 uvnitř kapitoly Odjezd a zůstává tam. Dotazník obsahuje všechny vyplněné otázky včetně jména hráče, bez časové značky | Převod skupiny postavy |

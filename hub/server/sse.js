@@ -24,6 +24,9 @@ export function filtrUdalosti(url) {
 // „verze“ (otisk kódu panelu a výstupů) dostává každý klient: po změně kódu se stránka sama obnoví.
 const chce = (filtr, udalost) => !filtr || udalost === 'verze' || filtr.has(udalost);
 
+/** Události, které platí jen v okamžiku odeslání. */
+const JEDNORAZOVE = new Set(['zvuk-efekt', 'zvuk-povel']);
+
 export class Vysilac {
   constructor({ srdceMs = 15000 } = {}) {
     /** @type {Set<{res: import('node:http').ServerResponse, filtr: Set<string>|null}>} */
@@ -74,7 +77,9 @@ export class Vysilac {
   }
 
   vyslat(udalost, data) {
-    this.posledni.set(udalost, data);
+    // Jednorázové pokyny (zvukový efekt, další skladba) se novému klientovi znovu neposílají:
+    // otevřená nebo obnovená stránka u stolu by jinak zahrála poslední efekt podruhé.
+    if (!JEDNORAZOVE.has(udalost)) this.posledni.set(udalost, data);
     let sse;
     for (const k of this.klienti) if (chce(k.filtr, udalost)) k.res.write((sse ??= Vysilac.zprava(udalost, data)));
     let ws;

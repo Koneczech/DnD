@@ -312,3 +312,43 @@ test('sada: Openverse vynechá výslovnost slov; položka s druhem hudba bere je
   const hudba = (await o.hledat(polozky[0])).map((k) => k.id);
   assert.deepEqual(hudba, ['ov:p3'], 'jen hudba (Jamendo), ne zvukový efekt stejné délky');
 });
+
+test('lišta: pauza hudby a další skladba; jiná scéna pauzu zruší; efekty se nové stránce znovu nepošlou', async () => {
+  const t = await spustitHub();
+  try {
+    const povely = [];
+    t.hub.zvuk.on('povel', (x) => povely.push(x));
+    await t.volat('/api/scena/zobrazit', { metoda: 'POST', telo: { misto: 'tabor' } });
+    await t.volat('/api/souboj', { metoda: 'POST', telo: { zapnout: true } });
+    let s = (await t.volat('/api/zvuk')).data;
+    assert.equal(s.hrajeTed.zdroj, 'slozka');
+    assert.equal(s.hrajeTed.playlist, 'souboj.mp3 + hudba/souboj/');
+    // Stránka hlásí skladbu, která hraje: lišta ji ukáže bez přípony.
+    await t.volat('/api/zvuk/hlaseni', { metoda: 'POST', telo: { stranka: 'stul', odemceno: true, hraje: [], skladba: 'hudba/souboj/boj-2.ogg' } });
+    assert.equal((await t.volat('/api/zvuk')).data.hrajeTed.nazev, 'boj-2');
+    // Další skladba: pokyn pro stránku (playlist ze složky).
+    assert.equal((await t.volat('/api/zvuk/hudba', { metoda: 'POST', telo: { akce: 'dalsi' } })).status, 200);
+    assert.deepEqual(povely, [{ akce: 'dalsi' }]);
+    // Pauza: hudba pryč, ambient zůstává; druhé stisknutí ji vrátí.
+    s = (await t.volat('/api/zvuk/hudba', { metoda: 'POST', telo: { akce: 'pauza' } })).data;
+    assert.equal(s.pauzaHudby, true);
+    assert.equal((await t.volat('/api/zvuk?pro=stranka')).data.hudba, null);
+    assert.equal((await t.volat('/api/zvuk/hudba', { metoda: 'POST', telo: { akce: 'dalsi' } })).status, 409, 'při pauze není co přeskočit');
+    s = (await t.volat('/api/zvuk/hudba', { metoda: 'POST', telo: { akce: 'pauza' } })).data;
+    assert.equal(s.pauzaHudby, false);
+    // Pauza a pak konec souboje: místo má jinou hudbu, ta hraje (pauza se zrušila sama).
+    await t.volat('/api/zvuk/hudba', { metoda: 'POST', telo: { akce: 'pauza' } });
+    await t.volat('/api/souboj', { metoda: 'POST', telo: { zapnout: false } });
+    const z = (await t.volat('/api/zvuk?pro=stranka')).data;
+    assert.equal(z.pauzaHudby, false);
+    assert.equal(z.hudba.soubor, 'hudba/tabor/jedina.mp3');
+    // Jedna skladba dokola: další není.
+    assert.equal((await t.volat('/api/zvuk/hudba', { metoda: 'POST', telo: { akce: 'dalsi' } })).status, 409);
+    // Jednorázové události (efekt, pokyn) si vysílač nepamatuje: nová stránka je nezahraje znovu.
+    assert.ok(!t.hub.vysilac.posledni.has('zvuk-efekt'));
+    assert.ok(!t.hub.vysilac.posledni.has('zvuk-povel'));
+    assert.ok(t.hub.vysilac.posledni.has('zvuk'));
+  } finally {
+    await t.zastavit();
+  }
+});

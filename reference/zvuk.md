@@ -79,7 +79,17 @@ Playlisty Hubu ve tvém Spotify (vytvořené 20. 10. 2026, jsou v knihovně). Sk
 | Jeskyně u tábora | DM Hub Jeskyně Temná Instrumentální |
 | Souboj | DM Hub Souboj Epická Instrumentální |
 
-#### Nastavení (jednou)
+#### Hudba v liště
+
+V horní liště je na každé obrazovce vedle **Ticho** ovládání hudby:
+
+- **⏸ Pauza hudby**: ztlumí jen hudbu, ambient a efekty hrají dál. Jakmile scéna chce jinou hudbu (konec souboje, jiné místo), pauza se zruší sama. Když jsi Spotify pozastavil přímo v aplikaci, tlačítko ho pustí.
+- **⏭ Další skladba**: u Spotify i u playlistu ze složky.
+- **Název skladby**: po kliknutí ukáže interpreta a posuvníky Hudba, Ambient a Efekty.
+
+V aplikaci Spotify můžeš během scény klidně přeskakovat nebo pauzovat, Hub to nepřebíjí. Při změně scény (souboj, jiné místo) Hub ověří, co Spotify opravdu hraje, a pustí správný playlist.
+
+
 
 1. **Virtuální kabel:** stáhni a nainstaluj **VB-CABLE** (VB-Audio Virtual Cable, zdarma, vb-audio.com/Cable). Po instalaci restartuj PC. Ve Windows přibude výstup *CABLE Input* a vstup *CABLE Output*.
 2. **Spotify do kabelu:** spusť desktopovou aplikaci Spotify a pusť cokoli. Ve Windows **Nastavení → Systém → Zvuk → Směšovač hlasitosti** nastav u **Spotify** výstupní zařízení **CABLE Input**. Prohlížeč nech na BT reproduktoru (ne na kabelu, jinak by vznikla smyčka).

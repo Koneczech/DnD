@@ -3104,9 +3104,40 @@ async function nactiZvukoveSoubory() {
   if (m) vykresliZvukMista(m);
 }
 
+/** Hudba v liště (DM 20. 10. 2026): co hraje, pauza, další skladba a hlasitosti na každé obrazovce. */
+function vykresliHudbuVListe(z) {
+  const t = z.hrajeTed;
+  const pauza = z.pauzaHudby === true;
+  const spotifyStoji = t?.zdroj === 'spotify' && t.pozastaveno;
+  const nazev = pauza ? 'Hudba pozastavená' : !t ? 'Hudba: nic' : t.nazev ?? (t.zdroj === 'spotify' ? 'Spotify' : 'Hudba');
+  $('#hudba-nazev').textContent = nazev;
+  $('#hudba-detail > summary').title = t?.autor ? `${t.nazev} · ${t.autor}` : nazev;
+  const tlPauza = $('#hudba-pauza');
+  tlPauza.setAttribute('aria-pressed', String(pauza || spotifyStoji));
+  tlPauza.title = pauza || spotifyStoji ? 'Pustit hudbu znovu' : 'Pozastavit hudbu (ambient a efekty hrají dál). Jiná scéna pustí svou hudbu sama.';
+  tlPauza.disabled = !pauza && !t;
+  $('#hudba-dalsi').disabled = pauza || !t || (t.zdroj === 'slozka' && !t.playlist);
+  const ted = $('#hudba-ted');
+  ted.replaceChildren();
+  if (pauza) ted.textContent = 'Hudba je pozastavená. Ambient a efekty hrají dál.';
+  else if (!t) ted.textContent = z.ticho ? 'Ticho: hraje jen to, co pustíš ručně.' : 'Tahle scéna nemá hudbu.';
+  else {
+    ted.append(document.createTextNode(t.nazev ?? (t.zdroj === 'spotify' ? 'Spotify přepíná…' : '…')));
+    const pod = document.createElement('small');
+    pod.textContent = [t.autor, t.zdroj === 'spotify' ? `Spotify${spotifyStoji ? ', pozastavené v aplikaci (pauza ▶ ji pustí)' : ''}` : t.playlist ? `playlist ${t.playlist}` : 'ze složky'].filter(Boolean).join(' · ');
+    ted.append(pod);
+  }
+  for (const k of ['hudba', 'ambient', 'efekty']) {
+    const posuvnik = $(`#lista-${k}`);
+    if (document.activeElement !== posuvnik) posuvnik.value = Math.round((z.hlasitost?.[k] ?? 0) * 100);
+    $(`#lista-${k}-hodnota`).textContent = `${posuvnik.value} %`;
+  }
+}
+
 function vykresliZvuk() {
   const z = stav.prehled?.zvuk;
   if (!z) return;
+  vykresliHudbuVListe(z);
   if (stav.zvukoveSoubory === null) nactiZvukoveSoubory();
   const ticho = $('#tlacitko-ticho');
   ticho.setAttribute('aria-pressed', String(z.ticho));
@@ -3377,6 +3408,32 @@ for (const k of ['hudba', 'ambient']) {
     casovacHlasitosti = setTimeout(() => api('/api/zvuk', { metoda: 'PUT', telo: { [k]: Number(e.target.value) / 100 } }).catch((x) => toast(x.message, { chyba: true })), 150);
   });
 }
+
+async function ovladatHudbu(akce) {
+  try {
+    stav.prehled.zvuk = await api('/api/zvuk/hudba', { metoda: 'POST', telo: { akce } });
+    vykresliZvuk();
+  } catch (e) {
+    toast(e.message, { chyba: true });
+  }
+}
+$('#hudba-pauza').addEventListener('click', () => ovladatHudbu('pauza'));
+$('#hudba-dalsi').addEventListener('click', () => ovladatHudbu('dalsi'));
+{
+  let casovacListy;
+  for (const k of ['hudba', 'ambient', 'efekty']) {
+    $(`#lista-${k}`).addEventListener('input', (e) => {
+      $(`#lista-${k}-hodnota`).textContent = `${e.target.value} %`;
+      clearTimeout(casovacListy);
+      casovacListy = setTimeout(() => api('/api/zvuk', { metoda: 'PUT', telo: { [k]: Number(e.target.value) / 100 } }).catch((x) => toast(x.message, { chyba: true })), 150);
+    });
+  }
+}
+// Rozbalená hudba v liště se zavře klikem jinam.
+document.addEventListener('click', (e) => {
+  const d = $('#hudba-detail');
+  if (d.open && !d.contains(e.target)) d.open = false;
+});
 
 $('#tlacitko-ticho').addEventListener('click', async () => {
   try {

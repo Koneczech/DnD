@@ -1335,3 +1335,20 @@ span.oko { cursor: default; }
 .skupina-vyberu { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 2px; padding-left: var(--m-2); border-left: 1px solid var(--linka); }
 .popisek-vyberu { color: var(--text-tlumeny); margin: 0 2px 0 var(--m-1); }
 .kanon-vyber strong { color: var(--akcent); }
+
+/* Hudba v liště (DM 20. 10. 2026): pauza, další skladba, co hraje a hlasitosti, na každé obrazovce. */
+.hudba-lista { display: inline-flex; align-items: stretch; border: 1px solid var(--linka); border-radius: var(--zaobleni); }
+.hudba-lista > button.jen-ikona { border: 0; border-right: 1px solid var(--linka); border-radius: 0; padding: var(--m-2); background: transparent; }
+.hudba-lista > button.jen-ikona:first-child { border-radius: var(--zaobleni) 0 0 var(--zaobleni); }
+.hudba-lista > button[aria-pressed="true"] { background: var(--jantar); color: var(--noc); }
+.hudba-lista > button:disabled { opacity: 0.4; }
+.hudba-detail { position: relative; display: flex; }
+.hudba-detail > summary { list-style: none; display: inline-flex; align-items: center; gap: var(--m-2); padding: var(--m-2) var(--m-3); cursor: pointer; font-size: var(--t-popisek); color: var(--text-tlumeny); max-width: 16rem; }
+.hudba-detail > summary::-webkit-details-marker { display: none; }
+.hudba-detail > summary:hover, .hudba-detail[open] > summary { color: var(--text); }
+.hudba-detail > summary span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hudba-detail .hudba-panel { position: absolute; right: 0; top: calc(100% + var(--m-2)); z-index: 20; width: 22rem; max-width: calc(100vw - 2rem); display: grid; gap: var(--m-2); padding: var(--m-3); background: var(--povrch-1); border: 1px solid var(--linka); border-radius: var(--zaobleni-karta); box-shadow: 0 12px 32px rgb(0 0 0 / 0.45); }
+.hudba-ted { margin: 0; color: var(--text); }
+.hudba-ted small { display: block; color: var(--text-tlumeny); }
+.hudba-posuvnik { display: grid; grid-template-columns: 4.5rem 1fr 3rem; align-items: center; gap: var(--m-2); font-size: var(--t-popisek); }
+.hudba-posuvnik output { text-align: right; color: var(--text-tlumeny); }

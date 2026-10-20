@@ -19,6 +19,13 @@ export const OVERENI_MS = 30000;
 /** Hlasitost normalizace Spotify (nastavení Normální) v LUFS: k ní se dorovná hladina hudby Hubu. */
 export const SPOTIFY_LUFS = -14;
 
+/** Hraje Spotify playlist `uri`? Kontext může mít i starší tvar spotify:user:<jméno>:playlist:<id>. */
+export function stejnyKontext(kontext, uri) {
+  if (!kontext || !uri) return false;
+  const [typ, id] = String(uri).split(':').slice(-2);
+  return String(kontext).endsWith(`:${typ}:${id}`);
+}
+
 const chyba = (zprava, status = 400, kod) => Object.assign(new Error(zprava), { status, ...(kod ? { kod } : {}) });
 const base64url = (b) => Buffer.from(b).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
@@ -67,6 +74,9 @@ export class Spotify extends EventEmitter {
     this.hraje = null; // URI, které Spotify na pokyn Hubu opravdu hraje
     this.selhalo = null; // URI, které se nepodařilo pustit (zvuk pak hraje zálohu ze složky)
     this.hlasitostNastavena = null; // ID zařízení, kterému Hub nastavil hlasitost 100 %
+    this.skladba = null; // { nazev, autor } co Spotify právě hraje (lišta panelu)
+    this.pozastaveno = false; // Spotify hraje náš playlist, ale je pozastavené (třeba ručně v aplikaci)
+    this.casovacSkladby = null;
     this.fronta = Promise.resolve();
     this.casovacPauzy = null;
     this.casovacOvereni = null;
@@ -102,6 +112,8 @@ export class Spotify extends EventEmitter {
       chyba: this.chyba,
       cil: this.cil,
       hraje: this.hraje,
+      skladba: this.hraje ? this.skladba : null,
+      pozastaveno: Boolean(this.hraje) && this.pozastaveno,
       selhalo: this.selhalo,
       presmerovani: this.presmerovani,
     };
@@ -129,6 +141,7 @@ export class Spotify extends EventEmitter {
   zastavit() {
     clearInterval(this.casovacOvereni);
     clearTimeout(this.casovacPauzy);
+    clearTimeout(this.casovacSkladby);
   }
 
   /* ---------- Přihlášení (PKCE) ---------- */
@@ -275,6 +288,8 @@ export class Spotify extends EventEmitter {
           ? `Zařízení Spotify „${this.nastaveni().SPOTIFY_ZARIZENI}“ není vidět. Spusť na něm Spotify a přihlas se stejným účtem.`
           : 'Aplikace Spotify na tomto PC neběží. Spusť ji a přihlas se stejným účtem.';
       // Aplikace se právě objevila (nebo od chyby uběhly 2 minuty): zkusit znovu i playlist, který nešel.
+      // Co hraje (lišta panelu); ručně pozastavené nebo přepnuté v aplikaci Hub jen zobrazí, nepřebíjí.
+      if (this.zarizeni && this.hraje) await this.obnovitSkladbu().catch(() => {});
       if (this.zarizeni && (this.zarizeni.id !== pred || (this.selhalo && this.hodiny() - this.selhaloKdy > 120000))) {
         this.selhalo = null;
         if (this.cil && this.hraje !== this.cil) this.naplanovat();
@@ -308,14 +323,15 @@ export class Spotify extends EventEmitter {
    * Co má hrát (URI, nebo null = nic). Volá ho zvuk při každé změně scény; opakované volání se stejným
    * cílem nic nedělá. Přepnutí jde přes frontu, takže rychlé klikání nepošle Spotify zmatené pokyny.
    */
-  chci(uri) {
+  chci(uri, { pauzaPoMs = PAUZA_PO_MS } = {}) {
     const cil = uri ?? null;
     if (cil === this.cil) return;
     this.cil = cil;
     clearTimeout(this.casovacPauzy);
     if (!cil) {
       // Nic ze Spotify: stránka hudbu ztlumila; po minutě se aplikace pozastaví (krátké přepnutí ne).
-      this.casovacPauzy = setTimeout(() => this.naplanovat(), PAUZA_PO_MS);
+      // Pauza z lišty pozastaví hned po ztlumení.
+      this.casovacPauzy = setTimeout(() => this.naplanovat(), pauzaPoMs);
       this.casovacPauzy.unref?.();
       this.oznam();
       return;
@@ -339,13 +355,46 @@ export class Spotify extends EventEmitter {
         /* už nehraje nebo aplikace neběží */
       }
       this.hraje = null;
+      this.skladba = null;
       this.oznam();
       return;
     }
-    if (cil === this.hraje) return;
     if (!this.prihlaseno) return;
     if (!this.zarizeni) await this.overit();
     if (!this.zarizeni) return;
+    if (cil === this.hraje) {
+      // Hub si myslí, že tohle už hraje (třeba souboj zapnutý znovu dřív, než se Spotify pozastavilo).
+      // Mezitím ho ale DM mohl v aplikaci pozastavit nebo přepnout: ověřit, co opravdu hraje (bug 20. 10.).
+      let p = null;
+      try {
+        p = await this.prehravani();
+      } catch {
+        /* nejde ověřit: pustit znovu */
+      }
+      this.nastavitSkladbu(p);
+      const nase = Boolean(p) && stejnyKontext(p.kontext, cil) && p.zarizeni === this.zarizeni.id;
+      if (nase && p.hraje) return this.oznam();
+      // Stránka hudbu ztlumí; když hraje něco cizího, přepnout až potichu.
+      this.hraje = null;
+      this.oznam();
+      if (p?.hraje) {
+        await this.cekat(this.prolnutiMs());
+        if (this.cil !== cil) return;
+      }
+      if (nase) {
+        // Náš playlist, jen pozastavený: pokračovat, kde přestal.
+        try {
+          await this.api('PUT', '/me/player/play', { dotaz: { device_id: this.zarizeni.id } });
+          this.hraje = cil;
+          this.pozastaveno = false;
+          this.chyba = null;
+          this.naplanovatSkladbu();
+          return this.oznam();
+        } catch {
+          /* pokračování nešlo: pustit playlist znovu */
+        }
+      }
+    }
     // Hrála jiná hudba ze Spotify: stránka ji právě ztlumuje. Přepnout až potichu.
     if (this.hraje) {
       this.hraje = null;
@@ -367,8 +416,10 @@ export class Spotify extends EventEmitter {
       }
       // I když mezitím Hub chce něco jiného, hraje teď tohle: další krok ve frontě to přepne nebo pozastaví.
       this.hraje = cil;
+      this.pozastaveno = false;
       this.selhalo = null;
       this.chyba = null;
+      this.naplanovatSkladbu();
     } catch (e) {
       this.hraje = null;
       this.selhalo = cil;
@@ -377,5 +428,46 @@ export class Spotify extends EventEmitter {
       this.chyba = e.message;
     }
     this.oznam();
+  }
+
+  /* ---------- Co hraje a další skladba (lišta panelu) ---------- */
+
+  /** Co Spotify opravdu hraje: { hraje, kontext, zarizeni, skladba }, nebo null (nic). */
+  async prehravani() {
+    const d = await this.api('GET', '/me/player');
+    if (!d) return null;
+    const item = d.item;
+    return {
+      hraje: d.is_playing === true,
+      kontext: d.context?.uri ?? null,
+      zarizeni: d.device?.id ?? null,
+      skladba: item ? { nazev: String(item.name ?? '').slice(0, 120), autor: (item.artists ?? []).map((a) => a?.name).filter(Boolean).join(', ').slice(0, 120) } : null,
+    };
+  }
+
+  nastavitSkladbu(p) {
+    this.skladba = p?.skladba ?? null;
+    this.pozastaveno = Boolean(p) && !p.hraje;
+  }
+
+  async obnovitSkladbu() {
+    this.nastavitSkladbu(await this.prehravani());
+    this.oznam();
+  }
+
+  /** Po přepnutí nebo další skladbě: Spotify chvíli trvá, než ohlásí novou skladbu. */
+  naplanovatSkladbu(ms = 1500) {
+    clearTimeout(this.casovacSkladby);
+    this.casovacSkladby = setTimeout(() => this.obnovitSkladbu().catch(() => {}), ms);
+    this.casovacSkladby.unref?.();
+  }
+
+  /** Další skladba v playlistu, který Hub pustil. */
+  async dalsi() {
+    if (!this.hraje || !this.zarizeni) throw chyba('Ze Spotify teď nic nehraje.', 409);
+    await this.api('POST', '/me/player/next', { dotaz: { device_id: this.zarizeni.id } });
+    this.pozastaveno = false;
+    this.naplanovatSkladbu(800);
+    return this.verejny();
   }
 }

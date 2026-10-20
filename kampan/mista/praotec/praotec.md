@@ -6,6 +6,7 @@ nazev: "Praotec"
 verejne: false
 ikona: 🌳
 aliases: ["Grandfather Tree", "Kruh pod Praotcem"]
+lezi_v: "[[high-forest]]"
 vazby: ["[[bifron-nox]]", "[[alba]]", "[[corvain-thornroot]]", "[[krkavci-prapor]]", "[[osric-redgrave]]", "[[rod-redgrave]]", "[[tusker]]"]
 tags: []
 popis_obrazu: ""

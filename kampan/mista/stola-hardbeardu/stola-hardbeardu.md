@@ -6,6 +6,7 @@ nazev: "Štola Hardbeardů"
 verejne: false
 ikona: ⛏️
 aliases: ["Štola Hardbeardů (Undercity)"]
+lezi_v: "[[mirabar]]"
 vazby: ["[[koudur]]", "[[balgur-hardbeard]]", "[[halvar-grimsdal]]", "[[kouduruv-nahrdelnik]]", "[[mirabar]]"]
 tags: []
 popis_obrazu: ""

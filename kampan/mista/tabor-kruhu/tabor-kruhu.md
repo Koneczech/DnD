@@ -6,6 +6,7 @@ nazev: "Tábor kruhu v Lurkwoodu"
 verejne: true
 ikona: 🔥
 aliases: ["Tábor kruhu"]
+lezi_v: "[[lurkwood]]"
 vazby: ["[[lurkwood]]", "[[torva]]", "[[novacek-kruhu]]", "[[kruh]]", "[[alba]]", "[[tusker]]", "[[koudur]]", "[[leta]]", "[[tavis]]"]
 tags: [aktualni]
 popis_obrazu: ""

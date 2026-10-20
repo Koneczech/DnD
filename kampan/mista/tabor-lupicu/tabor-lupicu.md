@@ -4,6 +4,7 @@ id: tabor-lupicu
 typ: misto
 nazev: Tábor lupičů
 verejne: true
+lezi_v: "[[longsaddle]]"
 # Anglický popis vzhledu místa pro prompty dílny (doplní DM). Dílna ho vloží do promptu.
 popis_obrazu: ""
 ilustrace:

@@ -54,7 +54,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Zápis a hráčský kánon sezení 2 | ✗ |
 | | Modul Kánon: mapa vazeb a vztahů, karta s textem, hledání v liště, Pohled družiny | ◐ |
 | | Místa v místech: čára Leží v na mapě, cesta Mirabar › v kartě, Místa uvnitř, výběr Leží v | ◐ |
-| | Přiřazení existujících míst (kam co patří) | ✗ |
+| | Přiřazení existujících míst (kam co patří), nová místa High Forest, Triboar, Cragy, Long Road | ✓ |
 | | Malé úpravy z karty a mapy (vazby, vztahy, přezdívky, Ve hře, Družina zná), Otevřít v Obsidianu, F2 s odkazem, nástěnky | ◐ |
 | | Hráčská stránka na GitHub Pages (pohled družiny) | ✗ |
 | **Verze 2** | Editor entit, příprava Lazy DM, generátor obchodů, portréty, export do IIO | ✗ |

@@ -6,6 +6,7 @@ nazev: "Věznice pod radnicí"
 verejne: false
 ikona: 🔒
 aliases: ["věznice"]
+lezi_v: "[[mirabar]]"
 vazby: ["[[thiril-ambersedge]]", "[[leta]]", "[[ordwin-sohla]]", "[[longsaddle]]", "[[mirabar]]"]
 tags: []
 popis_obrazu: ""

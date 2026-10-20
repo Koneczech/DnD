@@ -6,6 +6,7 @@ nazev: "Komora nad koželužnou"
 verejne: false
 ikona: 🕯️
 aliases: []
+lezi_v: "[[mirabar]]"
 vazby: ["[[leta]]", "[[thiril-ambersedge]]", "[[ordwinuv-dopis]]", "[[mirabar]]"]
 tags: [aktualni]
 popis_obrazu: ""

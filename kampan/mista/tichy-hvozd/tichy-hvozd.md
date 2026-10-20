@@ -6,6 +6,7 @@ nazev: "Tichý hvozd"
 verejne: false
 ikona: 🌲
 aliases: []
+lezi_v: "[[high-forest]]"
 vazby: ["[[alba]]", "[[bifron-nox]]", "[[corvain-thornroot]]", "[[albin-privesek]]", "[[tarnwick]]", "[[uhliri-a-lovci]]", "[[patyk]]"]
 tags: []
 popis_obrazu: ""

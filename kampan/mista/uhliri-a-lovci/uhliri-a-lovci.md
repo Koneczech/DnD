@@ -6,6 +6,7 @@ nazev: "Uhlíři a lovci na kraji hvozdu"
 verejne: false
 ikona: 🔥
 aliases: []
+lezi_v: "[[high-forest]]"
 vazby: ["[[alba]]", "[[bifron-nox]]", "[[tichy-hvozd]]"]
 tags: []
 popis_obrazu: ""

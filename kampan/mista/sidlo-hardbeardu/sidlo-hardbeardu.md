@@ -6,6 +6,7 @@ nazev: "Sídlo Hardbeardů"
 verejne: false
 ikona: 🏛️
 aliases: []
+lezi_v: "[[mirabar]]"
 vazby: ["[[koudur]]", "[[balgur-hardbeard]]", "[[hedwiga-hardbeard]]", "[[halvar-grimsdal]]", "[[dagnar-stonewhen]]", "[[bruna-ironvale]]", "[[mirabar]]"]
 tags: []
 popis_obrazu: ""

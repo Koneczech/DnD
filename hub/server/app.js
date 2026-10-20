@@ -413,6 +413,7 @@ export class Hub {
     // Spotify se přihlásil, aplikace naběhla nebo začala hrát: zvuk přepočítá, co hraje (Spotify, nebo záloha).
     this.spotify.on('stav', () => this.zvuk.oznam());
     this.zvuk.on('efekt', (e) => this.vysilac.vyslat('zvuk-efekt', e));
+    this.zvuk.on('povel', (x) => this.vysilac.vyslat('zvuk-povel', x));
     this.zvuk.on('stav', (z) => this.vysilac.vyslat('zvuk-stav', z));
     this.zvuk.on('soubory', () => this.data.naplanovatKontrolu());
     this.svetla.on('stav', (s) => this.vysilac.vyslat('svetla', s));
@@ -1015,6 +1016,8 @@ export class Hub {
       return z.doplnitSadu({ cil: typeof telo.cil === 'string' ? telo.cil : null, soubor: typeof telo.soubor === 'string' ? telo.soubor : null, vymenit: telo.vymenit === true });
     }
     if (p === '/api/zvuk/smycka' && m === 'PUT') return z.smycka(await nacistJson(req));
+    // Lišta panelu: pauza hudby a další skladba (Spotify i playlist ze složky).
+    if (p === '/api/zvuk/hudba' && m === 'POST') return z.hudba(await nacistJson(req));
     if (p === '/api/zvuk/smycky/zastavit' && m === 'POST') {
       await nacistJson(req);
       return z.zastavitSmycky();

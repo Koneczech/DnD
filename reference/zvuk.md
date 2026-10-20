@@ -60,7 +60,7 @@ Dokud OBS ukazuje scénu s rolí **Start** (úvodní obrazovka, odpočet), hraje
 Hudba může hrát z tvého Spotify (Premium). Hub řídí, který playlist hraje aplikace Spotify na tomto PC, a její zvuk si bere přes **virtuální kabel**. Hudba ze Spotify tak jde stejnou cestou jako hudba ze složky: fungují na ni ucpané uši, ztišení pod efekty a bubnem, Ticho, prolnutí scén i doznění na konci souboje.
 
 ```yaml
-hudba: { spotify: spotify:playlist:1DdwLtApYi2VUxTZGjhxjJ, zaloha: [souboj.mp3, hudba/souboj/] }
+hudba: { spotify: spotify:playlist:0cBHwxr15oCWygLqQ64Bpk, zaloha: [souboj.mp3, hudba/souboj/] }
 ```
 
 - `spotify`: playlist nebo album (URI, nebo odkaz ze Spotify → Sdílet → Kopírovat odkaz).
@@ -69,17 +69,27 @@ hudba: { spotify: spotify:playlist:1DdwLtApYi2VUxTZGjhxjJ, zaloha: [souboj.mp3, 
 - Při přepnutí scény Hub hudbu ztlumí, přepne playlist (náhodné pořadí) a zase ji zesílí. Stará hudba nedohraje přes novou scénu.
 - Když Spotify žádná scéna nechce, Hub ho po minutě pozastaví.
 
-Playlisty Hubu ve tvém Spotify (vytvořené 20. 10. 2026, jsou v knihovně). Skladby v nich klidně měň, Hub pouští, co v playlistu zrovna je:
+Playlisty Hubu ve tvém Spotify, ve stylu soundtracků **Zaklínače**, **Krále Artuše: Legenda o meči** a **Peaky Blinders** (vytvořené 20. 10. 2026, jsou v knihovně). Skladby v nich klidně měň, Hub pouští, co v playlistu zrovna je:
 
 | Kde | Playlist |
 | --- | --- |
-| Scéna Start | DM Hub – Start: Fantasy Hudba pro D&D Večer |
-| Longsaddle | Klidná Vesnice D&D |
-| Tábor lupičů | DM Hub Divočina Cestování Lesem |
-| Jeskyně u tábora | DM Hub Jeskyně Temná Instrumentální |
-| Souboj | DM Hub Souboj Epická Instrumentální |
+| Scéna Start | DM Hub Start: Temná Energie D&D |
+| Longsaddle | DM Hub Longsaddle Hospoda |
+| Tábor lupičů | DM Hub Divočina Cesty Lupičů |
+| Jeskyně u tábora | DM Hub Jeskyně Temná Mystika |
+| Souboj | DM Hub Souboj D&D |
 
-#### Nastavení (jednou)
+#### Hudba v liště
+
+V horní liště je na každé obrazovce vedle **Ticho** ovládání hudby:
+
+- **⏸ Pauza hudby**: ztlumí jen hudbu, ambient a efekty hrají dál. Jakmile scéna chce jinou hudbu (konec souboje, jiné místo), pauza se zruší sama. Když jsi Spotify pozastavil přímo v aplikaci, tlačítko ho pustí.
+- **⏭ Další skladba**: u Spotify i u playlistu ze složky.
+- **Název skladby**: po kliknutí ukáže interpreta a posuvníky Hudba, Ambient a Efekty.
+
+V aplikaci Spotify můžeš během scény klidně přeskakovat nebo pauzovat, Hub to nepřebíjí. Při změně scény (souboj, jiné místo) Hub ověří, co Spotify opravdu hraje, a pustí správný playlist.
+
+
 
 1. **Virtuální kabel:** stáhni a nainstaluj **VB-CABLE** (VB-Audio Virtual Cable, zdarma, vb-audio.com/Cable). Po instalaci restartuj PC. Ve Windows přibude výstup *CABLE Input* a vstup *CABLE Output*.
 2. **Spotify do kabelu:** spusť desktopovou aplikaci Spotify a pusť cokoli. Ve Windows **Nastavení → Systém → Zvuk → Směšovač hlasitosti** nastav u **Spotify** výstupní zařízení **CABLE Input**. Prohlížeč nech na BT reproduktoru (ne na kabelu, jinak by vznikla smyčka).

@@ -37,11 +37,23 @@
         if (ladeni) vypis.textContent = `${new Date().toLocaleTimeString('cs')} ${!tady ? '(hudba hraje u stolu)' : s.hudba?.soubor ?? '(bez hudby)'}${s.ticho ? ' · ticho' : ''}${s.tlumeni?.aktivni ? ' · ucpané uši' : ''}`;
         setTimeout(() => p.hlasit(), 300);
       },
+      // Lišta panelu: další skladba playlistu ze složky (u Spotify ji přepne Hub sám).
+      priPovelu: (x) => {
+        if (x?.akce === 'dalsi') hudba?.playlist()?.dalsi();
+      },
       priEfektu: (e) => (e.test ? p.test(p.ctx.destination) : p.efekt(e, efekty).catch((x) => p.zaznamenatChybu(String(x)))),
     });
     ({ g: sbernice, tlumeni } = p.sberniceSTlumenim());
     efekty = p.sbernice();
     hudba = new Vrstvy(p.ctx, sbernice, (t) => p.zaznamenatChybu(t));
+    // Skladba playlistu, která hraje: Hub ji ukáže v liště panelu.
+    setInterval(() => {
+      const skladba = hudba.playlist()?.skladba ?? null;
+      if (skladba !== p.skladba) {
+        p.skladba = skladba;
+        p.hlasit();
+      }
+    }, 2000);
     p.hraje = () => hudba.hraje();
     // OBS pouští zvuk bez kliknutí; v běžném prohlížeči stačí kliknout do stránky.
     document.addEventListener('click', () => p.odemknout());

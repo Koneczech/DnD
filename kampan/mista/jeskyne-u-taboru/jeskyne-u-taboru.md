@@ -17,7 +17,7 @@ ilustrace: []
 zvuk:
   dozvuk: jeskyne
   den:
-    hudba: { spotify: spotify:playlist:569We1c9zxwc9uHjtHP1N2, zaloha: hudba/jeskyne/ }
+    hudba: { spotify: spotify:playlist:7dpIkiymxQISaMH3aXU3hh, zaloha: hudba/jeskyne/ }
     ambient: jeskyne-kapani.mp3
     nahodne:
       - { zvuk: nahodne/jeskyne/kapka, kazdych_s: 12, nahodilost: 0.8, hlasitost: 0.6, vzdalenost: 0.4 }

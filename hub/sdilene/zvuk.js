@@ -204,6 +204,12 @@ export class Playlist {
     this.casovac = setInterval(() => this.hlidat(), 200);
   }
 
+  /** Skladba, která právě hraje (po prolnutí ta nová). */
+  get skladba() {
+    const p = this.prvky[this.prechod ? 1 - this.aktivni : this.aktivni];
+    return p.a.dataset.soubor ?? null;
+  }
+
   /** Otisk seznamu skladeb (změna = nová skladba ve složce). */
   static klic(skladby) {
     return skladby.map((x) => x.url).join('|');
@@ -506,6 +512,11 @@ export class Vrstvy {
   hraje() {
     return [...this.smycky.values()].filter((s) => s.hraje).map((s) => s.soubor);
   }
+
+  /** Playlist, který hraje (ten, co právě nedobíhá), nebo null. */
+  playlist() {
+    return [...this.smycky.values()].find((s) => s instanceof Playlist && !s.zastaveno) ?? null;
+  }
 }
 
 /**
@@ -734,7 +745,7 @@ export class Prehravac {
    * @param {(stav: object) => void} volby.priZmene co hrát (událost zvuk)
    * @param {(efekt: object) => void} [volby.priEfektu]
    */
-  constructor({ stranka, priZmene, priEfektu }) {
+  constructor({ stranka, priZmene, priEfektu, priPovelu }) {
     this.stranka = stranka;
     this.ctx = new AudioContext({ latencyHint: 'playback' });
     this.chyba = null;
@@ -743,6 +754,8 @@ export class Prehravac {
     this.buffery = new Map();
     this.priZmene = priZmene;
     this.priEfektu = priEfektu;
+    this.priPovelu = priPovelu; // ovládání hudby z lišty panelu (další skladba)
+    this.skladba = null; // skladba playlistu, která právě hraje (hlásí se Hubu)
     this.ctx.addEventListener('statechange', () => this.hlasit());
   }
 
@@ -899,7 +912,7 @@ export class Prehravac {
     fetch('/api/zvuk/hlaseni', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ stranka: this.stranka, odemceno: this.odemceno, hraje: this.hraje(), chyba: this.chyba, vystup: this.vystup, ...(this.kabel ? { kabel: this.kabel } : {}) }),
+      body: JSON.stringify({ stranka: this.stranka, odemceno: this.odemceno, hraje: this.hraje(), chyba: this.chyba, vystup: this.vystup, ...(this.kabel ? { kabel: this.kabel } : {}), ...(this.skladba ? { skladba: this.skladba } : {}) }),
     }).catch(() => {});
   }
 
@@ -910,8 +923,9 @@ export class Prehravac {
         .then((s) => this.priZmene(s))
         .catch(() => {});
     nacist();
-    odebirat(['zvuk', 'zvuk-efekt'], (udalost, data) => {
+    odebirat(['zvuk', 'zvuk-efekt', 'zvuk-povel'], (udalost, data) => {
       if (udalost === 'zvuk') this.priZmene(data);
+      else if (udalost === 'zvuk-povel') this.priPovelu?.(data);
       else if (data?.cil === this.stranka) this.priEfektu?.(data);
     }, {
       priStavu: (pripojeno, poVypadku) => {

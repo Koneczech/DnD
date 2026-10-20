@@ -102,6 +102,10 @@
         // Spotify (přihlášené v Hubu): hlídat virtuální kabel, i když zrovna hraje záloha.
         hlidatKabel(s.spotifyKabel ?? null);
       },
+      // Lišta panelu: další skladba playlistu ze složky (u Spotify ji přepne Hub sám).
+      priPovelu: (x) => {
+        if (x?.akce === 'dalsi') hudba?.playlist()?.dalsi();
+      },
       priEfektu: (e) => {
         if (e.test) return p.test(p.ctx.destination);
         let cil = e.prostor ? efektyProstor : efekty;
@@ -142,6 +146,14 @@
     ambient = new Vrstvy(p.ctx, sbernice, priChybe);
     hudba = new Vrstvy(p.ctx, sberniceHudby, priChybe);
     smycky = new Vrstvy(p.ctx, efektyProstor, priChybe);
+    // Skladba playlistu, která hraje: Hub ji ukáže v liště panelu.
+    setInterval(() => {
+      const skladba = hudba.playlist()?.skladba ?? null;
+      if (skladba !== p.skladba) {
+        p.skladba = skladba;
+        p.hlasit();
+      }
+    }, 2000);
     p.hraje = () => [...hudba.hraje(), ...ambient.hraje(), ...smycky.hraje()];
 
     /* ---------- Spotify přes virtuální kabel (DM 20. 10. 2026) ---------- */

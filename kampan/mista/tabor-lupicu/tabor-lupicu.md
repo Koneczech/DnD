@@ -53,6 +53,7 @@ svetla:
     lampa: { barva: [ 31, 35, 255 ], jas: 21 }
 zvuk:
   den:
+    hudba: { spotify: spotify:playlist:3XhR52j3ROEfcD2TfBFmps, zaloha: hudba/divocina/ }
     hudba:
       spotify: spotify:playlist:0fQfvbqzfXTb9zruh9vTpu
       zaloha: hudba/divocina/
@@ -64,7 +65,7 @@ zvuk:
       - { zvuk: nahodne/tabor/drevo, kazdych_s: 40, nahodilost: 0.6, hlasitost: 0.8, vzdalenost: 0.3 }
   # Noc (DM 19. 10. 2026, ⚠ návrh): oheň dál, tábor spí; koně, sova a vlci v dálce.
   noc:
-    hudba: { spotify: spotify:playlist:2TIkuVsxQjj1MmSlUZ7ziF, zaloha: hudba/divocina/ }
+    hudba: { spotify: spotify:playlist:3XhR52j3ROEfcD2TfBFmps, zaloha: hudba/divocina/ }
     ambient: tabor-ohen.mp3
     nahodne:
       - { zvuk: nahodne/tabor/kun, kazdych_s: 90, nahodilost: 0.8, hlasitost: 0.6, vzdalenost: 0.6 }

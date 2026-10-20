@@ -41,9 +41,19 @@ function falesneSpotify({ zarizeni = [{ id: 'pc1', name: 'DESKTOP-TEST', type: '
     if (u.pathname === '/v1/me') return odpoved(200, { id: 'matej', display_name: 'Matěj' });
     if (u.pathname === '/v1/me/player/devices') return odpoved(200, { devices: stav.zarizeni });
     if (u.pathname === '/v1/me/playlists') return odpoved(200, { items: [{ uri: PLAYLIST_A, name: 'DM Hub – Souboj' }], next: null });
+    // Co Spotify opravdu hraje (GET /me/player); play, pause a next ho mění jako skutečná aplikace.
+    if (u.pathname === '/v1/me/player' && metoda === 'GET') return stav.prehravani ? odpoved(200, stav.prehravani) : odpoved(204, null);
     if (u.pathname === '/v1/me/player/play') {
       if (stav.play === 404) return odpoved(404, { error: { status: 404, reason: 'NO_ACTIVE_DEVICE', message: 'Player command failed: No active device found' } });
+      const kontext = volby.body ? JSON.parse(volby.body).context_uri : stav.prehravani?.context?.uri;
+      stav.skladba = volby.body ? 1 : stav.skladba ?? 1;
+      stav.prehravani = { is_playing: true, context: { uri: kontext }, device: { id: u.searchParams.get('device_id') }, item: { name: `Skladba ${stav.skladba}`, artists: [{ name: 'Autor' }] } };
       return odpoved(stav.play, null);
+    }
+    if (u.pathname === '/v1/me/player/pause' && stav.prehravani) stav.prehravani = { ...stav.prehravani, is_playing: false };
+    if (u.pathname === '/v1/me/player/next' && stav.prehravani) {
+      stav.skladba = (stav.skladba ?? 1) + 1;
+      stav.prehravani = { ...stav.prehravani, is_playing: true, item: { name: `Skladba ${stav.skladba}`, artists: [{ name: 'Autor' }] } };
     }
     if (u.pathname.startsWith('/v1/me/player/')) return odpoved(204, null);
     return odpoved(404, { error: { status: 404 } });
@@ -263,4 +273,54 @@ test('Hub: Spotify hraje přes kabel, jen když stránka u stolu kabel otevřela
     await repo.smazat();
     await fs.rm(audio, { recursive: true, force: true });
   }
+});
+
+test('návrat ke stejnému playlistu: Hub ověří, co Spotify hraje; ručně pozastavené pustí, cizí playlist přepne (20. 10.)', async () => {
+  const fake = falesneSpotify();
+  const { sp, cekani } = spotifyProTest(fake, { SPOTIFY_OBNOVA: fake.stav.obnova });
+  await sp.overit();
+  sp.chci(PLAYLIST_A); // souboj
+  await sp.fronta;
+  assert.equal(sp.hraje, PLAYLIST_A);
+  sp.chci(null); // konec souboje: pauza se jen naplánuje (za minutu)
+  // Mezitím DM v aplikaci Spotify pozastaví.
+  fake.stav.prehravani = { ...fake.stav.prehravani, is_playing: false };
+  fake.volani.length = 0;
+  sp.chci(PLAYLIST_A); // souboj znovu
+  await sp.fronta;
+  assert.deepEqual(fake.volani, ['GET /v1/me/player', 'PUT /v1/me/player/play?device_id=pc1'], 'jen pokračovat, ne playlist od začátku');
+  assert.equal(fake.stav.prehravani.is_playing, true);
+  assert.equal(sp.hraje, PLAYLIST_A);
+  // DM v aplikaci pustí jiný playlist; po návratu Hub počká na ztlumení a přepne zpátky.
+  sp.chci(null);
+  fake.stav.prehravani = { ...fake.stav.prehravani, context: { uri: PLAYLIST_B } };
+  cekani.length = 0;
+  sp.chci(PLAYLIST_A);
+  await sp.fronta;
+  assert.deepEqual(cekani, [2000]);
+  assert.equal(fake.stav.prehravani.context.uri, PLAYLIST_A);
+  // Hraje správně: ověření nic nepošle.
+  sp.chci(null);
+  fake.volani.length = 0;
+  sp.chci(PLAYLIST_A);
+  await sp.fronta;
+  assert.deepEqual(fake.volani, ['GET /v1/me/player']);
+});
+
+test('lišta: co hraje, další skladba, pozastavení v aplikaci se pozná', async () => {
+  const fake = falesneSpotify();
+  const { sp } = spotifyProTest(fake, { SPOTIFY_OBNOVA: fake.stav.obnova });
+  await sp.overit();
+  await assert.rejects(sp.dalsi(), /nic nehraje/);
+  sp.chci(PLAYLIST_A);
+  await sp.fronta;
+  await sp.obnovitSkladbu();
+  assert.deepEqual(sp.verejny().skladba, { nazev: 'Skladba 2', autor: 'Autor' }, 'po náhodném pořadí hned další');
+  await sp.dalsi();
+  await sp.obnovitSkladbu();
+  assert.equal(sp.verejny().skladba.nazev, 'Skladba 3');
+  fake.stav.prehravani.is_playing = false;
+  await sp.overit();
+  assert.equal(sp.verejny().pozastaveno, true);
+  sp.zastavit();
 });

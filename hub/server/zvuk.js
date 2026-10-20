@@ -282,6 +282,9 @@ export class Zvuk extends EventEmitter {
     this.spotify = spotify; // Spotify nebo null (bez něj hraje vždy záloha ze složky)
     this.start = start; // () => OBS ukazuje scénu Start
     this.prolnutiKonce = null; // { ms, do }: delší prolnutí po konci souboje
+    // Pauza hudby z lišty panelu: platí pro hudbu, kterou scéna chtěla, když DM pauzu dal.
+    // Jiná hudba (jiné místo, souboj, Start) pauzu zruší sama, takže hudba nikdy „nezamrzne“.
+    this.pauzaKlic = null;
     this.c = cesty;
     this.nastaveni = nastaveni;
     this.misto = misto;
@@ -565,13 +568,23 @@ export class Zvuk extends EventEmitter {
   }
 
   /** Pro stránky: co hrát a jak hlasitě. Soubory, které ve složce nejsou, se vynechají. */
+  /** Pauza hudby platí, jen dokud scéna chce stejnou hudbu jako při stisknutí. */
+  pauzaHudby(c = this.cil()) {
+    if (this.pauzaKlic === null) return false;
+    if (this.pauzaKlic === JSON.stringify(c.hudba ?? null)) return true;
+    this.pauzaKlic = null;
+    return false;
+  }
+
   verejny() {
     const c = this.cil();
     const souboj = this.scena().rezim === 'souboj';
+    const pauza = this.pauzaHudby(c);
     return {
       ticho: this.mistni.ticho,
       hlasitost: { hudba: this.mistni.hudba, ambient: this.mistni.ambient, efekty: this.mistni.efekty },
-      hudba: this.hudbaSpotify(c.hudba) ?? this.hudbaProStranky(c.hudba),
+      hudba: pauza ? null : this.hudbaSpotify(c.hudba) ?? this.hudbaProStranky(c.hudba),
+      pauzaHudby: pauza,
       // Stránka u stolu si podle toho hlídá virtuální kabel (i když Spotify zrovna nehraje).
       spotifyKabel: this.spotify?.prihlaseno ? this.jmenoKabelu : null,
       ambient: c.ambient
@@ -712,6 +725,8 @@ export class Zvuk extends EventEmitter {
         nejdou: this.soubory.filter((f) => this.mereniSouboru(f)?.chyba),
       },
       sada: this.stavSady(),
+      // Lišta panelu: co hraje a jestli je hudba pozastavená.
+      hrajeTed: this.hrajeTed(),
       // Spotify (DM 20. 10. 2026): přihlášení, aplikace na PC, kabel ve stránce u stolu.
       spotify: this.spotify ? { ...this.spotify.verejny(), kabel: this.hlaseni.stul?.kabel ?? null, jmenoKabelu: this.jmenoKabelu, hrajeTed: Boolean(this.hudbaSpotify(c.hudba)) } : null,
     };
@@ -721,9 +736,12 @@ export class Zvuk extends EventEmitter {
   oznam(vynutit = false) {
     // Spotify dostane, co má hrát (nebo nic). Opakovaný stejný pokyn nic nedělá.
     if (this.spotify) {
-      const h = this.cil().hudba;
+      const c = this.cil();
+      const h = c.hudba;
       const uri = h && typeof h === 'object' && !Array.isArray(h) ? h.spotify : null;
-      this.spotify.chci(uri && this.spotifyPouzitelny(uri) ? uri : null);
+      const pauza = this.pauzaHudby(c);
+      // Pauza z lišty: Spotify se pozastaví hned po ztlumení, ne až za minutu.
+      this.spotify.chci(!pauza && uri && this.spotifyPouzitelny(uri) ? uri : null, pauza ? { pauzaPoMs: this.prolnutiMs + 300 } : undefined);
     }
     const v = this.verejny();
     const json = JSON.stringify(v);
@@ -810,6 +828,8 @@ export class Zvuk extends EventEmitter {
       vystup: d.vystup && typeof d.vystup === 'object' ? { nazev: text(d.vystup.nazev, 120), ok: d.vystup.ok !== false, vybrany: d.vystup.vybrany === true } : null,
       // Virtuální kabel se Spotify (jen stránka u stolu): otevřený, jak se jmenuje, jestli v něm něco hraje.
       kabel: d.kabel && typeof d.kabel === 'object' ? { ok: d.kabel.ok !== false, nazev: text(d.kabel.nazev, 120), ticho: d.kabel.ticho === true, chyba: text(d.kabel.chyba) } : null,
+      // Skladba playlistu ze složky, která právě hraje (lišta panelu).
+      skladba: text(d.skladba, 300),
     };
     // Kabel se otevřel nebo selhal: mění, jestli hraje Spotify, nebo záloha.
     const kabel = JSON.stringify(this.hlaseni[stranka].kabel?.ok ?? null);
@@ -913,6 +933,44 @@ export class Zvuk extends EventEmitter {
     const n = id && najitSkupinu(this.knihovna, id);
     if (!n || n.druh === 'smycky') return null;
     return this.zahratSkupinu(n.skupina, { maxS: MAX_TAH_S });
+  }
+
+  /**
+   * Ovládání hudby z lišty panelu (DM 20. 10. 2026): `pauza` přepne pauzu hudby (ambient a efekty
+   * hrají dál), `dalsi` pustí další skladbu (Spotify i playlist ze složky).
+   */
+  async hudba({ akce } = {}) {
+    if (akce === 'pauza') {
+      // Spotify pozastavené ručně v aplikaci: tlačítko ho pustí (Hub ověří a pokračuje).
+      if (!this.pauzaHudby() && this.verejny().hudba?.spotify && this.spotify?.pozastaveno) {
+        await this.spotify.naplanovat();
+        return this.stav();
+      }
+      this.pauzaKlic = this.pauzaHudby() ? null : JSON.stringify(this.cil().hudba ?? null);
+      this.oznam();
+      return this.stav();
+    }
+    if (akce === 'dalsi') {
+      const v = this.verejny();
+      if (!v.hudba) throw chyba('Teď nehraje žádná hudba.', 409);
+      if (v.hudba.spotify) await this.spotify.dalsi();
+      else if (v.hudba.playlist) this.emit('povel', { akce: 'dalsi' });
+      else throw chyba('Hraje jedna skladba dokola, další není.', 409);
+      return this.stav();
+    }
+    throw chyba('Neznámý pokyn pro hudbu.');
+  }
+
+  /** Co právě hraje, pro lištu panelu: skladba ze Spotify, nebo soubor ze složky. */
+  hrajeTed(v = this.verejny()) {
+    if (!v.hudba) return null;
+    if (v.hudba.spotify) {
+      const sp = this.spotify?.verejny();
+      return { zdroj: 'spotify', nazev: sp?.skladba?.nazev ?? null, autor: sp?.skladba?.autor ?? null, pozastaveno: sp?.pozastaveno === true };
+    }
+    const stranka = this.mistni.hudbaKde === 'obs' ? 'hudba' : 'stul';
+    const soubor = v.hudba.playlist ? this.hlaseni[stranka]?.skladba ?? null : v.hudba.soubor;
+    return { zdroj: 'slozka', nazev: soubor ? soubor.split('/').pop().replace(/\.[a-z0-9]+$/i, '') : null, playlist: v.hudba.playlist ? v.hudba.soubor : null };
   }
 
   /**

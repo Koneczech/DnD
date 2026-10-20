@@ -47,6 +47,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Náhodné zvuky, vzdálenost, dozvuk, vlastní zvuk místa v souboji | ◐ |
 | | Playlisty hudby (složka = playlist), hudba scény Start, konec souboje bubnem v dozvuku | ◐ |
 | | Hudba ze Spotify přes virtuální kabel (s efekty Hubu a zálohou ze složky) | ◐ |
+| | Hudba v liště na každé obrazovce: pauza, další skladba, co hraje, hlasitosti | ◐ |
 | | Zvuk míst Longsaddle, Tábor lupičů (den i noc) a Jeskyně u tábora | ◐ |
 | | Zvuková sada: Freesound, Openverse, balíčky Kenney, hudba, Vyměnit a ↻ | ◐ |
 | | Srovnání hlasitosti a přeskočení ticha na začátku | ◐ |

@@ -371,3 +371,9 @@ Asi přežiju všechno. Co se týče hry, nevadí mi zemřít, ale zároveň asi
 ### Chceš, abych tvou minulost tahal do příběhu?
 
 Občas, ale nechci být středobod
+
+## Co ví družina
+
+- 185 cm, zelená kůže, černé krátké vlasy, žlutohnědé oči. Svaly má, ale ne vyrýsované. Vzhledem odpovídá zhruba lidským dvaceti. %%zná%%
+- Ve znaku má šedý strom. Tusker ho nosí na kyji i na batohu %%zná%%
+- Koudur oznámil, že jede koncertovat. Domluvili se - bard na cestách potřebuje ochranku, Tusker potřeboval peníze... %%zná%%

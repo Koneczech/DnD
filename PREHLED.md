@@ -1,6 +1,6 @@
 # DM Hub v kostce
 
-Stav k 19. 10. 2026. Tenhle soubor odpovídá na tři otázky: **co Hub umí, co je rozdělané a co jsme vědomě vynechali.** Podrobná pravidla a rozhodnutí jsou v `ZADANI.md`, návody v `reference/`.
+Stav k 20. 10. 2026. Tenhle soubor odpovídá na tři otázky: **co Hub umí, co je rozdělané a co jsme vědomě vynechali.** Podrobná pravidla a rozhodnutí jsou v `ZADANI.md`, návody v `reference/`.
 
 ## Hub jednou větou
 
@@ -20,6 +20,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | Kdo je kdo | **Hledat v kánonu** nahoře (Ctrl+K) nebo **Kánon**: wiki, karta, mapa, Pohled družiny | Kánon |
 | Družina se něco dozví | Karta v Kánonu → **Co ví družina** → oko 👁 u odrážky, nebo napiš novou a Enter | Kánon |
 | Něco nejde | **Systém → Záznam událostí → Stáhnout** a pošli Claudovi | Systém |
+| Mimo domov | Codespace na GitHubu → panel se štítkem **Zkouška**, nic se neukládá | `reference/zkouska-v-cloudu.md` |
 
 ## Co Hub umí
 
@@ -48,6 +49,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Zvuková sada: Freesound, Openverse, balíčky Kenney, hudba, Vyměnit a ↻ | ◐ |
 | | Srovnání hlasitosti a přeskočení ticha na začátku | ◐ |
 | **Údržba** | Aktualizovat jedním tlačítkem, restart sám, Kontrola dat, Záznam událostí | ◐ |
+| | Zkouška v cloudu (GitHub Codespaces): panel v prohlížeči mimo domov, bez světel, OBS a zvuku, na GitHub se nic neukládá | ◐ |
 | **Kánon** (Blok 3) | Příprava převodu: audit zdrojů, mapa převodu, šablony, report `npm run kanon` | ◐ |
 | | Vztahy s popisem a postojem: formát, šablony, Kontrola dat | ◐ |
 | | Převedené karty: postavy (4), padouši a frakce (6), NPC (23), místa (16), předměty (6), registr rozhodnutí (39), zápis sezení 1 | ◐ |
@@ -89,7 +91,8 @@ Vlastní combat tracker, sledování zdrojů postav (BV, kouzla, Zuřivost), mix
 | --- | --- |
 | Pravidla práce pro Clauda | `CLAUDE.md` |
 | Zadání, rozhodnutí, otevřené body | `ZADANI.md` |
-| Návody (zvuk, OBS, ilustrace) | `reference/` |
+| Návody (zvuk, OBS, ilustrace, zkouška v cloudu) | `reference/` |
+| Prostředí pro zkoušku v cloudu (Codespaces) | `.devcontainer/` |
 | Data kampaně | `kampan/` |
 | Šablony pro nové soubory (Obsidian) | `sablony/` |
 | Nástěnky mapy kánonu (uložená rozložení) | `kampan/nastenky/` |

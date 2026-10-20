@@ -14,6 +14,7 @@ import { Vysilac, filtrUdalosti } from './sse.js';
 import { Sezeni, datumCesky } from './sezeni.js';
 import { Odpocet } from './odpocet.js';
 import { jeVOneDrive, nainstalovatHook } from './prostredi.js';
+import { zkusebniRezim } from './zkouska.js';
 import { Kalendar } from './kalendar.js';
 import { DalsiDen } from './dalsiden.js';
 import { Obchody } from './obchody.js';
@@ -126,9 +127,13 @@ export class Hub {
    * @param {object} [volby.cesty] přepis cest (testy)
    * @param {object} [volby.obsKlient] náhrada klienta OBS (testy)
    * @param {boolean} [volby.gitSit] kontrolovat GitHub při startu (výchozí true)
+   * @param {object} [volby.prostredi] proměnné prostředí pro zkušební režim (testy; výchozí process.env)
    */
-  constructor({ cesty = vychoziCesty(), obsKlient, gitSit = true, port, ovladaceSvetel, sparovatHue, fetchZvuky, ziveIniciativa } = {}) {
+  constructor({ cesty = vychoziCesty(), obsKlient, gitSit = true, port, ovladaceSvetel, sparovatHue, fetchZvuky, ziveIniciativa, prostredi = process.env } = {}) {
     this.c = cesty;
+    this.env = prostredi;
+    /** Zkušební režim v Codespaces (zkouska.js); povolené adresy se doplní po startu, až je znám port. */
+    this.zkouska = zkusebniRezim(prostredi);
     this.gitSit = gitSit;
     this.portPrepis = port;
     this.zapisovac = new Zapisovac({ zurnal: path.join(this.c.lokalniStav, 'odlozene-zapisy') });
@@ -138,7 +143,7 @@ export class Hub {
     this.hlidac = new Hlidac(this.c.kampan);
     this.nastaveni = new Nastaveni(this.c.env);
     this.obs = new Obs(obsKlient ? { klient: obsKlient } : {});
-    this.git = new Git(this.c.koren);
+    this.git = new Git(this.c.koren, { jenStahovat: this.zkouska.zapnuto });
     this.vysilac = new Vysilac();
     this.kalendar = new Kalendar({ cesty: this.c, data: this.data, zapisovac: this.zapisovac });
     this.dalsiDen = new DalsiDen({ cesty: this.c, kalendar: this.kalendar, sezeni: this.sezeni });
@@ -199,7 +204,7 @@ export class Hub {
     this.casovacOdpoctu = null;
     this.server = null;
     this.spusteno = new Date().toISOString();
-    this.prostredi = { oneDrive: jeVOneDrive(this.c.koren), hook: null };
+    this.prostredi = { oneDrive: jeVOneDrive(this.c.koren), hook: null, zkouska: this.zkouska.zapnuto };
     this.relace = new Map(); // token přihlášení PINem z domácí sítě -> čas přihlášení
     this.pokusyPinu = new Map(); // adresa -> { chyb, zamcenoDo }
     /** Funkce, která Hub restartuje (nastaví ji index.js, když běží pod spouštěčem). */
@@ -432,6 +437,7 @@ export class Hub {
       this.server.once('error', reject);
       this.server.listen(port, host, resolve);
     });
+    this.zkouska = zkusebniRezim(this.env, this.server.address().port);
 
     // Pomalé věci až po startu, aby se panel otevřel hned.
     this.prostredi.hook = await nainstalovatHook(this.c.koren).catch(() => 'chyba');
@@ -575,7 +581,8 @@ export class Hub {
     const host = String(req.headers.host || '').replace(/:\d+$/, '').replace(/^\[|\]$/g, '');
     // Z tohoto počítače vždy jen s hlavičkou Host localhostu, i se zapnutou domácí sítí:
     // cizí stránka přes DNS rebinding má v Host svou doménu (audit S5).
-    if (!vzdaleny) return JMENA_LOOPBACKU.has(host);
+    // Zkušební režim v Codespaces: přesměrovaný port přichází z localhostu s adresou Codespace.
+    if (!vzdaleny) return JMENA_LOOPBACKU.has(host) || this.zkouska.hosty.has(host.toLowerCase());
     if (!this.nastaveni.domaciSit) return false;
     const cookie = String(req.headers.cookie || '').match(/(?:^|;\s*)dmhub=([a-f0-9]+)/);
     const prihlasen = cookie ? this.relace.get(cookie[1]) : undefined;
@@ -1340,7 +1347,8 @@ export class Hub {
    * Selhání (obsazený port) Hub neshodí, jen ho ohlásí.
    */
   async zajistitPruchod() {
-    const relace = () => this.nastaveni.hodnoty.II_RELACE || null;
+    // Ve zkušebním režimu průchod neběží: Codespaces jeho vedlejší port nepřesměruje.
+    const relace = () => (this.zkouska.zapnuto ? null : this.nastaveni.hodnoty.II_RELACE || null);
     if (!relace()) {
       if (this.pruchod) await this.pruchod.zastavit();
       this.pruchod = null;

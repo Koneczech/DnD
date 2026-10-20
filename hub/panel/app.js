@@ -230,6 +230,7 @@ function vykresliUpozorneni() {
     return;
   }
   if (!p) return;
+  $('#lista-zkouska').hidden = !p.prostredi?.zkouska;
   if (p.server?.restartV) {
     // Restart po aktualizaci (bod 91): odpočet s možností odložit.
     const zbyva = Math.max(0, Math.ceil((p.server.restartV - Date.now() - (stav.odchylkaHodin ?? 0)) / 1000));
@@ -259,12 +260,13 @@ function vykresliUpozorneni() {
   }
   const g = p.git;
   if (g?.pozadu > 0) {
-    box.append(zprava(`Na GitHubu je nová verze (${g.pozadu} ${g.pozadu === 1 ? 'změna' : g.pozadu < 5 ? 'změny' : 'změn'}). Aktualizovat uloží tvoje úpravy kampaně, stáhne ji a případně Hub restartuje.`, { tlacitko: { text: 'Aktualizovat', akce: aktualizovat } }));
+    const coUdela = p.prostredi?.zkouska ? 'Aktualizovat ji stáhne' : 'Aktualizovat uloží tvoje úpravy kampaně, stáhne ji';
+    box.append(zprava(`Na GitHubu je nová verze (${g.pozadu} ${g.pozadu === 1 ? 'změna' : g.pozadu < 5 ? 'změny' : 'změn'}). ${coUdela} a případně Hub restartuje.`, { tlacitko: { text: 'Aktualizovat', akce: aktualizovat } }));
   }
   for (const v of p.obs?.varovaniZdroju ?? []) {
     box.append(zprava(`Zdroj „${v.zdroj}“ v OBS má zapnuté ${v.nastaveni.join(' a ')}. Vypni to, jinak výstup nepřežije výpadek Hubu.`));
   }
-  if (p.nastaveni && !p.nastaveni.existuje) {
+  if (p.nastaveni && !p.nastaveni.existuje && !p.prostredi?.zkouska) {
     box.append(zprava('Hub ještě není nastavený. Vyplň heslo k OBS v Nastavení.', { tlacitko: { text: 'Otevřít Nastavení', akce: () => (location.hash = 'nastaveni') } }));
   }
 }
@@ -1447,14 +1449,14 @@ async function aktualizovat() {
     const casti = [];
     if (r.ulozeno) casti.push('tvoje úpravy uloženy');
     if (r.stazeno) casti.push(`staženo ${r.stazeno} ${r.stazeno === 1 ? 'změna' : r.stazeno < 5 ? 'změny' : 'změn'}`);
-    if (r.ulozeno || r.stazeno) casti.push(r.push ? 'odesláno na GitHub' : 'na GitHub se zatím neodeslalo (zkus později)');
+    if ((r.ulozeno || r.stazeno) && !stav.prehled?.prostredi?.zkouska) casti.push(r.push ? 'odesláno na GitHub' : 'na GitHub se zatím neodeslalo (zkus později)');
     let text = casti.length ? `${casti.join(', ')}.` : 'Všechno je aktuální.';
     text = text[0].toUpperCase() + text.slice(1);
     if (r.vracenoZGitHubu?.length) text += ` Soubory ${r.vracenoZGitHubu.join(', ')} se změnily i na GitHubu: platí verze z GitHubu, tvoje je v úschovně Gitu. Pošli to Claudovi.`;
     if (r.restart === 'auto') text += ' Hub se za chvíli restartuje.';
     if (r.restart === 'rucne') text += ' Nová verze Hubu se spustí po restartu: běží sezení, tak jsem nic nerestartoval.';
     if (r.restart === 'nejde') text += ' Nová verze Hubu se spustí, až Hub zavřeš a spustíš zástupcem DM Hub.';
-    v.className = r.push || !(r.ulozeno || r.stazeno) ? 'ulozeni' : 'ulozeni varovani';
+    v.className = r.push || !(r.ulozeno || r.stazeno) || stav.prehled?.prostredi?.zkouska ? 'ulozeni' : 'ulozeni varovani';
     v.textContent = text;
     toast(text, { chyba: Boolean(r.vracenoZGitHubu?.length) });
     await nactiPrehled();
@@ -2681,7 +2683,7 @@ $('#zaznam-problemy').addEventListener('change', vykresliZaznam);
 
 await nactiPrehled();
 nactiZaznam();
-ukazObrazovku(stav.prehled?.nastaveni && !stav.prehled.nastaveni.existuje && !location.hash ? 'nastaveni' : location.hash.slice(1));
+ukazObrazovku(stav.prehled?.nastaveni && !stav.prehled.nastaveni.existuje && !stav.prehled.prostredi?.zkouska && !location.hash ? 'nastaveni' : location.hash.slice(1));
 pripojitUdalosti();
 
 /* ---------- Světla (Blok 4) ---------- */

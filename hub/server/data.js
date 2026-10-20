@@ -8,6 +8,7 @@ import { TYPY_SLOZEK, TYPY } from './cesty.js';
 import { WIZ_SCENY } from './zarizeni/wiz.js';
 import { PRIPONA_DOCASNA } from './zapis.js';
 import { Harptos } from '../sdilene/harptos.js';
+import { OSUDY, ODKAZOVA_POLE, POLE_TYPU } from '../sdilene/typy-karet.js';
 
 export const SCHEMA = 1;
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -230,6 +231,23 @@ export async function kontrolaDat(c) {
         break;
       }
       videno.add(m);
+    }
+  }
+
+  // Pole typových stránek (rozhodnutí 74): osud a odkazová pole kde, frakce, sidlo, u_koho.
+  for (const z of zaznamy) {
+    const d = z.data;
+    if ('osud' in d && d.osud != null && d.osud !== '' && !(String(d.osud) in OSUDY)) {
+      pridej(z.soubor, 'varovani', `osud musí být ${Object.keys(OSUDY).join(', ')}`);
+    }
+    for (const [pole, { cil: typyCile }] of Object.entries(ODKAZOVA_POLE)) {
+      if (!(pole in d) || d[pole] == null || d[pole] === '') continue;
+      const cil = typeof d[pole] === 'string' ? odkazy(d[pole])[0] : null;
+      if (!cil) pridej(z.soubor, 'chyba', `${pole} musí být odkaz na kartu, např. "[[${typyCile[0] === 'misto' ? 'mirabar' : 'id'}]]"`);
+      else if (!(POLE_TYPU[d.typ] ?? []).includes(pole)) pridej(z.soubor, 'varovani', `${pole} karta typu ${d.typ} nepoužívá`);
+      else if (cil === String(d.id)) pridej(z.soubor, 'chyba', `${pole} vede na kartu samu`);
+      else if (!typPodleId.has(cil)) pridej(z.soubor, 'varovani', `${pole} vede na neexistující kartu [[${cil}]]`);
+      else if (!typyCile.includes(typPodleId.get(cil))) pridej(z.soubor, 'chyba', `${pole} [[${cil}]] musí vést na: ${typyCile.join(', ')}`);
     }
   }
 

@@ -11,7 +11,8 @@ import { EventEmitter } from 'node:events';
 import YAML from 'yaml';
 import { rozebrat, odkazy } from './frontmatter.js';
 import { TYPY_SLOZEK } from './cesty.js';
-import { upravitKartu, idZOdkazu, normalizujVztah, teloKarty, nahraditTelo, TEXTOVA_POLE } from './hlavicka.js';
+import { upravitKartu, idZOdkazu, normalizujVztah, teloKarty, nahraditTelo, TEXTOVA_POLE, ODKAZOVA_KLICE } from './hlavicka.js';
+import { OSUDY, ODKAZOVA_POLE, POLE_TYPU } from '../sdilene/typy-karet.js';
 import { PRIPONA_DOCASNA, zapsatAtomicky } from './zapis.js';
 import { Harptos } from '../sdilene/harptos.js';
 import { STAVY_ROZHODNUTI } from './data.js';
@@ -320,14 +321,24 @@ export function nacistEntitu(text, { slozka, soubor, slozkaEntity, upraveno = nu
   entita.aktualni = entita.tags.includes(STITEK_VE_HRE);
   entita.obrazky = obrazky(d, entita);
   // Hlavní údaje z hlavičky podle typu (karta je ukáže pod názvem).
-  for (const pole of ['hrac', 'druh', 'povolani', 'stav', 'oblast', 'zaznamenano', 'sezeni', 'cislo']) {
+  for (const pole of ['hrac', 'druh', 'povolani', 'role', 'osud', 'stav', 'oblast', 'zaznamenano', 'sezeni', 'cislo']) {
     const h = textovePole(d[pole]);
     if (h) entita.udaje[pole] = h;
+  }
+  // Živý je výchozí osud, boční panel ho neukazuje (rozhodnutí 74).
+  if (entita.udaje.osud === 'zije') delete entita.udaje.osud;
+  // Odkazová pole (kde, sidlo, u_koho): id cílové karty.
+  entita.odkazyPole = {};
+  for (const pole of ODKAZOVA_KLICE) {
+    if (typeof d[pole] !== 'string') continue;
+    const cil = odkazy(d[pole])[0] ?? '';
+    if (SLUG.test(cil) && cil !== id) entita.odkazyPole[pole] = cil;
   }
   if (Array.isArray(d.kdo) && d.kdo.length) entita.udaje.kdo = d.kdo.map(String).join(', ');
   if (typeof d.doresit === 'boolean') entita.udaje.doresit = d.doresit ? 'ano' : 'ne';
   // Pole pro editor karty (surové hodnoty z hlavičky).
   for (const pole of TEXTOVA_POLE) if (pole in d) entita.pole[pole] = textovePole(d[pole]) ?? '';
+  for (const pole of ODKAZOVA_KLICE) if (pole in d) entita.pole[pole] = entita.odkazyPole[pole] ?? '';
   if ('doresit' in d) entita.pole.doresit = d.doresit === true;
   if ('kdo' in d) entita.pole.kdo = (Array.isArray(d.kdo) ? d.kdo : []).map(String);
   entita.kdo = (Array.isArray(d.kdo) ? d.kdo : []).map(String).filter(Boolean);
@@ -356,7 +367,7 @@ export function vPohledu(e, pohled, najit) {
     const obrazky = e.obrazky;
     return {
       id: e.id, typ: e.typ, nazev: e.nazev, verejne: e.verejne, ikona: e.ikona, aliases: e.aliases, tags: e.tags,
-      aktualni: e.aktualni, vazby: e.vazby, vztahy: e.vztahy, leziV: e.leziV, udaje: e.udaje, soubor: e.soubor,
+      aktualni: e.aktualni, vazby: e.vazby, vztahy: e.vztahy, leziV: e.leziV, udaje: e.udaje, odkazyPole: e.odkazyPole ?? {}, soubor: e.soubor,
       kdo: e.kdo ?? [], odkryto: e.odkryto ?? { zna: 0, celkem: 0 },
       obrazek: obrazekUzlu(obrazky)?.url ?? null, portret: obrazekUzlu(obrazky)?.ucel === 'portret', obrazky,
       popis: e.popis, upraveno: e.upraveno,
@@ -367,7 +378,7 @@ export function vPohledu(e, pohled, najit) {
   const vztahy = e.vztahy.filter((v) => v.verejne && najit(v.s)?.verejne);
   return {
     id: e.id, typ: e.typ, nazev: e.nazev, verejne: true, ikona: e.ikona, aliases: [], tags: [], aktualni: false,
-    vazby: vztahy.map((v) => v.s), vztahy, udaje: {}, soubor: null,
+    vazby: vztahy.map((v) => v.s), vztahy, udaje: {}, odkazyPole: {}, soubor: null,
     // Hráčský kánon je celý pro družinu, včetně toho, koho se týká.
     kdo: e.typ === 'kanon' ? e.kdo ?? [] : [], odkryto: null,
     // Kde místo leží, družina ví, když zná obě místa.
@@ -701,6 +712,19 @@ export class Kanon extends EventEmitter {
       const klic = [...poradi.keys()];
       zde.sort((a, b) => (klic.indexOf(a.id) + 1 || 1e9) - (klic.indexOf(b.id) + 1 || 1e9) || a.nazev.localeCompare(b.nazev, 'cs'));
     }
+    // Kdo a co odkazuje na tuto kartu polem hlavičky (rozhodnutí 74): NPC s kde, frakce se sidlo,
+    // předmět s u_koho. U místa i z míst v něm (pres = id podmísta).
+    const odkazujePolem = [];
+    for (const jina of this.entity.values()) {
+      if (jina.id === id) continue;
+      const jv = vPohledu(jina, p, this.najit);
+      if (!jv) continue;
+      for (const [pole, cil] of Object.entries(jv.odkazyPole ?? {})) {
+        const pres = cil === id ? null : podmista.has(cil) ? cil : undefined;
+        if (pres !== undefined) odkazujePolem.push({ id: jina.id, nazev: jina.nazev, typ: jina.typ, pole, pres });
+      }
+    }
+    odkazujePolem.sort((a, b) => a.nazev.localeCompare(b.nazev, 'cs'));
     let telo;
     if (p === 'dm') telo = teloBezDruziny(e.telo);
     else telo = e.typ === 'kanon' ? teloDruziny(e.telo, e.typ) : '';
@@ -712,6 +736,7 @@ export class Kanon extends EventEmitter {
       udalosti,
       chronologie: e.typ === 'kanon' ? this.chronologieKarty(id, p) : null,
       zde,
+      odkazujePolem,
       pole: p === 'dm' ? e.pole : {},
       odkazujici,
       odkazyVTextu: p === 'dm' ? e.odkazyVTextu.filter((x) => this.entity.has(x)) : [],
@@ -770,6 +795,20 @@ export class Kanon extends EventEmitter {
       if (pole === 'ikona' && [...t].length > 4) throw chyba('Ikona je jeden emoji znak.');
       if (pole === 'stav' && e.typ === 'rozhodnuti' && !STAVY_ROZHODNUTI.includes(t)) throw chyba(`Stav rozhodnutí je ${STAVY_ROZHODNUTI.join(', ')}.`);
       if (pole === 'oblast' && t && !SLUG.test(t)) throw chyba('Oblast je kampan, nebo id postavy.');
+      if (pole === 'osud' && t && !(t in OSUDY)) throw chyba(`Osud je ${Object.keys(OSUDY).join(', ')}.`);
+      if ((e.pole[pole] ?? '') !== t) z[pole] = t;
+    }
+    // Odkazová pole (kde, sidlo, u_koho): id karty povoleného typu, prázdné = odebrat.
+    for (const pole of ODKAZOVA_KLICE) {
+      if (!(pole in telo)) continue;
+      const t = idZOdkazu(String(telo[pole] ?? ''));
+      if (t) {
+        if (!(POLE_TYPU[e.typ] ?? []).includes(pole)) throw chyba(`Pole ${pole} karta typu ${e.typ} nemá.`);
+        if (!SLUG.test(t) || t === e.id) throw chyba(`Neplatný odkaz v poli ${pole}.`);
+        const cil = this.entity.get(t);
+        if (!cil) throw chyba(`Karta „${t}“ neexistuje.`, 404);
+        if (!ODKAZOVA_POLE[pole].cil.includes(cil.typ)) throw chyba(`${cil.nazev} sem nepatří (pole ${pole} vede na: ${ODKAZOVA_POLE[pole].cil.join(', ')}).`);
+      }
       if ((e.pole[pole] ?? '') !== t) z[pole] = t;
     }
     if ('doresit' in telo) {
@@ -949,7 +988,7 @@ export class Kanon extends EventEmitter {
       if (aliasy.length > MAX_ALIASU) throw chyba(`Nejvýš ${MAX_ALIASU} přezdívek.`);
     }
     if ('aktualni' in telo && typeof telo.aktualni !== 'boolean') throw chyba('aktualni musí být true nebo false.');
-    const maPole = [...TEXTOVA_POLE, 'doresit', 'kdo'].some((k) => k in telo);
+    const maPole = [...TEXTOVA_POLE, ...ODKAZOVA_KLICE, 'doresit', 'kdo'].some((k) => k in telo);
     if (maPole) this.overitPole(this.get(id), telo); // chyba dřív, než se sáhne na soubor
     if (!Object.keys(zmeny).length && !aliasy && !('aktualni' in telo) && !maPole) throw chyba('Není co změnit.');
     return this.upravitHlavicku(id, (e) => {

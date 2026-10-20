@@ -7,13 +7,14 @@
 // změněné řádky). Celkové přeformátování přes YAML.stringify by změnilo mezery v [ ] u všech
 // polí (akceptační kritérium Bloku 3).
 import YAML from 'yaml';
+import { ODKAZOVA_POLE } from '../sdilene/typy-karet.js';
 
 const OTEVRENI = /^(﻿)?---\r?\n/;
 
 /** Pořadí klíčů, podle kterého se chybějící klíč vloží na rozumné místo (jako v šablonách). */
 const PORADI = [
-  'schema', 'id', 'typ', 'nazev', 'verejne', 'ikona', 'hrac', 'druh', 'povolani', 'stav', 'oblast',
-  'zaznamenano', 'sezeni', 'kdo', 'doresit', 'aliases', 'lezi_v', 'vazby', 'vztahy', 'tags', 'ilustrace', 'zdroj',
+  'schema', 'id', 'typ', 'nazev', 'verejne', 'ikona', 'hrac', 'druh', 'povolani', 'role', 'frakce', 'osud', 'kde', 'sidlo',
+  'u_koho', 'stav', 'oblast', 'zaznamenano', 'sezeni', 'kdo', 'doresit', 'aliases', 'lezi_v', 'vazby', 'vztahy', 'tags', 'ilustrace', 'zdroj',
 ];
 
 const JEDNODUCHY_STITEK = /^[\p{L}\p{N}_-]+$/u;
@@ -29,7 +30,11 @@ export function idZOdkazu(text) {
 }
 
 /** Textová pole hlavičky, která jde upravit v editoru karty (Blok 3, plný editor). */
-export const TEXTOVA_POLE = Object.freeze(['nazev', 'ikona', 'hrac', 'druh', 'povolani', 'stav', 'oblast', 'zaznamenano', 'sezeni']);
+export const TEXTOVA_POLE = Object.freeze(['nazev', 'ikona', 'hrac', 'druh', 'povolani', 'role', 'osud', 'stav', 'oblast', 'zaznamenano', 'sezeni']);
+/** Pole s odkazem na jinou kartu (typové stránky, rozhodnutí 74): kde, frakce, sidlo, u_koho. */
+export const ODKAZOVA_KLICE = Object.freeze(Object.keys(ODKAZOVA_POLE));
+/** Nepovinná pole typových stránek: prázdná hodnota klíč z hlavičky odebere, místo `role: ""`. */
+const ODEBRAT_PRAZDNE = new Set(['role', 'osud', ...ODKAZOVA_KLICE]);
 const PROSTY_TEXT = /^[\p{L}\p{N}\p{Extended_Pictographic}][\p{L}\p{N}\p{Extended_Pictographic}\uFE0F\u200D ()'.,–—-]*$/u;
 const ZVLASTNI = /^(true|false|null|yes|no|on|off|y|n|~|[-+]?[\d.]+(e[-+]?\d+)?)$/i;
 
@@ -49,7 +54,7 @@ function vykreslit(klic, hodnota, puvodniUvozovky = false) {
   if (klic === 'tags') return `[${hodnota.map((t) => (JEDNODUCHY_STITEK.test(t) ? t : JSON.stringify(t))).join(', ')}]`;
   if (klic === 'aliases') return `[${hodnota.map((a) => JSON.stringify(a)).join(', ')}]`;
   if (klic === 'vazby') return `[${hodnota.map((id) => JSON.stringify(odkaz(id))).join(', ')}]`;
-  if (klic === 'lezi_v') return JSON.stringify(odkaz(hodnota));
+  if (klic === 'lezi_v' || ODKAZOVA_KLICE.includes(klic)) return JSON.stringify(odkaz(hodnota));
   throw new Error(`Klíč ${klic} se takto zapsat nedá`);
 }
 
@@ -253,8 +258,12 @@ export function nahraditTelo(text, telo) {
 export function upravitKartu(text, zmeny) {
   const { pred, yaml: puvodniYaml, za } = rozdelit(text);
   let yaml = puvodniYaml;
-  for (const klic of [...TEXTOVA_POLE, 'verejne', 'doresit', 'kdo', 'aliases', 'vazby', 'tags']) {
+  for (const klic of [...TEXTOVA_POLE, ...ODKAZOVA_KLICE, 'verejne', 'doresit', 'kdo', 'aliases', 'vazby', 'tags']) {
     if (!(klic in zmeny)) continue;
+    if (ODEBRAT_PRAZDNE.has(klic) && !zmeny[klic]) {
+      yaml = odebratKlic(yaml, parovat(yaml), klic);
+      continue;
+    }
     const dokument = parovat(yaml);
     const par = najitPar(dokument, klic);
     const uvozovky = Boolean(par?.value && YAML.isScalar(par.value) && par.value.type === 'QUOTE_DOUBLE');

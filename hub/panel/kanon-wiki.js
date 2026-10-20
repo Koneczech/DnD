@@ -381,7 +381,8 @@ export function vytvoritWiki(ctx, karta) {
       return;
     }
     const text = el('div', { className: 'text-karty' });
-    if (k.telo.trim()) text.innerHTML = naHtml(k.telo, { existuje: (id) => s.podleId.has(id), vynechatNadpis: e.nazev, oznacitDm: dm() });
+    // DM oddíly wiki ukáže dole, na jejich místě v textu zůstane odkaz (rozhodnutí 74).
+    if (k.telo.trim()) text.innerHTML = naHtml(k.telo, { existuje: (id) => s.podleId.has(id), vynechatNadpis: e.nazev, oznacitDm: dm(), dmDolu: dm() });
     const portret = k.obrazky.find((o) => o.url === k.obrazek && o.ucel === 'portret');
     const pocetVazeb = new Set([...k.vztahy.map((v) => v.s), ...k.vazby]).size;
     const infobox = el('aside', { className: 'infobox karta' },
@@ -391,10 +392,11 @@ export function vytvoritWiki(ctx, karta) {
       e.typ === 'misto' ? karta.sekceMista(e) : null,
       (uprav() || e.aliases.length) ? el('h3', { textContent: 'Přezdívky' }) : null,
       karta.prezdivky(e),
+      karta.dopocitane(k),
       el('div', { className: 'sekce-hlava' }, el('h3', { textContent: `Vztahy a vazby (${pocetVazeb})` }), uprav() ? karta.pridatVazbuUI(k) : null),
       (() => {
-        const radky = karta.seznamVztahu(k);
-        return radky.length ? el('ul', { className: 'vztahy-karty' }, radky) : el('p', { className: 'poznamka', textContent: dm() ? 'Zatím bez vazeb.' : 'Družina o žádném vztahu neví.' });
+        const bloky = karta.vztahyPoSkupinach(k);
+        return bloky.length ? bloky : el('p', { className: 'poznamka', textContent: dm() ? 'Zatím bez vazeb.' : 'Družina o žádném vztahu neví.' });
       })(),
       karta.zpetneOdkazy(k, e.nazev),
       (() => {
@@ -412,6 +414,16 @@ export function vytvoritWiki(ctx, karta) {
   }
 
   obsah.addEventListener('click', (ev) => {
+    // Odkaz na DM oddíl, který wiki přesunula dolů: posunout stránku, adresa (#kanon/…) zůstane.
+    const dmOdkaz = ev.target.closest?.('.text-karty a.odkaz-na-dm');
+    if (dmOdkaz) {
+      ev.preventDefault();
+      const cil = obsah.querySelector(`#oddil-dm-${CSS.escape(dmOdkaz.dataset.dm)}`);
+      cil?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      cil?.classList.add('zvyraznit');
+      setTimeout(() => cil?.classList.remove('zvyraznit'), 1600);
+      return;
+    }
     const a = ev.target.closest?.('.text-karty a.odkaz-entity, .blok-text a.odkaz-entity');
     if (!a) return;
     ev.preventDefault();

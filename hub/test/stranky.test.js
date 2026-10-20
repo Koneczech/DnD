@@ -64,7 +64,8 @@ test('sestavitStranky: družina otevřeně, DM jen zašifrovaně, obrázky jen p
     assert.deepEqual(v.chybiObrazky, []);
 
     const cist = async (rel) => JSON.parse(await fs.readFile(path.join(cil, ...rel.split('/')), 'utf8'));
-    assert.deepEqual(await cist('data/stranky.json'), { dm: true });
+    assert.equal((await cist('data/stranky.json')).dm, true);
+    assert.match((await cist('data/stranky.json')).sestaveno, /^\d{4}-\d{2}-\d{2}T/);
     const druzina = await cist('data/kanon-druzina.json');
     assert.deepEqual(druzina.entity.map((e) => e.id).sort(), ['tabor', 'tusker']);
     await assert.rejects(fs.access(path.join(cil, 'data', 'entita', 'druzina', 'tajny.json')), 'karta jen pro DM v pohledu družiny není');
@@ -110,7 +111,7 @@ test('sestavitStranky bez hesla: jen pohled družiny', async () => {
     await zapsat(repo.koren, 'kampan/npc/tajny/tajny.md', ['---', 'schema: 1', 'id: tajny', 'typ: npc', 'nazev: Tajný', 'verejne: false', '---', 'Jen pro DM.', ''].join('\n'));
     const v = await sestavitStranky({ cesty: repo.c, cil });
     assert.equal(v.dm, false);
-    assert.deepEqual(JSON.parse(await fs.readFile(path.join(cil, 'data', 'stranky.json'), 'utf8')), { dm: false });
+    assert.equal(JSON.parse(await fs.readFile(path.join(cil, 'data', 'stranky.json'), 'utf8')).dm, false);
     await assert.rejects(fs.access(path.join(cil, 'data', 'dm.json')));
     await fs.access(path.join(cil, 'data', 'kanon-druzina.json'));
   } finally {

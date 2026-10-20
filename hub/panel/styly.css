@@ -412,6 +412,10 @@ a { color: var(--mosaz); }
 
 .misto-hlava { display: flex; align-items: center; gap: var(--m-4); margin-top: var(--m-5); }
 .misto-hlava h2 { margin: 0; }
+.misto-titul { display: grid; gap: 0; }
+.misto-cesta { margin: 0; font-size: var(--t-popisek); color: var(--text-tlumeny); }
+.misto-cesta .odkaz { border: 0; background: none; padding: 0; color: inherit; font: inherit; text-decoration: underline; text-underline-offset: 0.18em; cursor: pointer; }
+.misto-cesta .odkaz:hover { color: var(--akcent); }
 .ilustrace { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: var(--m-4); margin-top: var(--m-3); }
 .karta-ilustrace { background: var(--deska); border: 1px solid var(--linka); border-radius: var(--zaobleni); overflow: hidden; display: grid; }
 .karta-ilustrace[data-aktualni="true"] { border-color: var(--mosaz); box-shadow: 0 0 0 1px var(--mosaz); }
@@ -753,6 +757,11 @@ main { padding: var(--m-4) var(--m-5) var(--m-5); }
 .stul-mista { display: flex; flex-direction: column; gap: 2px; }
 .polozka-mista { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 var(--m-2); text-align: left; background: transparent; border-color: transparent; padding: var(--m-2) var(--m-3); }
 .polozka-mista[aria-pressed="true"] { background: var(--povrch-2); border-color: var(--akcent); }
+/* Podmísta pod svým místem (⚠ bod 116): odsazená, s tenkou linkou vlevo. */
+.polozka-mista { margin-left: calc(var(--hloubka, 0) * var(--m-4)); }
+.polozka-mista.podmisto { border-left: 2px solid var(--linka); border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.rodic-mista { color: var(--text-tlumeny); }
+.polozka-mista small.pocet-uvnitr { flex-basis: auto; color: var(--text-tlumeny); font-size: var(--t-stitek); }
 .polozka-mista small { flex-basis: 100%; font-size: var(--t-stitek); color: var(--varovani); }
 .stul-ilustrace-hlava { margin-bottom: var(--m-1); }
 .stul-vyber { margin: 0 0 var(--m-2); }
@@ -976,6 +985,7 @@ main:has(> #obrazovka-kanon:not([hidden])) { display: flex; flex-direction: colu
 .kanon-legenda .vzorek { width: 1rem; height: 3px; border-radius: 2px; background: var(--b); }
 .kanon-legenda .vzorek.bez { background: var(--postoj-0); opacity: 0.5; margin-left: var(--m-2); }
 .kanon-legenda .vzorek.vazba { background: var(--linka); margin-left: var(--m-2); }
+.kanon-legenda .vzorek.lezi-v { background: repeating-linear-gradient(90deg, var(--t-misto) 0 2px, transparent 2px 5px); margin-left: var(--m-2); }
 .pohled-druziny .kanon-legenda .vzorek.vazba, .pohled-druziny .kanon-legenda .vzorek.vazba + .legenda-text { display: none; }
 
 /* Síť */
@@ -984,6 +994,8 @@ main:has(> #obrazovka-kanon:not([hidden])) { display: flex; flex-direction: colu
 .hrana.vztah.bez-postoje .cara { stroke: var(--postoj-0); stroke-opacity: 0.45; }
 .hrana .zachyt { fill: none; stroke: transparent; stroke-width: 10; }
 .hrana:hover .cara { stroke-width: 3.2; }
+/* Místo v místě (⚠ bod 116): přerušovaná čára v barvě míst. */
+.hrana.lezi-v .cara { stroke: var(--t-misto); stroke-opacity: 0.75; stroke-width: 1.6; stroke-dasharray: 2 3; }
 .uzel { cursor: pointer; }
 .uzel .telo { fill: var(--c); stroke: var(--povrch-0); stroke-width: 2; }
 .uzel .ram { fill: none; stroke: var(--c); stroke-width: 2.5; pointer-events: none; }
@@ -1023,6 +1035,14 @@ svg.zoom-blizko .uzel .popisek, svg.malo-uzlu .uzel .popisek, .uzel.vybrany .pop
 .stitek-typu { color: var(--c); }
 .stitek-stavu.otevrene { color: var(--jantar); } .stitek-stavu.rozhodnuto { color: var(--ok); } .stitek-stavu.zavrzeno { color: var(--text-tlumeny); }
 .stitek-maly { color: var(--ok); margin-left: var(--m-2); white-space: nowrap; }
+/* Kde místo leží (Mirabar › Komora) a výběr Leží v */
+.cesta-mista { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--m-1); margin: calc(-1 * var(--m-2)) 0 var(--m-2); font-size: var(--t-popisek); color: var(--text-tlumeny); }
+.cesta-mista .odkaz-entity { color: var(--text-tlumeny); text-decoration-thickness: 1px; }
+.cesta-mista .odkaz-entity:hover { color: var(--akcent); }
+.lezi-v { display: flex; align-items: center; gap: var(--m-2); margin-top: var(--m-3); font-size: var(--t-popisek); color: var(--text-tlumeny); }
+.lezi-v select { min-width: 0; flex: 1; max-width: 18rem; }
+.podmista { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--m-1) var(--m-3); }
+.podmista small { color: var(--text-tlumeny); }
 .prepinace-karty { display: flex; flex-wrap: wrap; gap: var(--m-2) var(--m-5); margin-top: var(--m-4); }
 .udaje-karty { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--m-1) var(--m-4); margin: var(--m-3) 0 0; font-size: var(--t-popisek); }
 .udaje-karty dt { color: var(--text-tlumeny); }

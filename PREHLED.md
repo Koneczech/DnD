@@ -32,6 +32,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | **Obchody** | Sortimenty, aktivní obchod, ceník v OBS | ✓ |
 | **Místa a scény** | Ilustrace míst, den/noc, stavy (poplach, hoří, po boji), odkrývání stop, počasí s intenzitou | ✓ |
 | | Ilustrační dílna (prompt, ořez, nová ilustrace jako skrytá) | ✓ |
+| | Hierarchie míst (Leží v): strom v Místech, U stolu i dílně, popis nadřazeného místa v promptu | ◐ |
 | **OBS** | Přepínání scén podle rolí, výstupy jako zdroje Browser, živý náhled | ✓ |
 | **Světla** | Hue a WiZ po rolích (hlavní, pozadí, lampa), světla místa, blesky při bouřce | ✓ |
 | | Málo HP: lampa i hlavní světlo pulzují červeně | ◐ |
@@ -52,6 +53,8 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Karty mimo Notion (8), hráčský kánon sezení 1 | ◐ |
 | | Zápis a hráčský kánon sezení 2 | ✗ |
 | | Modul Kánon: mapa vazeb a vztahů, karta s textem, hledání v liště, Pohled družiny | ◐ |
+| | Místa v místech: čára Leží v na mapě, cesta Mirabar › v kartě, Místa uvnitř, výběr Leží v | ◐ |
+| | Přiřazení existujících míst (kam co patří) | ✗ |
 | | Malé úpravy z karty a mapy (vazby, vztahy, přezdívky, Ve hře, Družina zná), Otevřít v Obsidianu, F2 s odkazem, nástěnky | ◐ |
 | | Hráčská stránka na GitHub Pages (pohled družiny) | ✗ |
 | **Verze 2** | Editor entit, příprava Lazy DM, generátor obchodů, portréty, export do IIO | ✗ |

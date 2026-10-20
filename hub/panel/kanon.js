@@ -134,6 +134,28 @@ function ulozitVolby(v) {
 /**
  * @param {{api: Function, toast: Function, otevritPoznamku: (text?: string) => void}} zavislosti
  */
+/**
+ * Místa jako strom pro výběry: nadřazené místo, pod ním jeho podmísta (podle názvu).
+ * Místo, jehož rodič v seznamu není, je nahoře.
+ * @param {Array<{id: string, nazev: string, leziV?: string|null}>} mista
+ * @returns {Array<{m: object, hloubka: number}>}
+ */
+export function stromMist(mista) {
+  const ids = new Set(mista.map((m) => m.id));
+  const podle = (a, b) => a.nazev.localeCompare(b.nazev, 'cs');
+  const vysledek = [];
+  const videno = new Set();
+  const pridat = (m, hloubka) => {
+    if (videno.has(m.id)) return;
+    videno.add(m.id);
+    vysledek.push({ m, hloubka });
+    for (const d of mista.filter((x) => x.leziV === m.id).sort(podle)) pridat(d, hloubka + 1);
+  };
+  for (const m of mista.filter((x) => !x.leziV || !ids.has(x.leziV)).sort(podle)) pridat(m, 0);
+  for (const m of mista) if (!videno.has(m.id)) pridat(m, 0); // rozbitý kruh v datech: aspoň se ukáže
+  return vysledek;
+}
+
 export function vytvoritKanon({ api, toast, otevritPoznamku }) {
   const ulozene = nacistVolby();
   const s = {
@@ -207,12 +229,25 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
     else vykresliKartu();
   }
 
-  /** Neuspořádané dvojice entit, mezi kterými vede vazba nebo vztah (jen existující cíle). */
+  /** Je `a` místo, které leží v `b` (nebo naopak)? Taková dvojice má na mapě čáru Leží v (⚠ bod 116). */
+  const jeLeziV = (a, b) => s.podleId.get(a)?.leziV === b || s.podleId.get(b)?.leziV === a;
+
+  /** Místa, která leží přímo v místě `id`, podle názvu. */
+  const podmista = (id) => (s.data?.entity ?? []).filter((e) => e.leziV === id).sort((a, b) => a.nazev.localeCompare(b.nazev, 'cs'));
+
+  /** Cesta od nejvyššího místa k místu `id` (bez něj): Mirabar › Chudinská čtvrť. */
+  function predci(id) {
+    const cesta = [];
+    for (let m = s.podleId.get(s.podleId.get(id)?.leziV); m && cesta.length < 20 && !cesta.includes(m) && m.id !== id; m = s.podleId.get(m.leziV)) cesta.unshift(m);
+    return cesta;
+  }
+
+  /** Neuspořádané dvojice entit, mezi kterými vede vazba, vztah nebo Leží v (jen existující cíle). */
   function vsechnyDvojice() {
     const videno = new Set();
     const vysledek = [];
     for (const e of s.data?.entity ?? []) {
-      for (const cil of new Set([...e.vazby, ...e.vztahy.map((v) => v.s)])) {
+      for (const cil of new Set([...(e.leziV ? [e.leziV] : []), ...e.vazby, ...e.vztahy.map((v) => v.s)])) {
         if (!s.podleId.has(cil) || cil === e.id) continue;
         const klic = e.id < cil ? `${e.id} ${cil}` : `${cil} ${e.id}`;
         if (videno.has(klic)) continue;
@@ -230,7 +265,7 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
     if (!s.data) return;
     const uzly = s.data.entity.filter(viditelny).map((e) => ({ id: e.id, typ: e.typ, obrazek: e.obrazek, r: polomer(e, e.stupen) }));
     const ids = new Set(uzly.map((u) => u.id));
-    const hrany = vsechnyDvojice().filter(([a, b]) => ids.has(a) && ids.has(b));
+    const hrany = vsechnyDvojice().filter(([a, b]) => ids.has(a) && ids.has(b)).map(([a, b]) => (jeLeziV(a, b) ? [a, b, 'lezi_v'] : [a, b]));
     const pevne = new Map([...s.pevne].filter(([id]) => ids.has(id)));
     const start = new Map([...s.pozice].filter(([id]) => ids.has(id)));
     s.pozice = rozlozit(uzly, hrany, { pevne, start });
@@ -256,6 +291,12 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
     }
     for (const [a, b] of vsechnyDvojice()) {
       if (!s.pozice.has(a) || !s.pozice.has(b)) continue;
+      // Místo v místě: vlastní čára (ta nahradí i holou vazbu mezi nimi), vztahy zůstávají.
+      if (jeLeziV(a, b)) {
+        const dite = s.podleId.get(a)?.leziV === b ? a : b;
+        vysledek.push({ a: dite, b: dite === a ? b : a, vztah: null, leziV: true, obousmerny: false });
+        continue;
+      }
       if (smery.has(`${a}>${b}`) || smery.has(`${b}>${a}`)) continue;
       vysledek.push({ a, b, vztah: null, obousmerny: false });
     }
@@ -279,6 +320,7 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
   function popisHrany(h) {
     const a = s.podleId.get(h.a)?.nazev ?? h.a;
     const b = s.podleId.get(h.b)?.nazev ?? h.b;
+    if (h.leziV) return `${a} leží v ${b}`;
     if (!h.vztah) return `${a} — ${b} (vazba bez popisu)`;
     const v = h.vztah;
     return `${a} → ${b}: ${v.popis}${Number.isInteger(v.postoj) ? ` · postoj ${postojText(v.postoj)}` : ''}${s.pohled === 'dm' ? (v.verejne ? ' · družina zná' : ' · družina nezná') : ''}`;
@@ -289,7 +331,7 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
     const hrany = hranyKVykresleni();
     gHrany.replaceChildren(
       ...hrany.map((h) => {
-        const g = svg('g', { class: `hrana${h.vztah ? ' vztah' : ''}${h.vztah && !Number.isInteger(h.vztah.postoj) ? ' bez-postoje' : ''}`, 'data-a': h.a, 'data-b': h.b });
+        const g = svg('g', { class: `hrana${h.leziV ? ' lezi-v' : ''}${h.vztah ? ' vztah' : ''}${h.vztah && !Number.isInteger(h.vztah.postoj) ? ' bez-postoje' : ''}`, 'data-a': h.a, 'data-b': h.b });
         const d = cestaHrany(h);
         const cara = svg('path', { d, class: 'cara' });
         const barva = h.vztah ? barvaPostoje(h.vztah.postoj) : null;
@@ -945,6 +987,41 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
     );
   }
 
+  /**
+   * Místo v místě (⚠ bod 116): výběr Leží v (jen DM) a místa, která v něm leží.
+   * Nabízí jen místa, ve kterých by nevznikl kruh (ne místo samo ani jeho podmísta).
+   */
+  function sekceMista(e) {
+    const dm = s.pohled === 'dm';
+    const deti = podmista(e.id);
+    const vysledek = [];
+    if (dm) {
+      const potomci = new Set([e.id]);
+      for (let pridano = true; pridano;) {
+        pridano = false;
+        for (const x of s.data.entity) {
+          if (!x.leziV || !potomci.has(x.leziV) || potomci.has(x.id)) continue;
+          potomci.add(x.id);
+          pridano = true;
+        }
+      }
+      const mista = s.data.entity.filter((x) => x.typ === 'misto' && !potomci.has(x.id));
+      const vyber = el('select', { 'aria-label': 'Místo, ve kterém leží' }, new Option('— nikde (samostatné místo)', ''), ...stromMist(mista).map(({ m, hloubka }) => new Option(`${'\u00a0\u00a0'.repeat(hloubka)}${m.nazev}`, m.id)));
+      vyber.value = e.leziV ?? '';
+      vyber.addEventListener('change', () => {
+        const cil = vyber.value || null;
+        const nazev = cil ? s.podleId.get(cil)?.nazev ?? cil : null;
+        upravit(`/api/kanon/entita/${encodeURIComponent(e.id)}/lezi-v`, 'PUT', { cil }, cil ? `${e.nazev} leží v ${nazev}.` : `${e.nazev} je samostatné místo.`);
+      });
+      vysledek.push(el('label', { className: 'lezi-v', title: 'Místo, ve kterém nebo u kterého toto místo leží (hospoda ve městě, tábor u osady). Mapa ho drží u něj, Místa ho řadí pod něj.' }, el('span', { textContent: 'Leží v' }), vyber));
+    }
+    if (deti.length) {
+      vysledek.push(el('h3', { textContent: `Místa uvnitř (${deti.length})` }));
+      vysledek.push(el('ul', { className: 'podmista' }, deti.map((d) => el('li', {}, odkazNaEntitu(d.id), podmista(d.id).length ? el('small', { textContent: ` +${podmista(d.id).length}` }) : null))));
+    }
+    return vysledek;
+  }
+
   function vykresliKartu() {
     if (!s.vybrane) return prehledKarty();
     const e = s.podleId.get(s.vybrane);
@@ -957,8 +1034,10 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
     typ.style.setProperty('--c', barvaTypu(e.typ));
     const stitky = [typ];
     if (e.udaje?.stav) stitky.push(el('span', { className: `stitek-stavu ${e.udaje.stav}`, textContent: STAVY[e.udaje.stav] ?? e.udaje.stav }));
+    const cesta = e.typ === 'misto' ? predci(e.id) : [];
     const casti = [
       el('button', { type: 'button', className: 'zpet', textContent: '← Přehled', onclick: () => vybrat(null) }),
+      cesta.length ? el('nav', { className: 'cesta-mista', 'aria-label': 'Kde místo leží' }, cesta.flatMap((m) => [odkazNaEntitu(m.id), el('span', { className: 'oddelovac', textContent: '›', 'aria-hidden': 'true' })])) : null,
       el('div', { className: 'hlava-karty' }, ikona, el('div', {}, el('h2', { className: 'karta-nazev', textContent: e.nazev }), el('div', { className: 'stitky-karty' }, stitky))),
     ];
     if (dm) {
@@ -990,11 +1069,12 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
       nahradit(kartaEl, ...casti);
       return;
     }
+    if (e.typ === 'misto') casti.push(...sekceMista(e));
     const pocet = new Set([...k.vztahy.map((v) => v.s), ...k.vazby]).size;
     casti.push(el('div', { className: 'sekce-hlava' }, el('h3', { textContent: `Vztahy a vazby (${pocet})` }), dm ? pridatVazbuUI(k) : null));
     const radky = seznamVztahu(k);
     casti.push(radky.length ? el('ul', { className: 'vztahy-karty' }, radky) : el('p', { className: 'poznamka', textContent: dm ? 'Zatím bez vazeb. Přidej ji tlačítkem, nebo Alt + tažením na mapě.' : 'Družina o žádném vztahu neví.' }));
-    const zpetne = k.odkazujici.filter((o) => !k.vazby.includes(o.id));
+    const zpetne = k.odkazujici.filter((o) => !k.vazby.includes(o.id) && s.podleId.get(o.id)?.leziV !== e.id);
     if (zpetne.length) {
       casti.push(el('h3', { textContent: `Odkazují sem (${zpetne.length})` }));
       casti.push(el('ul', { className: 'vztahy-karty zpetne' }, zpetne.map((o) => {

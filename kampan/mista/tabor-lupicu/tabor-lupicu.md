@@ -54,6 +54,9 @@ svetla:
 zvuk:
   den:
     hudba: { spotify: spotify:playlist:3XhR52j3ROEfcD2TfBFmps, zaloha: hudba/divocina/ }
+    hudba:
+      spotify: spotify:playlist:0fQfvbqzfXTb9zruh9vTpu
+      zaloha: hudba/divocina/
     ambient: tabor-ohen.mp3
     nahodne:
       - { zvuk: nahodne/tabor/kun, kazdych_s: 60, nahodilost: 0.8, hlasitost: 0.8, vzdalenost: 0.7 }

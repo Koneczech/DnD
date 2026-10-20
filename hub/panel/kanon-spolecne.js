@@ -254,16 +254,17 @@ export function castiKarty(ctx) {
 
   function seznamVztahu(k) {
     const dm = s.pohled === 'dm';
+    const uprava = dm && !s.jenCteni;
     const cile = [...new Set([...k.vztahy.map((v) => v.s), ...k.vazby])];
     const radky = cile.map((cil) => {
       const v = k.vztahy.find((x) => x.s === cil) ?? null;
-      if (s.uprava?.cil === cil && dm) return el('li', { className: 'vztah-radek upravuje' }, formularVztahu(k, cil, v, s.uprava.nova));
+      if (s.uprava?.cil === cil && uprava) return el('li', { className: 'vztah-radek upravuje' }, formularVztahu(k, cil, v, s.uprava.nova));
       const existuje = s.podleId.has(cil);
       const tecka = el('span', { className: 'tecka-postoje', title: v && Number.isInteger(v.postoj) ? `Postoj ${postojText(v.postoj)}` : v ? 'Bez postoje' : 'Vazba bez popisu' });
       const barva = v ? barvaPostoje(v.postoj) : null;
       if (barva) tecka.style.background = barva;
       if (!v) tecka.classList.add('jen-vazba');
-      const akce = dm
+      const akce = uprava
         ? el('span', { className: 'akce-vztahu' },
           el('button', { type: 'button', className: 'mala', textContent: v ? 'Upravit' : '+ popis', title: v ? 'Upravit popis, postoj a jestli ho zná družina' : 'Doplnit popis vztahu', onclick: () => { s.uprava = { cil }; ctx.prekreslit(); } }),
           el('button', { type: 'button', className: 'mala tiche', textContent: '×', title: 'Odebrat vazbu i vztah', 'aria-label': `Odebrat vazbu na ${s.podleId.get(cil)?.nazev ?? cil}`, onclick: () => odebratVazbu(k, cil) }))
@@ -276,7 +277,7 @@ export function castiKarty(ctx) {
           v && dm && v.verejne ? el('span', { className: 'stitek-maly', textContent: 'družina zná' }) : null),
         akce);
     });
-    if (s.uprava && !cile.includes(s.uprava.cil) && dm) radky.push(el('li', { className: 'vztah-radek upravuje' }, formularVztahu(k, s.uprava.cil, null, true)));
+    if (s.uprava && !cile.includes(s.uprava.cil) && uprava) radky.push(el('li', { className: 'vztah-radek upravuje' }, formularVztahu(k, s.uprava.cil, null, true)));
     return radky;
   }
 
@@ -336,7 +337,7 @@ export function castiKarty(ctx) {
   }
 
   function prezdivky(k) {
-    const dm = s.pohled === 'dm';
+    const dm = s.pohled === 'dm' && !s.jenCteni;
     const cipy = k.aliases.map((a) => el('span', { className: 'prezdivka' }, a, dm ? el('button', { type: 'button', className: 'odebrat-prezdivku', textContent: '×', 'aria-label': `Odebrat přezdívku ${a}`, onclick: () => upravit(`/api/kanon/entita/${encodeURIComponent(k.id)}`, 'PUT', { aliases: k.aliases.filter((x) => x !== a) }, 'Přezdívka odebrána.') }) : null));
     if (!dm) return cipy.length ? el('div', { className: 'prezdivky' }, cipy) : null;
     const vstup = el('input', { type: 'text', placeholder: '+ přezdívka', maxLength: 80, 'aria-label': 'Nová přezdívka', className: 'nova-prezdivka' });
@@ -382,7 +383,7 @@ export function castiKarty(ctx) {
    * Nabízí jen místa, ve kterých by nevznikl kruh (ne místo samo ani jeho podmísta).
    */
   function sekceMista(e) {
-    const dm = s.pohled === 'dm';
+    const dm = s.pohled === 'dm' && !s.jenCteni;
     const deti = podmista(e.id);
     const vysledek = [];
     if (dm) {
@@ -429,7 +430,7 @@ export function castiKarty(ctx) {
 
   /** Ukázat místo v OBS (karta místa s ilustrací scény). */
   function tlacitkoObs(e) {
-    if (s.pohled !== 'dm' || e.typ !== 'misto' || !e.obrazky.some((o) => o.ucel === 'scena' && !o.skryta)) return null;
+    if (s.pohled !== 'dm' || s.jenCteni || e.typ !== 'misto' || !e.obrazky.some((o) => o.ucel === 'scena' && !o.skryta)) return null;
     return el('button', { type: 'button', textContent: 'Ukázat v OBS', title: 'Přepne scénu Místo v OBS na toto místo', onclick: async () => {
       try {
         const r = await api('/api/scena/zobrazit', { metoda: 'POST', telo: { misto: e.id, prepnout: true } });
@@ -440,7 +441,7 @@ export function castiKarty(ctx) {
     } });
   }
 
-  const tlacitkoPoznamky = (e) => (s.pohled === 'dm' ? el('button', { type: 'button', textContent: 'Poznámka', title: `Poznámka F2 s odkazem [[${e.id}]]`, onclick: () => otevritPoznamku(`[[${e.id}]] `) }) : null);
+  const tlacitkoPoznamky = (e) => (s.pohled === 'dm' && !s.jenCteni ? el('button', { type: 'button', textContent: 'Poznámka', title: `Poznámka F2 s odkazem [[${e.id}]]`, onclick: () => otevritPoznamku(`[[${e.id}]] `) }) : null);
 
   return { hlasitZapis, upravit, odkazNaEntitu, prepinac, prepinace, udaje, seznamVztahu, pridatVazbuUI, prezdivky, obrazkyKarty, zpetneOdkazy, tlacitkoObs, tlacitkoPoznamky, vyber, predci, podmista, cestaMista, sekceMista };
 }

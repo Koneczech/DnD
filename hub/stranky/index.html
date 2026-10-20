@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{{NAZEV}} · Kánon</title>
+  <link rel="stylesheet" href="panel/styly.css">
+  <link rel="icon" href="panel/ikona.svg" type="image/svg+xml">
+  <!-- Moduly Hubu se importují absolutními cestami (/panel/…, /sdilene/…); na GitHub Pages leží stránky v podsložce repa. -->
+  <script type="importmap">{ "imports": { "/panel/": "./panel/", "/sdilene/": "./sdilene/" } }</script>
+  <style>
+    .lista.stranky-lista { grid-template-columns: auto minmax(10rem, 22rem) 1fr; }
+    .stranky-lista .kampan-detail a { color: inherit; }
+    @media (max-width: 52rem) { .lista.stranky-lista { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header class="lista stranky-lista">
+    <a class="kampan" href="#kanon" title="Přehled kánonu">
+      <p class="kampan-datum">{{NAZEV}}</p>
+      <p class="kampan-detail">Čtecí verze kánonu · stav k {{STAV}}</p>
+    </a>
+    <div class="hledani-lista" role="search">
+      <label class="vizualne-skryte" for="hledat-kanon">Hledat v kánonu</label>
+      <input type="search" id="hledat-kanon" placeholder="Hledat v kánonu…" autocomplete="off" spellcheck="false" aria-controls="hledat-vysledky" aria-expanded="false" title="Jméno nebo přezdívka, i bez diakritiky (Ctrl+K)">
+      <ul class="hledat-vysledky" id="hledat-vysledky" role="listbox" hidden></ul>
+    </div>
+  </header>
+
+  <main>
+<!-- KANON -->
+  </main>
+
+<!-- DIALOGY -->
+
+  <p class="toast" id="toast" role="status" aria-live="polite" hidden></p>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

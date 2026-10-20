@@ -21,6 +21,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | Družina se něco dozví | Karta v Kánonu → **Co ví družina** → oko 👁 u odrážky, nebo napiš novou a Enter | Kánon |
 | Něco nejde | **Systém → Záznam událostí → Stáhnout** a pošli Claudovi | Systém |
 | Mimo domov | Codespace na GitHubu → panel se štítkem **Zkouška**, nic se neukládá | `reference/zkouska-v-cloudu.md` |
+| Mimo domov, jen čtení | Kánon (wiki, mapa, Pohled družiny) v prohlížeči, i z práce | [koneczech.github.io/DnD](https://koneczech.github.io/DnD/) |
 
 ## Co Hub umí
 
@@ -62,6 +63,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Mapa (záložka): vazby a vztahy, malé úpravy, nástěnky; Otevřít v Obsidianu, F2 s odkazem | ◐ |
 | | Místa v místech: čára Leží v na mapě, cesta Mirabar › v kartě, Místa uvnitř, výběr Leží v | ◐ |
 | | Přiřazení existujících míst (kam co patří), nová místa High Forest, Triboar, Cragy, Long Road | ✓ |
+| | Čtecí verze kánonu na GitHub Pages: wiki, mapa, Pohled družiny, hledání, bez úprav; obnoví se po každém pushi | ◐ |
 | | Hráčská stránka na GitHub Pages (pohled družiny) | ✗ |
 | **Verze 2** | Příprava Lazy DM, generátor obchodů, dílna portrétů, export do IIO | ✗ |
 
@@ -93,6 +95,7 @@ Vlastní combat tracker, sledování zdrojů postav (BV, kouzla, Zuřivost), mix
 | Zadání, rozhodnutí, otevřené body | `ZADANI.md` |
 | Návody (zvuk, OBS, ilustrace, zkouška v cloudu) | `reference/` |
 | Prostředí pro zkoušku v cloudu (Codespaces) | `.devcontainer/` |
+| Čtecí verze kánonu (GitHub Pages) | `hub/stranky/`, `hub/server/stranky.js`, `.github/workflows/stranky.yml` |
 | Data kampaně | `kampan/` |
 | Šablony pro nové soubory (Obsidian) | `sablony/` |
 | Nástěnky mapy kánonu (uložená rozložení) | `kampan/nastenky/` |

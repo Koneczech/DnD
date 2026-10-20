@@ -30,3 +30,6 @@ hub/.stav/
 
 # Výstup testů v CI
 hub/vystup-testu.txt
+
+# Čtecí verze pro GitHub Pages (generuje npm run stranky)
+_site/

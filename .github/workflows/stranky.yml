@@ -1,0 +1,55 @@
+name: Čtecí verze kánonu (GitHub Pages)
+
+# Po každém pushi do main sestaví z kampan/ statickou wiki a mapu kánonu (npm run stranky)
+# a publikuje ji na GitHub Pages. Repo je veřejné, čtecí verze ukazuje totéž co repo (rozhodnutí 2 a 3).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Nasazení běží jedno po druhém; rozběhnuté se nepřeruší.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  sestavit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node.js podle .nvmrc
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: hub/package-lock.json
+
+      - name: Instalace závislostí
+        working-directory: hub
+        run: npm ci --no-audit --no-fund
+
+      - name: Sestavení čtecí verze
+        working-directory: hub
+        run: npm run stranky -- ../_site
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  publikovat:
+    needs: sestavit
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.nasazeni.outputs.page_url }}
+    steps:
+      - id: nasazeni
+        uses: actions/deploy-pages@v4

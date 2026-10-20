@@ -30,9 +30,14 @@ function ulozitVolby(v) {
 // Strom míst je ve společném modulu; panel (app.js) ho bere odsud.
 export { stromMist };
 
-export function vytvoritKanon({ api, toast, otevritPoznamku }) {
+/**
+ * @param {object} volby
+ * @param {boolean} [volby.jenCteni] čtecí verze (GitHub Pages): bez úprav, poznámek a OBS
+ */
+export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false }) {
   const ulozene = nacistVolby();
   const s = {
+    jenCteni,
     pohled: ulozene.pohled === 'druzina' ? 'druzina' : 'dm',
     typy: new Set(Array.isArray(ulozene.typy) ? ulozene.typy : Object.keys(TYPY).filter((t) => t !== 'rozhodnuti')),
     jenVeHre: ulozene.jenVeHre === true,
@@ -422,7 +427,7 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
     if (e.button !== 0) return;
     const uzel = e.target.closest('.uzel');
     plocha.setPointerCapture(e.pointerId);
-    if (uzel && e.altKey && s.pohled === 'dm') {
+    if (uzel && e.altKey && s.pohled === 'dm' && !s.jenCteni) {
       e.preventDefault();
       tah = { druh: 'vazba', id: uzel.dataset.id, x0: e.clientX, y0: e.clientY };
       const p = s.pozice.get(tah.id);
@@ -590,6 +595,7 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
     vykresliNastenky();
   }
 
+  if (jenCteni) $('#kanon-ulozit').hidden = true;
   $('#kanon-ulozit').addEventListener('click', () => {
     const d = $('#dialog-nastenka');
     $('#nastenka-nazev').value = s.nastenka?.nazev ?? '';
@@ -710,7 +716,7 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
       el('ul', { className: 'napoveda-kanonu' },
         el('li', { textContent: 'Klik na uzel vybere entitu, Esc výběr zruší.' }),
         el('li', { textContent: 'Tažením posuneš uzel nebo celou mapu, kolečkem přiblížíš.' }),
-        druzina ? null : el('li', {}, el('kbd', { textContent: 'Alt' }), ' + tažení z uzlu na uzel založí vazbu a otevře popis vztahu.'),
+        druzina || s.jenCteni ? null : el('li', {}, el('kbd', { textContent: 'Alt' }), ' + tažení z uzlu na uzel založí vazbu a otevře popis vztahu.'),
         el('li', { textContent: 'Celou kartu s textem otevře Wiki.' }),
       ),
     );
@@ -733,7 +739,7 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
         el('a', { className: 'tlacitko hlavni', href: `#kanon/${encodeURIComponent(e.id)}`, textContent: 'Otevřít kartu' }),
         karta.tlacitkoPoznamky(e),
         karta.tlacitkoObs(e)),
-      dm ? karta.prepinace(e) : null,
+      dm && !s.jenCteni ? karta.prepinace(e) : null,
     ];
     if (!k) {
       casti.push(el('p', { className: 'uvod', textContent: 'Načítám kartu…' }));
@@ -742,9 +748,9 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
     }
     if (e.typ === 'misto') casti.push(...karta.sekceMista(e));
     const pocet = new Set([...k.vztahy.map((v) => v.s), ...k.vazby]).size;
-    casti.push(el('div', { className: 'sekce-hlava' }, el('h3', { textContent: `Vztahy a vazby (${pocet})` }), dm ? karta.pridatVazbuUI(k) : null));
+    casti.push(el('div', { className: 'sekce-hlava' }, el('h3', { textContent: `Vztahy a vazby (${pocet})` }), dm && !s.jenCteni ? karta.pridatVazbuUI(k) : null));
     const radky = karta.seznamVztahu(k);
-    casti.push(radky.length ? el('ul', { className: 'vztahy-karty' }, radky) : el('p', { className: 'poznamka', textContent: dm ? 'Zatím bez vazeb. Přidej ji tlačítkem, nebo Alt + tažením na mapě.' : 'Družina o žádném vztahu neví.' }));
+    casti.push(radky.length ? el('ul', { className: 'vztahy-karty' }, radky) : el('p', { className: 'poznamka', textContent: !dm ? 'Družina o žádném vztahu neví.' : s.jenCteni ? 'Zatím bez vazeb.' : 'Zatím bez vazeb. Přidej ji tlačítkem, nebo Alt + tažením na mapě.' }));
     casti.push(karta.zpetneOdkazy(k, e.nazev));
     nahradit(kartaEl, ...casti);
   }

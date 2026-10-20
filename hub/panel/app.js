@@ -3140,10 +3140,110 @@ function vykresliZvuk() {
     : 'Hudba, ambient i efekty hraje stránka Zvuk u stolu do BT reproduktoru. Postup v ';
   vykresliSadu(z);
   vykresliSrovnani(z);
+  vykresliSpotify(z);
   $('#zvuk-stranky').replaceChildren(
     ...[...(hudbaVObs ? [['Hudba v OBS', z.stranky.hudba]] : []), ['Zvuk u stolu', z.stranky.stul]].map(([nazev, x]) =>
       polozkaKontroly(x?.pripojeno && x.odemceno !== false && !x.chyba && x.vystup?.ok !== false ? 'ok' : x?.pripojeno ? 'varovani' : 'chyba', popisStrankyZvuku(nazev, x))),
   );
+}
+
+/* ---------- Spotify (DM 20. 10. 2026): hudba z aplikace Spotify přes virtuální kabel ---------- */
+
+function vykresliSpotify(z) {
+  const sp = z.spotify;
+  const n = stav.prehled?.nastaveni ?? {};
+  if (!sp) return;
+  const pole = $('#pole-spotify-klient');
+  if (document.activeElement !== pole && !pole.dataset.upraveno) pole.value = n.spotifyKlient ?? '';
+  for (const [id, hodnota] of [['#pole-spotify-kabel', n.spotifyKabel], ['#pole-spotify-zarizeni', n.spotifyZarizeni]]) {
+    const p = $(id);
+    if (document.activeElement !== p && !p.dataset.upraveno) p.value = hodnota ?? '';
+  }
+  $('#pole-spotify-kabel').placeholder = n.spotifyKabelVychozi ?? 'CABLE Output';
+  $('#spotify-presmerovani').textContent = sp.presmerovani;
+  $('#spotify-odhlasit').hidden = !sp.prihlaseno;
+  $('#spotify-prihlasit').textContent = sp.prihlaseno ? 'Přihlásit znovu' : 'Přihlásit ke Spotify';
+  const kabel = sp.kabel;
+  const polozky = [
+    sp.prihlaseno
+      ? polozkaKontroly('ok', `Přihlášeno${sp.uzivatel ? ` jako ${sp.uzivatel}` : ''}`)
+      : polozkaKontroly(sp.klient ? 'varovani' : 'chyba', sp.klient ? 'Nepřihlášeno: klikni na Přihlásit ke Spotify' : 'Chybí Client ID aplikace ze Spotify'),
+  ];
+  if (sp.prihlaseno) {
+    polozky.push(sp.zarizeni ? polozkaKontroly('ok', `Aplikace Spotify: ${sp.zarizeni}`) : polozkaKontroly('chyba', sp.chyba ?? 'Aplikace Spotify na tomto PC neběží'));
+    polozky.push(
+      !z.stranky?.stul?.pripojeno
+        ? polozkaKontroly('varovani', 'Kabel: otevři stránku Zvuk u stolu')
+        : !kabel
+          ? polozkaKontroly('varovani', `Kabel: stránka ho teprve otevírá (${sp.jmenoKabelu})`)
+          : !kabel.ok
+            ? polozkaKontroly('chyba', `Kabel: ${kabel.chyba ?? 'nejde otevřít'}`)
+            : kabel.ticho
+              ? polozkaKontroly('varovani', `Kabel ${kabel.nazev}: ticho. Ve Směšovači hlasitosti pošli Spotify do CABLE Input.`)
+              : polozkaKontroly('ok', `Kabel: ${kabel.nazev}`),
+    );
+    polozky.push(
+      sp.hrajeTed
+        ? polozkaKontroly('ok', `Hraje Spotify${sp.hraje ? '' : ' (přepíná se)'}`)
+        : polozkaKontroly('info', sp.chyba && sp.zarizeni ? `Hraje záloha ze složky: ${sp.chyba}` : 'Teď hraje hudba ze složky (scéna nemá Spotify, nebo Spotify nejede)'),
+    );
+  }
+  $('#spotify-kontrola').replaceChildren(...polozky);
+}
+
+async function ulozitSpotify(telo, tlacitko) {
+  const r = await ulozitNastaveni(telo, tlacitko, { chybaDo: $('#spotify-vysledek') });
+  for (const id of ['#pole-spotify-klient', '#pole-spotify-kabel', '#pole-spotify-zarizeni']) delete $(id).dataset.upraveno;
+  return r;
+}
+
+for (const id of ['#pole-spotify-klient', '#pole-spotify-kabel', '#pole-spotify-zarizeni']) {
+  $(id).addEventListener('input', (e) => (e.target.dataset.upraveno = '1'));
+}
+
+$('#spotify-prihlasit').addEventListener('click', async () => {
+  const vysledek = $('#spotify-vysledek');
+  const klient = $('#pole-spotify-klient').value.trim();
+  try {
+    if (klient !== (stav.prehled?.nastaveni?.spotifyKlient ?? '')) {
+      if (!(await ulozitSpotify({ spotifyKlient: klient }))) return;
+    }
+    const { url } = await api('/api/spotify/prihlasit', { metoda: 'POST', telo: {} });
+    window.open(url, '_blank', 'noopener');
+    vysledek.className = 'ulozeni';
+    vysledek.textContent = 'Přihlas se v novém okně a potvrď přístup. Hub se pak přepne sám.';
+  } catch (e) {
+    vysledek.className = 'ulozeni chyba';
+    vysledek.textContent = e.message;
+  }
+});
+
+$('#spotify-odhlasit').addEventListener('click', async () => {
+  try {
+    await api('/api/spotify/odhlasit', { metoda: 'POST', telo: {} });
+    $('#spotify-vysledek').className = 'ulozeni';
+    $('#spotify-vysledek').textContent = 'Odhlášeno. Hraje záloha ze složky.';
+  } catch (e) {
+    $('#spotify-vysledek').className = 'ulozeni chyba';
+    $('#spotify-vysledek').textContent = e.message;
+  }
+});
+
+$('#spotify-ulozit').addEventListener('click', () =>
+  ulozitSpotify({ spotifyKabel: $('#pole-spotify-kabel').value.trim(), spotifyZarizeni: $('#pole-spotify-zarizeni').value.trim() }, $('#spotify-ulozit')),
+);
+
+/** Playlisty ze Spotify pro výběr hudby místa (načtou se jednou, když je Hub přihlášený). */
+stav.spotifyPlaylisty = null;
+async function nactiSpotifyPlaylisty() {
+  stav.spotifyPlaylisty = [];
+  try {
+    stav.spotifyPlaylisty = (await api('/api/spotify/playlisty')).playlisty;
+  } catch {
+    stav.spotifyPlaylisty = [];
+  }
+  const m = stav.prehled?.mista?.mista?.find((x) => x.id === vybraneMisto);
+  if (m) vykresliZvukMista(m);
 }
 
 /* ---------- Zvuková sada a srovnání hlasitosti (bod 86) ---------- */
@@ -3639,13 +3739,17 @@ function vykresliZvukMista(m) {
     const kdy = varianta;
     for (const [k, popis] of [['hudba', 'Hudba'], ['ambient', 'Ambient']]) {
       const hodnota = m.zvuk?.[varianta]?.[k] ?? '';
+      // Hudba ze Spotify: { spotify, zaloha }. Výběr ukáže playlist Spotify, záloha zůstane.
+      const sp = hodnota && typeof hodnota === 'object' && !Array.isArray(hodnota) ? hodnota : null;
+      const ziva = sp ? sp.zaloha ?? '' : hodnota;
       // Seznam (víc playlistů nebo souborů) jde zapsat jen v datech; tady se ukáže jako jedna volba.
-      const aktualni = Array.isArray(hodnota) ? hodnota.join(' + ') : hodnota;
+      const aktualni = sp ? sp.spotify : Array.isArray(ziva) ? ziva.join(' + ') : ziva;
+      if (k === 'hudba' && stav.prehled?.zvuk?.spotify?.prihlaseno && stav.spotifyPlaylisty === null) nactiSpotifyPlaylisty();
       const label = document.createElement('label');
       label.textContent = popis;
       const select = document.createElement('select');
       const souboryVolby = k === 'hudba' ? bezEfektu.filter((x) => !x.startsWith('hudba/') || !x.includes('/', 6)) : bezEfektu;
-      const moznosti = [...new Set([...souboryVolby, ...(aktualni && !playlisty.has(aktualni) ? [aktualni] : [])])];
+      const moznosti = [...new Set([...souboryVolby, ...(aktualni && !sp && !playlisty.has(aktualni) ? [aktualni] : [])])];
       // Souboj bez vlastní volby: hudba souboje z kampan/sceny/rezim/souboj.yaml, ambient místa ztlumený.
       const prazdna = varianta === 'souboj' ? (k === 'hudba' ? '— hudba souboje —' : '— ambient místa, ztlumený —') : varianta === 'noc' && m.zvuk?.den?.[k] ? '— jako ve dne —' : '— žádná —';
       select.append(new Option(prazdna, ''));
@@ -3654,14 +3758,32 @@ function vykresliZvukMista(m) {
         skupina.append(...[...playlisty].map(([slozka, n]) => new Option(`📁 ${slozka} (${n} ${n === 1 ? 'skladba' : n < 5 ? 'skladby' : 'skladeb'})`, slozka)));
         select.append(skupina);
       }
+      if (k === 'hudba' && (sp || stav.spotifyPlaylisty?.length)) {
+        const seznam = [...(stav.spotifyPlaylisty ?? [])];
+        if (sp && !seznam.some((x) => x.uri === sp.spotify)) seznam.unshift({ uri: sp.spotify, nazev: 'playlist z dat' });
+        const skupina = Object.assign(document.createElement('optgroup'), { label: 'Spotify (záloha ze složky zůstává)' });
+        skupina.append(...seznam.map((x) => new Option(`🎵 ${x.nazev}`, x.uri)));
+        select.append(skupina);
+      }
       select.append(...moznosti.map((x) => new Option(x.endsWith('/') ? `📁 ${x} (prázdný)` : x.includes(' + ') || soubory.includes(x) || soubory.some((y) => kmenZvuku(y) === kmenZvuku(x)) ? x : `${x} (ve složce chybí)`, x)));
       select.value = aktualni;
-      select.addEventListener('change', () => ulozitZvuk(`/api/mista/${m.id}/zvuk/${varianta}`, { [k]: select.value || null }, `${popis} pro ${kdy} uložen${k === 'hudba' ? 'a' : ''}`));
+      if (sp) select.title = `Záloha, když Spotify nejede: ${Array.isArray(sp.zaloha) ? sp.zaloha.join(' + ') : sp.zaloha ?? 'žádná'}`;
+      select.addEventListener('change', () => {
+        let v = select.value || null;
+        // Playlist ze Spotify: dosavadní hudba ze složky zůstane jako záloha.
+        if (v?.startsWith('spotify:')) v = { spotify: v, ...(ziva ? { zaloha: ziva } : {}) };
+        ulozitZvuk(`/api/mista/${m.id}/zvuk/${varianta}`, { [k]: v }, `${popis} pro ${kdy} uložen${k === 'hudba' ? 'a' : ''}`);
+      });
       const prehrat = document.createElement('button');
       prehrat.type = 'button';
       prehrat.textContent = '▶';
       prehrat.title = 'Přehrát ukázku v tomto prohlížeči';
-      prehrat.addEventListener('click', () => select.value && prehratUkazku(select.value, prehrat));
+      prehrat.addEventListener('click', () => {
+        if (!select.value) return;
+        // Ukázka playlistu ze Spotify se otevře ve Spotify (zvuk z kabelu by panel neslyšel).
+        if (select.value.startsWith('spotify:')) return window.open(`https://open.spotify.com/${select.value.split(':').slice(1).join('/')}`, '_blank', 'noopener');
+        prehratUkazku(select.value, prehrat);
+      });
       label.append(select);
       radek.append(label, prehrat);
     }

@@ -8,5 +8,6 @@ obs_role: souboj
 # Konec souboje: místo fanfáry jeden úder bubnu v dozvuku jeskyně a bojová hudba pod ním za 6 s dozní.
 # Tlačítko Konec potichu buben vynechá (útěk, prohra). konec/buben = varianty buben-1, buben-2 …
 zvuk:
-  hudba: [souboj.mp3, hudba/souboj/]
+  # Spotify (DM 20. 10. 2026): playlist „DM Hub Souboj Epická Instrumentální“; záloha ze složky, když Spotify nejede.
+  hudba: { spotify: spotify:playlist:1DdwLtApYi2VUxTZGjhxjJ, zaloha: [souboj.mp3, hudba/souboj/] }
   konec: { zvuk: konec/buben, dozvuk: jeskyne, prolnuti_s: 6 }

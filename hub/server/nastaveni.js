@@ -28,10 +28,17 @@ export const VYCHOZI = Object.freeze({
   HP_SVETLA: '1',
   FREESOUND_KLIC: '',
   OBSIDIAN_TREZOR: '',
+  // Spotify (DM 20. 10. 2026): Client ID aplikace DM, obnovovací token (tajný), zařízení a vstup kabelu.
+  SPOTIFY_KLIENT: '',
+  SPOTIFY_OBNOVA: '',
+  SPOTIFY_ZARIZENI: '',
+  SPOTIFY_KABEL: '',
 });
 
 /** Klíče, jejichž hodnoty jsou tajné: nikdy neopustí server a hook je hlídá v commitech. */
-export const TAJNE_KLICE = Object.freeze(['OBS_HESLO', 'PIN', 'OPENAI_API_KEY', 'HUE_KLIC', 'II_RELACE', 'FREESOUND_KLIC']);
+export const TAJNE_KLICE = Object.freeze(['OBS_HESLO', 'PIN', 'OPENAI_API_KEY', 'HUE_KLIC', 'II_RELACE', 'FREESOUND_KLIC', 'SPOTIFY_OBNOVA']);
+/** Výchozí jméno vstupu virtuálního kabelu VB-Audio (Windows ho ukazuje jako „CABLE Output (VB-Audio Virtual Cable)“). */
+export const VYCHOZI_KABEL = 'CABLE Output';
 
 const IPV4 = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
 /** Zařízení role: hue:<id světla na bridgi> nebo wiz:<IP lampy>. */
@@ -131,6 +138,12 @@ export class Nastaveni {
       freesoundNastaven: Boolean(this.hodnoty.FREESOUND_KLIC),
       // Odkaz Otevřít v Obsidianu (bod 101): prázdné = jméno složky repa.
       obsidianTrezor: this.hodnoty.OBSIDIAN_TREZOR || '',
+      // Spotify: Client ID není tajné (je vidět v adrese přihlášení), obnovovací token ano.
+      spotifyKlient: this.hodnoty.SPOTIFY_KLIENT || '',
+      spotifyPrihlaseno: Boolean(this.hodnoty.SPOTIFY_OBNOVA),
+      spotifyZarizeni: this.hodnoty.SPOTIFY_ZARIZENI || '',
+      spotifyKabel: this.hodnoty.SPOTIFY_KABEL || '',
+      spotifyKabelVychozi: VYCHOZI_KABEL,
     };
   }
 
@@ -215,6 +228,22 @@ export class Nastaveni {
       const t = String(z.obsidianTrezor).trim();
       if (t.length > 120 || /[\0-\x1f]/.test(t)) throw Object.assign(new Error('Jméno trezoru Obsidianu je příliš dlouhé nebo obsahuje neplatné znaky.'), { status: 400 });
       nove.OBSIDIAN_TREZOR = t;
+    }
+    if (z.spotifyKlient !== undefined) {
+      const k = String(z.spotifyKlient).trim();
+      if (k && !/^[0-9a-f]{32}$/i.test(k)) throw Object.assign(new Error('Client ID ze Spotify má 32 znaků (0–9, a–f). Najdeš ho v aplikaci na developer.spotify.com/dashboard.'), { status: 400 });
+      // Jiná aplikace = jiné přihlášení.
+      if (k !== nove.SPOTIFY_KLIENT) nove.SPOTIFY_OBNOVA = '';
+      nove.SPOTIFY_KLIENT = k;
+    }
+    // Obnovovací token zapisuje jen server po přihlášení (panel ho nikdy nepošle ani nedostane).
+    if (z.spotifyObnova) nove.SPOTIFY_OBNOVA = String(z.spotifyObnova);
+    if (z.smazatSpotify) nove.SPOTIFY_OBNOVA = '';
+    for (const [pole, klic] of [['spotifyZarizeni', 'SPOTIFY_ZARIZENI'], ['spotifyKabel', 'SPOTIFY_KABEL']]) {
+      if (z[pole] === undefined) continue;
+      const t = String(z[pole]).trim();
+      if (t.length > 120 || /[\0-\x1f]/.test(t)) throw Object.assign(new Error('Jméno zařízení je příliš dlouhé nebo obsahuje neplatné znaky.'), { status: 400 });
+      nove[klic] = t;
     }
     await zapsatAtomicky(this.cesta, slozitEnv(nove));
     this.hodnoty = nove;

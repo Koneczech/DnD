@@ -314,6 +314,129 @@ export class Playlist {
   }
 }
 
+/**
+ * Virtuální kabel se Spotify (DM 20. 10. 2026): aplikace Spotify hraje do kabelu VB-CABLE a stránka
+ * ho otevře jako vstup. Jedno otevření pro celou stránku; prohlížeč se poprvé zeptá na „mikrofon“.
+ * Zpracování řeči (ozvěna, šum, zesílení) je vypnuté, jinak by hudbu zkreslilo.
+ */
+const kabely = new Map(); // jméno → Promise<{ stream, nazev }>
+export function otevritKabel(jmeno) {
+  const klic = String(jmeno || 'CABLE Output').toLowerCase();
+  if (!kabely.has(klic)) {
+    const p = (async () => {
+      const najit = async () => (await navigator.mediaDevices.enumerateDevices()).find((d) => d.kind === 'audioinput' && d.label.toLowerCase().includes(klic));
+      let vstup = await najit();
+      if (!vstup) {
+        // Bez povolení prohlížeč jména vstupů neukáže: jednou se zeptat, pak hledat znovu.
+        const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+        for (const t of s.getTracks()) t.stop();
+        vstup = await najit();
+      }
+      if (!vstup) throw new Error(`Virtuální kabel „${jmeno}“ tu není. Nainstaluj VB-CABLE (reference/zvuk.md) a obnov stránku.`);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { deviceId: { exact: vstup.deviceId }, echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 2 },
+      });
+      return { stream, nazev: vstup.label };
+    })();
+    // Selhání se nepamatuje: další pokus (třeba po instalaci kabelu) to zkusí znovu.
+    p.catch(() => kabely.delete(klic));
+    kabely.set(klic, p);
+  }
+  return kabely.get(klic);
+}
+
+/**
+ * Hudba ze Spotify přes kabel. Stejné rozhraní jako Smycka, takže jde přes sběrnici hudby (ucpané uši,
+ * uhnutí, Ticho). Hlasitost pustí až ve chvíli, kdy Hub ohlásí, že Spotify přepnulo na správný playlist
+ * (`hraje`); při změně playlistu hudbu nejdřív ztlumí. Stará hudba tak nedohraje přes novou scénu.
+ */
+export class SpotifyVstup {
+  constructor(ctx, cil, x, priChybe) {
+    this.ctx = ctx;
+    this.soubor = x.soubor;
+    this.url = 'spotify';
+    this.priChybe = priChybe;
+    this.kabel = x.kabel;
+    this.uri = x.uri;
+    this.pripraveno = Boolean(x.hraje);
+    this.prolnutiMs = 2000;
+    this.chtena = 0;
+    this.vystup = ctx.createGain();
+    this.vystup.gain.value = 0;
+    this.vzdalenost = new Vzdalenost(ctx, 0);
+    this.vystup.connect(this.vzdalenost.vstup);
+    this.vzdalenost.vystup.connect(cil);
+    // Měřič: je v kabelu signál? (Spotify hraje jinam než do kabelu = ticho.)
+    this.analyzator = ctx.createAnalyser();
+    this.analyzator.fftSize = 2048;
+    this.zdroj = null;
+    this.zastaveno = false;
+  }
+
+  get hraje() {
+    return !this.zastaveno && Boolean(this.zdroj) && this.pripraveno;
+  }
+
+  async spustit() {
+    const { stream } = await otevritKabel(this.kabel);
+    if (this.zastaveno) return;
+    this.zdroj = this.ctx.createMediaStreamSource(stream);
+    this.zdroj.connect(this.vystup);
+    this.zdroj.connect(this.analyzator);
+  }
+
+  /** Úroveň signálu v kabelu (RMS 0–1). */
+  uroven() {
+    const d = new Float32Array(this.analyzator.fftSize);
+    this.analyzator.getFloatTimeDomainData(d);
+    let suma = 0;
+    for (const x of d) suma += x * x;
+    return Math.sqrt(suma / d.length);
+  }
+
+  rampa(v, ms) {
+    const t = this.ctx.currentTime;
+    const g = this.vystup.gain;
+    g.cancelScheduledValues(t);
+    g.setValueAtTime(g.value, t);
+    g.linearRampToValueAtTime(v, t + ms / 1000);
+  }
+
+  /** Hlasitost od Hubu (posuvník Hudba, srovnání): platí, až Spotify hraje správný playlist. */
+  hlasitost(v, ms) {
+    this.chtena = v;
+    this.rampa(this.pripraveno ? v : 0, ms);
+  }
+
+  /** Nový stav od Hubu: jiný playlist = ztlumit; Hub ohlásil, že hraje = zesílit. */
+  aktualizovat(x, prolnutiMs) {
+    this.prolnutiMs = prolnutiMs;
+    if (x.uri !== this.uri) {
+      this.uri = x.uri;
+      this.pripraveno = false;
+      this.rampa(0, prolnutiMs);
+    }
+    if (x.hraje && !this.pripraveno) {
+      this.pripraveno = true;
+      this.rampa(this.chtena, prolnutiMs);
+    } else if (!x.hraje && this.pripraveno) {
+      this.pripraveno = false;
+      this.rampa(0, prolnutiMs);
+    }
+  }
+
+  zastavit(ms) {
+    this.zastaveno = true;
+    this.rampa(0, ms);
+    setTimeout(() => {
+      // Kabel zůstává otevřený pro další scénu se Spotify; odpojí se jen tahle cesta.
+      this.zdroj?.disconnect();
+      this.vystup.disconnect();
+      this.vzdalenost.vystup.disconnect();
+    }, ms + 100);
+  }
+}
+
 /** Sada smyček, které mají hrát současně (ambient místa + počasí, nebo jedna hudba). */
 export class Vrstvy {
   constructor(ctx, cil, priChybe) {
@@ -336,10 +459,13 @@ export class Vrstvy {
       // U playlistu má zisk každá skladba zvlášť.
       const cil = (x.hlasitost ?? 1) * (x.playlist ? 1 : x.zisk ?? 1);
       let jiz = this.smycky.get(soubor);
-      if (jiz && x.playlist && jiz instanceof Playlist) {
+      if (jiz && x.spotify && jiz instanceof SpotifyVstup) {
+        // Spotify: stejný kabel, jiný playlist nebo potvrzení, že hraje (ztlumit / zesílit).
+        jiz.aktualizovat(x, prolnutiMs);
+      } else if (jiz && x.playlist && jiz instanceof Playlist) {
         // Playlist hraje dál; nová nebo vyměněná skladba ve složce přijde na řadu sama.
         if (jiz.url !== Playlist.klic(x.skladby)) jiz.aktualizovat(x.skladby);
-      } else if (jiz && (Boolean(x.playlist) !== jiz instanceof Playlist || (x.url && jiz.url !== x.url))) {
+      } else if (jiz && (Boolean(x.playlist) !== jiz instanceof Playlist || Boolean(x.spotify) !== jiz instanceof SpotifyVstup || (x.url && jiz.url !== x.url))) {
         // Soubor se vyměnil (jiný otisk v adrese): stará smyčka doběhne, nová naběhne.
         jiz.zastavit(prolnutiMs);
         this.smycky.delete(soubor);
@@ -355,7 +481,8 @@ export class Vrstvy {
         jiz.vzdalenost.nastavit(x.vzdalenost ?? 0);
         continue;
       }
-      const s = x.playlist ? new Playlist(this.ctx, this.cil, x, this.priChybe) : new Smycka(this.ctx, this.cil, x, this.priChybe);
+      const s = x.spotify ? new SpotifyVstup(this.ctx, this.cil, x, this.priChybe) : x.playlist ? new Playlist(this.ctx, this.cil, x, this.priChybe) : new Smycka(this.ctx, this.cil, x, this.priChybe);
+      if (x.spotify) s.prolnutiMs = prolnutiMs;
       s.cil = cil;
       this.smycky.set(soubor, s);
       // Prolnutí začne až s prvním zvukem nové smyčky: stará mezitím dohrává, ticho nevznikne.
@@ -370,7 +497,7 @@ export class Vrstvy {
               setTimeout(() => !s.zastaveno && zkusit(pokus + 1), 300 * (pokus + 1));
               return;
             }
-            this.priChybe?.(e?.name === 'NotAllowedError' ? 'Prohlížeč zatím nepovolil zvuk. Klikni do stránky.' : `Soubor ${soubor} nehraje: ${e?.message ?? e}`);
+            this.priChybe?.(x.spotify ? `Spotify: ${e?.name === 'NotAllowedError' ? 'prohlížeč nepovolil vstup z kabelu (ikona zámku vedle adresy → Mikrofon → Povolit).' : e?.message ?? e}` : e?.name === 'NotAllowedError' ? 'Prohlížeč zatím nepovolil zvuk. Klikni do stránky.' : `Soubor ${soubor} nehraje: ${e?.message ?? e}`);
           });
       zkusit(0);
     }
@@ -612,6 +739,7 @@ export class Prehravac {
     this.ctx = new AudioContext({ latencyHint: 'playback' });
     this.chyba = null;
     this.vystup = null; // {nazev, ok, vybrany} u stolu
+    this.kabel = null; // {ok, nazev, ticho, chyba} virtuální kabel se Spotify (jen u stolu)
     this.buffery = new Map();
     this.priZmene = priZmene;
     this.priEfektu = priEfektu;
@@ -771,7 +899,7 @@ export class Prehravac {
     fetch('/api/zvuk/hlaseni', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ stranka: this.stranka, odemceno: this.odemceno, hraje: this.hraje(), chyba: this.chyba, vystup: this.vystup }),
+      body: JSON.stringify({ stranka: this.stranka, odemceno: this.odemceno, hraje: this.hraje(), chyba: this.chyba, vystup: this.vystup, ...(this.kabel ? { kabel: this.kabel } : {}) }),
     }).catch(() => {});
   }
 

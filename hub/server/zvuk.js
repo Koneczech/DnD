@@ -15,6 +15,8 @@ import { sestavitKnihovnu, najitSkupinu, vybratVariantu, normalizujMapu, zvukTah
 import { normalizujSadu, souboryPolozky, Freesound, Openverse, Kenney, hledatKandidaty, idKandidata, ZDROJE } from './zvuky-sada.js';
 import { polozkyZip, rozbalit } from './zip.js';
 import { HLADINY, ziskNaHladinu, VERZE_MERENI } from '../sdilene/mereni.js';
+import { spotifyUri, SPOTIFY_LUFS } from './spotify.js';
+import { VYCHOZI_KABEL } from './nastaveni.js';
 
 /** Formáty, které umí přehrát prohlížeč v OBS i Chrome/Edge. */
 export const PRIPONY_ZVUKU = Object.freeze(['.mp3', '.ogg', '.opus', '.wav', '.flac', '.m4a']);
@@ -88,6 +90,15 @@ export function platneJmeno(jmeno) {
  * @returns {string|string[]|null}
  */
 export function platnaHudba(x) {
+  // Spotify (DM 20. 10. 2026): { spotify: <playlist>, zaloha: <hudba ze složky> }, nebo jen odkaz na playlist.
+  // Záloha hraje, když Spotify nejede (aplikace neběží, Hub není přihlášený, kabel chybí).
+  if (x && typeof x === 'object' && !Array.isArray(x)) {
+    const uri = spotifyUri(x.spotify);
+    const zaloha = x.zaloha && typeof x.zaloha === 'object' && !Array.isArray(x.zaloha) ? null : platnaHudba(x.zaloha);
+    if (!uri) return zaloha;
+    return zaloha ? { spotify: uri, zaloha } : { spotify: uri };
+  }
+  if (typeof x === 'string' && spotifyUri(x)) return { spotify: spotifyUri(x) };
   const jedna = (y) => {
     if (typeof y !== 'string') return null;
     const t = y.replace(/\\/g, '/').trim();
@@ -103,6 +114,9 @@ export function platnaHudba(x) {
   }
   return jedna(x);
 }
+
+/** Hudba ze složky: u hudby ze Spotify její záloha, jinak hudba sama. */
+export const zalohaHudby = (h) => (h && typeof h === 'object' && !Array.isArray(h) ? h.zaloha ?? null : h ?? null);
 
 /** Je hudba playlist (složka nebo seznam), ne jeden soubor? */
 export const jePlaylist = (h) => Array.isArray(h) || (typeof h === 'string' && h.endsWith('/'));
@@ -263,8 +277,9 @@ export class Zvuk extends EventEmitter {
    * @param {() => object} volby.vrstvy vrstvy z kampan/sceny (sdílené se světly)
    * @param {() => Array<object>} volby.mista všechna místa (Kontrola dat)
    */
-  constructor({ cesty, nastaveni, misto, scena, vrstvy, mista, start = () => false, hodiny = () => Date.now(), nahodne = Math.random, fetchZvuky }) {
+  constructor({ cesty, nastaveni, misto, scena, vrstvy, mista, start = () => false, spotify = null, hodiny = () => Date.now(), nahodne = Math.random, fetchZvuky }) {
     super();
+    this.spotify = spotify; // Spotify nebo null (bez něj hraje vždy záloha ze složky)
     this.start = start; // () => OBS ukazuje scénu Start
     this.prolnutiKonce = null; // { ms, do }: delší prolnutí po konci souboje
     this.c = cesty;
@@ -448,6 +463,7 @@ export class Zvuk extends EventEmitter {
    * soubory v ní i v podsložkách. Každý soubor jen jednou, v pořadí ze seznamu.
    */
   souboryHudby(hudba) {
+    hudba = zalohaHudby(hudba);
     const vysledek = [];
     for (const h of Array.isArray(hudba) ? hudba : hudba ? [hudba] : []) {
       if (h.endsWith('/')) {
@@ -466,6 +482,7 @@ export class Zvuk extends EventEmitter {
    * a více skladbami hraje skladby v náhodném pořadí s prolnutím mezi nimi.
    */
   hudbaProStranky(hudba) {
+    hudba = zalohaHudby(hudba);
     const soubory = this.souboryHudby(hudba);
     if (!soubory.length) return null;
     if (!jePlaylist(hudba) || soubory.length === 1) return this.zvukovy(soubory[0], 'hudba');
@@ -474,6 +491,34 @@ export class Zvuk extends EventEmitter {
       playlist: true,
       skladby: soubory.map((f) => this.zvukovy(f, 'hudba')),
     };
+  }
+
+  get jmenoKabelu() {
+    return String(this.nastaveni().SPOTIFY_KABEL ?? '').trim() || VYCHOZI_KABEL;
+  }
+
+  /**
+   * Jde teď hrát hudbu ze Spotify? Přihlášeno, aplikace na PC běží, hudba hraje u stolu (v OBS kabel
+   * nejde) a otevřená stránka u stolu kabel otevřela. Playlist, který se nepodařilo pustit, hraje zálohu.
+   */
+  spotifyPouzitelny(uri) {
+    const sp = this.spotify;
+    if (!sp?.pripraveno || this.mistni.hudbaKde !== 'stul') return false;
+    // Stránka u stolu je otevřená a kabel otevřela: jinak by Spotify hrálo do kabelu, který nikdo neposlouchá.
+    const h = this.hlaseni.stul;
+    if (!h || this.hodiny() - h.cas > PLATNOST_HLASENI_MS || h.kabel?.ok !== true) return false;
+    return sp.selhalo !== uri;
+  }
+
+  /**
+   * Hudba ze Spotify pro stránku u stolu: co má hrát a jestli už hraje (do té doby stránka drží
+   * hudbu ztlumenou). Zisk dorovná normalizaci Spotify (−14 LUFS) na hladinu hudby Hubu.
+   */
+  hudbaSpotify(hudba) {
+    const uri = hudba && typeof hudba === 'object' && !Array.isArray(hudba) ? hudba.spotify : null;
+    if (!uri || !this.spotifyPouzitelny(uri)) return null;
+    const zisk = this.mistni.srovnat ? Math.round(10 ** ((this.mistni.hladiny.hudba - SPOTIFY_LUFS) / 20) * 1000) / 1000 : 1;
+    return { soubor: 'spotify', spotify: true, uri, hraje: this.spotify.hraje === uri, kabel: this.jmenoKabelu, ...(zisk !== 1 ? { zisk } : {}) };
   }
 
   /** Soubory skupiny variant (`konec/buben` = buben-1, buben-2 …) nebo jeden soubor podle jména. */
@@ -526,7 +571,9 @@ export class Zvuk extends EventEmitter {
     return {
       ticho: this.mistni.ticho,
       hlasitost: { hudba: this.mistni.hudba, ambient: this.mistni.ambient, efekty: this.mistni.efekty },
-      hudba: this.hudbaProStranky(c.hudba),
+      hudba: this.hudbaSpotify(c.hudba) ?? this.hudbaProStranky(c.hudba),
+      // Stránka u stolu si podle toho hlídá virtuální kabel (i když Spotify zrovna nehraje).
+      spotifyKabel: this.spotify?.prihlaseno ? this.jmenoKabelu : null,
       ambient: c.ambient
         .map((a) => ({ ...a, soubor: this.najit(a.soubor) }))
         .filter((a) => a.soubor)
@@ -632,7 +679,7 @@ export class Zvuk extends EventEmitter {
       STRANKY.map((s) => {
         const h = this.hlaseni[s];
         const pripojeno = Boolean(h && ted - h.cas < PLATNOST_HLASENI_MS);
-        return [s, pripojeno ? { pripojeno, odemceno: h.odemceno, hraje: h.hraje, chyba: h.chyba, vystup: h.vystup } : { pripojeno: false }];
+        return [s, pripojeno ? { pripojeno, odemceno: h.odemceno, hraje: h.hraje, chyba: h.chyba, vystup: h.vystup, kabel: h.kabel } : { pripojeno: false }];
       }),
     );
     return {
@@ -643,7 +690,7 @@ export class Zvuk extends EventEmitter {
       pocetSouboru: this.soubory.length,
       efekty: this.soubory.filter((s) => s.startsWith('efekty/')),
       chybiTed: [
-        ...(Array.isArray(c.hudba) ? c.hudba : c.hudba ? [c.hudba] : []).filter((h) => !this.souboryHudby(h).length).map((h) => (h.endsWith('/') ? `${h} (prázdný playlist)` : h)),
+        ...(this.hudbaSpotify(c.hudba) ? [] : (Array.isArray(zalohaHudby(c.hudba)) ? zalohaHudby(c.hudba) : zalohaHudby(c.hudba) ? [zalohaHudby(c.hudba)] : []).filter((h) => !this.souboryHudby(h).length).map((h) => (h.endsWith('/') ? `${h} (prázdný playlist)` : h))),
         ...[...c.ambient.map((a) => a.soubor), ...c.hrom].filter((s) => s && !this.najit(s)),
         ...c.nahodne.map((n) => n.zvuk).filter((id) => !this.souboryZvuku(id).length),
       ],
@@ -665,11 +712,19 @@ export class Zvuk extends EventEmitter {
         nejdou: this.soubory.filter((f) => this.mereniSouboru(f)?.chyba),
       },
       sada: this.stavSady(),
+      // Spotify (DM 20. 10. 2026): přihlášení, aplikace na PC, kabel ve stránce u stolu.
+      spotify: this.spotify ? { ...this.spotify.verejny(), kabel: this.hlaseni.stul?.kabel ?? null, jmenoKabelu: this.jmenoKabelu, hrajeTed: Boolean(this.hudbaSpotify(c.hudba)) } : null,
     };
   }
 
   /** Pošle stránkám jen skutečnou změnu (střídání ilustrací scénu mění, zvuk ne). */
   oznam(vynutit = false) {
+    // Spotify dostane, co má hrát (nebo nic). Opakovaný stejný pokyn nic nedělá.
+    if (this.spotify) {
+      const h = this.cil().hudba;
+      const uri = h && typeof h === 'object' && !Array.isArray(h) ? h.spotify : null;
+      this.spotify.chci(uri && this.spotifyPouzitelny(uri) ? uri : null);
+    }
     const v = this.verejny();
     const json = JSON.stringify(v);
     if (vynutit || json !== this.posledniZvuk) {
@@ -753,8 +808,15 @@ export class Zvuk extends EventEmitter {
       hraje: Array.isArray(d.hraje) ? d.hraje.filter((x) => typeof x === 'string').slice(0, 20).map((x) => x.slice(0, 300)) : [],
       chyba: text(d.chyba),
       vystup: d.vystup && typeof d.vystup === 'object' ? { nazev: text(d.vystup.nazev, 120), ok: d.vystup.ok !== false, vybrany: d.vystup.vybrany === true } : null,
+      // Virtuální kabel se Spotify (jen stránka u stolu): otevřený, jak se jmenuje, jestli v něm něco hraje.
+      kabel: d.kabel && typeof d.kabel === 'object' ? { ok: d.kabel.ok !== false, nazev: text(d.kabel.nazev, 120), ticho: d.kabel.ticho === true, chyba: text(d.kabel.chyba) } : null,
     };
-    this.oznamStav();
+    // Kabel se otevřel nebo selhal: mění, jestli hraje Spotify, nebo záloha.
+    const kabel = JSON.stringify(this.hlaseni[stranka].kabel?.ok ?? null);
+    if (kabel !== this.posledniKabel) {
+      this.posledniKabel = kabel;
+      this.oznam();
+    } else this.oznamStav();
     return { ok: true };
   }
 
@@ -1105,6 +1167,7 @@ export class Zvuk extends EventEmitter {
     const playlisty = []; // [souborDat, složka] (playlist hudby)
     const konce = []; // [souborDat, zvuk konce souboje]
     const pridatHudbu = (soubor, h) => {
+      h = zalohaHudby(h);
       for (const x of Array.isArray(h) ? h : h ? [h] : []) (x.endsWith('/') ? playlisty : odkazy).push([soubor, x]);
     };
     for (const m of this.mista()) {

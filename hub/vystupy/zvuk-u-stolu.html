@@ -51,7 +51,7 @@
   <p class="ulozeni" id="vystup-vysledek" aria-live="polite"></p>
 
   <script type="module">
-    import { Prehravac, Vrstvy, NahodneZvuky, Dozvuk } from '/sdilene/zvuk.js';
+    import { Prehravac, Vrstvy, NahodneZvuky, Dozvuk, SpotifyVstup, otevritKabel } from '/sdilene/zvuk.js';
     import { zmeritUrl } from '/sdilene/mereni.js';
 
     const $ = (s) => document.querySelector(s);
@@ -99,6 +99,8 @@
         zmeritDalsi(s.zmerit ?? []);
         // Zvuky tahů a konce souboje předem do paměti: první tah bez čekání na načtení.
         if (s.predem?.length) p.predNacist(s.predem);
+        // Spotify (přihlášené v Hubu): hlídat virtuální kabel, i když zrovna hraje záloha.
+        hlidatKabel(s.spotifyKabel ?? null);
       },
       priEfektu: (e) => {
         if (e.test) return p.test(p.ctx.destination);
@@ -142,6 +144,54 @@
     smycky = new Vrstvy(p.ctx, efektyProstor, priChybe);
     p.hraje = () => [...hudba.hraje(), ...ambient.hraje(), ...smycky.hraje()];
 
+    /* ---------- Spotify přes virtuální kabel (DM 20. 10. 2026) ---------- */
+    // Stránka kabel otevře a ohlásí Hubu, jestli jde. Když ne, Hub hraje zálohu ze složky.
+    // Když Spotify hraje, ale v kabelu je ticho, posílá Spotify zvuk jinam (Směšovač hlasitosti).
+    let jmenoKabelu = null;
+    let dalsiPokusKabelu = 0;
+    let tichychMereni = 0;
+    async function hlidatKabel(jmeno) {
+      if (jmeno !== jmenoKabelu) {
+        jmenoKabelu = jmeno;
+        dalsiPokusKabelu = 0;
+        if (!jmeno) {
+          p.kabel = null;
+          p.hlasit();
+          return;
+        }
+      }
+      if (!jmeno || p.kabel?.ok || performance.now() < dalsiPokusKabelu) return;
+      dalsiPokusKabelu = performance.now() + 60000;
+      try {
+        const { nazev } = await otevritKabel(jmeno);
+        p.kabel = { ok: true, nazev, ticho: false };
+      } catch (e) {
+        p.kabel = { ok: false, nazev: jmeno, chyba: e?.name === 'NotAllowedError' ? 'Prohlížeč nepovolil vstup z kabelu: ikona zámku vedle adresy → Mikrofon → Povolit.' : String(e?.message ?? e) };
+      }
+      p.hlasit();
+      vykreslit();
+    }
+    setInterval(() => {
+      hlidatKabel(jmenoKabelu);
+      const sp = hudba?.smycky.get('spotify');
+      if (!(sp instanceof SpotifyVstup) || !sp.pripraveno || !sp.zdroj || !p.kabel?.ok) {
+        tichychMereni = 0;
+        if (p.kabel?.ticho) {
+          p.kabel = { ...p.kabel, ticho: false };
+          p.hlasit();
+        }
+        return;
+      }
+      // 8 s bez signálu, přestože Spotify podle Hubu hraje: zvuk jde jinam než do kabelu.
+      tichychMereni = sp.uroven() < 0.0005 ? tichychMereni + 1 : 0;
+      const ticho = tichychMereni >= 4;
+      if (ticho !== Boolean(p.kabel.ticho)) {
+        p.kabel = { ...p.kabel, ticho };
+        p.hlasit();
+        vykreslit();
+      }
+    }, 2000);
+
     /* ---------- Srovnání hlasitosti (bod 86): soubory se změří jednou, postupně na pozadí ---------- */
     let meri = false;
     const nemeritZnovu = new Set();
@@ -173,7 +223,7 @@
       $('#stav-nahodne').textContent = s?.nahodne?.length ? `Náhodné zvuky: ${s.nahodne.map((n) => `${n.zvuk.split('/').pop()} (~${n.kazdych_s} s)`).join(', ')}${s.dozvuk && s.dozvuk !== 'zadny' ? ` · dozvuk ${DOZVUKY_POPIS[s.dozvuk] ?? s.dozvuk}` : ''}` : '';
       $('#stav-smycky').hidden = !s?.smycky?.length;
       $('#stav-smycky').textContent = s?.smycky?.length ? `Smyčky: ${s.smycky.map((x) => x.soubor.split('/').pop()).join(', ')}` : '';
-      $('#stav-hudba').textContent = !s ? 'Hudba: čekám na Hub…' : s.hudbaKde === 'obs' ? 'Hudba hraje v OBS (Nastavení → Zvuk).' : `Hudba: ${s.hudba?.playlist ? `playlist ${s.hudba.soubor} (${s.hudba.skladby.length} ${s.hudba.skladby.length < 5 ? 'skladby' : 'skladeb'})` : s.hudba?.soubor ?? 'žádná'}`;
+      $('#stav-hudba').textContent = !s ? 'Hudba: čekám na Hub…' : s.hudbaKde === 'obs' ? 'Hudba hraje v OBS (Nastavení → Zvuk).' : `Hudba: ${s.hudba?.spotify ? `Spotify${s.hudba.hraje ? '' : ' (přepíná se…)'}${p.kabel?.ticho ? ' · v kabelu je ticho: ve Směšovači hlasitosti pošli Spotify do CABLE Input' : ''}` : s.hudba?.playlist ? `playlist ${s.hudba.soubor} (${s.hudba.skladby.length} ${s.hudba.skladby.length < 5 ? 'skladby' : 'skladeb'})` : s.hudba?.soubor ?? 'žádná'}`;
       $('#stav-ticho').hidden = !s?.ticho;
       $('#stav-tlumeni').hidden = !s?.tlumeni?.aktivni;
       $('#stav-chyba').hidden = !p.chyba;

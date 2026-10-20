@@ -31,7 +31,7 @@ ilustrace:
   - soubor: opusteny.png
     ucel: scena
     stav: po boji
-    skryta: true
+    skryta: false
     puvod: Abandoned Camp Beneath Stormy Dusk.png
   - soubor: mapa-shora.png
     ucel: scena
@@ -44,7 +44,7 @@ ilustrace:
     puvod: Scorched Letters by the Campfire.png
   - soubor: prsten-kapitana.png
     ucel: scena
-    skryta: true
+    skryta: false
     puvod: Weathered Warrior’s Ring at Sunset.png
 svetla:
   noc:
@@ -54,12 +54,12 @@ svetla:
 zvuk:
   den:
     hudba:
-      spotify: spotify:playlist:0fQfvbqzfXTb9zruh9vTpu
+      spotify: spotify:playlist:3XhR52j3ROEfcD2TfBFmps
       zaloha: hudba/divocina/
     ambient: tabor-ohen.mp3
     nahodne:
       - { zvuk: nahodne/tabor/kun, kazdych_s: 60, nahodilost: 0.8, hlasitost: 0.8, vzdalenost: 0.7 }
-      - { zvuk: nahodne/tabor/kovadlina, kazdych_s: 45, nahodilost: 0.5, hlasitost: 0.8, vzdalenost: 0.7 }
+      - { zvuk: nahodne/tabor/kovadlina, kazdych_s: 45, nahodilost: 0.75, hlasitost: 0.8, vzdalenost: 0.7 }
       - { zvuk: nahodne/tabor/krkavec, kazdych_s: 90, nahodilost: 0.9, hlasitost: 0.7, vzdalenost: 0.5 }
       - { zvuk: nahodne/tabor/drevo, kazdych_s: 40, nahodilost: 0.6, hlasitost: 0.8, vzdalenost: 0.3 }
   # Noc (DM 19. 10. 2026, ⚠ návrh): oheň dál, tábor spí; koně, sova a vlci v dálce.

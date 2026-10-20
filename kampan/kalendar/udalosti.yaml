@@ -32,6 +32,7 @@ udalosti:
     datum: { rok: 1491, mesic: Eleint, den: 18 }
     text: Longsaddle
     verejna: true
+    vazby: [ "[[longsaddle]]" ]
   - id: umutn742q4xjx
     datum: { rok: 1491, mesic: Eleint, den: 18 }
     text: Setkání s Malkem

@@ -6,6 +6,7 @@ nazev: "Tarnwick"
 verejne: false
 ikona: 🌲
 aliases: ["Pohlcené město"]
+lezi_v: "[[high-forest]]"
 vazby: ["[[rod-redgrave]]", "[[praotec]]", "[[alba]]", "[[bifron-nox]]", "[[osric-redgrave]]"]
 tags: []
 popis_obrazu: ""

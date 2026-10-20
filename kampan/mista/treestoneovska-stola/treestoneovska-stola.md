@@ -6,6 +6,7 @@ nazev: "Treestoneovská štola v Cragách"
 verejne: false
 ikona: ⛏️
 aliases: []
+lezi_v: "[[cragy]]"
 vazby: ["[[dorn-treestone]]", "[[bruna-ironvale]]", "[[tusker]]", "[[poloha-treestoneovske-stoly]]"]
 tags: []
 popis_obrazu: ""

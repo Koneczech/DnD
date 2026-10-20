@@ -6,6 +6,7 @@ nazev: "Chovná stanice pro hutě"
 verejne: false
 ikona: 🛠️
 aliases: ["sirotčinec"]
+lezi_v: "[[mirabar]]"
 vazby: ["[[leta]]", "[[mirabar]]"]
 tags: []
 popis_obrazu: ""

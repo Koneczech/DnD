@@ -1,6 +1,6 @@
 # Start: scéna Start v OBS (úvodní obrazovka a odpočet před hrou). Dokud OBS ukazuje scénu Start,
 # hraje jen tahle hudba; zvuk místa a počasí mlčí (⚠ návrh, DM 19. 10. 2026). Světla řídí místo a odpočet.
 # Playlist = složka ve složce zvuku zakončená lomítkem: hrají všechny skladby v ní v náhodném pořadí.
-# Spotify (DM 20. 10. 2026): playlist „DM Hub – Start: Fantasy Hudba pro D&D Večer“; když Spotify nejede, hraje záloha ze složky.
+# Spotify (DM 20. 10. 2026): playlist „DM Hub Start: Temná Energie D&D“ (styl Zaklínač, Král Artuš, Peaky Blinders); když Spotify nejede, hraje záloha ze složky.
 zvuk:
-  hudba: { spotify: spotify:playlist:2kAHqrk5QJWj94GUOMOETm, zaloha: hudba/start/ }
+  hudba: { spotify: spotify:playlist:2pFx4Js4zqM76XGJjUw7IQ, zaloha: hudba/start/ }

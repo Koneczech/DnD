@@ -30,7 +30,7 @@ svetla:
 # ze Spotify (DM 20. 10. 2026) se zálohou ze složky, když Spotify nejede.
 zvuk:
   den:
-    hudba: { spotify: spotify:playlist:7iL46TbURmmHp0VTjCS7om, zaloha: hudba/longsaddle/ }
+    hudba: { spotify: spotify:playlist:2UAnG9qnMbmlPCmaJpApa2, zaloha: hudba/longsaddle/ }
     ambient: longsaddle-den.mp3
     nahodne:
       - { zvuk: nahodne/tabor/kun, kazdych_s: 70, nahodilost: 0.8, hlasitost: 0.6, vzdalenost: 0.6 }
@@ -39,7 +39,7 @@ zvuk:
       - { zvuk: nahodne/mesto/povoz, kazdych_s: 120, nahodilost: 0.8, hlasitost: 0.6, vzdalenost: 0.4 }
       - { zvuk: nahodne/longsaddle/kouzlo, kazdych_s: 240, nahodilost: 0.9, hlasitost: 0.4, vzdalenost: 0.8 }
   noc:
-    hudba: { spotify: spotify:playlist:7iL46TbURmmHp0VTjCS7om, zaloha: hudba/longsaddle/ }
+    hudba: { spotify: spotify:playlist:2UAnG9qnMbmlPCmaJpApa2, zaloha: hudba/longsaddle/ }
     ambient: longsaddle-noc.mp3
     nahodne:
       - { zvuk: nahodne/mesto/pes, kazdych_s: 120, nahodilost: 0.9, hlasitost: 0.4, vzdalenost: 0.9 }

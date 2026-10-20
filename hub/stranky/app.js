@@ -1,9 +1,14 @@
 // Čtecí verze kánonu na GitHub Pages (Blok 3, rozhodnutí 3).
 // Stejný modul Kánon jako v Hubu, jen místo serveru čte předgenerovaná data (skripty/stranky.js)
 // a nic nemění: ovládání úprav, poznámek a OBS se nezobrazuje (jenCteni).
+// Pohled družiny je otevřený, pohled DM je zašifrovaný heslem (⚠ bod 124).
 import { vytvoritKanon } from '/panel/kanon.js';
 
 const $ = (sel) => document.querySelector(sel);
+/** Klíč k pohledu DM zapamatovaný na tomto zařízení (ne heslo samo). */
+const ULOZENY_KLIC = 'dmhub-stranky-klic';
+/** Volby modulu Kánon (stejný klíč jako v kanon.js). */
+const VOLBY_KANONU = 'dmhub-kanon';
 
 async function nactiJson(cesta) {
   const odpoved = await fetch(cesta, { cache: 'no-cache' });
@@ -12,16 +17,126 @@ async function nactiJson(cesta) {
   return odpoved.json();
 }
 
-/** Náhrada API Hubu: jen čtení z předgenerovaných souborů ve složce data/. */
+/* ---------- Pohled DM: rozšifrování heslem ---------- */
+
+const zBase64 = (text) => Uint8Array.from(atob(text), (z) => z.charCodeAt(0));
+const doBase64 = (bajty) => btoa(String.fromCharCode(...new Uint8Array(bajty)));
+
+function nacistKlic() {
+  try {
+    const ulozeny = localStorage.getItem(ULOZENY_KLIC);
+    return ulozeny ? crypto.subtle.importKey('raw', zBase64(ulozeny), 'AES-GCM', true, ['decrypt']) : null;
+  } catch {
+    return null;
+  }
+}
+function zapomenoutKlic() {
+  try {
+    localStorage.removeItem(ULOZENY_KLIC);
+  } catch {
+    /* soukromé okno */
+  }
+}
+async function ulozitKlic(klic) {
+  try {
+    localStorage.setItem(ULOZENY_KLIC, doBase64(await crypto.subtle.exportKey('raw', klic)));
+  } catch {
+    /* soukromé okno: heslo platí jen do zavření stránky */
+  }
+}
+
+/** Klíč z hesla stejně jako při sestavení (PBKDF2-SHA256, parametry ze souboru). */
+async function klicZHesla(heslo, soubor) {
+  const zaklad = await crypto.subtle.importKey('raw', new TextEncoder().encode(heslo.normalize('NFC')), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', hash: 'SHA-256', salt: zBase64(soubor.sul), iterations: soubor.iterace }, zaklad, { name: 'AES-GCM', length: 256 }, true, ['decrypt']);
+}
+
+async function rozbalit(klic, soubor) {
+  const gz = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: zBase64(soubor.iv) }, klic, zBase64(soubor.data));
+  const text = await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+  return JSON.parse(text);
+}
+
+/** Zeptá se na heslo. Vrací { heslo, pamatovat }, nebo null (Pohled družiny). */
+function zeptatSeNaHeslo(chyba = '') {
+  const dialog = $('#dialog-heslo');
+  const pole = $('#pole-heslo');
+  $('#heslo-chyba').textContent = chyba;
+  pole.value = '';
+  dialog.returnValue = '';
+  dialog.showModal();
+  pole.focus();
+  return new Promise((hotovo) => {
+    dialog.addEventListener('close', () => hotovo(dialog.returnValue === 'odemknout' && pole.value ? { heslo: pole.value, pamatovat: $('#pamatovat-heslo').checked } : null), { once: true });
+  });
+}
+
+let stranky = { dm: false };
+let balikDm = null;
+let odemykani = null;
+
+function prepnoutNaDruzinu() {
+  setTimeout(() => $('#kanon-pohled [data-pohled="druzina"]')?.click(), 0);
+}
+
+async function odemknout() {
+  if (!stranky.dm) throw new Error('Pohled DM tu není.');
+  const soubor = await nactiJson('data/dm.json');
+  const ulozeny = await nacistKlic();
+  if (ulozeny) {
+    try {
+      balikDm = await rozbalit(ulozeny, soubor);
+    } catch {
+      zapomenoutKlic(); // heslo se mezitím změnilo
+    }
+  }
+  let chyba = '';
+  while (!balikDm) {
+    const odpoved = await zeptatSeNaHeslo(chyba);
+    if (!odpoved) {
+      prepnoutNaDruzinu();
+      throw new Error('Pohled DM je zamčený heslem.');
+    }
+    const klic = await klicZHesla(odpoved.heslo, soubor);
+    try {
+      balikDm = await rozbalit(klic, soubor);
+      if (odpoved.pamatovat) await ulozitKlic(klic);
+    } catch {
+      chyba = 'Nesprávné heslo.';
+    }
+  }
+  $('#zamknout-dm').hidden = false;
+  return balikDm;
+}
+
+/** Data pohledu DM; při prvním použití se zeptá na heslo (souběžné dotazy čekají na jedno odemčení). */
+async function dataDm() {
+  if (balikDm) return balikDm;
+  odemykani ??= odemknout().finally(() => (odemykani = null));
+  return odemykani;
+}
+
+/* ---------- Náhrada API Hubu: jen čtení z předgenerovaných souborů ve složce data/ ---------- */
+
 async function api(cesta, { metoda = 'GET' } = {}) {
   if (metoda !== 'GET') throw new Error('Tohle je čtecí verze. Měnit jde jen v Hubu doma.');
   const url = new URL(cesta, location.href);
   const pohled = url.searchParams.get('pohled') === 'druzina' ? 'druzina' : 'dm';
-  if (url.pathname.endsWith('/api/kanon')) return nactiJson(`data/kanon-${pohled}.json`);
-  let m = /\/api\/kanon\/entita\/([a-z0-9-]{1,80})$/.exec(url.pathname);
-  if (m) return nactiJson(`data/entita/${pohled}/${m[1]}.json`);
-  m = /\/api\/kanon\/nastenky\/([a-z0-9-]{1,60})$/.exec(url.pathname);
-  if (m) return nactiJson(`data/nastenky/${m[1]}.json`);
+  let m = /\/api\/kanon\/nastenky\/([a-z0-9-]{1,60})$/.exec(url.pathname);
+  if (m) return balikDm?.nastenky[m[1]] ?? nactiJson(`data/nastenky/${m[1]}.json`);
+  if (pohled === 'druzina') {
+    if (url.pathname.endsWith('/api/kanon')) return nactiJson('data/kanon-druzina.json');
+    m = /\/api\/kanon\/entita\/([a-z0-9-]{1,80})$/.exec(url.pathname);
+    if (m) return nactiJson(`data/entita/druzina/${m[1]}.json`);
+  } else {
+    const dm = await dataDm();
+    if (url.pathname.endsWith('/api/kanon')) return dm.seznam;
+    m = /\/api\/kanon\/entita\/([a-z0-9-]{1,80})$/.exec(url.pathname);
+    if (m) {
+      if (!dm.karty[m[1]]) throw Object.assign(new Error('Karta v kánonu není.'), { status: 404 });
+      return dm.karty[m[1]];
+    }
+  }
   throw new Error('Tohle čtecí verze neumí.');
 }
 
@@ -35,7 +150,27 @@ function toast(text, { chyba = false } = {}) {
   casovacToastu = setTimeout(() => (t.hidden = true), chyba ? 7000 : 3500);
 }
 
+stranky = await nactiJson('data/stranky.json').catch(() => ({ dm: false }));
+// Kdo heslo na tomto zařízení nezadal (hráči), začíná v pohledu družiny, bez dotazu na heslo.
+if (!stranky.dm || !(await nacistKlic())) {
+  try {
+    const volby = JSON.parse(localStorage.getItem(VOLBY_KANONU)) ?? {};
+    localStorage.setItem(VOLBY_KANONU, JSON.stringify({ ...volby, pohled: 'druzina' }));
+  } catch {
+    /* soukromé okno: kanon.js pak začne v pohledu DM a zeptá se na heslo */
+  }
+}
+
 const kanon = vytvoritKanon({ api, toast, otevritPoznamku: () => {}, jenCteni: true });
+if (!stranky.dm) $('#kanon-pohled [data-pohled="dm"]').hidden = true;
+
+$('#zamknout-dm').addEventListener('click', () => {
+  zapomenoutKlic();
+  balikDm = null;
+  $('#zamknout-dm').hidden = true;
+  prepnoutNaDruzinu();
+  toast('Pohled DM je na tomto zařízení zase zamčený.');
+});
 
 function ukazat() {
   const h = decodeURIComponent(location.hash.slice(1));

@@ -1,7 +1,7 @@
 name: Čtecí verze kánonu (GitHub Pages)
 
 # Po každém pushi do main sestaví z kampan/ statickou wiki a mapu kánonu (npm run stranky)
-# a publikuje ji na GitHub Pages. Repo je veřejné, čtecí verze ukazuje totéž co repo (rozhodnutí 2 a 3).
+# a publikuje ji na GitHub Pages. Pohled DM je zašifrovaný heslem STRANKY_HESLO (⚠ bod 124).
 on:
   push:
     branches: [main]
@@ -36,6 +36,9 @@ jobs:
 
       - name: Sestavení čtecí verze
         working-directory: hub
+        # Heslo k pohledu DM (Settings → Secrets and variables → Actions); bez něj jen pohled družiny.
+        env:
+          STRANKY_HESLO: ${{ secrets.STRANKY_HESLO }}
         run: npm run stranky -- ../_site
 
       - uses: actions/configure-pages@v5

@@ -221,7 +221,7 @@ export function vytvoritWiki(ctx, karta) {
           el('h3', { textContent: 'Co se rozhodlo' }),
           rozhodnuto.length
             ? el('ul', { className: 'rozhodnuto' }, rozhodnuto.map((e) => el('li', {}, el('a', { href: `#kanon/${encodeURIComponent(e.id)}`, className: 'rozhodnuto-odkaz' }, el('strong', { textContent: e.nazev }), e.popis ? el('span', { textContent: e.popis }) : null), odebrat(e))))
-            : el('p', { className: 'poznamka', textContent: dm() ? 'Zatím nic. Zápis hráčského kánonu (Co se stalo, Důsledek) přidáš tlačítkem níž, nebo ho navážeš.' : 'Zatím nic.' })),
+            : el('p', { className: 'poznamka', textContent: uprav() ? 'Zatím nic. Zápis hráčského kánonu (Co se stalo, Důsledek) přidáš tlačítkem níž, nebo ho navážeš.' : 'Zatím nic.' })),
         el('section', { className: 'wiki-sekce' },
           el('h3', { textContent: 'Kdo a kde' }),
           ostatni.length

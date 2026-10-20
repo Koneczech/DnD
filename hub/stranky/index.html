@@ -10,7 +10,8 @@
   <!-- Moduly Hubu se importují absolutními cestami (/panel/…, /sdilene/…); na GitHub Pages leží stránky v podsložce repa. -->
   <script type="importmap">{ "imports": { "/panel/": "./panel/", "/sdilene/": "./sdilene/" } }</script>
   <style>
-    .lista.stranky-lista { grid-template-columns: auto minmax(10rem, 22rem) 1fr; }
+    .lista.stranky-lista { grid-template-columns: auto minmax(10rem, 22rem) 1fr auto; }
+    .stranky-lista #zamknout-dm { justify-self: end; }
     .stranky-lista .kampan-detail a { color: inherit; }
     @media (max-width: 52rem) { .lista.stranky-lista { grid-template-columns: 1fr; } }
   </style>
@@ -26,6 +27,8 @@
       <input type="search" id="hledat-kanon" placeholder="Hledat v kánonu…" autocomplete="off" spellcheck="false" aria-controls="hledat-vysledky" aria-expanded="false" title="Jméno nebo přezdívka, i bez diakritiky (Ctrl+K)">
       <ul class="hledat-vysledky" id="hledat-vysledky" role="listbox" hidden></ul>
     </div>
+    <span></span>
+    <button type="button" id="zamknout-dm" class="tiche" hidden title="Zapomene heslo na tomto zařízení a přepne na pohled družiny">Zamknout DM</button>
   </header>
 
   <main>
@@ -33,6 +36,22 @@
   </main>
 
 <!-- DIALOGY -->
+
+  <dialog id="dialog-heslo" class="dialog">
+    <form method="dialog" id="formular-heslo">
+      <h2>Pohled DM</h2>
+      <p class="uvod">Karty DM jsou zamčené heslem. Pohled družiny je otevřený.</p>
+      <label>Heslo
+        <input type="password" id="pole-heslo" autocomplete="current-password" required>
+      </label>
+      <label class="zaskrtavaci"><input type="checkbox" id="pamatovat-heslo" checked> Zapamatovat na tomto zařízení</label>
+      <p class="ulozeni chyba" id="heslo-chyba" aria-live="polite"></p>
+      <div class="tlacitka">
+        <button type="submit" value="odemknout" class="hlavni">Odemknout</button>
+        <button type="submit" value="zrusit" formnovalidate class="tiche">Pohled družiny</button>
+      </div>
+    </form>
+  </dialog>
 
   <p class="toast" id="toast" role="status" aria-live="polite" hidden></p>
   <script type="module" src="app.js"></script>

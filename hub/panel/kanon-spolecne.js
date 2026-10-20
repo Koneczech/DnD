@@ -95,6 +95,8 @@ export function vyrezHlavy(url) {
         }
       };
       obr.onerror = () => hotovo(null);
+      // Čtecí verze bere obrázky jen pro DM z raw.githubusercontent.com: bez CORS by plátno nešlo číst.
+      obr.crossOrigin = 'anonymous';
       obr.src = url;
     }));
   }

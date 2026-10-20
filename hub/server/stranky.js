@@ -1,11 +1,15 @@
 // Čtecí verze kánonu pro GitHub Pages (Blok 3, rozhodnutí 3): statické stránky z kampan/.
 //
 // Wiki a mapa jsou tentýž kód jako v Hubu (panel/kanon*.js); místo serveru čtou JSON, který
-// tady vznikne z modulu Kánon pro oba pohledy (DM a družina). Obrázky karet se zkopírují vedle.
-// Repo je veřejné (rozhodnutí 2), čtecí verze ukazuje totéž co repo; pohled družiny je filtr, ne ochrana.
+// tady vznikne z modulu Kánon. Pohled družiny je otevřený, pohled DM je zašifrovaný heslem
+// (STRANKY_HESLO, ⚠ bod 124): bez hesla se vůbec nepublikuje. Obrázky se zkopírují jen ty,
+// které zná družina; obrázky jen pro DM čte pohled DM z repa na GitHubu (repo je veřejné,
+// rozhodnutí 2, heslo tedy brání nahlédnutí na webu, ne čtení repa).
+import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import zlib from 'node:zlib';
 import YAML from 'yaml';
 import { HUB_DIR } from './cesty.js';
 import { Zapisovac } from './zapis.js';
@@ -13,7 +17,10 @@ import { DataKampane } from './data.js';
 import { Kalendar } from './kalendar.js';
 import { Kanon } from './kanon-modul.js';
 
-const POHLEDY = ['dm', 'druzina'];
+/** PBKDF2 pro heslo DM: stejné parametry čte prohlížeč z hlavičky souboru. */
+export const ITERACE_HESLA = 600000;
+/** Sůl je stálá, aby klíč zapamatovaný v prohlížeči platil i po dalším sestavení. */
+const SUL_HESLA = 'dm-hub:stranky:dm:v1';
 const OBRAZEK = /^\/[^/].*\.(png|jpe?g|webp)$/i;
 /** Soubory panelu, které wiki a mapa potřebují. */
 const SOUBORY_PANELU = ['kanon.js', 'kanon-spolecne.js', 'kanon-wiki.js', 'kanon-editor.js', 'styly.css', 'ikona.svg'];
@@ -30,22 +37,41 @@ export function vyriznout(html, tag, id) {
 }
 
 /**
- * Projde data a obrázky z repa (`/kampan/…`, `/Alba.png`) přepíše na relativní adresy;
- * jejich cesty posbírá do `obrazky`. Odkaz do Obsidianu na webu nemá smysl, zahodí ho.
+ * Projde data a obrázky z repa (`/kampan/…`, `/Alba.png`) přepíše funkcí `prevest`
+ * (relativní adresa, nebo adresa v repu na GitHubu). Odkaz do Obsidianu na webu nemá smysl, zahodí ho.
  */
-export function prepsatAdresy(hodnota, obrazky) {
-  if (typeof hodnota === 'string') {
-    if (!OBRAZEK.test(hodnota)) return hodnota;
-    obrazky.add(hodnota);
-    return hodnota.slice(1);
-  }
-  if (Array.isArray(hodnota)) return hodnota.map((x) => prepsatAdresy(x, obrazky));
+export function prepsatAdresy(hodnota, prevest) {
+  if (typeof hodnota === 'string') return OBRAZEK.test(hodnota) ? prevest(hodnota) : hodnota;
+  if (Array.isArray(hodnota)) return hodnota.map((x) => prepsatAdresy(x, prevest));
   if (hodnota && typeof hodnota === 'object') {
     const vysledek = {};
-    for (const [k, v] of Object.entries(hodnota)) vysledek[k] = k === 'obsidian' ? null : prepsatAdresy(v, obrazky);
+    for (const [k, v] of Object.entries(hodnota)) vysledek[k] = k === 'obsidian' ? null : prepsatAdresy(v, prevest);
     return vysledek;
   }
   return hodnota;
+}
+
+/**
+ * Zašifruje data pohledu DM: gzip a AES-256-GCM s klíčem z hesla (PBKDF2-SHA256).
+ * Prohlížeč je rozšifruje přes Web Crypto (data = šifrový text + značka, jak to čeká AES-GCM).
+ */
+export function zasifrovat(data, heslo) {
+  const sul = Buffer.from(SUL_HESLA, 'utf8');
+  const klic = crypto.pbkdf2Sync(String(heslo).normalize('NFC'), sul, ITERACE_HESLA, 32, 'sha256');
+  const iv = crypto.randomBytes(12);
+  const sifra = crypto.createCipheriv('aes-256-gcm', klic, iv);
+  const telo = Buffer.concat([sifra.update(zlib.gzipSync(Buffer.from(JSON.stringify(data), 'utf8'))), sifra.final(), sifra.getAuthTag()]);
+  return { verze: 1, iterace: ITERACE_HESLA, sul: sul.toString('base64'), iv: iv.toString('base64'), data: telo.toString('base64') };
+}
+
+/** Opak k zasifrovat (testy a kontrola po sestavení). */
+export function rozsifrovat(soubor, heslo) {
+  const klic = crypto.pbkdf2Sync(String(heslo).normalize('NFC'), Buffer.from(soubor.sul, 'base64'), soubor.iterace, 32, 'sha256');
+  const telo = Buffer.from(soubor.data, 'base64');
+  const desifra = crypto.createDecipheriv('aes-256-gcm', klic, Buffer.from(soubor.iv, 'base64'));
+  desifra.setAuthTag(telo.subarray(telo.length - 16));
+  const gz = Buffer.concat([desifra.update(telo.subarray(0, telo.length - 16)), desifra.final()]);
+  return JSON.parse(zlib.gunzipSync(gz).toString('utf8'));
 }
 
 async function zapsatJson(cil, data) {
@@ -66,9 +92,13 @@ async function kopirovatSlozku(z, kam, filtr = () => true) {
  * @param {object} volby.cesty cesty repa (cesty.js)
  * @param {string} volby.cil výstupní složka
  * @param {Date} [volby.cas] čas sestavení (do lišty)
- * @returns {Promise<{entity:number, druzina:number, obrazky:number, chybiObrazky:string[]}>}
+ * @param {string} [volby.heslo] heslo k pohledu DM; bez něj se pohled DM nepublikuje
+ * @param {string} [volby.repo] repo na GitHubu (obrázky jen pro DM), např. Koneczech/DnD
+ * @param {string} [volby.vetev] větev repa
+ * @returns {Promise<{entity:number, druzina:number, dm:boolean, obrazky:number, chybiObrazky:string[]}>}
  */
-export async function sestavitStranky({ cesty: c, cil, cas = new Date() }) {
+export async function sestavitStranky({ cesty: c, cil, cas = new Date(), heslo = '', repo = 'Koneczech/DnD', vetev = 'main' }) {
+  const surovy = `https://raw.githubusercontent.com/${repo}/${vetev}/`;
   const docasna = await fs.mkdtemp(path.join(os.tmpdir(), 'dmhub-stranky-'));
   try {
     const zapisovac = new Zapisovac({ zurnal: path.join(docasna, 'zurnal') });
@@ -81,19 +111,35 @@ export async function sestavitStranky({ cesty: c, cil, cas = new Date() }) {
 
     await fs.rm(cil, { recursive: true, force: true });
     await fs.mkdir(cil, { recursive: true });
+
+    // Pohled družiny: otevřená data a obrázky, které družina zná.
     const obrazky = new Set();
-    const pocty = {};
-    for (const pohled of POHLEDY) {
-      const seznam = kanon.seznam(pohled);
-      pocty[pohled] = seznam.entity.length;
-      await zapsatJson(path.join(cil, 'data', `kanon-${pohled}.json`), prepsatAdresy(seznam, obrazky));
-      for (const e of seznam.entity) {
-        await zapsatJson(path.join(cil, 'data', 'entita', pohled, `${e.id}.json`), prepsatAdresy(kanon.karta(e.id, pohled), obrazky));
-      }
+    const relativne = (adresa) => {
+      obrazky.add(adresa);
+      return adresa.slice(1);
+    };
+    const druzina = kanon.seznam('druzina');
+    const znaDruzina = new Set(druzina.entity.map((e) => e.id));
+    druzina.nastenky = druzina.nastenky.filter((n) => n.pohled === 'druzina');
+    await zapsatJson(path.join(cil, 'data', 'kanon-druzina.json'), prepsatAdresy(druzina, relativne));
+    for (const e of druzina.entity) {
+      await zapsatJson(path.join(cil, 'data', 'entita', 'druzina', `${e.id}.json`), prepsatAdresy(kanon.karta(e.id, 'druzina'), relativne));
     }
-    for (const n of kanon.seznam('dm').nastenky) {
-      await zapsatJson(path.join(cil, 'data', 'nastenky', `${n.id}.json`), prepsatAdresy(kanon.nastenka(n.id), obrazky));
+    for (const n of druzina.nastenky) {
+      const nastenka = kanon.nastenka(n.id);
+      await zapsatJson(path.join(cil, 'data', 'nastenky', `${n.id}.json`), { ...nastenka, entity: nastenka.entity.filter((x) => znaDruzina.has(x.id)) });
     }
+
+    // Pohled DM: jen zašifrovaný. Obrázky, které zná družina, sdílí; ostatní bere z repa na GitHubu.
+    const dm = kanon.seznam('dm');
+    if (heslo) {
+      const vRepu = (adresa) => (obrazky.has(adresa) ? adresa.slice(1) : `${surovy}${adresa.slice(1)}`);
+      const balik = { seznam: prepsatAdresy(dm, vRepu), karty: {}, nastenky: {} };
+      for (const e of dm.entity) balik.karty[e.id] = prepsatAdresy(kanon.karta(e.id, 'dm'), vRepu);
+      for (const n of dm.nastenky) balik.nastenky[n.id] = kanon.nastenka(n.id);
+      await zapsatJson(path.join(cil, 'data', 'dm.json'), zasifrovat(balik, heslo));
+    }
+    await zapsatJson(path.join(cil, 'data', 'stranky.json'), { dm: Boolean(heslo) });
 
     // Obrázky karet (portréty, ilustrace míst) ze stejných cest jako v repu.
     const chybiObrazky = [];
@@ -130,7 +176,7 @@ export async function sestavitStranky({ cesty: c, cil, cas = new Date() }) {
     // GitHub Pages bez Jekyllu (jinak by vynechal soubory začínající podtržítkem).
     await fs.writeFile(path.join(cil, '.nojekyll'), '');
 
-    return { entity: pocty.dm, druzina: pocty.druzina, obrazky: obrazky.size - chybiObrazky.length, chybiObrazky };
+    return { entity: dm.entity.length, druzina: druzina.entity.length, dm: Boolean(heslo), obrazky: obrazky.size - chybiObrazky.length, chybiObrazky };
   } finally {
     await fs.rm(docasna, { recursive: true, force: true }).catch(() => {});
   }

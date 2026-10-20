@@ -28,12 +28,17 @@ export function slozitUdalosti(udalosti) {
       z.text = u.text;
       z.verejna = u.verejna;
       if (u.lhuta) z.lhuta = u.lhuta;
+      if (u.vazby?.length) z.vazby = u.vazby.map((id) => `[[${id}]]`);
       return z;
     }),
   });
   YAML.visit(dokument, {
     Pair(_, pair) {
       if (['datum', 'konec'].includes(pair.key?.value) && YAML.isMap(pair.value)) pair.value.flow = true;
+      if (pair.key?.value === 'vazby' && YAML.isSeq(pair.value)) {
+        pair.value.flow = true;
+        for (const x of pair.value.items) x.type = 'QUOTE_DOUBLE';
+      }
     },
   });
   dokument.commentBefore =
@@ -106,7 +111,8 @@ export class Kalendar extends EventEmitter {
     return {
       dnes: this.dnes(),
       zacatek: this.data.zacatek(),
-      udalosti: seradit(this.udalosti.filter((u) => u.verejna)),
+      // Vazby na karty kánonu do OBS nepatří.
+      udalosti: seradit(this.udalosti.filter((u) => u.verejna)).map(({ vazby, ...u }) => u),
     };
   }
 
@@ -152,6 +158,16 @@ export class Kalendar extends EventEmitter {
     if ('lhuta' in vstup && (vstup.lhuta === null || vstup.lhuta === '')) delete zaklad.lhuta;
     const cisty = Object.fromEntries(Object.entries(vstup).filter(([, v]) => v !== null && v !== ''));
     const n = this.overUdalost(cisty, zaklad);
+    this.udalosti[i] = n;
+    return { udalost: n, vysledek: await this.ulozit() };
+  }
+
+  /** Vazby události na karty kánonu (id bez [[ ]]). */
+  async nastavitVazby(id, vazby) {
+    const i = this.udalosti.findIndex((u) => u.id === id);
+    if (i < 0) throw chyba('Událost neexistuje.', 404);
+    const n = normalizujUdalost({ ...this.udalosti[i], vazby });
+    if (!n.vazby) delete n.vazby;
     this.udalosti[i] = n;
     return { udalost: n, vysledek: await this.ulozit() };
   }

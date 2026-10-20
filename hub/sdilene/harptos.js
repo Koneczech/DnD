@@ -95,6 +95,11 @@ export function normalizujUdalost(u) {
   if (konec && Harptos.rozdil(datum, konec) >= 1) zaznam.konec = konec;
   const lhuta = u.lhuta ?? u.odpocet;
   if (Number.isInteger(lhuta) && lhuta >= 1 && lhuta <= MAX_LHUTA) zaznam.lhuta = lhuta;
+  // Vazby na karty kánonu ("[[tusker]]" nebo tusker): kdo a kde, co se u události rozhodlo (Blok 3).
+  if (Array.isArray(u.vazby)) {
+    const vazby = [...new Set(u.vazby.map((v) => String(v ?? '').trim().replace(/^\[\[([^\]|#]+)(?:[#|][^\]]*)?\]\]$/, '$1').trim()).filter((v) => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(v)))];
+    if (vazby.length) zaznam.vazby = vazby;
+  }
   return zaznam;
 }
 

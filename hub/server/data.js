@@ -252,6 +252,19 @@ export async function kontrolaDat(c) {
     }
   }
 
+  // Vazby událostí kalendáře na karty kánonu (Blok 3)
+  const souborUdalosti = path.join(c.kampan, 'kalendar', 'udalosti.yaml');
+  try {
+    const d = YAML.parse(await fs.readFile(souborUdalosti, 'utf8'));
+    for (const u of Array.isArray(d?.udalosti) ? d.udalosti : []) {
+      for (const cil of odkazy(JSON.stringify(u?.vazby ?? []))) {
+        if (!podleId.has(cil)) pridej(souborUdalosti, 'varovani', `Událost „${u.text ?? u.id}“: vazba [[${cil}]] vede na neexistující id`);
+      }
+    }
+  } catch {
+    /* chybějící nebo rozbitý kalendář hlásí modul Kalendář */
+  }
+
   return { problemy, pocetSouboru: soubory.length, entity: zaznamy.length };
 }
 

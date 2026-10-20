@@ -145,7 +145,7 @@ export class Hub {
     this.obchody = new Obchody({ cesty: this.c, zapisovac: this.zapisovac });
     this.mista = new Mista({ cesty: this.c, zapisovac: this.zapisovac });
     // Modul Kánon (Blok 3): mapa entit, karty, pohled družiny, nástěnky.
-    this.kanon = new Kanon({ cesty: this.c, zapisovac: this.zapisovac, nastaveni: () => this.nastaveni.hodnoty });
+    this.kanon = new Kanon({ cesty: this.c, zapisovac: this.zapisovac, nastaveni: () => this.nastaveni.hodnoty, kalendar: this.kalendar });
     this.scena = new Scena({ soubor: path.join(this.c.lokalniStav, 'scena.json'), mista: this.mista });
     this.svetla = new Svetla({
       cesty: this.c,
@@ -373,7 +373,10 @@ export class Hub {
       this.hlidatOdpocet();
       this.svetla.odpocet(this.odpocet.stav); // start hry: světla plynou do výchozího stavu (bod 77)
     });
-    this.kalendar.on('zmena', (k) => this.vysilac.vyslat('kalendar-dm', k));
+    this.kalendar.on('zmena', (k) => {
+      this.vysilac.vyslat('kalendar-dm', k);
+      this.kanon.oznam(); // karty a stránka Události ve wiki ukazují události kalendáře
+    });
     this.kalendar.on('verejne', (k) => this.vyslatKalendar(k));
     this.obchody.on('zmena', (o) => this.vysilac.vyslat('obchody', o));
     this.kanon.on('zmena', (k) => this.vysilac.vyslat('kanon', k));
@@ -1178,6 +1181,23 @@ export class Hub {
     const vztah = /^\/api\/kanon\/entita\/([a-z0-9-]{1,80})\/vztahy\/([a-z0-9-]{1,80})$/.exec(p);
     if (vztah && m === 'PUT') return this.poUpraveKanonu(await k.nastavitVztah(vztah[1], vztah[2], await nacistJson(req)));
     if (vztah && m === 'DELETE') return this.poUpraveKanonu(await k.odebratVztah(vztah[1], vztah[2]));
+    if (p === '/api/kanon/entity' && m === 'POST') return this.poUpraveKanonu(await k.zalozit(await nacistJson(req)));
+    const zdroj = /^\/api\/kanon\/entita\/([a-z0-9-]{1,80})\/zdroj$/.exec(p);
+    if (zdroj && m === 'GET') return k.zdroj(zdroj[1]);
+    if (zdroj && m === 'PUT') return this.poUpraveKanonu(await k.ulozitZdroj(zdroj[1], await nacistJson(req, 1024 * 1024)));
+    const portret = /^\/api\/kanon\/entita\/([a-z0-9-]{1,80})\/portret$/.exec(p);
+    if (portret && m === 'POST') return this.poUpraveKanonu(await k.ulozitPortret(portret[1], await nacistJson(req, 22 * 1024 * 1024)));
+    const druzina = /^\/api\/kanon\/entita\/([a-z0-9-]{1,80})\/druzina$/.exec(p);
+    if (druzina && m === 'POST') {
+      const telo = await nacistJson(req);
+      return this.poUpraveKanonu(await k.pridatDruzinu(druzina[1], telo.text, telo.zna ?? true));
+    }
+    const blok = /^\/api\/kanon\/entita\/([a-z0-9-]{1,80})\/druzina\/(\d{1,4})$/.exec(p);
+    if (blok && m === 'PUT') return this.poUpraveKanonu(await k.prepnoutDruzinu(blok[1], Number(blok[2]), (await nacistJson(req)).zna));
+    const udVazby = /^\/api\/kanon\/udalosti\/([A-Za-z0-9_-]{1,40})\/vazby$/.exec(p);
+    if (udVazby && m === 'POST') return this.poUpraveKanonu(await k.vazbaUdalosti(udVazby[1], String((await nacistJson(req)).cil ?? ''), true));
+    const udVazba = /^\/api\/kanon\/udalosti\/([A-Za-z0-9_-]{1,40})\/vazby\/([a-z0-9-]{1,80})$/.exec(p);
+    if (udVazba && m === 'DELETE') return this.poUpraveKanonu(await k.vazbaUdalosti(udVazba[1], udVazba[2], false));
     const leziV = /^\/api\/kanon\/entita\/([a-z0-9-]{1,80})\/lezi-v$/.exec(p);
     if (leziV && m === 'PUT') {
       const cil = (await nacistJson(req)).cil;

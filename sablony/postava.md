@@ -26,7 +26,7 @@ Kapitoly životopisu, jak vznikly s hráčem. Odkazy na lidi a místa jako [[id|
 
 ## Co ví družina
 
-Jen to, co hráči opravdu vědí. Tento oddíl ukáže pohled družiny.
+%% Odrážky, které družina zná. Každá se odkrývá zvlášť: v Hubu okem u odrážky, v Obsidianu značkou zná ve dvojitých procentech na konci řádku. %%
 
 ## DM — co postava neví
 

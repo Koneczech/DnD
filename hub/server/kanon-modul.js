@@ -1,16 +1,20 @@
 // Modul Kánon (Blok 3, rozhodnutí 69–71, body 99–102): síť entit z kampan/, karta vybrané entity,
 // pohled družiny, malé úpravy hlavičky a nástěnky (uložená rozložení mapy).
 //
-// Hub čte všechny karty ze složek typů (TYPY_SLOZEK). Mění jen vazby, vztahy, přezdívky,
-// štítek `aktualni`, `verejne` a u místa `lezi_v` (hlavicka.js); text karty se píše v Obsidianu.
+// Hub čte všechny karty ze složek typů (TYPY_SLOZEK). Od 20. 10. 2026 je kánon wiki s plným
+// editorem: Hub mění text karty i pole hlavičky (hlavicka.js mění jen měněné řádky), u místa i `lezi_v`,
+// zakládá karty ze šablon a odkrývá jednotlivé odrážky oddílu Co ví družina. Obsidian funguje souběžně.
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import YAML from 'yaml';
 import { rozebrat, odkazy } from './frontmatter.js';
 import { TYPY_SLOZEK } from './cesty.js';
-import { upravitKartu, idZOdkazu, normalizujVztah } from './hlavicka.js';
-import { PRIPONA_DOCASNA } from './zapis.js';
+import { upravitKartu, idZOdkazu, normalizujVztah, teloKarty, nahraditTelo, TEXTOVA_POLE } from './hlavicka.js';
+import { PRIPONA_DOCASNA, zapsatAtomicky } from './zapis.js';
+import { Harptos } from '../sdilene/harptos.js';
+import { STAVY_ROZHODNUTI } from './data.js';
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const STITEK_VE_HRE = 'aktualni';
@@ -19,6 +23,12 @@ export const POHLEDY = Object.freeze(['dm', 'druzina']);
 const MAX_ALIASU = 20;
 const MAX_NASTENEK = 50;
 const OBRAZEK = /\.(png|jpe?g|webp)$/i;
+/** Typy, které jde v Hubu založit (sezení zakládá Zahájit sezení). */
+export const TYPY_NOVE = Object.freeze(['postava', 'npc', 'padouch', 'frakce', 'misto', 'predmet', 'bytost', 'rozhodnuti', 'kanon']);
+const SLOZKA_TYPU = Object.fromEntries(Object.entries(TYPY_SLOZEK).map(([slozka, typ]) => [typ, slozka]));
+const ZAZNAMY = new Set(['rozhodnuti', 'kanon']);
+const MAX_PORTRET = 15 * 1024 * 1024;
+export const hashTela = (telo) => crypto.createHash('sha1').update(String(telo)).digest('hex').slice(0, 16);
 
 const chyba = (zprava, status = 400) => Object.assign(new Error(zprava), { status });
 const bezDiakritiky = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -56,26 +66,191 @@ export const jeOddilDm = (nadpis) => /^DM(\b|\s|—|-|:|$)/.test(String(nadpis ?
 
 const jeOddilDruziny = (nadpis) => bezDiakritiky(String(nadpis ?? '').trim()) === bezDiakritiky(ODDIL_DRUZINY);
 
+/** Značka odkryté odrážky: komentář Obsidianu, v náhledu není vidět. */
+export const ZNACKA_ZNA = '%%zná%%';
+const ZNACKA = /[ \t]*%%\s*zn[aá]\s*%%/gi;
+const ma = (text) => /%%\s*zn[aá]\s*%%/i.test(text);
+export const bezZnacek = (text) => String(text ?? '').replace(ZNACKA, '');
+/** Komentáře Obsidianu %%…%% se nikde neukazují (ani v pohledu družiny). */
+const bezKomentaru = (text) => String(text ?? '').replace(/%%[\s\S]*?%%/g, '').replace(/[ \t]+$/gm, '');
+
+const NADPIS = /^(#{1,6})\s+(.*?)\s*#*\s*$/;
+const ODRAZKA = /^( ?)([-*+]|\d+[.)])\s+/;
+
+/** Řádky oddílu Co ví družina v těle karty: { od (nadpis), do, uroven }, nebo null. */
+export function najitOddilDruziny(radky) {
+  let od = -1;
+  let uroven = 0;
+  let vKodu = false;
+  for (let i = 0; i < radky.length; i++) {
+    if (/^\s*(```|~~~)/.test(radky[i])) vKodu = !vKodu;
+    const m = !vKodu && NADPIS.exec(radky[i]);
+    if (!m) continue;
+    if (od >= 0 && m[1].length <= uroven) return { od, do: i, uroven };
+    if (od < 0 && jeOddilDruziny(m[2])) {
+      od = i;
+      uroven = m[1].length;
+    }
+  }
+  return od >= 0 ? { od, do: radky.length, uroven } : null;
+}
+
 /**
- * Text, který smí vidět družina. Oddíl Co ví družina se vezme celý i s pododdíly, nic jiného.
- * Hráčský kánon (typ kanon) je záznam toho, co družina zažila: ukáže se celý kromě oddílů DM.
+ * Bloky oddílu Co ví družina (rozhodnutí DM 20. 10. 2026): každá odrážka a každý odstavec se
+ * odkrývá zvlášť. Odkrytý blok má na prvním řádku značku %%zná%%, bez ní ho družina nevidí.
+ * Pododdíl s nadpisem DM… je vždy jen pro DM.
+ * @returns {Array<{index: number, druh: 'odrazka'|'odstavec'|'nadpis', od: number, do: number, text: string, zna: boolean, dm: boolean, uroven?: number}>}
+ *   od/do = řádky v těle karty, index = pořadí mezi bloky, které jde odkrýt
+ */
+export function blokyDruziny(telo) {
+  const radky = String(telo ?? '').split('\n');
+  const oddil = najitOddilDruziny(radky);
+  if (!oddil) return [];
+  const bloky = [];
+  let blok = null;
+  let dmUroven = 0;
+  let index = 0;
+  const ukoncit = (i) => {
+    if (!blok) return;
+    blok.do = i;
+    const text = radky.slice(blok.od, i).join('\n');
+    blok.zna = !blok.dm && ma(text);
+    blok.text = bezZnacek(text).replace(/\s+$/, '');
+    if (blok.druh === 'odrazka') blok.text = blok.text.replace(ODRAZKA, '');
+    // Samotný komentář Obsidianu (nápověda ze šablony) není nic, co by se dalo odkrýt.
+    if (bezKomentaru(blok.text).trim()) bloky.push(blok);
+    else if (blok.index >= 0) index--;
+    blok = null;
+  };
+  for (let i = oddil.od + 1; i < oddil.do; i++) {
+    const r = radky[i];
+    const nadpis = NADPIS.exec(r);
+    if (nadpis) {
+      ukoncit(i);
+      const uroven = nadpis[1].length;
+      if (dmUroven && uroven <= dmUroven) dmUroven = 0;
+      if (!dmUroven && jeOddilDm(nadpis[2])) dmUroven = uroven;
+      bloky.push({ index: -1, druh: 'nadpis', od: i, do: i + 1, text: nadpis[2], uroven, zna: false, dm: Boolean(dmUroven) });
+      continue;
+    }
+    if (!r.trim()) {
+      ukoncit(i);
+      continue;
+    }
+    if (ODRAZKA.test(r)) {
+      ukoncit(i);
+      blok = { index: dmUroven ? -1 : index++, druh: 'odrazka', od: i, dm: Boolean(dmUroven) };
+      continue;
+    }
+    // Pokračování odrážky (odsazený řádek nebo vnořená odrážka) zůstává v ní.
+    if (blok && (blok.druh === 'odstavec' || /^\s{2,}/.test(r))) continue;
+    ukoncit(i);
+    blok = { index: dmUroven ? -1 : index++, druh: 'odstavec', od: i, dm: Boolean(dmUroven) };
+  }
+  ukoncit(oddil.do);
+  return bloky;
+}
+
+/** Odkryje nebo skryje jeden blok Co ví družina; vrátí nové tělo. */
+export function prepnoutBlok(telo, index, zna) {
+  const blok = blokyDruziny(telo).find((b) => b.index === index);
+  if (!blok) throw chyba('Tahle část oddílu Co ví družina neexistuje (karta se mezitím změnila?).', 409);
+  const radky = String(telo).split('\n');
+  for (let i = blok.od; i < blok.do; i++) radky[i] = bezZnacek(radky[i]);
+  if (zna) radky[blok.od] = `${radky[blok.od].replace(/\s+$/, '')} ${ZNACKA_ZNA}`;
+  return radky.join('\n');
+}
+
+/** Přidá odrážku na konec oddílu Co ví družina (oddíl založí, když chybí). */
+export function pridatBlok(telo, text, zna) {
+  const cisty = String(text ?? '').replace(/\s+/g, ' ').trim();
+  if (!cisty) throw chyba('Napiš, co družina ví.');
+  if (cisty.length > 600) throw chyba('Odrážka je příliš dlouhá (nejvýš 600 znaků).');
+  const radek = `- ${cisty}${zna ? ` ${ZNACKA_ZNA}` : ''}`;
+  const radky = String(telo ?? '').split('\n');
+  const oddil = najitOddilDruziny(radky);
+  if (!oddil) {
+    const zaklad = String(telo ?? '').replace(/\s+$/, '');
+    return `${zaklad}${zaklad ? '\n\n' : ''}## ${ODDIL_DRUZINY}\n\n${radek}\n`;
+  }
+  // Na konec hlavní části oddílu: před první pododdíl (ten může být DM…), za poslední neprázdný řádek.
+  let kam = oddil.do;
+  for (let i = oddil.od + 1; i < oddil.do; i++) {
+    if (NADPIS.test(radky[i])) {
+      kam = i;
+      break;
+    }
+  }
+  while (kam > oddil.od + 1 && !radky[kam - 1].trim()) kam--;
+  const predchozi = radky[kam - 1] ?? '';
+  const vlozit = kam === oddil.od + 1 || (!ODRAZKA.test(predchozi) && !/^\s{2,}/.test(predchozi)) ? ['', radek] : [radek];
+  radky.splice(kam, 0, ...vlozit);
+  return radky.join('\n');
+}
+
+/**
+ * Text, který smí vidět družina. Z oddílu Co ví družina jen odkryté bloky (a nadpisy nad nimi),
+ * nic jiného. Hráčský kánon (typ kanon) je záznam toho, co družina zažila: ukáže se celý kromě
+ * oddílů DM. Komentáře Obsidianu %%…%% se vynechají vždy.
  */
 export function teloDruziny(telo, typ) {
-  const casti = oddily(telo);
-  const vystup = [];
-  let berUroven = 0; // > 0 = jsme uvnitř oddílu, který se ukazuje
-  let vynechUroven = 0; // > 0 = jsme uvnitř oddílu DM
-  for (const o of casti) {
-    if (o.nadpis !== null) {
-      if (berUroven && o.uroven <= berUroven) berUroven = 0;
-      if (vynechUroven && o.uroven <= vynechUroven) vynechUroven = 0;
-      if (!vynechUroven && jeOddilDm(o.nadpis)) vynechUroven = o.uroven;
-      if (!berUroven && jeOddilDruziny(o.nadpis)) berUroven = o.uroven;
+  if (typ === 'kanon') {
+    const vystup = [];
+    let vynechUroven = 0;
+    for (const o of oddily(telo)) {
+      if (o.nadpis !== null) {
+        if (vynechUroven && o.uroven <= vynechUroven) vynechUroven = 0;
+        if (!vynechUroven && jeOddilDm(o.nadpis)) vynechUroven = o.uroven;
+      }
+      if (!vynechUroven) vystup.push(o.text);
     }
-    if (vynechUroven) continue;
-    if (typ === 'kanon' || berUroven) vystup.push(o.text);
+    return bezKomentaru(vystup.join('\n')).trim();
   }
-  return vystup.join('\n').trim();
+  const radky = String(telo ?? '').split('\n');
+  const oddil = najitOddilDruziny(radky);
+  if (!oddil) return '';
+  const bloky = blokyDruziny(telo);
+  if (!bloky.some((b) => b.zna)) return '';
+  const vystup = [radky[oddil.od], ''];
+  bloky.forEach((b, i) => {
+    if (b.druh === 'nadpis') {
+      // Nadpis jen tehdy, když pod ním (před dalším nadpisem stejné nebo vyšší úrovně) je něco odkrytého.
+      const dalsi = bloky.slice(i + 1);
+      const konec = dalsi.findIndex((x) => x.druh === 'nadpis' && x.uroven <= b.uroven);
+      if (!b.dm && (konec === -1 ? dalsi : dalsi.slice(0, konec)).some((x) => x.zna)) vystup.push('', radky[b.od]);
+      return;
+    }
+    if (!b.zna) return;
+    vystup.push(...(b.druh === 'odstavec' ? ['', bezKomentaru(radky.slice(b.od, b.do).join('\n'))] : [bezKomentaru(radky.slice(b.od, b.do).join('\n'))]));
+  });
+  return vystup.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+/** Tělo bez oddílu Co ví družina (wiki ho ukazuje zvlášť, po odrážkách). */
+export function teloBezDruziny(telo) {
+  const radky = String(telo ?? '').split('\n');
+  const oddil = najitOddilDruziny(radky);
+  if (!oddil) return String(telo ?? '');
+  radky.splice(oddil.od, oddil.do - oddil.od);
+  return radky.join('\n').replace(/\n{3,}/g, '\n\n');
+}
+
+/** Krátký popis do seznamu karet: první odstavec textu bez formátování. */
+export function kratkyPopis(text, max = 170) {
+  for (const odstavec of String(text ?? '').split(/\n\s*\n/)) {
+    const t = bezKomentaru(odstavec)
+      .split('\n')
+      .filter((r) => r.trim() && !NADPIS.test(r) && !/^\s*(```|~~~|\||---)/.test(r))
+      .map((r) => r.replace(/^\s*(>\s*)+/, '').replace(ODRAZKA, ''))
+      .join(' ')
+      .replace(/\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]*))?\]\]/g, (_, id, popisek) => popisek ?? id)
+      .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+      .replace(/[*_~`]+/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (t) return t.length > max ? `${t.slice(0, max - 1).replace(/\s+\S*$/, '')}…` : t;
+  }
+  return '';
 }
 
 /** Ilustrace z hlavičky → adresa obrázku přes Hub (stejné cesty jako jinde v Hubu). */
@@ -115,7 +290,7 @@ export function leziV(d) {
 const textovePole = (x) => (typeof x === 'string' ? x : Number.isFinite(x) ? String(x) : null);
 
 /** Karta ze souboru v jednotném tvaru pro panel. */
-export function nacistEntitu(text, { slozka, soubor, slozkaEntity }) {
+export function nacistEntitu(text, { slozka, soubor, slozkaEntity, upraveno = null }) {
   const r = rozebrat(text);
   if (r.chyba) throw new Error(r.chyba);
   if (!r.maHlavicku) throw new Error('Chybí hlavička YAML');
@@ -138,7 +313,9 @@ export function nacistEntitu(text, { slozka, soubor, slozkaEntity }) {
     leziV: leziV(d),
     odkazyVTextu: [...new Set(odkazy(r.telo))],
     udaje: {},
+    pole: {},
     telo: r.telo,
+    upraveno,
   };
   entita.aktualni = entita.tags.includes(STITEK_VE_HRE);
   entita.obrazky = obrazky(d, entita);
@@ -149,6 +326,12 @@ export function nacistEntitu(text, { slozka, soubor, slozkaEntity }) {
   }
   if (Array.isArray(d.kdo) && d.kdo.length) entita.udaje.kdo = d.kdo.map(String).join(', ');
   if (typeof d.doresit === 'boolean') entita.udaje.doresit = d.doresit ? 'ano' : 'ne';
+  // Pole pro editor karty (surové hodnoty z hlavičky).
+  for (const pole of TEXTOVA_POLE) if (pole in d) entita.pole[pole] = textovePole(d[pole]) ?? '';
+  if ('doresit' in d) entita.pole.doresit = d.doresit === true;
+  if ('kdo' in d) entita.pole.kdo = (Array.isArray(d.kdo) ? d.kdo : []).map(String);
+  entita.popis = kratkyPopis(teloBezDruziny(r.telo));
+  entita.popisDruziny = kratkyPopis(teloDruziny(r.telo, entita.typ));
   return entita;
 }
 
@@ -171,6 +354,7 @@ export function vPohledu(e, pohled, najit) {
       id: e.id, typ: e.typ, nazev: e.nazev, verejne: e.verejne, ikona: e.ikona, aliases: e.aliases, tags: e.tags,
       aktualni: e.aktualni, vazby: e.vazby, vztahy: e.vztahy, leziV: e.leziV, udaje: e.udaje, soubor: e.soubor,
       obrazek: obrazekUzlu(obrazky)?.url ?? null, portret: obrazekUzlu(obrazky)?.ucel === 'portret', obrazky,
+      popis: e.popis, upraveno: e.upraveno,
     };
   }
   if (!e.verejne) return null;
@@ -182,6 +366,7 @@ export function vPohledu(e, pohled, najit) {
     // Kde místo leží, družina ví, když zná obě místa.
     leziV: e.leziV && najit(e.leziV)?.verejne ? e.leziV : null,
     obrazek: obrazekUzlu(obrazky)?.url ?? null, portret: obrazekUzlu(obrazky)?.ucel === 'portret', obrazky,
+    popis: e.popisDruziny, upraveno: null,
   };
 }
 
@@ -213,11 +398,13 @@ export function normalizujNastenku(id, d) {
  * Události: 'zmena' { verze } — panel si podle ní načte seznam a otevřenou kartu znovu.
  */
 export class Kanon extends EventEmitter {
-  constructor({ cesty, zapisovac, nastaveni = () => ({}) }) {
+  constructor({ cesty, zapisovac, nastaveni = () => ({}), kalendar = null }) {
     super();
     this.c = cesty;
     this.zapisovac = zapisovac;
     this.nastaveni = nastaveni;
+    /** Kalendář (události s vazbami na karty). */
+    this.kalendar = kalendar;
     /** @type {Map<string, object>} */
     this.entity = new Map();
     /** @type {Map<string, object>} */
@@ -255,13 +442,16 @@ export class Kanon extends EventEmitter {
         // Poznámky mimo sezení (Poznámka F2 bez běžícího sezení) nejsou kánon.
         if (soubor === 'kampan/sezeni/priprava.md') continue;
         let text;
+        let upraveno;
         try {
-          text = await fs.readFile(path.join(this.c.koren, ...soubor.split('/')), 'utf8');
+          const cesta = path.join(this.c.koren, ...soubor.split('/'));
+          text = await fs.readFile(cesta, 'utf8');
+          upraveno = (await fs.stat(cesta)).mtime.toISOString();
         } catch {
           continue; // složka bez hlavního souboru (jen obrázky)
         }
         try {
-          const e = nacistEntitu(text, { slozka, soubor, slozkaEntity });
+          const e = nacistEntitu(text, { slozka, soubor, slozkaEntity, upraveno });
           if (entity.has(e.id)) chyby.push({ soubor, chyba: `Duplicitní id „${e.id}“` });
           else entity.set(e.id, e);
         } catch (err) {
@@ -321,7 +511,32 @@ export class Kanon extends EventEmitter {
 
   najit = (id) => this.entity.get(id);
 
-  /** Seznam pro mapu (bez textu karet). */
+  /**
+   * Události kalendáře pro daný pohled (vazby jen na entity, které pohled zná).
+   * Družina vidí jen veřejné události.
+   */
+  udalosti(pohled = 'dm') {
+    const vsechny = this.kalendar?.udalosti ?? [];
+    return vsechny
+      .filter((u) => pohled === 'dm' || u.verejna)
+      .map((u) => ({
+        id: u.id,
+        datum: u.datum,
+        konec: u.konec ?? null,
+        datumText: Harptos.format(u.datum),
+        konecText: u.konec ? Harptos.format(u.konec) : null,
+        text: u.text,
+        verejna: u.verejna,
+        vazby: (u.vazby ?? []).filter((id) => {
+          const e = this.entity.get(id);
+          return e && (pohled === 'dm' || e.verejne);
+        }),
+        poradi: Harptos.absolutni(u.datum),
+      }))
+      .sort((a, b) => a.poradi - b.poradi);
+  }
+
+  /** Seznam pro wiki a mapu (bez textu karet). */
   seznam(pohled = 'dm') {
     const p = POHLEDY.includes(pohled) ? pohled : 'dm';
     const entity = [...this.entity.values()].map((e) => vPohledu(e, p, this.najit)).filter(Boolean);
@@ -329,6 +544,8 @@ export class Kanon extends EventEmitter {
       pohled: p,
       verze: this.verze,
       entity,
+      udalosti: this.udalosti(p),
+      typyNove: p === 'dm' ? TYPY_NOVE : [],
       nastenky: [...this.nastenky.values()].map((n) => ({ ...n, entity: undefined, pocet: n.entity.length })),
       chyby: p === 'dm' ? this.chyby : [],
     };
@@ -349,10 +566,30 @@ export class Kanon extends EventEmitter {
       const vztah = jv.vztahy.find((x) => x.s === id);
       if (vztah || jv.vazby.includes(id)) odkazujici.push({ id: jina.id, vztah: vztah ?? null });
     }
-    const telo = p === 'druzina' ? teloDruziny(e.telo, e.typ) : e.telo;
+    // Oddíl Co ví družina wiki ukazuje po odrážkách; DM vidí všechny, družina jen odkryté.
+    const bloky = blokyDruziny(e.telo);
+    const druzina = (p === 'dm' ? bloky : bloky.filter((b) => b.zna || (b.druh === 'nadpis' && !b.dm))).map((b) => ({
+      index: b.index, druh: b.druh, text: b.druh === 'nadpis' || p === 'dm' ? b.text : bezKomentaru(b.text), zna: b.zna, dm: b.dm, uroven: b.uroven,
+    }));
+    // Družině nadpisy bez odkrytého obsahu pod sebou nic neřeknou.
+    const druzinaCista = p === 'dm'
+      ? druzina
+      : druzina.filter((b, i) => {
+        if (b.druh !== 'nadpis') return true;
+        const dalsi = druzina.slice(i + 1);
+        const konec = dalsi.findIndex((x) => x.druh === 'nadpis' && x.uroven <= b.uroven);
+        return (konec === -1 ? dalsi : dalsi.slice(0, konec)).some((x) => x.druh !== 'nadpis');
+      });
+    let telo;
+    if (p === 'dm') telo = teloBezDruziny(e.telo);
+    else telo = e.typ === 'kanon' ? teloDruziny(e.telo, e.typ) : '';
     return {
       ...v,
       telo,
+      druzina: druzinaCista,
+      maOddilDruziny: Boolean(najitOddilDruziny(e.telo.split('\n'))),
+      udalosti: this.udalosti(p).filter((u) => u.vazby.includes(id)),
+      pole: p === 'dm' ? e.pole : {},
       odkazujici,
       odkazyVTextu: p === 'dm' ? e.odkazyVTextu.filter((x) => this.entity.has(x)) : [],
       obsidian: p === 'dm' ? odkazObsidian(this.trezor(), e.soubor) : null,
@@ -375,10 +612,184 @@ export class Kanon extends EventEmitter {
       const zmeny = zmenyZEntity(aktualni);
       return zmeny ? upravitKartu(text, zmeny) : text;
     });
-    const nova = nacistEntitu(obsah, { slozka: e.slozka, soubor: e.soubor, slozkaEntity: e.slozkaEntity });
+    const nova = nacistEntitu(obsah, { slozka: e.slozka, soubor: e.soubor, slozkaEntity: e.slozkaEntity, upraveno: new Date().toISOString() });
     this.entity.set(id, nova);
     this.oznam();
     return { vysledek, karta: this.karta(id) };
+  }
+
+  /** Celý soubor karty přes frontu zápisu: uprava(text, entita) vrátí nový text. */
+  async upravitSoubor(id, uprava) {
+    const e = this.get(id);
+    const soubor = path.join(this.c.koren, ...e.soubor.split('/'));
+    const { vysledek, obsah } = await this.zapisovac.upravit(soubor, (text) => uprava(text, nacistEntitu(text, { slozka: e.slozka, soubor: e.soubor, slozkaEntity: e.slozkaEntity })));
+    this.entity.set(id, nacistEntitu(obsah, { slozka: e.slozka, soubor: e.soubor, slozkaEntity: e.slozkaEntity, upraveno: new Date().toISOString() }));
+    this.oznam();
+    return { vysledek, obsah, karta: this.karta(id) };
+  }
+
+  /** Pole hlavičky z editoru (název, ikona, hráč, druh, stav …) po kontrole. */
+  overitPole(e, telo) {
+    const z = {};
+    for (const pole of TEXTOVA_POLE) {
+      if (!(pole in telo)) continue;
+      const t = String(telo[pole] ?? '').replace(/\s+/g, ' ').trim();
+      if (pole === 'nazev' && !t) throw chyba('Karta potřebuje název.');
+      if (t.length > (pole === 'nazev' ? 120 : 200)) throw chyba(`Pole ${pole} je příliš dlouhé.`);
+      if (pole === 'ikona' && [...t].length > 4) throw chyba('Ikona je jeden emoji znak.');
+      if (pole === 'stav' && e.typ === 'rozhodnuti' && !STAVY_ROZHODNUTI.includes(t)) throw chyba(`Stav rozhodnutí je ${STAVY_ROZHODNUTI.join(', ')}.`);
+      if (pole === 'oblast' && t && !SLUG.test(t)) throw chyba('Oblast je kampan, nebo id postavy.');
+      if ((e.pole[pole] ?? '') !== t) z[pole] = t;
+    }
+    if ('doresit' in telo) {
+      if (typeof telo.doresit !== 'boolean') throw chyba('doresit musí být true nebo false.');
+      if (telo.doresit !== (e.pole.doresit ?? false)) z.doresit = telo.doresit;
+    }
+    if ('kdo' in telo) {
+      if (!Array.isArray(telo.kdo)) throw chyba('Kdo musí být seznam.');
+      const kdo = [...new Set(telo.kdo.map((x) => String(x ?? '').trim()).filter(Boolean))].slice(0, 20);
+      if (kdo.some((x) => x.length > 60)) throw chyba('Položka Kdo je příliš dlouhá.');
+      if (JSON.stringify(kdo) !== JSON.stringify(e.pole.kdo ?? [])) z.kdo = kdo;
+    }
+    return z;
+  }
+
+  /** Text karty a pole hlavičky pro editor. hash slouží ke kontrole souběžné úpravy v Obsidianu. */
+  async zdroj(id) {
+    const e = this.get(id);
+    const text = await fs.readFile(path.join(this.c.koren, ...e.soubor.split('/')), 'utf8');
+    const telo = teloKarty(text);
+    const aktualni = nacistEntitu(text, { slozka: e.slozka, soubor: e.soubor, slozkaEntity: e.slozkaEntity });
+    return { id, typ: e.typ, telo, hash: hashTela(telo), pole: aktualni.pole, aliases: aktualni.aliases, slozkaEntity: e.slozkaEntity };
+  }
+
+  /**
+   * Uloží text karty (a případně pole hlavičky) z editoru. Když se text na disku mezitím změnil
+   * (Obsidian), vrátí 409 s aktuálním textem a nic nepřepíše, ledaže přijde prepsat: true.
+   * @param {{telo?: string, zaklad?: string, prepsat?: boolean, pole?: object}} vstup
+   */
+  async ulozitZdroj(id, vstup) {
+    const e = this.get(id);
+    if (vstup.telo !== undefined && typeof vstup.telo !== 'string') throw chyba('Text karty musí být text.');
+    if ((vstup.telo ?? '').length > 400000) throw chyba('Text karty je příliš dlouhý.');
+    let konflikt = null;
+    const r = await this.upravitSoubor(id, (text, aktualni) => {
+      let novy = text;
+      if (vstup.telo !== undefined) {
+        const telo = teloKarty(text);
+        if (!vstup.prepsat && vstup.zaklad && hashTela(telo) !== vstup.zaklad) {
+          konflikt = { telo, hash: hashTela(telo) };
+          return text;
+        }
+        novy = nahraditTelo(novy, vstup.telo);
+      }
+      if (vstup.pole) {
+        const z = this.overitPole(aktualni, vstup.pole);
+        if (Object.keys(z).length) novy = upravitKartu(novy, z);
+      }
+      return novy;
+    });
+    if (konflikt) {
+      throw Object.assign(new Error('Karta se mezitím změnila jinde (Obsidian?). Načti její novou podobu, nebo ji přepiš svou.'), { status: 409, kod: 'konflikt', ...konflikt });
+    }
+    return { vysledek: r.vysledek, hash: hashTela(teloKarty(r.obsah)), karta: r.karta, nazev: e.nazev };
+  }
+
+  /** Odkryje nebo skryje jednu odrážku Co ví družina. */
+  async prepnoutDruzinu(id, index, zna) {
+    if (!Number.isInteger(index) || index < 0) throw chyba('Neplatná odrážka.');
+    if (typeof zna !== 'boolean') throw chyba('zna musí být true nebo false.');
+    const r = await this.upravitSoubor(id, (text) => nahraditTelo(text, prepnoutBlok(teloKarty(text), index, zna)));
+    return { vysledek: r.vysledek, karta: r.karta };
+  }
+
+  /** Přidá odrážku do Co ví družina. */
+  async pridatDruzinu(id, text, zna = true) {
+    if (typeof zna !== 'boolean') throw chyba('zna musí být true nebo false.');
+    const r = await this.upravitSoubor(id, (obsah) => nahraditTelo(obsah, pridatBlok(teloKarty(obsah), text, zna)));
+    return { vysledek: r.vysledek, karta: r.karta };
+  }
+
+  /**
+   * Nová karta ze šablony sablony/<typ>.md (bod 98): složka entity, nebo jeden soubor záznamu.
+   * @param {{typ: string, nazev: string, id?: string}} vstup
+   */
+  async zalozit(vstup) {
+    const typ = String(vstup?.typ ?? '');
+    if (!TYPY_NOVE.includes(typ)) throw chyba('Tenhle typ karty v Hubu založit nejde.');
+    const nazev = String(vstup?.nazev ?? '').replace(/\s+/g, ' ').trim();
+    if (!nazev || nazev.length > 120) throw chyba('Karta potřebuje název (nejvýš 120 znaků).');
+    const id = vstup.id ? String(vstup.id) : slugNastenky(nazev);
+    if (!SLUG.test(id)) throw chyba('Z názvu nejde udělat id. Použij písmena nebo číslice.');
+    if (this.entity.has(id)) throw chyba(`Karta s id „${id}“ už existuje (${this.entity.get(id).nazev}). Zvol jiný název.`, 409);
+    const slozka = SLOZKA_TYPU[typ];
+    const zaznam = ZAZNAMY.has(typ);
+    const soubor = zaznam ? `kampan/${slozka}/${id}.md` : `kampan/${slozka}/${id}/${id}.md`;
+    const cesta = path.join(this.c.koren, ...soubor.split('/'));
+    try {
+      await fs.access(cesta);
+      throw chyba(`Soubor ${soubor} už existuje.`, 409);
+    } catch (err) {
+      if (err.status) throw err;
+    }
+    let sablona;
+    try {
+      sablona = await fs.readFile(path.join(this.c.koren, 'sablony', `${typ}.md`), 'utf8');
+    } catch {
+      sablona = `---\nschema: 1\nid:\ntyp: ${typ}\nnazev: "{{title}}"\nverejne: false\naliases: []\nvazby: []\ntags: []\n---\n# {{title}}\n\n## ${ODDIL_DRUZINY}\n`;
+    }
+    const dnes = new Date().toISOString().slice(0, 10);
+    let text = sablona
+      .replace(/^nazev: "\{\{title\}\}"/m, () => `nazev: ${JSON.stringify(nazev)}`)
+      .replace(/\{\{title\}\}/g, () => nazev)
+      .replace(/\{\{date(:[^}]*)?\}\}/g, dnes);
+    text = text.replace(/^id:[^\n]*$/m, () => `id: ${id}`);
+    nacistEntitu(text, { slozka, soubor, slozkaEntity: !zaznam }); // pojistka: šablona musí dát platnou kartu
+    await fs.mkdir(path.dirname(cesta), { recursive: true });
+    const { vysledek } = await this.zapisovac.zapsat(cesta, text);
+    this.entity.set(id, nacistEntitu(text, { slozka, soubor, slozkaEntity: !zaznam, upraveno: new Date().toISOString() }));
+    this.oznam();
+    return { vysledek, karta: this.karta(id) };
+  }
+
+  /**
+   * Portrét karty z editoru: uloží se do složky entity jako portret.<přípona> a zapíše do ilustrace.
+   * @param {{data: string}} vstup obrázek v base64 (PNG, JPEG nebo WebP)
+   */
+  async ulozitPortret(id, vstup) {
+    const e = this.get(id);
+    if (!e.slozkaEntity) throw chyba('Záznam (rozhodnutí, hráčský kánon) nemá vlastní složku na obrázky.');
+    const data = Buffer.from(String(vstup?.data ?? ''), 'base64');
+    if (data.length < 12) throw chyba('Obrázek chybí.');
+    if (data.length > MAX_PORTRET) throw chyba('Obrázek je větší než 15 MB.');
+    let pripona = null;
+    if (data.readUInt32BE(0) === 0x89504e47) pripona = 'png';
+    else if (data[0] === 0xff && data[1] === 0xd8) pripona = 'jpg';
+    else if (data.toString('ascii', 0, 4) === 'RIFF' && data.toString('ascii', 8, 12) === 'WEBP') pripona = 'webp';
+    if (!pripona) throw chyba('Obrázek musí být PNG, JPEG nebo WebP.');
+    const jmeno = `portret.${pripona}`;
+    const slozka = path.dirname(path.join(this.c.koren, ...e.soubor.split('/')));
+    // Obrázek je binární a jen Hubu: atomický zápis z zapis.js.
+    await zapsatAtomicky(path.join(slozka, jmeno), data);
+    const r = await this.upravitSoubor(id, (text, aktualni) => {
+      if (aktualni.obrazky.some((o) => o.soubor === jmeno)) return text;
+      return upravitKartu(text, { ilustrace: { soubor: jmeno, ucel: 'portret' } });
+    });
+    return { vysledek: r.vysledek, karta: r.karta, soubor: jmeno };
+  }
+
+  /** Naváže kartu na událost kalendáře, nebo vazbu zruší. */
+  async vazbaUdalosti(udalostId, cil, pridat) {
+    if (!this.kalendar) throw chyba('Kalendář není k dispozici.', 503);
+    if (pridat) this.overitCil(null, cil);
+    const u = this.kalendar.udalosti.find((x) => x.id === udalostId);
+    if (!u) throw chyba('Událost neexistuje.', 404);
+    const vazby = new Set(u.vazby ?? []);
+    if (pridat) vazby.add(cil);
+    else vazby.delete(cil);
+    const r = await this.kalendar.nastavitVazby(udalostId, [...vazby]);
+    this.oznam();
+    return { vysledek: r.vysledek, udalost: this.udalosti('dm').find((x) => x.id === udalostId) };
   }
 
   overitCil(id, cil) {
@@ -407,9 +818,11 @@ export class Kanon extends EventEmitter {
       if (aliasy.length > MAX_ALIASU) throw chyba(`Nejvýš ${MAX_ALIASU} přezdívek.`);
     }
     if ('aktualni' in telo && typeof telo.aktualni !== 'boolean') throw chyba('aktualni musí být true nebo false.');
-    if (!Object.keys(zmeny).length && !aliasy && !('aktualni' in telo)) throw chyba('Není co změnit.');
+    const maPole = [...TEXTOVA_POLE, 'doresit', 'kdo'].some((k) => k in telo);
+    if (maPole) this.overitPole(this.get(id), telo); // chyba dřív, než se sáhne na soubor
+    if (!Object.keys(zmeny).length && !aliasy && !('aktualni' in telo) && !maPole) throw chyba('Není co změnit.');
     return this.upravitHlavicku(id, (e) => {
-      const z = { ...zmeny };
+      const z = { ...zmeny, ...(maPole ? this.overitPole(e, telo) : {}) };
       if (z.verejne === e.verejne) delete z.verejne;
       if (aliasy && JSON.stringify(aliasy) !== JSON.stringify(e.aliases)) z.aliases = aliasy;
       if ('aktualni' in telo && telo.aktualni !== e.aktualni) {

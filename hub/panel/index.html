@@ -276,21 +276,26 @@
         </div>
       </section>
 
-      <section id="obrazovka-kanon" class="obrazovka kanon" hidden>
+      <section id="obrazovka-kanon" class="obrazovka kanon rezim-wiki" hidden>
         <div class="kanon-hlava">
           <h1>Kánon</h1>
+          <div class="segment" id="kanon-rezim" role="group" aria-label="Zobrazení">
+            <button type="button" data-rezim="wiki" aria-pressed="true">Wiki</button>
+            <button type="button" data-rezim="mapa" aria-pressed="false">Mapa</button>
+          </div>
           <div class="segment" id="kanon-pohled" role="group" aria-label="Pohled">
             <button type="button" data-pohled="dm" aria-pressed="true">DM</button>
-            <button type="button" data-pohled="druzina" aria-pressed="false" title="Jen to, co zná družina: entity a vztahy s verejne: true a oddíl Co ví družina">Pohled družiny</button>
+            <button type="button" data-pohled="druzina" aria-pressed="false" title="Jen to, co zná družina: karty s verejne: true, odkryté odrážky Co ví družina a známé vztahy">Pohled družiny</button>
           </div>
-          <div class="kanon-filtry" id="kanon-filtry" role="group" aria-label="Filtry typů"></div>
-          <div class="kanon-nastenky">
+          <div class="kanon-filtry jen-mapa" id="kanon-filtry" role="group" aria-label="Filtry typů"></div>
+          <div class="kanon-nastenky jen-mapa">
             <label class="vizualne-skryte" for="kanon-nastenka">Nástěnka</label>
             <select id="kanon-nastenka" title="Uložené rozložení mapy"></select>
             <button type="button" id="kanon-ulozit" title="Uloží pozice uzlů jako nástěnku v kampan/nastenky/">Uložit rozložení</button>
           </div>
         </div>
-        <div class="kanon-telo">
+        <div class="kanon-wiki jen-wiki" id="kanon-wiki"></div>
+        <div class="kanon-telo jen-mapa">
           <div class="kanon-platno" id="kanon-platno">
             <svg id="kanon-svg" role="img" aria-label="Síť entit kánonu a jejich vazeb"></svg>
             <div class="kanon-legenda" aria-label="Barva čáry podle postoje">
@@ -813,6 +818,25 @@
       <div class="knihovna-seznam" id="knihovna-seznam"></div>
       <div class="tlacitka">
         <button type="submit" value="zavrit">Zavřít <kbd>Esc</kbd></button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dialog-nova-karta" class="dialog">
+    <form method="dialog" id="formular-nova-karta">
+      <h2>Nová karta</h2>
+      <p class="uvod">Karta vznikne ze šablony v <code>sablony/</code> a otevře se v editoru. Je jen pro DM, dokud nezapneš Družina zná.</p>
+      <label>Typ
+        <select id="nova-karta-typ"></select>
+      </label>
+      <label>Název
+        <input id="nova-karta-nazev" maxlength="120" placeholder="např. Halvar Grimsdal" autocomplete="off" required>
+      </label>
+      <p class="poznamka" id="nova-karta-udalost" hidden></p>
+      <p class="ulozeni chyba" id="nova-karta-chyba" aria-live="polite"></p>
+      <div class="tlacitka">
+        <button type="submit" class="hlavni" value="zalozit">Založit kartu</button>
+        <button type="submit" value="zrusit" formnovalidate>Zpět</button>
       </div>
     </form>
   </dialog>

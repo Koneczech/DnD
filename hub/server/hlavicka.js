@@ -28,8 +28,23 @@ export function idZOdkazu(text) {
   return (m ? m[1] : t).trim();
 }
 
+/** Textová pole hlavičky, která jde upravit v editoru karty (Blok 3, plný editor). */
+export const TEXTOVA_POLE = Object.freeze(['nazev', 'ikona', 'hrac', 'druh', 'povolani', 'stav', 'oblast', 'zaznamenano', 'sezeni']);
+const PROSTY_TEXT = /^[\p{L}\p{N}\p{Extended_Pictographic}][\p{L}\p{N}\p{Extended_Pictographic}\uFE0F\u200D ()'.,–—-]*$/u;
+const ZVLASTNI = /^(true|false|null|yes|no|on|off|y|n|~|[-+]?[\d.]+(e[-+]?\d+)?)$/i;
+
+/** Text bez uvozovek, když to YAML dovolí (hrac: Martin), jinak v uvozovkách. */
+function vykreslitText(hodnota, vzdyUvozovky = false) {
+  const t = String(hodnota ?? '');
+  if (!vzdyUvozovky && t && t === t.trim() && PROSTY_TEXT.test(t) && !ZVLASTNI.test(t)) return t;
+  return JSON.stringify(t);
+}
+
 /** Text hodnoty v domácím stylu karet. */
-function vykreslit(klic, hodnota) {
+function vykreslit(klic, hodnota, puvodniUvozovky = false) {
+  if (TEXTOVA_POLE.includes(klic)) return vykreslitText(hodnota, puvodniUvozovky || klic === 'nazev');
+  if (klic === 'doresit') return hodnota ? 'true' : 'false';
+  if (klic === 'kdo') return `[${hodnota.map((t) => (JEDNODUCHY_STITEK.test(t) ? t : JSON.stringify(t))).join(', ')}]`;
   if (klic === 'verejne') return hodnota ? 'true' : 'false';
   if (klic === 'tags') return `[${hodnota.map((t) => (JEDNODUCHY_STITEK.test(t) ? t : JSON.stringify(t))).join(', ')}]`;
   if (klic === 'aliases') return `[${hodnota.map((a) => JSON.stringify(a)).join(', ')}]`;
@@ -187,6 +202,48 @@ function nahraditVztahy(yaml, dokument, vztahy) {
   return `${yaml.slice(0, od).trimEnd()}${yaml.slice(do_, kde)}${blok}${yaml.slice(kde)}`;
 }
 
+/** Přidá obrázek do seznamu ilustrace (na jeden řádek), ostatní položky zůstanou. */
+function pridatIlustraci(yaml, dokument, zaznam) {
+  const casti = [`soubor: ${vykreslitText(zaznam.soubor)}`, `ucel: ${zaznam.ucel ?? 'portret'}`];
+  const radek = `{ ${casti.join(', ')} }`;
+  const par = najitPar(dokument, 'ilustrace');
+  if (!par) return vlozitRadek(yaml, mistoVlozeni(yaml, dokument, 'ilustrace'), `ilustrace:\n  - ${radek}`);
+  if (par.value && YAML.isSeq(par.value) && !par.value.flow && par.value.items.length) {
+    const prvni = par.value.items[0].range[0];
+    const zacatekRadku = yaml.lastIndexOf('\n', prvni - 1) + 1;
+    const odsazeni = yaml.slice(zacatekRadku, prvni).replace(/-\s*$/, '');
+    const posledni = par.value.items.at(-1);
+    const konec = yaml.slice(0, posledni.range[1]).trimEnd().length;
+    return `${yaml.slice(0, konec)}\n${odsazeni}- ${radek}${yaml.slice(konec)}`;
+  }
+  if (par.value && YAML.isSeq(par.value) && par.value.flow && par.value.items.length) {
+    // ilustrace: [ … ] na jednom řádku: připojí se na konec.
+    const [od, do_] = par.value.range;
+    const vnitrek = yaml.slice(od + 1, do_ - 1).trim();
+    return `${yaml.slice(0, od)}[${vnitrek}, ${radek}]${yaml.slice(do_)}`;
+  }
+  // Prázdné „ilustrace: []“ nebo bez hodnoty: blokový seznam, komentář zůstane na řádku klíče.
+  const dvojtecka = yaml.indexOf(':', par.key.range[1]);
+  const konecRadku = yaml.indexOf('\n', dvojtecka);
+  const kde = konecRadku === -1 ? yaml.length : konecRadku;
+  const zbytek = yaml.slice(dvojtecka + 1, kde).replace(/^\s*\[\s*\]/, '');
+  return `${yaml.slice(0, dvojtecka + 1)}${zbytek}\n  - ${radek}${yaml.slice(kde)}`;
+}
+
+/** Tělo karty (vše pod hlavičkou). */
+export function teloKarty(text) {
+  const { za } = rozdelit(text);
+  return za.replace(/^---[ \t]*\r?\n?/, '');
+}
+
+/** Nahradí tělo karty, hlavička zůstane bajt po bajtu. */
+export function nahraditTelo(text, telo) {
+  const { pred, yaml, za } = rozdelit(text);
+  const uzaver = /^---[ \t]*\r?\n?/.exec(za)[0];
+  const novy = String(telo).replace(/\r\n?/g, '\n');
+  return `${pred}${yaml}${uzaver.endsWith('\n') ? uzaver : `${uzaver}\n`}${novy}`;
+}
+
 /**
  * Upraví vybrané klíče hlavičky a zbytek souboru nechá beze změny.
  * @param {string} text celý soubor karty
@@ -196,10 +253,14 @@ function nahraditVztahy(yaml, dokument, vztahy) {
 export function upravitKartu(text, zmeny) {
   const { pred, yaml: puvodniYaml, za } = rozdelit(text);
   let yaml = puvodniYaml;
-  for (const klic of ['verejne', 'aliases', 'vazby', 'tags']) {
+  for (const klic of [...TEXTOVA_POLE, 'verejne', 'doresit', 'kdo', 'aliases', 'vazby', 'tags']) {
     if (!(klic in zmeny)) continue;
-    yaml = nahraditHodnotu(yaml, parovat(yaml), klic, vykreslit(klic, zmeny[klic]));
+    const dokument = parovat(yaml);
+    const par = najitPar(dokument, klic);
+    const uvozovky = Boolean(par?.value && YAML.isScalar(par.value) && par.value.type === 'QUOTE_DOUBLE');
+    yaml = nahraditHodnotu(yaml, dokument, klic, vykreslit(klic, zmeny[klic], uvozovky));
   }
+  if (zmeny.ilustrace) yaml = pridatIlustraci(yaml, parovat(yaml), zmeny.ilustrace);
   if ('vztahy' in zmeny) yaml = nahraditVztahy(yaml, parovat(yaml), zmeny.vztahy);
   if ('lezi_v' in zmeny) {
     yaml = zmeny.lezi_v ? nahraditHodnotu(yaml, parovat(yaml), 'lezi_v', vykreslit('lezi_v', zmeny.lezi_v)) : odebratKlic(yaml, parovat(yaml), 'lezi_v');

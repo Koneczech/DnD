@@ -79,13 +79,9 @@ function ukazObrazovku(jmeno) {
   // #kanon/<id>: Kánon s vybranou entitou (odkazy z hledání a z textu karet).
   let entita;
   if (jmeno.startsWith('kanon/')) {
-    try {
-      entita = decodeURIComponent(jmeno.slice(6));
-    } catch {
-      entita = '';
-    }
+    entita = jmeno.slice(6); // cesta uvnitř Kánonu (entita, mapa, typ, události), dekóduje ji modul
     jmeno = 'kanon';
-  } else if (jmeno === 'kanon') entita = undefined;
+  } else if (jmeno === 'kanon') entita = '';
   if (PRESMEROVANI[jmeno]) {
     stav.stulVyber = PRESMEROVANI[jmeno][1];
     jmeno = PRESMEROVANI[jmeno][0];
@@ -827,8 +823,9 @@ const kanon = vytvoritKanon({ api, toast, otevritPoznamku });
     zavrit();
     vstup.value = '';
     kanon.hledat('');
-    location.hash = `kanon/${encodeURIComponent(id)}`;
-    if (location.hash === `#kanon/${encodeURIComponent(id)}`) kanon.vybrat(id);
+    const adresa = kanon.adresa(id);
+    if (location.hash === `#${adresa}`) kanon.ukazat(adresa.slice(6));
+    else location.hash = adresa;
     vstup.blur();
   };
   const vykreslit = () => {

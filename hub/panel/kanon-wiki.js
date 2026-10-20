@@ -40,6 +40,8 @@ export function vytvoritWiki(ctx, karta) {
   };
   const editor = vytvoritEditor({ ...ctx, kam: obsah, poZavreni: () => ctx.nacist() });
   const dm = () => s.pohled === 'dm';
+  /** Ovládání, které mění data (čtecí verze na GitHub Pages ho nemá). */
+  const uprav = () => dm() && !s.jenCteni;
   const entity = () => s.data?.entity ?? [];
   const udalosti = () => s.data?.udalosti ?? [];
 
@@ -59,7 +61,7 @@ export function vytvoritWiki(ctx, karta) {
       Object.entries(TYPY).filter(([t]) => pocty[t]).map(([t, d]) => odkaz(`#kanon/typ/${t}`, d.mn, w.stranka === 'typ' && w.typ === t || (w.stranka === 'entita' && s.podleId.get(s.vybrane)?.typ === t), { barva: barvaTypu(t), pocet: pocty[t] })),
       el('p', { className: 'skupina-menu', textContent: 'Čas' }),
       odkaz('#kanon/udalosti', 'Události', w.stranka === 'udalosti' || w.stranka === 'udalost', { barva: 'var(--akcent)', pocet: udalosti().length }),
-      dm() && s.data?.typyNove?.length ? el('button', { type: 'button', className: 'nova-karta', textContent: '+ Nová karta', onclick: () => otevritNovou() }) : null,
+      uprav() && s.data?.typyNove?.length ? el('button', { type: 'button', className: 'nova-karta', textContent: '+ Nová karta', onclick: () => otevritNovou() }) : null,
     );
   }
 
@@ -105,7 +107,9 @@ export function vytvoritWiki(ctx, karta) {
     nahradit(obsah,
       el('div', { className: 'wiki-hlava' },
         el('h2', { className: 'wiki-nadpis', textContent: dm() ? 'Kánon kampaně' : 'Co ví družina' }),
-        el('p', { className: 'uvod', textContent: dm()
+        el('p', { className: 'uvod', textContent: s.jenCteni && dm()
+          ? `${vse.length} karet a ${ud.length} událostí. Čtecí verze: karty se upravují v Hubu doma nebo v Obsidianu.`
+          : dm()
           ? `${vse.length} karet a ${ud.length} událostí. Karty upravíš tady i v Obsidianu; co z nich zná družina, odkrýváš po odrážkách v oddílu Co ví družina.`
           : `${vse.length} karet, které družina zná, a jen to, co o nich ví. Slouží k rekapitulaci.` })),
       postavy.length ? el('section', { className: 'wiki-sekce' }, el('h3', { textContent: 'Postavy hráčů' }), el('div', { className: 'mrizka-dlazdic' }, postavy.map(dlazdice))) : null,
@@ -145,7 +149,7 @@ export function vytvoritWiki(ctx, karta) {
         el('nav', { className: 'drobecky' }, el('a', { href: '#kanon', textContent: 'Kánon' }), ' › '),
         el('div', { className: 'radek-hlavy' },
           el('h2', { className: 'wiki-nadpis', textContent: `${TYPY[t]?.mn ?? t} (${vse.length})` }),
-          dm() && s.data?.typyNove?.includes(t) ? el('button', { type: 'button', textContent: `+ ${TYPY[t]?.j ?? t}`, onclick: () => otevritNovou(t) }) : null),
+          uprav() && s.data?.typyNove?.includes(t) ? el('button', { type: 'button', textContent: `+ ${TYPY[t]?.j ?? t}`, onclick: () => otevritNovou(t) }) : null),
         el('div', { className: 'wiki-filtr' }, filtr, cip)),
       seznam.length ? el('div', { className: 'mrizka-dlazdic' }, seznam.map(dlazdice)) : el('p', { className: 'poznamka', textContent: q ? 'Nic nenalezeno.' : 'V kategorii zatím nic není.' }),
     );
@@ -157,7 +161,7 @@ export function vytvoritWiki(ctx, karta) {
       el('div', { className: 'wiki-hlava' },
         el('nav', { className: 'drobecky' }, el('a', { href: '#kanon', textContent: 'Kánon' }), ' › '),
         el('h2', { className: 'wiki-nadpis', textContent: `Události (${ud.length})` }),
-        el('p', { className: 'uvod' }, dm() ? 'Události z Kalendáře. Datum a text se mění v ' : 'Co se kdy stalo.', dm() ? el('a', { href: '#kalendar', textContent: 'Kalendáři' }) : null, dm() ? '; tady k nim navážeš postavy, místa a co se u nich ve hře rozhodlo.' : null)),
+        el('p', { className: 'uvod' }, uprav() ? 'Události z Kalendáře. Datum a text se mění v ' : dm() ? 'Události z Kalendáře.' : 'Co se kdy stalo.', uprav() ? el('a', { href: '#kalendar', textContent: 'Kalendáři' }) : null, uprav() ? '; tady k nim navážeš postavy, místa a co se u nich ve hře rozhodlo.' : null)),
       ud.length ? el('ul', { className: 'udalosti-seznam casova-osa' }, ud.map((u) => radekUdalosti(u))) : el('p', { className: 'poznamka', textContent: 'V kalendáři zatím nejsou žádné události.' }),
     );
   }
@@ -187,8 +191,8 @@ export function vytvoritWiki(ctx, karta) {
     const vazby = u.vazby.map((id) => s.podleId.get(id)).filter(Boolean);
     const rozhodnuto = vazby.filter((e) => e.typ === 'kanon');
     const ostatni = vazby.filter((e) => e.typ !== 'kanon');
-    const odebrat = (e) => (dm() ? el('button', { type: 'button', className: 'mala tiche', textContent: '×', title: 'Zrušit navázání', 'aria-label': `Zrušit navázání ${e.nazev}`, onclick: () => navazat(u.id, e.id, false) }) : null);
-    const pridat = dm()
+    const odebrat = (e) => (uprav() ? el('button', { type: 'button', className: 'mala tiche', textContent: '×', title: 'Zrušit navázání', 'aria-label': `Zrušit navázání ${e.nazev}`, onclick: () => navazat(u.id, e.id, false) }) : null);
+    const pridat = uprav()
       ? w.pridavaniKarty
         ? karta.vyber({
           placeholder: 'Hledat kartu…',
@@ -212,7 +216,7 @@ export function vytvoritWiki(ctx, karta) {
         el('div', { className: 'wiki-hlava' },
           el('nav', { className: 'drobecky' }, el('a', { href: '#kanon', textContent: 'Kánon' }), ' › ', el('a', { href: '#kanon/udalosti', textContent: 'Události' }), ' › '),
           el('h2', { className: 'wiki-nadpis', textContent: u.text }),
-          el('p', { className: 'udalost-meta' }, el('span', { className: 'udalost-datum', textContent: u.konecText ? `${u.datumText} – ${u.konecText}` : u.datumText }), dm() ? el('span', { className: u.verejna ? 'stitek-maly' : 'stitek-dm', textContent: u.verejna ? 'veřejná (OBS, družina)' : 'skrytá' }) : null, dm() ? el('a', { href: '#kalendar', className: 'tlacitko tiche', textContent: 'Upravit v Kalendáři' }) : null)),
+          el('p', { className: 'udalost-meta' }, el('span', { className: 'udalost-datum', textContent: u.konecText ? `${u.datumText} – ${u.konecText}` : u.datumText }), dm() ? el('span', { className: u.verejna ? 'stitek-maly' : 'stitek-dm', textContent: u.verejna ? 'veřejná (OBS, družina)' : 'skrytá' }) : null, uprav() ? el('a', { href: '#kalendar', className: 'tlacitko tiche', textContent: 'Upravit v Kalendáři' }) : null)),
         el('section', { className: 'wiki-sekce' },
           el('h3', { textContent: 'Co se rozhodlo' }),
           rozhodnuto.length
@@ -245,12 +249,13 @@ export function vytvoritWiki(ctx, karta) {
       text.innerHTML = naHtml(b.text, { existuje: (id) => s.podleId.has(id) });
       if (!dm()) return el('li', { className: 'blok' }, text);
       if (b.dm) return el('li', { className: 'blok blok-dm' }, el('span', { className: 'oko', textContent: '🔒', title: 'Pododdíl DM: družina ho nevidí nikdy' }), text);
+      if (!uprav()) return el('li', { className: `blok${b.zna ? ' zna' : ''}` }, el('span', { className: `oko${b.zna ? ' zna' : ''}`, textContent: b.zna ? '👁' : '🔒', title: b.zna ? 'Družina to ví.' : 'Družina to zatím neví.' }), text);
       const oko = el('button', { type: 'button', className: `oko${b.zna ? ' zna' : ''}`, textContent: b.zna ? '👁' : '🔒', title: b.zna ? 'Družina to ví. Klik skryje.' : 'Družina to zatím neví. Klik odkryje.', 'aria-pressed': String(b.zna), 'aria-label': b.zna ? 'Skrýt před družinou' : 'Odkrýt družině' });
       oko.addEventListener('click', () => prepnoutBlok(e, b));
       return el('li', { className: `blok${b.zna ? ' zna' : ''}` }, oko, text);
     });
     let pridat = null;
-    if (dm()) {
+    if (uprav()) {
       const vstup = el('input', { type: 'text', placeholder: 'Co se družina dozvěděla… (Enter přidá jako odkryté)', maxLength: 600, 'aria-label': 'Nová odrážka Co ví družina' });
       const skryte = el('input', { type: 'checkbox' });
       const odeslat = async () => {
@@ -276,7 +281,7 @@ export function vytvoritWiki(ctx, karta) {
   function udalostiEntity(e, k) {
     const ud = k.udalosti ?? [];
     let navazani = null;
-    if (dm()) {
+    if (uprav()) {
       navazani = w.navazovani
         ? karta.vyber({
           placeholder: 'Hledat událost podle textu nebo data…',
@@ -299,7 +304,7 @@ export function vytvoritWiki(ctx, karta) {
     return el('section', { className: 'wiki-sekce' },
       el('div', { className: 'sekce-hlava' }, el('h3', { textContent: `Události (${ud.length})` }), w.navazovani ? null : navazani),
       w.navazovani ? navazani : null,
-      ud.length ? el('ul', { className: 'udalosti-seznam' }, ud.map((u) => radekUdalosti({ ...u, vazby: u.vazby.filter((x) => x !== e.id) }, { odebrat: dm() ? () => navazat(u.id, e.id, false) : null }))) : el('p', { className: 'poznamka', textContent: dm() ? 'Karta zatím není navázaná na žádnou událost z Kalendáře.' : 'Žádné události.' }));
+      ud.length ? el('ul', { className: 'udalosti-seznam' }, ud.map((u) => radekUdalosti({ ...u, vazby: u.vazby.filter((x) => x !== e.id) }, { odebrat: uprav() ? () => navazat(u.id, e.id, false) : null }))) : el('p', { className: 'poznamka', textContent: dm() ? 'Karta zatím není navázaná na žádnou událost z Kalendáře.' : 'Žádné události.' }));
   }
 
   function stranaEntity() {
@@ -314,8 +319,8 @@ export function vytvoritWiki(ctx, karta) {
     if (e.aktualni) stitky.push(el('span', { className: 'stitek-ve-hre', textContent: 've hře' }));
     if (dm()) stitky.push(el('span', { className: e.verejne ? 'stitek-maly' : 'stitek-dm', textContent: e.verejne ? 'družina zná' : 'jen DM' }));
     const akce = el('div', { className: 'akce-clanku' },
-      dm() ? el('a', { className: 'tlacitko hlavni', href: `#kanon/${encodeURIComponent(e.id)}/upravit`, textContent: 'Upravit' }) : null,
-      dm() && k?.obsidian ? el('a', { className: 'tlacitko', href: k.obsidian, textContent: 'Otevřít v Obsidianu', title: k.soubor }) : null,
+      uprav() ? el('a', { className: 'tlacitko hlavni', href: `#kanon/${encodeURIComponent(e.id)}/upravit`, textContent: 'Upravit' }) : null,
+      uprav() && k?.obsidian ? el('a', { className: 'tlacitko', href: k.obsidian, textContent: 'Otevřít v Obsidianu', title: k.soubor }) : null,
       karta.tlacitkoPoznamky(e),
       el('a', { className: 'tlacitko', href: `#kanon/mapa/${encodeURIComponent(e.id)}`, textContent: 'Na mapě' }),
       karta.tlacitkoObs(e));
@@ -336,12 +341,12 @@ export function vytvoritWiki(ctx, karta) {
     const pocetVazeb = new Set([...k.vztahy.map((v) => v.s), ...k.vazby]).size;
     const infobox = el('aside', { className: 'infobox karta' },
       portret ? el('a', { href: portret.url, target: '_blank', rel: 'noopener', className: 'infobox-portret' }, el('img', { src: portret.url, alt: e.nazev })) : k.obrazek ? el('a', { href: k.obrazek, target: '_blank', rel: 'noopener', className: 'infobox-scena' }, el('img', { src: k.obrazek, alt: e.nazev })) : null,
-      dm() ? karta.prepinace(e) : null,
+      uprav() ? karta.prepinace(e) : null,
       karta.udaje(e),
       e.typ === 'misto' ? karta.sekceMista(e) : null,
-      (dm() || e.aliases.length) ? el('h3', { textContent: 'Přezdívky' }) : null,
+      (uprav() || e.aliases.length) ? el('h3', { textContent: 'Přezdívky' }) : null,
       karta.prezdivky(e),
-      el('div', { className: 'sekce-hlava' }, el('h3', { textContent: `Vztahy a vazby (${pocetVazeb})` }), dm() ? karta.pridatVazbuUI(k) : null),
+      el('div', { className: 'sekce-hlava' }, el('h3', { textContent: `Vztahy a vazby (${pocetVazeb})` }), uprav() ? karta.pridatVazbuUI(k) : null),
       (() => {
         const radky = karta.seznamVztahu(k);
         return radky.length ? el('ul', { className: 'vztahy-karty' }, radky) : el('p', { className: 'poznamka', textContent: dm() ? 'Zatím bez vazeb.' : 'Družina o žádném vztahu neví.' });
@@ -354,7 +359,7 @@ export function vytvoritWiki(ctx, karta) {
     const hlavni = el('div', { className: 'clanek-hlavni' },
       // Hráčský kánon je celý pro družinu, oddíl Co ví družina má jen karta, která ho opravdu obsahuje.
       e.typ !== 'kanon' || (k.druzina ?? []).length ? coViDruzina(e, k) : null,
-      k.telo.trim() ? text : dm() ? el('p', { className: 'poznamka', textContent: 'Karta zatím nemá další text. Napiš ho přes Upravit.' }) : null,
+      k.telo.trim() ? text : uprav() ? el('p', { className: 'poznamka', textContent: 'Karta zatím nemá další text. Napiš ho přes Upravit.' }) : null,
       udalostiEntity(e, k));
     nahradit(obsah, el('article', { className: 'clanek' }, hlava, el('div', { className: 'clanek-telo' }, hlavni, infobox)));
   }
@@ -415,7 +420,7 @@ export function vytvoritWiki(ctx, karta) {
     /** casti: [''] přehled, ['typ', t], ['udalosti'], ['udalost', id], [id], [id, 'upravit'] */
     async ukazat(casti) {
       const [a, b] = casti;
-      const editovat = b === 'upravit' && a && s.pohled === 'dm';
+      const editovat = b === 'upravit' && a && s.pohled === 'dm' && !s.jenCteni;
       if (!editovat) await editor.zavrit();
       w.navazovani = false;
       w.pridavaniKarty = false;

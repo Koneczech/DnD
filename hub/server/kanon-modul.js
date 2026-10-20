@@ -330,6 +330,10 @@ export function nacistEntitu(text, { slozka, soubor, slozkaEntity, upraveno = nu
   for (const pole of TEXTOVA_POLE) if (pole in d) entita.pole[pole] = textovePole(d[pole]) ?? '';
   if ('doresit' in d) entita.pole.doresit = d.doresit === true;
   if ('kdo' in d) entita.pole.kdo = (Array.isArray(d.kdo) ? d.kdo : []).map(String);
+  entita.kdo = (Array.isArray(d.kdo) ? d.kdo : []).map(String).filter(Boolean);
+  // Kolik z oddílu Co ví družina je odkryté (mapa: rozložení Co družina ví).
+  const bloky = blokyDruziny(r.telo).filter((b) => b.index >= 0);
+  entita.odkryto = { zna: bloky.filter((b) => b.zna).length, celkem: bloky.length };
   entita.popis = kratkyPopis(teloBezDruziny(r.telo));
   entita.popisDruziny = kratkyPopis(teloDruziny(r.telo, entita.typ));
   return entita;
@@ -353,6 +357,7 @@ export function vPohledu(e, pohled, najit) {
     return {
       id: e.id, typ: e.typ, nazev: e.nazev, verejne: e.verejne, ikona: e.ikona, aliases: e.aliases, tags: e.tags,
       aktualni: e.aktualni, vazby: e.vazby, vztahy: e.vztahy, leziV: e.leziV, udaje: e.udaje, soubor: e.soubor,
+      kdo: e.kdo ?? [], odkryto: e.odkryto ?? { zna: 0, celkem: 0 },
       obrazek: obrazekUzlu(obrazky)?.url ?? null, portret: obrazekUzlu(obrazky)?.ucel === 'portret', obrazky,
       popis: e.popis, upraveno: e.upraveno,
     };
@@ -363,6 +368,8 @@ export function vPohledu(e, pohled, najit) {
   return {
     id: e.id, typ: e.typ, nazev: e.nazev, verejne: true, ikona: e.ikona, aliases: [], tags: [], aktualni: false,
     vazby: vztahy.map((v) => v.s), vztahy, udaje: {}, soubor: null,
+    // Hráčský kánon je celý pro družinu, včetně toho, koho se týká.
+    kdo: e.typ === 'kanon' ? e.kdo ?? [] : [], odkryto: null,
     // Kde místo leží, družina ví, když zná obě místa.
     leziV: e.leziV && najit(e.leziV)?.verejne ? e.leziV : null,
     obrazek: obrazekUzlu(obrazky)?.url ?? null, portret: obrazekUzlu(obrazky)?.ucel === 'portret', obrazky,

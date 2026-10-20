@@ -977,7 +977,8 @@ main:has(> #obrazovka-kanon:not([hidden])) { display: flex; flex-direction: colu
 .cip-ve-hre { --c: var(--akcent); }
 .kanon-nastenky { display: flex; gap: var(--m-2); align-items: center; }
 .kanon-prepinace { display: flex; gap: var(--m-1); align-items: center; }
-.kanon-prepinace button[aria-pressed="true"] { background: var(--povrch-2); border-color: var(--akcent); color: var(--akcent); }
+.kanon-prepinace label { font-size: var(--t-popisek); color: var(--text-tlumeny); }
+.kanon-prepinace select { max-width: 14rem; }
 .kanon-nastenky select { max-width: 16rem; }
 .kanon-telo { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 27rem; gap: var(--m-3); }
 .kanon-platno { position: relative; min-width: 0; min-height: 0; overflow: hidden; border: 1px solid var(--linka); border-radius: var(--zaobleni-karta); background: radial-gradient(ellipse at 50% 45%, var(--povrch-1), var(--povrch-0) 75%); }
@@ -1018,6 +1019,26 @@ main:has(> #obrazovka-kanon:not([hidden])) { display: flex; flex-direction: colu
 .uzel-udalosti:focus-visible .telo-udalosti { stroke: var(--jantar); stroke-width: 3.5; }
 .ztlumeno .uzel-udalosti { opacity: 0.3; }
 .ztlumeno .uzel-udalosti.okoli, .ztlumeno .uzel-udalosti.vybrany { opacity: 1; }
+/* Rozložení podle os (⚠ návrhy 134–141) */
+.mrizka line, .mrizka path, .mrizka circle, .mrizka rect, .mrizka text { pointer-events: none; }
+.mrizka .pas-radku { fill: var(--povrch-1); opacity: 0.55; }
+.mrizka .cara-sloupce { stroke: var(--linka); stroke-opacity: 0.5; stroke-dasharray: 2 4; }
+.mrizka .cara-osy-mapy { stroke: var(--akcent); stroke-opacity: 0.55; stroke-width: 2; }
+.mrizka .cara-ucasti { stroke: var(--t-postava); stroke-opacity: 0.45; stroke-width: 3; stroke-linecap: round; }
+.mrizka .znacka { fill: var(--povrch-0); stroke: var(--t-misto); stroke-width: 2; }
+.mrizka .znacka-postavy { stroke: var(--t-postava); fill: var(--t-postava); fill-opacity: 0.35; }
+.mrizka .trasa { fill: none; stroke: var(--akcent); stroke-width: 2.5; stroke-dasharray: 8 5; stroke-opacity: 0.8; }
+.mrizka .kruh-blizkosti { fill: none; stroke: var(--linka); stroke-width: 1.2; }
+.mrizka .kruh-blizkosti.mimo { stroke-dasharray: 4 6; }
+.mrizka text { font-family: var(--pismo); paint-order: stroke; stroke: var(--povrch-0); stroke-width: 3.5px; stroke-linejoin: round; }
+.mrizka .nadpis-radku, .mrizka .nadpis-sloupce { fill: var(--text); font-size: calc(var(--pismo-uzlu, 11.5px) * 1.1); font-weight: 600; }
+.mrizka .popisek-osy-mapy { fill: var(--akcent); font-size: var(--pismo-uzlu, 11.5px); }
+.mrizka .datum-osy-mapy { fill: var(--akcent); font-family: var(--pismo-svet); font-size: var(--pismo-uzlu, 11.5px); }
+svg.popisky-vse .uzel .popisek, .uzel.vzdy-popisek .popisek { opacity: 1; }
+.uzel.mimo-osu { opacity: 0.45; }
+.ztlumeno .uzel.mimo-osu.okoli, .ztlumeno .uzel.mimo-osu.nalez { opacity: 1; }
+.uzel.otevrene-vlakno .telo { stroke: var(--jantar); stroke-width: 3; }
+.uzel.otevrene-vlakno .kruh-oznaceni { stroke: var(--jantar); stroke-opacity: 0.8; stroke-dasharray: none; fill: none; display: inline; }
 .odznak-podmist { cursor: pointer; }
 .odznak-podmist circle { fill: var(--povrch-0); stroke: var(--t-misto); stroke-width: 1.5; }
 .odznak-podmist text { fill: var(--t-misto); font-family: var(--pismo); font-size: 8.5px; font-weight: 700; pointer-events: none; }

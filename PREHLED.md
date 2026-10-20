@@ -66,6 +66,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Místa v místech: čára Leží v na mapě, cesta Mirabar › v kartě, Místa uvnitř, výběr Leží v | ◐ |
 | | Mapa: podmísta sbalená do nadřazeného místa (odznak +N, Rozbalit místa), čára přes podmísta | ◐ |
 | | Časová osa: pořadí událostí v dni (Kalendář ↑ ↓), na mapě pás událostí s hráčským kánonem, Předtím / Potom v kartě a události, Co se tu stalo u místa | ◐ |
+| | Mapa: Rozložit podle (Síť, Čas, Čas a místa, Kdy a kde, Kdo a kdy, Blízkost, Spojenci a nepřátelé, Co družina ví, Zapomenutá vlákna, Mosty) | ◐ |
 | | Přiřazení existujících míst (kam co patří), nová místa High Forest, Triboar, Cragy, Long Road | ✓ |
 | | Čtecí verze kánonu na GitHub Pages: wiki, mapa, Pohled družiny, hledání, bez úprav; obnoví se po každém pushi | ◐ |
 | | Heslo na pohled DM ve čtecí verzi (pohled družiny otevřený, Zamknout DM) | ◐ |

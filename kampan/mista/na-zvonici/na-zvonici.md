@@ -6,6 +6,7 @@ nazev: "Na Zvonici"
 verejne: false
 ikona: 🔔
 aliases: ["Zvonice"]
+lezi_v: "[[mirabar]]"
 vazby: ["[[koudur]]", "[[ulfgar-tinbarrel]]", "[[brann-kettleborn]]", "[[tusker]]", "[[mirabar]]"]
 tags: [aktualni]
 popis_obrazu: ""

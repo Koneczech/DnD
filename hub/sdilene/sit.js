@@ -39,7 +39,8 @@ export function polomer(uzel, stupen = 0) {
 /**
  * Spočítá pozice uzlů.
  * @param {Array<{id: string, typ: string, r?: number}>} uzly
- * @param {Array<[string, string]>} hrany dvojice id
+ * @param {Array<[string, string, string?]>} hrany dvojice id; třetí prvek 'lezi_v' = místo v místě,
+ *   taková pružina je kratší a tužší, takže podmísta drží u svého místa
  * @param {{pevne?: Map<string, {x: number, y: number}>, start?: Map<string, {x: number, y: number}>, iterace?: number}} [volby]
  *   pevne: uzly, které se nehýbou (uložená nástěnka, ručně posunuté)
  *   start: výchozí pozice (předchozí rozložení), ostatní se rozmístí u kotvy nebo u sousedů
@@ -50,11 +51,11 @@ export function rozlozit(uzly, hrany, { pevne = new Map(), start = new Map(), it
   const n = uzly.length;
   const sousede = uzly.map(() => []);
   const spoje = [];
-  for (const [a, b] of hrany) {
+  for (const [a, b, druh] of hrany) {
     const ia = index.get(a);
     const ib = index.get(b);
     if (ia === undefined || ib === undefined || ia === ib) continue;
-    spoje.push([ia, ib]);
+    spoje.push([ia, ib, druh === 'lezi_v']);
     sousede[ia].push(ib);
     sousede[ib].push(ia);
   }
@@ -129,12 +130,12 @@ export function rozlozit(uzly, hrany, { pevne = new Map(), start = new Map(), it
       }
     }
     // Vazby jako pružiny
-    for (const [a, b] of spoje) {
+    for (const [a, b, pevna] of spoje) {
       const dx = x[b] - x[a];
       const dy = y[b] - y[a];
       const d = Math.sqrt(dx * dx + dy * dy) || 0.01;
-      const delka = 46 + r[a] + r[b];
-      const l = ((d - delka) / d) * 0.25 * alfa;
+      const delka = (pevna ? 22 : 46) + r[a] + r[b];
+      const l = ((d - delka) / d) * (pevna ? 0.6 : 0.25) * alfa;
       vx[a] += dx * l * 0.5;
       vy[a] += dy * l * 0.5;
       vx[b] -= dx * l * 0.5;

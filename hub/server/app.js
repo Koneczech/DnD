@@ -1139,6 +1139,7 @@ export class Hub {
       return {
         prompt: sestavPrompt({
           misto,
+          rodic: misto.leziV ? this.mista.mista.get(misto.leziV) ?? null : null,
           zaber: ZABERY[q.zaber] ? q.zaber : 'celek',
           varianta: q.varianta === 'noc' ? 'noc' : 'den',
           stav: q.stav || null,
@@ -1197,6 +1198,14 @@ export class Hub {
     if (udVazby && m === 'POST') return this.poUpraveKanonu(await k.vazbaUdalosti(udVazby[1], String((await nacistJson(req)).cil ?? ''), true));
     const udVazba = /^\/api\/kanon\/udalosti\/([A-Za-z0-9_-]{1,40})\/vazby\/([a-z0-9-]{1,80})$/.exec(p);
     if (udVazba && m === 'DELETE') return this.poUpraveKanonu(await k.vazbaUdalosti(udVazba[1], udVazba[2], false));
+    const leziV = /^\/api\/kanon\/entita\/([a-z0-9-]{1,80})\/lezi-v$/.exec(p);
+    if (leziV && m === 'PUT') {
+      const cil = (await nacistJson(req)).cil;
+      const v = await k.nastavitLeziV(leziV[1], cil ? String(cil) : null);
+      // Místa si vlastní zápis Kánonu nenačtou (hlídání ho pozná jako vlastní), proto ručně.
+      await this.mista.nacist();
+      return this.poUpraveKanonu(v);
+    }
     if (p === '/api/kanon/nastenky' && m === 'POST') return k.ulozitNastenku(null, await nacistJson(req, 512 * 1024));
     const nast = /^\/api\/kanon\/nastenky\/([a-z0-9-]{1,60})$/.exec(p);
     if (nast && m === 'GET') return k.nastenka(nast[1]);

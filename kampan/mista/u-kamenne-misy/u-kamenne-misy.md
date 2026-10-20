@@ -6,6 +6,7 @@ nazev: "U Kamenné mísy"
 verejne: false
 ikona: 🥣
 aliases: ["U Kamenné mísy (Triboar)"]
+lezi_v: "[[triboar]]"
 vazby: ["[[norra-ambleforge]]", "[[helga-hardbeard]]", "[[koudur]]", "[[hedwiga-hardbeard]]"]
 tags: [aktualni]
 popis_obrazu: ""

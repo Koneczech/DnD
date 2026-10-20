@@ -6,6 +6,7 @@ nazev: "U Roztaveného groše"
 verejne: false
 ikona: 🍺
 aliases: []
+lezi_v: "[[mirabar]]"
 vazby: ["[[leta]]", "[[ordwin-sohla]]", "[[halvar-grimsdal]]", "[[mirabar]]"]
 tags: []
 popis_obrazu: ""

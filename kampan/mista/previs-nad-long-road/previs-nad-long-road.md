@@ -6,6 +6,7 @@ nazev: "Převis nad Long Road"
 verejne: false
 ikona: 🪨
 aliases: ["převis"]
+lezi_v: "[[long-road-mirabar-longsaddle]]"
 vazby: ["[[cesta]]", "[[tabor-kruhu]]", "[[s01]]"]
 tags: []
 popis_obrazu: ""

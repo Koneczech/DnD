@@ -1,7 +1,7 @@
 // Ovládací panel DM Hubu. Bez build kroku, čistý JavaScript.
 import { Harptos, MESICE, SVATKY, dnyText, zbyvaText } from '/sdilene/harptos.js';
 import { odebirat } from '/sdilene/zive.js';
-import { vytvoritKanon } from '/panel/kanon.js';
+import { vytvoritKanon, stromMist } from '/panel/kanon.js';
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -2054,14 +2054,20 @@ function vykresliMista() {
   // Na dlaždicích jsou jen místa se scénou pro OBS. Místa z kánonu bez ilustrací (komora, sídla, štoly)
   // by tu jen překážela; najdeš je v modulu Místa, kde jim dílna může ilustraci přidat.
   const naStul = seznam.filter((m) => m.id === zive?.id || m.id === vybrane?.id || (m.ilustrace ?? []).some((il) => il.ucel === 'scena'));
+  // Podmísta pod svým místem (⚠ bod 116); když nadřazené místo na dlaždicích není, je jeho jméno před názvem.
+  const podleIdMist = new Map(seznam.map((m) => [m.id, m]));
   $('#stul-mista').replaceChildren(
-    ...naStul.map((m) => {
+    ...stromMist(naStul).map(({ m, hloubka }) => {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'polozka-mista';
+      b.style.setProperty('--hloubka', hloubka);
+      if (hloubka) b.classList.add('podmisto');
       b.setAttribute('aria-pressed', String(m.id === vybrane?.id));
       if (m.id === zive?.id) b.classList.add('v-obs');
-      b.append(Object.assign(document.createElement('span'), { textContent: m.nazev }));
+      const rodic = !hloubka && m.leziV ? podleIdMist.get(m.leziV) : null;
+      b.append(Object.assign(document.createElement('span'), { textContent: m.nazev }, rodic ? { title: `${m.nazev} leží v ${rodic.nazev}` } : {}));
+      if (rodic) b.firstChild.prepend(Object.assign(document.createElement('span'), { className: 'rodic-mista', textContent: `${rodic.nazev} › ` }));
       if (m.id === zive?.id) b.append(Object.assign(document.createElement('span'), { className: 'zive', textContent: 'Živě' }));
       // Místo, které by teď v OBS dalo černo, je označené už na dlaždici (audit S6).
       if (!viditelneIlustrace(m, volby).length) {
@@ -2095,14 +2101,31 @@ function vykresliMista() {
   const serazene = [...vsechny.filter((il) => !il.skryta), ...vsechny.filter((il) => il.skryta)];
   $('#stul-ilustrace').replaceChildren(...serazene.map((il) => kartaIlustrace(vybrane, il, s, jeZive, false)));
 
+  // Strom míst (⚠ bod 116): podmísta jsou vidět jen ve větvi vybraného místa, jinak by seznam
+  // přerostl obrazovku (rozhodnutí 66). Sbalené místo ukazuje, kolik míst v něm leží.
+  const podleIdM = new Map(seznam.map((x) => [x.id, x]));
+  const rozbalene = new Set();
+  for (let x = podleIdM.get(vybraneMisto); x && !rozbalene.has(x.id); x = podleIdM.get(x.leziV)) rozbalene.add(x.id);
+  const pocetUvnitr = (id) => seznam.filter((x) => x.leziV === id).length;
+  const strom = stromMist(seznam);
+  const viditelne = strom.filter(({ m }) => {
+    for (let r = podleIdM.get(m.leziV), k = 0; r && k < 20; r = podleIdM.get(r.leziV), k++) if (!rozbalene.has(r.id)) return false;
+    return true;
+  });
   $('#seznam-mist').replaceChildren(
-    ...seznam.map((m) => {
+    ...viditelne.map(({ m, hloubka }) => {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'polozka-mista';
+      b.style.setProperty('--hloubka', hloubka);
+      if (hloubka) b.classList.add('podmisto');
       b.setAttribute('aria-pressed', String(m.id === vybraneMisto));
       const odkryte = m.ilustrace.filter((il) => !il.skryta && il.ucel === 'scena');
+      const uvnitr = pocetUvnitr(m.id);
       b.append(Object.assign(document.createElement('span'), { textContent: m.nazev }));
+      if (uvnitr && !rozbalene.has(m.id)) {
+        b.firstChild.append(Object.assign(document.createElement('small'), { className: 'pocet-uvnitr', textContent: ` ▸ ${uvnitr}`, title: `Leží v něm ${uvnitr} míst. Klikni a ukážou se.` }));
+      }
       const pocet = Object.assign(document.createElement('span'), { className: 'pocet-ilustraci', textContent: `${odkryte.length} / ${m.ilustrace.length - odkryte.length}` });
       pocet.title = `${odkryte.length} odkrytých, ${m.ilustrace.length - odkryte.length} skrytých`;
       b.append(pocet);
@@ -2121,6 +2144,7 @@ function vykresliMista() {
   $('#misto-detail').hidden = !m;
   if (!m) return;
   $('#misto-nazev').textContent = m.nazev;
+  vykresliLeziV(m, seznam);
   const vObs = s?.misto?.id === m.id;
   $('#misto-ukazat').textContent = vObs ? 'Znovu přepnout OBS na místo' : 'Ukázat v OBS';
   $('#misto-souhrn').textContent = m.ilustrace.length
@@ -2313,6 +2337,56 @@ $('#misto-popis-ulozit').addEventListener('click', async () => {
 });
 $('#misto-do-dilny').addEventListener('click', () => (dilna.cil = `misto:${vybraneMisto}`));
 
+/** Kde místo leží (⚠ bod 116): cesta nad názvem a výběr Leží v (nabízí jen místa bez kruhu). */
+function vykresliLeziV(m, seznam) {
+  const podleId = new Map(seznam.map((x) => [x.id, x]));
+  const predci = [];
+  for (let r = podleId.get(m.leziV); r && predci.length < 20 && !predci.includes(r) && r.id !== m.id; r = podleId.get(r.leziV)) predci.unshift(r);
+  const cesta = $('#misto-cesta');
+  cesta.hidden = !predci.length;
+  cesta.replaceChildren(
+    ...predci.flatMap((r, i) => {
+      const b = Object.assign(document.createElement('button'), { type: 'button', className: 'odkaz', textContent: r.nazev });
+      b.addEventListener('click', () => {
+        vybraneMisto = r.id;
+        vykresliMista();
+      });
+      return i ? [' › ', b] : [b];
+    }),
+    ' ›',
+  );
+  const vyber = $('#misto-lezi-v');
+  if (document.activeElement === vyber) return;
+  const potomci = new Set([m.id]);
+  for (let pridano = true; pridano;) {
+    pridano = false;
+    for (const x of seznam) {
+      if (!x.leziV || !potomci.has(x.leziV) || potomci.has(x.id)) continue;
+      potomci.add(x.id);
+      pridano = true;
+    }
+  }
+  vyber.replaceChildren(
+    new Option('— nikde (samostatné místo)', ''),
+    ...stromMist(seznam.filter((x) => !potomci.has(x.id))).map(({ m: x, hloubka }) => new Option(`${'\u00a0\u00a0'.repeat(hloubka)}${x.nazev}`, x.id)),
+  );
+  vyber.value = m.leziV ?? '';
+}
+
+$('#misto-lezi-v').addEventListener('change', async (e) => {
+  const id = vybraneMisto;
+  const cil = e.target.value || null;
+  try {
+    await api(`/api/kanon/entita/${encodeURIComponent(id)}/lezi-v`, { metoda: 'PUT', telo: { cil } });
+    const m = stav.prehled?.mista?.mista?.find((x) => x.id === id);
+    const r = cil ? stav.prehled?.mista?.mista?.find((x) => x.id === cil) : null;
+    toast(r ? `${m?.nazev ?? id} leží v ${r.nazev}.` : `${m?.nazev ?? id} je samostatné místo.`);
+  } catch (chyba) {
+    toast(chyba.message, { chyba: true });
+    vykresliMista();
+  }
+});
+
 /* ---------- Ilustrační dílna ---------- */
 
 const dilna = { cil: null, obrazek: null, posun: 0.5 };
@@ -2331,7 +2405,7 @@ function vykresliDilnu() {
   const puvodni = dilna.cil ?? vyber.value;
   const skupinaM = document.createElement('optgroup');
   skupinaM.label = 'Místa';
-  skupinaM.append(...mista.map((m) => new Option(m.nazev, `misto:${m.id}`)));
+  skupinaM.append(...stromMist(mista).map(({ m, hloubka }) => new Option(`${'\u00a0\u00a0'.repeat(hloubka)}${m.nazev}`, `misto:${m.id}`)));
   const skupinaO = document.createElement('optgroup');
   skupinaO.label = 'Obchody (obrázek interiéru)';
   skupinaO.append(...obchody.map((o) => new Option(`${o.nazev}${o.mesto ? `, ${o.mesto}` : ''}`, `obchod:${o.id}`)));
@@ -3705,7 +3779,7 @@ function oznacUlozeno(pole) {
 }
 window.oznacUlozeno = oznacUlozeno;
 
-/* Místa: záložky v detailu místa (Ilustrace · Světla · Zvuk · Popis pro dílnu), rozhodnutí 65 */
+/* Místa: záložky v detailu místa (Ilustrace · Světla · Zvuk · Popis a poloha), rozhodnutí 65 */
 stav.mistoZalozka = 'ilustrace';
 function ukazMistoZalozku(z) {
   stav.mistoZalozka = z;

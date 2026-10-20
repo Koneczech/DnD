@@ -6,6 +6,7 @@ nazev: "Jeskyně u tábora lupičů"
 verejne: false
 ikona: 🕳️
 aliases: ["jeskyně"]
+lezi_v: "[[tabor-lupicu]]"
 vazby: ["[[tabor-lupicu]]"]
 tags: []
 # Anglický popis vzhledu místa pro prompty dílny (doplní DM). Dílna ho vloží do promptu.

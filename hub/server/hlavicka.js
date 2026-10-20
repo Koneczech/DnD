@@ -1,6 +1,7 @@
 // Přesné úpravy hlavičky karty kánonu (Blok 3, rozhodnutí 69).
 //
-// Hub smí na kartě měnit jen vazby, vztahy, přezdívky, štítek `aktualni` a `verejne`. Zbytek
+// Hub smí na kartě měnit jen vazby, vztahy, přezdívky, štítek `aktualni`, `verejne` a u místa
+// `lezi_v` (nadřazené místo). Zbytek
 // souboru zůstane bajt po bajtu, jak ho DM napsal v Obsidianu: přepíše se jen text hodnoty
 // měněného klíče, ne celá hlavička. `git diff` pak ukáže jediný změněný řádek (u vztahů jen
 // změněné řádky). Celkové přeformátování přes YAML.stringify by změnilo mezery v [ ] u všech
@@ -12,7 +13,7 @@ const OTEVRENI = /^(﻿)?---\r?\n/;
 /** Pořadí klíčů, podle kterého se chybějící klíč vloží na rozumné místo (jako v šablonách). */
 const PORADI = [
   'schema', 'id', 'typ', 'nazev', 'verejne', 'ikona', 'hrac', 'druh', 'povolani', 'stav', 'oblast',
-  'zaznamenano', 'sezeni', 'kdo', 'doresit', 'aliases', 'vazby', 'vztahy', 'tags', 'ilustrace', 'zdroj',
+  'zaznamenano', 'sezeni', 'kdo', 'doresit', 'aliases', 'lezi_v', 'vazby', 'vztahy', 'tags', 'ilustrace', 'zdroj',
 ];
 
 const JEDNODUCHY_STITEK = /^[\p{L}\p{N}_-]+$/u;
@@ -48,6 +49,7 @@ function vykreslit(klic, hodnota, puvodniUvozovky = false) {
   if (klic === 'tags') return `[${hodnota.map((t) => (JEDNODUCHY_STITEK.test(t) ? t : JSON.stringify(t))).join(', ')}]`;
   if (klic === 'aliases') return `[${hodnota.map((a) => JSON.stringify(a)).join(', ')}]`;
   if (klic === 'vazby') return `[${hodnota.map((id) => JSON.stringify(odkaz(id))).join(', ')}]`;
+  if (klic === 'lezi_v') return JSON.stringify(odkaz(hodnota));
   throw new Error(`Klíč ${klic} se takto zapsat nedá`);
 }
 
@@ -117,7 +119,10 @@ function vlozitRadek(yaml, pozice, radek) {
 function nahraditHodnotu(yaml, dokument, klic, text) {
   const par = najitPar(dokument, klic);
   if (!par) return vlozitRadek(yaml, mistoVlozeni(yaml, dokument, klic), `${klic}: ${text}`);
-  if (!par.value) {
+  // „klic:“ bez hodnoty, případně jen s komentářem („lezi_v: # nápověda“ ze šablony): YAML tam
+  // vrátí prázdný skalár, jehož rozsah začíná až u komentáře.
+  const prazdna = YAML.isScalar(par.value) && par.value.value === null && par.value.range[0] === par.value.range[1];
+  if (!par.value || prazdna) {
     // „klic:“ bez hodnoty
     const konec = par.key.range[1];
     const dvojtecka = yaml.indexOf(':', konec);
@@ -134,6 +139,16 @@ function nahraditHodnotu(yaml, dokument, klic, text) {
     return `${yaml.slice(0, dvojtecka + 1)} ${text}${komentar}${yaml.slice(konec)}`;
   }
   return `${yaml.slice(0, od)}${text}${yaml.slice(do_)}`;
+}
+
+/** Odebere jednoduchý klíč (hodnota na jednom řádku) i s jeho řádkem. */
+function odebratKlic(yaml, dokument, klic) {
+  const par = najitPar(dokument, klic);
+  if (!par) return yaml;
+  const od = yaml.lastIndexOf('\n', par.key.range[0] - 1) + 1;
+  const konecHodnoty = par.value?.range?.[1] ?? par.key.range[1];
+  const konecRadku = yaml.indexOf('\n', Math.max(od, konecHodnoty - 1));
+  return `${yaml.slice(0, od)}${konecRadku === -1 ? '' : yaml.slice(konecRadku + 1)}`;
 }
 
 /** Nahradí seznam vztahů. Nezměněné položky si nechají přesně svůj původní text. */
@@ -232,8 +247,8 @@ export function nahraditTelo(text, telo) {
 /**
  * Upraví vybrané klíče hlavičky a zbytek souboru nechá beze změny.
  * @param {string} text celý soubor karty
- * @param {{verejne?: boolean, tags?: string[], aliases?: string[], vazby?: string[], vztahy?: Array<{s:string, popis:string, postoj?:number|null, verejne?:boolean}>}} zmeny
- *   vazby a vztahy[].s jsou id bez [[ ]]
+ * @param {{verejne?: boolean, tags?: string[], aliases?: string[], vazby?: string[], vztahy?: Array<{s:string, popis:string, postoj?:number|null, verejne?:boolean}>, lezi_v?: string|null}} zmeny
+ *   vazby, vztahy[].s a lezi_v jsou id bez [[ ]]; lezi_v: null klíč odebere
  */
 export function upravitKartu(text, zmeny) {
   const { pred, yaml: puvodniYaml, za } = rozdelit(text);
@@ -247,6 +262,9 @@ export function upravitKartu(text, zmeny) {
   }
   if (zmeny.ilustrace) yaml = pridatIlustraci(yaml, parovat(yaml), zmeny.ilustrace);
   if ('vztahy' in zmeny) yaml = nahraditVztahy(yaml, parovat(yaml), zmeny.vztahy);
+  if ('lezi_v' in zmeny) {
+    yaml = zmeny.lezi_v ? nahraditHodnotu(yaml, parovat(yaml), 'lezi_v', vykreslit('lezi_v', zmeny.lezi_v)) : odebratKlic(yaml, parovat(yaml), 'lezi_v');
+  }
   parovat(yaml); // pojistka: výsledek musí jít přečíst
   return `${pred}${yaml}${za}`;
 }

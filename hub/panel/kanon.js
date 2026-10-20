@@ -3,7 +3,7 @@
 // Kreslí se ze souborů v kampan/ přes /api/kanon, bez knihoven a bez internetu.
 import { rozlozit, polomer, hledat, proHledani } from '/sdilene/sit.js';
 import { escapovat } from '/sdilene/markdown.js';
-import { $, TYPY, barvaTypu, barvaPostoje, postojText, el, nahradit, svg, vyrezHlavy, oriznoutPortret, obrazekEntity, stitekTypu, STAVY, castiKarty } from '/panel/kanon-spolecne.js';
+import { $, TYPY, barvaTypu, barvaPostoje, postojText, el, nahradit, svg, vyrezHlavy, oriznoutPortret, obrazekEntity, stitekTypu, STAVY, castiKarty, stromMist } from '/panel/kanon-spolecne.js';
 import { vytvoritWiki } from '/panel/kanon-wiki.js';
 
 export { TYPY };
@@ -27,6 +27,9 @@ function ulozitVolby(v) {
 /**
  * @param {{api: Function, toast: Function, otevritPoznamku: (text?: string) => void}} zavislosti
  */
+// Strom míst je ve společném modulu; panel (app.js) ho bere odsud.
+export { stromMist };
+
 export function vytvoritKanon({ api, toast, otevritPoznamku }) {
   const ulozene = nacistVolby();
   const s = {
@@ -144,12 +147,15 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
     else ctx.prekreslit();
   }
 
-  /** Neuspořádané dvojice entit, mezi kterými vede vazba nebo vztah (jen existující cíle). */
+  /** Je `a` místo, které leží v `b` (nebo naopak)? Taková dvojice má na mapě čáru Leží v (⚠ bod 116). */
+  const jeLeziV = (a, b) => s.podleId.get(a)?.leziV === b || s.podleId.get(b)?.leziV === a;
+
+  /** Neuspořádané dvojice entit, mezi kterými vede vazba, vztah nebo Leží v (jen existující cíle). */
   function vsechnyDvojice() {
     const videno = new Set();
     const vysledek = [];
     for (const e of s.data?.entity ?? []) {
-      for (const cil of new Set([...e.vazby, ...e.vztahy.map((v) => v.s)])) {
+      for (const cil of new Set([...(e.leziV ? [e.leziV] : []), ...e.vazby, ...e.vztahy.map((v) => v.s)])) {
         if (!s.podleId.has(cil) || cil === e.id) continue;
         const klic = e.id < cil ? `${e.id} ${cil}` : `${cil} ${e.id}`;
         if (videno.has(klic)) continue;
@@ -167,7 +173,7 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
     if (!s.data) return;
     const uzly = s.data.entity.filter(viditelny).map((e) => ({ id: e.id, typ: e.typ, obrazek: e.obrazek, r: polomer(e, e.stupen) }));
     const ids = new Set(uzly.map((u) => u.id));
-    const hrany = vsechnyDvojice().filter(([a, b]) => ids.has(a) && ids.has(b));
+    const hrany = vsechnyDvojice().filter(([a, b]) => ids.has(a) && ids.has(b)).map(([a, b]) => (jeLeziV(a, b) ? [a, b, 'lezi_v'] : [a, b]));
     const pevne = new Map([...s.pevne].filter(([id]) => ids.has(id)));
     const start = new Map([...s.pozice].filter(([id]) => ids.has(id)));
     s.pozice = rozlozit(uzly, hrany, { pevne, start });
@@ -194,6 +200,12 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
     }
     for (const [a, b] of vsechnyDvojice()) {
       if (!s.pozice.has(a) || !s.pozice.has(b)) continue;
+      // Místo v místě: vlastní čára (ta nahradí i holou vazbu mezi nimi), vztahy zůstávají.
+      if (jeLeziV(a, b)) {
+        const dite = s.podleId.get(a)?.leziV === b ? a : b;
+        vysledek.push({ a: dite, b: dite === a ? b : a, vztah: null, leziV: true, obousmerny: false });
+        continue;
+      }
       if (smery.has(`${a}>${b}`) || smery.has(`${b}>${a}`)) continue;
       vysledek.push({ a, b, vztah: null, obousmerny: false });
     }
@@ -217,6 +229,7 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
   function popisHrany(h) {
     const a = s.podleId.get(h.a)?.nazev ?? h.a;
     const b = s.podleId.get(h.b)?.nazev ?? h.b;
+    if (h.leziV) return `${a} leží v ${b}`;
     if (!h.vztah) return `${a} — ${b} (vazba bez popisu)`;
     const v = h.vztah;
     return `${a} → ${b}: ${v.popis}${Number.isInteger(v.postoj) ? ` · postoj ${postojText(v.postoj)}` : ''}${s.pohled === 'dm' ? (v.verejne ? ' · družina zná' : ' · družina nezná') : ''}`;
@@ -227,7 +240,7 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
     const hrany = hranyKVykresleni();
     gHrany.replaceChildren(
       ...hrany.map((h) => {
-        const g = svg('g', { class: `hrana${h.vztah ? ' vztah' : ''}${h.vztah && !Number.isInteger(h.vztah.postoj) ? ' bez-postoje' : ''}`, 'data-a': h.a, 'data-b': h.b });
+        const g = svg('g', { class: `hrana${h.leziV ? ' lezi-v' : ''}${h.vztah ? ' vztah' : ''}${h.vztah && !Number.isInteger(h.vztah.postoj) ? ' bez-postoje' : ''}`, 'data-a': h.a, 'data-b': h.b });
         const d = cestaHrany(h);
         const cara = svg('path', { d, class: 'cara' });
         const barva = h.vztah ? barvaPostoje(h.vztah.postoj) : null;
@@ -713,6 +726,7 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
     if (e.udaje?.stav) stitky.push(el('span', { className: `stitek-stavu ${e.udaje.stav}`, textContent: STAVY[e.udaje.stav] ?? e.udaje.stav }));
     const casti = [
       el('button', { type: 'button', className: 'zpet', textContent: '← Přehled', onclick: () => vybrat(null) }),
+      karta.cestaMista(e),
       el('div', { className: 'hlava-karty' }, obrazekEntity(e), el('div', {}, el('h2', { className: 'karta-nazev', textContent: e.nazev }), el('div', { className: 'stitky-karty' }, stitky))),
       e.popis ? el('p', { className: 'popis-karty', textContent: e.popis }) : null,
       el('div', { className: 'akce-karty' },
@@ -726,6 +740,7 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
       nahradit(kartaEl, ...casti);
       return;
     }
+    if (e.typ === 'misto') casti.push(...karta.sekceMista(e));
     const pocet = new Set([...k.vztahy.map((v) => v.s), ...k.vazby]).size;
     casti.push(el('div', { className: 'sekce-hlava' }, el('h3', { textContent: `Vztahy a vazby (${pocet})` }), dm ? karta.pridatVazbuUI(k) : null));
     const radky = karta.seznamVztahu(k);

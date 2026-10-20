@@ -320,7 +320,9 @@ export function vytvoritWiki(ctx, karta) {
       el('a', { className: 'tlacitko', href: `#kanon/mapa/${encodeURIComponent(e.id)}`, textContent: 'Na mapě' }),
       karta.tlacitkoObs(e));
     const hlava = el('div', { className: 'wiki-hlava clanek-hlava' },
-      el('nav', { className: 'drobecky' }, el('a', { href: '#kanon', textContent: 'Kánon' }), ' › ', el('a', { href: `#kanon/typ/${e.typ}`, textContent: TYPY[e.typ]?.mn ?? e.typ }), ' › '),
+      el('nav', { className: 'drobecky' }, el('a', { href: '#kanon', textContent: 'Kánon' }), ' › ', el('a', { href: `#kanon/typ/${e.typ}`, textContent: TYPY[e.typ]?.mn ?? e.typ }), ' › ',
+        // Místo v místě: Kánon › Místa › Mirabar › Chudinská čtvrť.
+        e.typ === 'misto' ? karta.predci(e.id).flatMap((m) => [karta.odkazNaEntitu(m.id), ' › ']) : null),
       el('div', { className: 'radek-hlavy' }, el('h2', { className: 'wiki-nadpis', textContent: `${e.ikona && !e.obrazek ? `${e.ikona} ` : ''}${e.nazev}` }), el('div', { className: 'stitky-karty' }, stitky)),
       e.aliases.length ? el('p', { className: 'aliasy', textContent: `Také: ${e.aliases.join(', ')}` }) : null,
       akce);
@@ -336,6 +338,7 @@ export function vytvoritWiki(ctx, karta) {
       portret ? el('a', { href: portret.url, target: '_blank', rel: 'noopener', className: 'infobox-portret' }, el('img', { src: portret.url, alt: e.nazev })) : k.obrazek ? el('a', { href: k.obrazek, target: '_blank', rel: 'noopener', className: 'infobox-scena' }, el('img', { src: k.obrazek, alt: e.nazev })) : null,
       dm() ? karta.prepinace(e) : null,
       karta.udaje(e),
+      e.typ === 'misto' ? karta.sekceMista(e) : null,
       (dm() || e.aliases.length) ? el('h3', { textContent: 'Přezdívky' }) : null,
       karta.prezdivky(e),
       el('div', { className: 'sekce-hlava' }, el('h3', { textContent: `Vztahy a vazby (${pocetVazeb})` }), dm() ? karta.pridatVazbuUI(k) : null),

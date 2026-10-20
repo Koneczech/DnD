@@ -6,6 +6,7 @@ nazev: "U Zlomeného sedla"
 verejne: false
 ikona: 🐴
 aliases: []
+lezi_v: "[[longsaddle]]"
 vazby: ["[[longsaddle]]", "[[ilma-dunwarova]]"]
 tags: []
 popis_obrazu: ""

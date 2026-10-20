@@ -129,6 +129,28 @@ export function stitekTypu(typ) {
 }
 
 /**
+ * Místa jako strom pro výběry: nadřazené místo, pod ním jeho podmísta (podle názvu).
+ * Místo, jehož rodič v seznamu není, je nahoře.
+ * @param {Array<{id: string, nazev: string, leziV?: string|null}>} mista
+ * @returns {Array<{m: object, hloubka: number}>}
+ */
+export function stromMist(mista) {
+  const ids = new Set(mista.map((m) => m.id));
+  const podle = (a, b) => a.nazev.localeCompare(b.nazev, 'cs');
+  const vysledek = [];
+  const videno = new Set();
+  const pridat = (m, hloubka) => {
+    if (videno.has(m.id)) return;
+    videno.add(m.id);
+    vysledek.push({ m, hloubka });
+    for (const d of mista.filter((x) => x.leziV === m.id).sort(podle)) pridat(d, hloubka + 1);
+  };
+  for (const m of mista.filter((x) => !x.leziV || !ids.has(x.leziV)).sort(podle)) pridat(m, 0);
+  for (const m of mista) if (!videno.has(m.id)) pridat(m, 0); // rozbitý kruh v datech: aspoň se ukáže
+  return vysledek;
+}
+
+/**
  * Části karty, které sdílí wiki i karta na mapě.
  * @param {{s: object, api: Function, toast: Function, otevritPoznamku: Function, prekreslit: () => void, otevrit: (id: string) => void}} ctx
  */
@@ -338,9 +360,61 @@ export function castiKarty(ctx) {
     );
   }
 
-  /** Kdo na entitu odkazuje, a nemá ji sama ve vazbách. */
+  /** Místa, která leží přímo v místě `id`, podle názvu. */
+  const podmista = (id) => (s.data?.entity ?? []).filter((e) => e.leziV === id).sort((a, b) => a.nazev.localeCompare(b.nazev, 'cs'));
+
+  /** Cesta od nejvyššího místa k místu `id` (bez něj): Mirabar › Chudinská čtvrť. */
+  function predci(id) {
+    const cesta = [];
+    for (let m = s.podleId.get(s.podleId.get(id)?.leziV); m && cesta.length < 20 && !cesta.includes(m) && m.id !== id; m = s.podleId.get(m.leziV)) cesta.unshift(m);
+    return cesta;
+  }
+
+  /** Kde místo leží, jako proklikávací cesta (karta na mapě); bez nadřazeného místa nic. */
+  function cestaMista(e) {
+    const cesta = e.typ === 'misto' ? predci(e.id) : [];
+    if (!cesta.length) return null;
+    return el('nav', { className: 'cesta-mista', 'aria-label': 'Kde místo leží' }, cesta.flatMap((m) => [odkazNaEntitu(m.id), el('span', { className: 'oddelovac', textContent: '›', 'aria-hidden': 'true' })]));
+  }
+
+  /**
+   * Místo v místě (⚠ bod 116): výběr Leží v (jen DM) a místa, která v něm leží.
+   * Nabízí jen místa, ve kterých by nevznikl kruh (ne místo samo ani jeho podmísta).
+   */
+  function sekceMista(e) {
+    const dm = s.pohled === 'dm';
+    const deti = podmista(e.id);
+    const vysledek = [];
+    if (dm) {
+      const potomci = new Set([e.id]);
+      for (let pridano = true; pridano;) {
+        pridano = false;
+        for (const x of s.data.entity) {
+          if (!x.leziV || !potomci.has(x.leziV) || potomci.has(x.id)) continue;
+          potomci.add(x.id);
+          pridano = true;
+        }
+      }
+      const mista = s.data.entity.filter((x) => x.typ === 'misto' && !potomci.has(x.id));
+      const vyber = el('select', { 'aria-label': 'Místo, ve kterém leží' }, new Option('— nikde (samostatné místo)', ''), ...stromMist(mista).map(({ m, hloubka }) => new Option(`${'\u00a0\u00a0'.repeat(hloubka)}${m.nazev}`, m.id)));
+      vyber.value = e.leziV ?? '';
+      vyber.addEventListener('change', () => {
+        const cil = vyber.value || null;
+        const nazev = cil ? s.podleId.get(cil)?.nazev ?? cil : null;
+        upravit(`/api/kanon/entita/${encodeURIComponent(e.id)}/lezi-v`, 'PUT', { cil }, cil ? `${e.nazev} leží v ${nazev}.` : `${e.nazev} je samostatné místo.`);
+      });
+      vysledek.push(el('label', { className: 'lezi-v', title: 'Místo, ve kterém nebo u kterého toto místo leží (hospoda ve městě, tábor u osady). Mapa ho drží u něj, Místa ho řadí pod něj.' }, el('span', { textContent: 'Leží v' }), vyber));
+    }
+    if (deti.length) {
+      vysledek.push(el('h3', { textContent: `Místa uvnitř (${deti.length})` }));
+      vysledek.push(el('ul', { className: 'podmista' }, deti.map((d) => el('li', {}, odkazNaEntitu(d.id), podmista(d.id).length ? el('small', { textContent: ` +${podmista(d.id).length}` }) : null))));
+    }
+    return vysledek;
+  }
+
+  /** Kdo na entitu odkazuje, a nemá ji sama ve vazbách. Místa uvnitř místa ukazuje sekceMista. */
   function zpetneOdkazy(k, nazev) {
-    const zpetne = k.odkazujici.filter((o) => !k.vazby.includes(o.id));
+    const zpetne = k.odkazujici.filter((o) => !k.vazby.includes(o.id) && s.podleId.get(o.id)?.leziV !== k.id);
     if (!zpetne.length) return null;
     return [
       el('h3', { textContent: `Odkazují sem (${zpetne.length})` }),
@@ -368,5 +442,5 @@ export function castiKarty(ctx) {
 
   const tlacitkoPoznamky = (e) => (s.pohled === 'dm' ? el('button', { type: 'button', textContent: 'Poznámka', title: `Poznámka F2 s odkazem [[${e.id}]]`, onclick: () => otevritPoznamku(`[[${e.id}]] `) }) : null);
 
-  return { hlasitZapis, upravit, odkazNaEntitu, prepinac, prepinace, udaje, seznamVztahu, pridatVazbuUI, prezdivky, obrazkyKarty, zpetneOdkazy, tlacitkoObs, tlacitkoPoznamky, vyber };
+  return { hlasitZapis, upravit, odkazNaEntitu, prepinac, prepinace, udaje, seznamVztahu, pridatVazbuUI, prezdivky, obrazkyKarty, zpetneOdkazy, tlacitkoObs, tlacitkoPoznamky, vyber, predci, podmista, cestaMista, sekceMista };
 }

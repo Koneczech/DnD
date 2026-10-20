@@ -6,6 +6,7 @@ nazev: "Sídlo Treestoneů"
 verejne: false
 ikona: 🏚️
 aliases: []
+lezi_v: "[[mirabar]]"
 vazby: ["[[tusker]]", "[[dorn-treestone]]", "[[vendla-treestone]]", "[[rurik-tarn]]", "[[sidlo-hardbeardu]]", "[[mirabar]]"]
 tags: []
 popis_obrazu: ""

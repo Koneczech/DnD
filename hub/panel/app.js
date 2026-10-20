@@ -1533,7 +1533,21 @@ function textData(u) {
   return u.konec ? Harptos.formatRozsah(u.datum, u.konec) : Harptos.format(u.datum);
 }
 
-function radekUdalosti(u, dnes) {
+/** Pořadí události v rámci dne: {vDni, pocet} (víc událostí téhož dne, podle pořadí zápisu). */
+function poradiVDni(u, udalosti) {
+  const den = udalosti.filter((x) => Harptos.absolutni(x.datum) === Harptos.absolutni(u.datum));
+  return { vDni: den.indexOf(u) + 1, pocet: den.length };
+}
+
+async function posunoutVDni(u, smer) {
+  try {
+    await api(`/api/kalendar/udalosti/${encodeURIComponent(u.id)}/poradi`, { metoda: 'POST', telo: { smer } });
+  } catch (chyba) {
+    toast(chyba.message, { chyba: true });
+  }
+}
+
+function radekUdalosti(u, dnes, udalosti = []) {
   const tr = document.createElement('tr');
   const z = Harptos.absolutni(u.datum);
   const k = u.konec ? Harptos.absolutni(u.konec) : z;
@@ -1541,6 +1555,11 @@ function radekUdalosti(u, dnes) {
   if (d !== null && d >= z && d <= k) tr.dataset.dnes = 'true';
   const datum = document.createElement('td');
   datum.textContent = textData(u);
+  const { vDni, pocet } = poradiVDni(u, udalosti);
+  if (pocet > 1) {
+    const poradi = Object.assign(document.createElement('span'), { className: 'poradi-v-dni', textContent: ` · ${vDni}. z ${pocet}`, title: `${vDni}. událost toho dne z ${pocet}` });
+    datum.append(poradi);
+  }
   if (d !== null && z > d) {
     const za = document.createElement('small');
     za.textContent = zbyvaText(z - d);
@@ -1573,6 +1592,15 @@ function radekUdalosti(u, dnes) {
       toast(chyba.message, { chyba: true });
     }
   });
+  if (pocet > 1) {
+    const driv = Object.assign(document.createElement('button'), { type: 'button', textContent: '↑', className: 'mala', title: 'Dřív v tom dni', disabled: vDni === 1 });
+    driv.setAttribute('aria-label', `${u.text}: dřív v tom dni`);
+    driv.addEventListener('click', () => posunoutVDni(u, -1));
+    const pozdeji = Object.assign(document.createElement('button'), { type: 'button', textContent: '↓', className: 'mala', title: 'Později v tom dni', disabled: vDni === pocet });
+    pozdeji.setAttribute('aria-label', `${u.text}: později v tom dni`);
+    pozdeji.addEventListener('click', () => posunoutVDni(u, 1));
+    akce.append(driv, pozdeji);
+  }
   akce.append(upravit, smazat);
   tr.append(datum, text, obs, akce);
   return tr;
@@ -1597,10 +1625,15 @@ function vykresliKalendar() {
   const d = dnes ? Harptos.absolutni(dnes) : null;
   const konec = (u) => Harptos.absolutni(u.konec ?? u.datum);
   const nadchazejici = k.udalosti.filter((u) => d === null || konec(u) >= d);
-  const probehle = k.udalosti.filter((u) => d !== null && konec(u) < d).reverse();
-  $('#tabulka-udalosti tbody').replaceChildren(...nadchazejici.map((u) => radekUdalosti(u, dnes)));
+  // Proběhlé: nejnovější dny nahoře, v rámci dne ale v pořadí, jak šly po sobě.
+  const probehle = k.udalosti
+    .map((u, i) => ({ u, i }))
+    .filter(({ u }) => d !== null && konec(u) < d)
+    .sort((a, b) => Harptos.absolutni(b.u.datum) - Harptos.absolutni(a.u.datum) || a.i - b.i)
+    .map(({ u }) => u);
+  $('#tabulka-udalosti tbody').replaceChildren(...nadchazejici.map((u) => radekUdalosti(u, dnes, k.udalosti)));
   $('#tabulka-udalosti').hidden = nadchazejici.length === 0;
-  $('#tabulka-probehlych tbody').replaceChildren(...probehle.map((u) => radekUdalosti(u, dnes)));
+  $('#tabulka-probehlych tbody').replaceChildren(...probehle.map((u) => radekUdalosti(u, dnes, k.udalosti)));
   $('#pocet-probehlych').textContent = probehle.length;
 
   // Lhůty, které OBS právě ukazuje (stejný výpočet jako výstupy)

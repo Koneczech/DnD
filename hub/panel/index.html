@@ -291,6 +291,10 @@
             <button type="button" data-pohled="druzina" aria-pressed="false" title="Jen to, co zná družina: karty s verejne: true, odkryté odrážky Co ví družina a známé vztahy">Pohled družiny</button>
           </div>
           <div class="kanon-filtry jen-mapa" id="kanon-filtry" role="group" aria-label="Filtry typů"></div>
+          <div class="kanon-prepinace jen-mapa" role="group" aria-label="Zobrazení mapy">
+            <button type="button" id="kanon-osa" aria-pressed="false" title="Události z Kalendáře v řadě podle data; hráčský kánon se přitáhne ke své události">Časová osa</button>
+            <button type="button" id="kanon-podmista" title="Místa uvnitř jiných míst">Rozbalit místa</button>
+          </div>
           <div class="kanon-nastenky jen-mapa">
             <label class="vizualne-skryte" for="kanon-nastenka">Nástěnka</label>
             <select id="kanon-nastenka" title="Uložené rozložení mapy"></select>
@@ -308,6 +312,7 @@
               <span class="vzorek bez" title="Vztah bez postoje"></span><span class="legenda-text">bez postoje</span>
               <span class="vzorek vazba" title="Vazba bez popisu"></span><span class="legenda-text">vazba</span>
               <span class="vzorek lezi-v" title="Místo leží v jiném místě"></span><span class="legenda-text">leží v</span>
+              <span class="vzorek souhrn" title="Vazby míst schovaných uvnitř"></span><span class="legenda-text">přes podmísta</span>
             </div>
             <div class="kanon-vyber" id="kanon-vyber" role="toolbar" aria-label="Vybrané uzly" hidden></div>
             <div class="kanon-fokus" id="kanon-fokus" hidden></div>

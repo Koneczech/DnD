@@ -81,12 +81,17 @@ export function vytvoritWiki(ctx, karta) {
     return a;
   }
 
+  /** Datum události; víc událostí téhož dne dostane i pořadí („· 2. z 3“). */
+  const datumUdalosti = (u) => `${u.konecText ? `${u.datumText} – ${u.konecText}` : u.datumText}${u.vDniPocet > 1 ? ` · ${u.vDni}. z ${u.vDniPocet}` : ''}`;
+
   function radekUdalosti(u, { odebrat } = {}) {
     const vazby = u.vazby.map((id) => s.podleId.get(id)).filter(Boolean);
+    const pres = u.pres ? s.podleId.get(u.pres) : null;
     return el('li', { className: 'udalost-radek' },
       el('a', { href: `#kanon/udalost/${encodeURIComponent(u.id)}`, className: 'udalost-odkaz' },
-        el('span', { className: 'udalost-datum', textContent: u.konecText ? `${u.datumText} – ${u.konecText}` : u.datumText }),
+        el('span', { className: 'udalost-datum', textContent: datumUdalosti(u) }),
         el('span', { className: 'udalost-text', textContent: u.text }),
+        pres ? el('span', { className: 'udalost-pres', textContent: `v ${pres.nazev}` }) : null,
         dm() && !u.verejna ? el('span', { className: 'stitek-dm', textContent: 'skrytá' }) : null),
       vazby.length ? el('span', { className: 'udalost-vazby' }, vazby.slice(0, 6).map((e) => {
         const c = el('a', { href: `#kanon/${encodeURIComponent(e.id)}`, className: 'cip-entity', textContent: e.nazev });
@@ -188,6 +193,9 @@ export function vytvoritWiki(ctx, karta) {
       nahradit(obsah, el('p', { className: 'poznamka', textContent: dm() ? 'Událost v kalendáři není.' : 'Tuhle událost družina nezná.' }));
       return;
     }
+    const vse = udalosti();
+    const predchozi = vse[vse.indexOf(u) - 1] ?? null;
+    const dalsi = vse[vse.indexOf(u) + 1] ?? null;
     const vazby = u.vazby.map((id) => s.podleId.get(id)).filter(Boolean);
     const rozhodnuto = vazby.filter((e) => e.typ === 'kanon');
     const ostatni = vazby.filter((e) => e.typ !== 'kanon');
@@ -216,7 +224,7 @@ export function vytvoritWiki(ctx, karta) {
         el('div', { className: 'wiki-hlava' },
           el('nav', { className: 'drobecky' }, el('a', { href: '#kanon', textContent: 'Kánon' }), ' › ', el('a', { href: '#kanon/udalosti', textContent: 'Události' }), ' › '),
           el('h2', { className: 'wiki-nadpis', textContent: u.text }),
-          el('p', { className: 'udalost-meta' }, el('span', { className: 'udalost-datum', textContent: u.konecText ? `${u.datumText} – ${u.konecText}` : u.datumText }), dm() ? el('span', { className: u.verejna ? 'stitek-maly' : 'stitek-dm', textContent: u.verejna ? 'veřejná (OBS, družina)' : 'skrytá' }) : null, uprav() ? el('a', { href: '#kalendar', className: 'tlacitko tiche', textContent: 'Upravit v Kalendáři' }) : null)),
+          el('p', { className: 'udalost-meta' }, el('span', { className: 'udalost-datum', textContent: datumUdalosti(u) }), dm() ? el('span', { className: u.verejna ? 'stitek-maly' : 'stitek-dm', textContent: u.verejna ? 'veřejná (OBS, družina)' : 'skrytá' }) : null, uprav() ? el('a', { href: '#kalendar', className: 'tlacitko tiche', textContent: 'Upravit v Kalendáři' }) : null)),
         el('section', { className: 'wiki-sekce' },
           el('h3', { textContent: 'Co se rozhodlo' }),
           rozhodnuto.length
@@ -227,7 +235,19 @@ export function vytvoritWiki(ctx, karta) {
           ostatni.length
             ? el('div', { className: 'mrizka-dlazdic mala' }, ostatni.map((e) => el('div', { className: 'dlazdice-obal' }, dlazdice(e), odebrat(e))))
             : el('p', { className: 'poznamka', textContent: 'K události zatím není navázaná žádná karta.' })),
-        pridat));
+        pridat,
+        navigaceCasu(
+          predchozi ? { href: `#kanon/udalost/${encodeURIComponent(predchozi.id)}`, text: predchozi.text, drobne: datumUdalosti(predchozi) } : null,
+          dalsi ? { href: `#kanon/udalost/${encodeURIComponent(dalsi.id)}`, text: dalsi.text, drobne: datumUdalosti(dalsi) } : null)));
+  }
+
+  /** Odkazy Předtím / Potom pod událostí a záznamem hráčského kánonu. */
+  function navigaceCasu(predtim, potom) {
+    if (!predtim && !potom) return null;
+    const odkaz = (x, smer) => (x
+      ? el('a', { href: x.href, className: `cas-${smer}` }, el('small', { textContent: smer === 'predtim' ? '← Předtím' : 'Potom →' }), el('strong', { textContent: x.text }), x.drobne ? el('span', { textContent: x.drobne }) : null)
+      : el('span'));
+    return el('nav', { className: 'navigace-casu', 'aria-label': 'Časová osa' }, odkaz(predtim, 'predtim'), odkaz(potom, 'potom'));
   }
 
   /* ---------- Stránka entity ---------- */
@@ -304,7 +324,32 @@ export function vytvoritWiki(ctx, karta) {
     return el('section', { className: 'wiki-sekce' },
       el('div', { className: 'sekce-hlava' }, el('h3', { textContent: `Události (${ud.length})` }), w.navazovani ? null : navazani),
       w.navazovani ? navazani : null,
-      ud.length ? el('ul', { className: 'udalosti-seznam' }, ud.map((u) => radekUdalosti({ ...u, vazby: u.vazby.filter((x) => x !== e.id) }, { odebrat: uprav() ? () => navazat(u.id, e.id, false) : null }))) : el('p', { className: 'poznamka', textContent: dm() ? 'Karta zatím není navázaná na žádnou událost z Kalendáře.' : 'Žádné události.' }));
+      ud.length ? el('ul', { className: 'udalosti-seznam' }, ud.map((u) => radekUdalosti({ ...u, vazby: u.vazby.filter((x) => x !== e.id && x !== u.pres) }, { odebrat: uprav() && !u.pres ? () => navazat(u.id, e.id, false) : null }))) : el('p', { className: 'poznamka', textContent: dm() ? 'Karta zatím není navázaná na žádnou událost z Kalendáře.' : 'Žádné události.' }));
+  }
+
+  /** Kdy se záznam hráčského kánonu stal (podle události z Kalendáře) a co bylo před ním a po něm. */
+  function casKanonu(k) {
+    const c = k.chronologie;
+    if (!c?.udalost) {
+      return el('p', { className: 'poznamka cas-kanonu' }, 'Záznam zatím není navázaný na událost z Kalendáře, takže nemá místo v čase.', uprav() ? ' Navážeš ho v sekci Události níž.' : null);
+    }
+    const u = c.udalost;
+    const z = (x) => (x ? { href: `#kanon/${encodeURIComponent(x.id)}`, text: x.nazev, drobne: x.udalost.datumText } : null);
+    return el('div', { className: 'cas-kanonu' },
+      el('p', {}, el('span', { className: 'udalost-datum', textContent: `${u.datumText}${u.vDniPocet > 1 ? ` · ${u.vDni}. z ${u.vDniPocet}` : ''}` }), ' ', el('a', { href: `#kanon/udalost/${encodeURIComponent(u.id)}`, textContent: u.text })),
+      navigaceCasu(z(c.predtim), z(c.potom)));
+  }
+
+  /** Místo: co se tu (i v místech uvnitř) stalo podle hráčského kánonu, v časovém pořadí. */
+  function coSeTuStalo(e, k) {
+    const zde = k.zde ?? [];
+    if (!zde.length) return null;
+    return el('section', { className: 'wiki-sekce' },
+      el('h3', { textContent: `Co se tu stalo (${zde.length})` }),
+      el('ul', { className: 'rozhodnuto' }, zde.map((x) => el('li', {},
+        el('a', { href: `#kanon/${encodeURIComponent(x.id)}`, className: 'rozhodnuto-odkaz' },
+          el('strong', { textContent: x.nazev }),
+          el('span', { textContent: [x.udalost ? x.udalost.datumText : null, x.pres ? `v ${s.podleId.get(x.pres)?.nazev ?? x.pres}` : null].filter(Boolean).join(' · ') || ' ' }))))));
   }
 
   function stranaEntity() {
@@ -357,9 +402,11 @@ export function vytvoritWiki(ctx, karta) {
         return obr ? [el('h3', { textContent: 'Ilustrace' }), obr] : null;
       })());
     const hlavni = el('div', { className: 'clanek-hlavni' },
+      e.typ === 'kanon' ? casKanonu(k) : null,
       // Hráčský kánon je celý pro družinu, oddíl Co ví družina má jen karta, která ho opravdu obsahuje.
       e.typ !== 'kanon' || (k.druzina ?? []).length ? coViDruzina(e, k) : null,
       k.telo.trim() ? text : uprav() ? el('p', { className: 'poznamka', textContent: 'Karta zatím nemá další text. Napiš ho přes Upravit.' }) : null,
+      e.typ === 'misto' ? coSeTuStalo(e, k) : null,
       udalostiEntity(e, k));
     nahradit(obsah, el('article', { className: 'clanek' }, hlava, el('div', { className: 'clanek-telo' }, hlavni, infobox)));
   }

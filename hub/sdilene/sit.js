@@ -195,3 +195,57 @@ export function hledat(entity, dotaz, limit = 10) {
     .slice(0, limit)
     .map((x) => x.e);
 }
+
+/* ---------- Výběr víc uzlů na mapě: uspořádání a výběr obdélníkem ---------- */
+
+/** Těžiště bodů. */
+function teziste(body) {
+  const n = body.length || 1;
+  return { x: body.reduce((s, p) => s + p.x, 0) / n, y: body.reduce((s, p) => s + p.y, 0) / n };
+}
+
+/**
+ * Rozmístí uzly do kruhu kolem jejich těžiště, v pořadí podle `poradi` (výchozí pořadí id).
+ * @param {string[]} ids
+ * @param {Map<string, {x: number, y: number}>} pozice
+ * @returns {Map<string, {x: number, y: number}>} nové pozice jen pro ids
+ */
+export function doKruhu(ids, pozice, { rozestup = 70 } = {}) {
+  const body = ids.map((id) => pozice.get(id)).filter(Boolean);
+  const stred = teziste(body);
+  const n = ids.length;
+  const vysledek = new Map();
+  if (n === 1) {
+    vysledek.set(ids[0], { ...stred });
+    return vysledek;
+  }
+  const polomer = Math.max(60, (n * rozestup) / (2 * Math.PI));
+  ids.forEach((id, i) => {
+    const uhel = -Math.PI / 2 + (i / n) * 2 * Math.PI;
+    vysledek.set(id, { x: Math.round(stred.x + Math.cos(uhel) * polomer), y: Math.round(stred.y + Math.sin(uhel) * polomer) });
+  });
+  return vysledek;
+}
+
+/**
+ * Rozmístí uzly do mřížky (řádky po sobě), levý horní roh drží levý horní roh výběru.
+ * @returns {Map<string, {x: number, y: number}>}
+ */
+export function doMrizky(ids, pozice, { rozestupX = 120, rozestupY = 90 } = {}) {
+  const body = ids.map((id) => pozice.get(id)).filter(Boolean);
+  const x0 = Math.min(...body.map((p) => p.x));
+  const y0 = Math.min(...body.map((p) => p.y));
+  const sloupcu = Math.max(1, Math.ceil(Math.sqrt(ids.length * 1.5)));
+  const vysledek = new Map();
+  ids.forEach((id, i) => vysledek.set(id, { x: Math.round(x0 + (i % sloupcu) * rozestupX), y: Math.round(y0 + Math.floor(i / sloupcu) * rozestupY) }));
+  return vysledek;
+}
+
+/** Id uzlů, jejichž střed leží v obdélníku (v souřadnicích mapy, rohy v libovolném pořadí). */
+export function vObdelniku(pozice, a, b) {
+  const x0 = Math.min(a.x, b.x);
+  const x1 = Math.max(a.x, b.x);
+  const y0 = Math.min(a.y, b.y);
+  const y1 = Math.max(a.y, b.y);
+  return [...pozice].filter(([, p]) => p.x >= x0 && p.x <= x1 && p.y >= y0 && p.y <= y1).map(([id]) => id);
+}

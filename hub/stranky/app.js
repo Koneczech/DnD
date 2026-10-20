@@ -12,9 +12,32 @@ const VOLBY_KANONU = 'dmhub-kanon';
 
 async function nactiJson(cesta) {
   const odpoved = await fetch(cesta, { cache: 'no-cache' });
-  if (odpoved.status === 404) throw Object.assign(new Error('Karta v čtecí verzi není.'), { status: 404 });
+  if (odpoved.status === 404) {
+    // Otevřená stránka ze starší verze hledá soubory, které nová verze už nemá: načíst znovu.
+    if (await zkontrolovatVerzi()) throw new Error('Vyšla nová verze čtecí verze, načítám ji znovu…');
+    throw Object.assign(new Error('Karta v čtecí verzi není.'), { status: 404 });
+  }
   if (!odpoved.ok) throw new Error(`Stránka vrátila ${odpoved.status}.`);
   return odpoved.json();
+}
+
+/* ---------- Nová verze: stránka otevřená přes nasazení se načte znovu sama ---------- */
+
+let sestaveno = null;
+let obnovuje = false;
+/** Vyšla od načtení stránky nová verze? Když ano, stránku za chvíli načte znovu a vrátí true. */
+async function zkontrolovatVerzi() {
+  if (obnovuje) return true;
+  try {
+    const nove = (await (await fetch('data/stranky.json', { cache: 'no-cache' })).json()).sestaveno ?? null;
+    if (!sestaveno || !nove || nove === sestaveno) return false;
+  } catch {
+    return false;
+  }
+  obnovuje = true;
+  toast('Vyšla nová verze kánonu, načítám ji…');
+  setTimeout(() => location.reload(), 1500);
+  return true;
 }
 
 /* ---------- Pohled DM: rozšifrování heslem ---------- */
@@ -151,6 +174,9 @@ function toast(text, { chyba = false } = {}) {
 }
 
 stranky = await nactiJson('data/stranky.json').catch(() => ({ dm: false }));
+sestaveno = stranky.sestaveno ?? null;
+setInterval(zkontrolovatVerzi, 5 * 60000);
+document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && zkontrolovatVerzi());
 // Kdo heslo na tomto zařízení nezadal (hráči), začíná v pohledu družiny, bez dotazu na heslo.
 if (!stranky.dm || !(await nacistKlic())) {
   try {

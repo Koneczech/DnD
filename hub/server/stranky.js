@@ -139,7 +139,8 @@ export async function sestavitStranky({ cesty: c, cil, cas = new Date(), heslo =
       for (const n of dm.nastenky) balik.nastenky[n.id] = kanon.nastenka(n.id);
       await zapsatJson(path.join(cil, 'data', 'dm.json'), zasifrovat(balik, heslo));
     }
-    await zapsatJson(path.join(cil, 'data', 'stranky.json'), { dm: Boolean(heslo) });
+    // `sestaveno` pozná otevřená stránka, že vyšla nová verze, a načte se znovu.
+    await zapsatJson(path.join(cil, 'data', 'stranky.json'), { dm: Boolean(heslo), sestaveno: cas.toISOString() });
 
     // Obrázky karet (portréty, ilustrace míst) ze stejných cest jako v repu.
     const chybiObrazky = [];

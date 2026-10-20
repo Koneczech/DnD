@@ -1189,6 +1189,7 @@ export class Hub {
     if (vztah && m === 'PUT') return this.poUpraveKanonu(await k.nastavitVztah(vztah[1], vztah[2], await nacistJson(req)));
     if (vztah && m === 'DELETE') return this.poUpraveKanonu(await k.odebratVztah(vztah[1], vztah[2]));
     if (p === '/api/kanon/entity' && m === 'POST') return this.poUpraveKanonu(await k.zalozit(await nacistJson(req)));
+    if (p === '/api/kanon/hromadne' && m === 'POST') return this.poUpraveKanonu(await k.nastavitHromadne(await nacistJson(req)));
     const zdroj = /^\/api\/kanon\/entita\/([a-z0-9-]{1,80})\/zdroj$/.exec(p);
     if (zdroj && m === 'GET') return k.zdroj(zdroj[1]);
     if (zdroj && m === 'PUT') return this.poUpraveKanonu(await k.ulozitZdroj(zdroj[1], await nacistJson(req, 1024 * 1024)));
@@ -1224,7 +1225,7 @@ export class Hub {
   /** Po úpravě karty: Kontrola dat hned (vztah bez vazby, neexistující cíl) a stav zápisu do lišty. */
   poUpraveKanonu(v) {
     this.data.naplanovatKontrolu();
-    if (v.vysledek === 'odlozeno') this.vyslatStav();
+    if (v.vysledek === 'odlozeno' || v.odlozeno) this.vyslatStav();
     return v;
   }
 

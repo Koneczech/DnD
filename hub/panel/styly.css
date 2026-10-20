@@ -1256,3 +1256,17 @@ span.oko { cursor: default; }
   .editor-karty { height: auto; }
   .editor-text, .editor-nahled { height: 28rem; }
 }
+
+/* Mapa kánonu: výběr víc uzlů (Shift), lišta výběru, fokus */
+.uzel .kruh-oznaceni { fill: rgb(198 161 91 / 0.22); stroke: var(--akcent); stroke-width: 2.5; stroke-dasharray: 5 3; display: none; pointer-events: none; }
+.uzel.oznaceny .kruh-oznaceni { display: inline; }
+.ztlumeno .uzel.oznaceny { opacity: 1; }
+.uzel.oznaceny .popisek { opacity: 1; }
+.vyber-obdelnik { fill: rgb(198 161 91 / 0.08); stroke: var(--akcent); stroke-width: 1.2; stroke-dasharray: 5 4; vector-effect: non-scaling-stroke; pointer-events: none; }
+.kanon-vyber, .kanon-fokus { position: absolute; left: var(--m-3); top: var(--m-3); z-index: 2; display: flex; flex-wrap: wrap; align-items: center; gap: var(--m-1) var(--m-2); padding: var(--m-1) var(--m-2); background: rgb(22 27 38 / 0.94); border: 1px solid var(--mosaz-tlumena); border-radius: var(--zaobleni); box-shadow: 0 6px 18px rgb(0 0 0 / 0.35); max-width: calc(100% - 2 * var(--m-3)); font-size: var(--t-popisek); }
+.kanon-vyber[hidden], .kanon-fokus[hidden] { display: none; }
+.kanon-fokus { top: auto; bottom: calc(var(--m-3) + 2.4rem); border-color: var(--linka); }
+.kanon-vyber:not([hidden]) ~ .kanon-fokus { top: auto; }
+.skupina-vyberu { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 2px; padding-left: var(--m-2); border-left: 1px solid var(--linka); }
+.popisek-vyberu { color: var(--text-tlumeny); margin: 0 2px 0 var(--m-1); }
+.kanon-vyber strong { color: var(--akcent); }

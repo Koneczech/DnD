@@ -1,12 +1,26 @@
 // Modul Kánon v panelu (Blok 3). Hlavní pohled je wiki (kanon-wiki.js, rozhodnutí DM
 // 20. 10. 2026), mapa sítě entit je druhá záložka (rozhodnutí 69, bod 102): síť vlevo, karta vpravo.
 // Kreslí se ze souborů v kampan/ přes /api/kanon, bez knihoven a bez internetu.
-import { rozlozit, polomer, hledat, proHledani } from '/sdilene/sit.js';
+import { rozlozit, polomer, hledat, proHledani, doKruhu, doMrizky, vObdelniku } from '/sdilene/sit.js';
 import { escapovat } from '/sdilene/markdown.js';
 import { $, TYPY, barvaTypu, barvaPostoje, postojText, el, nahradit, svg, vyrezHlavy, oriznoutPortret, obrazekEntity, stitekTypu, STAVY, castiKarty, stromMist } from '/panel/kanon-spolecne.js';
 import { vytvoritWiki } from '/panel/kanon-wiki.js';
 
 export { TYPY };
+/**
+ * Ručně posunuté uzly celé mapy (bez nástěnky) si pamatuje prohlížeč, zvlášť pro pohled DM
+ * a družiny. Nástěnky se ukládají do repa tlačítkem, tohle je jen pohodlí jednoho prohlížeče.
+ */
+const KLIC_POZIC = (pohled) => `dmhub-kanon-pozice-${pohled}`;
+function nacistPozice(pohled) {
+  try {
+    const d = JSON.parse(localStorage.getItem(KLIC_POZIC(pohled))) ?? {};
+    return new Map(Object.entries(d).filter(([, p]) => Number.isFinite(p?.x) && Number.isFinite(p?.y)).map(([id, p]) => [id, { x: p.x, y: p.y }]));
+  } catch {
+    return new Map();
+  }
+}
+
 /** Uložené volby mapy v prohlížeči (filtry, pohled). Bez localStorage to funguje taky. */
 const ULOZENI = 'dmhub-kanon';
 function nacistVolby() {
@@ -58,7 +72,13 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false })
     prvniPriblizeni: true,
     rezim: 'wiki', // wiki (hlavní pohled) nebo mapa
     mapaZastarala: true,
+    oznacene: new Set(), // výběr víc uzlů (Shift), nezávislý na kartě vpravo
+    fokus: null, // { ids: Set, okoli: Set } „jen výběr a okolí“
+    historie: [], // přesuny uzlů pro Ctrl+Z
+    zmenyNastenky: false, // v nástěnce se posunulo a ještě neuložilo
+    ulozitJen: null, // Nástěnka z výběru: jen tyto id
   };
+  s.pevne = nacistPozice(s.pohled);
   const platno = $('#kanon-platno');
   const plocha = $('#kanon-svg');
   const vrstva = svg('g', { class: 'vrstva' });
@@ -171,7 +191,7 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false })
     return vysledek;
   }
 
-  const viditelny = (e) => Boolean(e) && s.typy.has(e.typ) && (!s.jenVeHre || e.aktualni || e.id === s.vybrane) && (!s.nastenka?.jen_tyto || s.nastenka.entity.some((x) => x.id === e.id) || e.id === s.vybrane);
+  const viditelny = (e) => Boolean(e) && (s.fokus ? s.fokus.ids.has(e.id) || (s.fokus.okoli.has(e.id) && s.typy.has(e.typ)) : s.typy.has(e.typ) && (!s.jenVeHre || e.aktualni || e.id === s.vybrane) && (!s.nastenka?.jen_tyto || s.nastenka.entity.some((x) => x.id === e.id) || e.id === s.vybrane));
 
   /** Rozložení viditelných uzlů. Co už pozici mělo, zůstane zhruba na místě. */
   function prepocitat() {
@@ -255,6 +275,7 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false })
         const titul = svg('title');
         titul.textContent = popisHrany(h);
         g.append(cara, zachyt, titul);
+        g.__h = h;
         return g;
       }),
     );
@@ -274,6 +295,7 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false })
         'aria-label': `${e.nazev} (${TYPY[e.typ]?.j ?? e.typ})`,
       });
       g.style.setProperty('--c', barvaTypu(e.typ));
+      g.append(svg('circle', { r: r + 9, class: 'kruh-oznaceni' }));
       if (e.aktualni) g.append(svg('circle', { r: r + 5, class: 'kruh-ve-hre' }));
       g.append(svg('circle', { r, class: 'telo' }));
       if (e.obrazek) {
@@ -313,8 +335,188 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false })
     gUzly.replaceChildren(...uzly);
     // Málo uzlů (pohled družiny, nástěnka): popisky u všech.
     plocha.classList.toggle('malo-uzlu', uzly.length <= 40);
+    for (const id of [...s.oznacene]) if (!s.pozice.has(id)) s.oznacene.delete(id);
     zvyraznit();
     vykreslitZoom();
+    vykresliVyber();
+    vykresliFokus();
+  }
+
+  /** Při tažení se jen posunou uzly a čáry, DOM se nestaví znovu. */
+  function aktualizovatPozice() {
+    for (const g of gUzly.children) {
+      const p = s.pozice.get(g.dataset.id);
+      if (p) g.setAttribute('transform', `translate(${p.x},${p.y})`);
+    }
+    for (const g of gHrany.children) {
+      if (!g.__h) continue;
+      const d = cestaHrany(g.__h);
+      for (const cesta of g.querySelectorAll('path')) cesta.setAttribute('d', d);
+    }
+  }
+
+  /* ---------- Výběr víc uzlů, přesun skupiny, Ctrl+Z ---------- */
+
+  /** Zapamatuje si polohy uzlů před přesunem (Ctrl+Z je vrátí). */
+  function zaznamenat(ids, druh = 'presun') {
+    s.historie.push({ druh, cas: Date.now(), polozky: ids.map((id) => [id, s.pozice.has(id) ? { ...s.pozice.get(id) } : null, s.pevne.has(id) ? { ...s.pevne.get(id) } : null]) });
+    if (s.historie.length > 40) s.historie.shift();
+  }
+
+  function vratit() {
+    const krok = s.historie.pop();
+    if (!krok) return toast('Není co vrátit.');
+    for (const [id, poz, pev] of krok.polozky) {
+      if (poz) s.pozice.set(id, poz);
+      if (pev) s.pevne.set(id, pev);
+      else s.pevne.delete(id);
+    }
+    aktualizovatPozice();
+    ulozitPozice();
+    toast('Přesun vrácen.');
+  }
+
+  /** Ručně posunuté uzly: celá mapa do prohlížeče, nástěnka čeká na Uložit rozložení. */
+  function ulozitPozice() {
+    if (s.nastenka) {
+      if (!s.zmenyNastenky) {
+        s.zmenyNastenky = true;
+        vykresliNastenky();
+      }
+      return;
+    }
+    try {
+      localStorage.setItem(KLIC_POZIC(s.pohled), JSON.stringify(Object.fromEntries([...s.pevne].map(([id, p]) => [id, { x: Math.round(p.x), y: Math.round(p.y) }]))));
+    } catch {
+      /* bez úložiště se rozložení jen nepamatuje */
+    }
+  }
+
+  /** Nové polohy (Map id → {x, y}) a připnutí uzlů na ně. */
+  function presunout(nove) {
+    for (const [id, p] of nove) {
+      s.pozice.set(id, p);
+      s.pevne.set(id, p);
+    }
+    aktualizovatPozice();
+    ulozitPozice();
+  }
+
+  /** Vybrané uzly seřazené podle typu a názvu (pro kruh a mřížku). */
+  const serazeneOznacene = () => [...s.oznacene].filter((id) => s.pozice.has(id)).sort((a, b) => {
+    const ea = s.podleId.get(a);
+    const eb = s.podleId.get(b);
+    const ta = Object.keys(TYPY).indexOf(ea?.typ);
+    const tb = Object.keys(TYPY).indexOf(eb?.typ);
+    return ta - tb || (ea?.nazev ?? a).localeCompare(eb?.nazev ?? b, 'cs');
+  });
+
+  /** Vybrané uzly rozmístí síla vazeb, ostatní zůstanou na místě. */
+  function rozmistitVybrane() {
+    const ids = serazeneOznacene();
+    if (!ids.length) return;
+    zaznamenat(ids);
+    const vyber = new Set(ids);
+    const uzly = s.data.entity.filter((e) => s.pozice.has(e.id)).map((e) => ({ id: e.id, typ: e.typ, obrazek: e.obrazek, r: polomer(e, e.stupen) }));
+    const hrany = vsechnyDvojice().filter(([a, b]) => s.pozice.has(a) && s.pozice.has(b)).map(([a, b]) => (jeLeziV(a, b) ? [a, b, 'lezi_v'] : [a, b]));
+    const ostatni = new Map([...s.pozice].filter(([id]) => !vyber.has(id)));
+    const vysledek = rozlozit(uzly, hrany, { pevne: ostatni, start: ostatni, iterace: 200 });
+    presunout(new Map(ids.map((id) => [id, vysledek.get(id)])));
+  }
+
+  function uvolnitVybrane() {
+    const ids = [...s.oznacene];
+    zaznamenat(ids);
+    for (const id of ids) s.pevne.delete(id);
+    ulozitPozice();
+    prepocitat();
+    toast('Vybrané uzly jsou volné, mapa je rozmístí sama.');
+  }
+
+  function nastavitFokus(ids) {
+    if (!ids?.size) {
+      s.fokus = null;
+    } else {
+      const okoli = new Set();
+      for (const [a, b] of vsechnyDvojice()) {
+        if (ids.has(a)) okoli.add(b);
+        if (ids.has(b)) okoli.add(a);
+      }
+      s.fokus = { ids: new Set(ids), okoli };
+    }
+    prepocitat();
+    priblizitNa(null);
+  }
+
+  function vykresliFokus() {
+    const kam = $('#kanon-fokus');
+    if (!s.fokus) {
+      kam.hidden = true;
+      return;
+    }
+    kam.hidden = false;
+    const jmena = [...s.fokus.ids].map((id) => s.podleId.get(id)?.nazev).filter(Boolean);
+    nahradit(kam,
+      el('span', { textContent: `Jen ${jmena.length === 1 ? jmena[0] : `${jmena.length} vybraných`} a okolí · ${s.pozice.size} na mapě` }),
+      el('button', { type: 'button', className: 'mala', textContent: 'Celá mapa', onclick: () => nastavitFokus(null) }));
+  }
+
+  async function hromadne(zmena, popis) {
+    const ids = [...s.oznacene];
+    if (zmena.verejne === true && !confirm(`Družina bude znát ${ids.length} karet (uvidí jejich název, obrázek, odkryté odrážky Co ví družina a známé vztahy). Pokračovat?`)) return;
+    try {
+      const r = await api('/api/kanon/hromadne', { metoda: 'POST', telo: { ids, ...zmena } });
+      const zbytek = ids.length - r.zmeneno - r.chyby.length;
+      toast(`${popis}: změněno ${r.zmeneno}${zbytek > 0 ? `, ${zbytek} už to mělo` : ''}${r.odlozeno ? `, ${r.odlozeno} čeká na zápis` : ''}${r.chyby.length ? `, chyby: ${r.chyby.map((c) => c.id).join(', ')}` : ''}.`, { chyba: r.chyby.length > 0 });
+      await nacist();
+    } catch (chyba) {
+      toast(chyba.message, { chyba: true });
+    }
+  }
+
+  function zrusitOznaceni() {
+    s.oznacene.clear();
+    zvyraznit();
+    vykresliVyber();
+  }
+
+  /** Lišta nad mapou, když je vybraný aspoň jeden uzel (Shift). */
+  function vykresliVyber() {
+    const kam = $('#kanon-vyber');
+    const n = s.oznacene.size;
+    if (!n) {
+      kam.hidden = true;
+      return;
+    }
+    kam.hidden = false;
+    const tl = (text, titul, akce, trida = 'mala') => el('button', { type: 'button', className: trida, textContent: text, title: titul, onclick: akce });
+    const upravy = s.pohled === 'dm' && !s.jenCteni;
+    nahradit(kam,
+      el('strong', { textContent: n === 1 ? '1 vybraný' : n < 5 ? `${n} vybrané` : `${n} vybraných` }),
+      el('span', { className: 'skupina-vyberu' },
+        tl('Kruh', 'Rozmístit vybrané do kruhu', () => {
+          const ids = serazeneOznacene();
+          zaznamenat(ids);
+          presunout(doKruhu(ids, s.pozice));
+        }),
+        tl('Mřížka', 'Seřadit vybrané do mřížky (podle typu a názvu)', () => {
+          const ids = serazeneOznacene();
+          zaznamenat(ids);
+          presunout(doMrizky(ids, s.pozice));
+        }),
+        tl('Rozmístit', 'Vybrané rozmístí podle vazeb, ostatní zůstanou na místě', rozmistitVybrane),
+        tl('Uvolnit', 'Zapomenout ruční polohu vybraných, mapa je rozmístí sama', uvolnitVybrane)),
+      el('span', { className: 'skupina-vyberu' },
+        tl('Jen tyto a okolí', 'Ukázat jen vybrané a to, co s nimi souvisí', () => nastavitFokus(new Set(s.oznacene))),
+        s.jenCteni ? null : tl('Nástěnka z výběru', 'Uložit vybrané jako nástěnku jen s nimi', () => otevritNastenku(new Set(s.oznacene)))),
+      upravy ? el('span', { className: 'skupina-vyberu' },
+        el('span', { className: 'popisek-vyberu', textContent: 'Ve hře' }),
+        tl('✓', 'Označit vybrané jako Ve hře', () => hromadne({ aktualni: true }, 'Ve hře')),
+        tl('✗', 'Odebrat vybraným Ve hře', () => hromadne({ aktualni: false }, 'Ve hře odebráno')),
+        el('span', { className: 'popisek-vyberu', textContent: 'Družina zná' }),
+        tl('✓', 'Družina zná vybrané karty', () => hromadne({ verejne: true }, 'Družina zná')),
+        tl('✗', 'Vybrané karty jen pro DM', () => hromadne({ verejne: false }, 'Jen pro DM'))) : null,
+      tl('×', 'Zrušit výběr (Esc)', zrusitOznaceni, 'mala tiche'));
   }
 
   /** Vybraná entita ztlumí vše kromě okolí; hledání v liště zvýrazní nalezené uzly. */
@@ -335,6 +537,7 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false })
       g.classList.toggle('vybrany', id === s.vybrane);
       g.classList.toggle('okoli', okoli.has(id));
       g.classList.toggle('nalez', nalezy.has(id));
+      g.classList.toggle('oznaceny', s.oznacene.has(id));
     }
     for (const g of gHrany.children) {
       const sv = s.vybrane && (g.dataset.a === s.vybrane || g.dataset.b === s.vybrane);
@@ -420,8 +623,18 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false })
     zoomKolem(1 / 1.35, w / 2, h / 2);
   });
   $('#kanon-cele').addEventListener('click', () => priblizitNa(null));
+  $('#kanon-znovu').addEventListener('click', () => {
+    if (s.pevne.size && !confirm(`Zapomenout ručně posunuté uzly (${s.pevne.size}) a rozmístit mapu znovu? Ctrl+Z to vrátí.`)) return;
+    zaznamenat([...s.pevne.keys()]);
+    s.pevne = new Map();
+    s.pozice = new Map();
+    ulozitPozice();
+    prepocitat();
+    priblizitNa(null);
+  });
 
-  // Tažení: pozadí posouvá mapu, uzel posouvá uzel, Alt + uzel natahuje novou vazbu (bod 102).
+  // Tažení: pozadí posouvá mapu, uzel posouvá uzel (vybraný uzel celou skupinu), Shift + pozadí
+  // vybírá obdélníkem, Shift + klik přidá nebo odebere uzel z výběru, Alt + uzel natahuje vazbu.
   let tah = null;
   plocha.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
@@ -434,7 +647,21 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false })
       tah.cara = svg('line', { class: 'nova-vazba', x1: p.x, y1: p.y, x2: p.x, y2: p.y });
       gDocasna.replaceChildren(tah.cara);
     } else if (uzel) {
-      tah = { druh: 'uzel', id: uzel.dataset.id, x0: e.clientX, y0: e.clientY, posunuto: false, g: uzel };
+      const id = uzel.dataset.id;
+      let pridan = false;
+      if (e.shiftKey && !s.oznacene.has(id)) {
+        // Shift na prvním uzlu: do výběru i uzel, jehož karta je otevřená.
+        if (!s.oznacene.size && s.vybrane && s.vybrane !== id && s.pozice.has(s.vybrane)) s.oznacene.add(s.vybrane);
+        s.oznacene.add(id);
+        pridan = true;
+        zvyraznit();
+        vykresliVyber();
+      }
+      const skupina = s.oznacene.has(id) && s.oznacene.size > 1 ? [...s.oznacene].filter((x) => s.pozice.has(x)) : [id];
+      tah = { druh: 'uzel', id, skupina, start: new Map(skupina.map((x) => [x, { ...s.pozice.get(x) }])), m0: doMapy(e.clientX, e.clientY), x0: e.clientX, y0: e.clientY, posunuto: false, shift: e.shiftKey, pridan };
+    } else if (e.shiftKey) {
+      tah = { druh: 'obdelnik', m0: doMapy(e.clientX, e.clientY), x0: e.clientX, y0: e.clientY, posunuto: false, rect: svg('rect', { class: 'vyber-obdelnik' }) };
+      gDocasna.replaceChildren(tah.rect);
     } else {
       tah = { druh: 'plocha', x0: e.clientX, y0: e.clientY, z: { ...s.zoom }, posunuto: false };
     }
@@ -443,15 +670,29 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false })
     if (!tah) return;
     const dx = e.clientX - tah.x0;
     const dy = e.clientY - tah.y0;
-    if (Math.hypot(dx, dy) > 3) tah.posunuto = true;
+    if (!tah.posunuto && Math.hypot(dx, dy) > 3) {
+      tah.posunuto = true;
+      if (tah.druh === 'uzel') zaznamenat(tah.skupina);
+    }
     if (tah.druh === 'plocha' && tah.posunuto) {
       s.zoom = { ...tah.z, x: tah.z.x + dx, y: tah.z.y + dy };
       vykreslitZoom();
     } else if (tah.druh === 'uzel' && tah.posunuto) {
-      const p = doMapy(e.clientX, e.clientY);
-      s.pozice.set(tah.id, p);
-      s.pevne.set(tah.id, p);
-      vykreslit();
+      const m = doMapy(e.clientX, e.clientY);
+      const ox = m.x - tah.m0.x;
+      const oy = m.y - tah.m0.y;
+      for (const [id, p] of tah.start) {
+        const nova = { x: p.x + ox, y: p.y + oy };
+        s.pozice.set(id, nova);
+        s.pevne.set(id, nova);
+      }
+      aktualizovatPozice();
+    } else if (tah.druh === 'obdelnik') {
+      const m = doMapy(e.clientX, e.clientY);
+      tah.rect.setAttribute('x', Math.min(m.x, tah.m0.x));
+      tah.rect.setAttribute('y', Math.min(m.y, tah.m0.y));
+      tah.rect.setAttribute('width', Math.abs(m.x - tah.m0.x));
+      tah.rect.setAttribute('height', Math.abs(m.y - tah.m0.y));
     } else if (tah.druh === 'vazba') {
       const p = doMapy(e.clientX, e.clientY);
       tah.cara.setAttribute('x2', p.x);
@@ -471,16 +712,65 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false })
       if (pod && pod.dataset.id !== t.id) zalozitVazbu(t.id, pod.dataset.id);
       return;
     }
-    if (!t.posunuto) {
-      if (t.druh === 'uzel') vybrat(t.id === s.vybrane ? null : t.id);
-      else vybrat(null);
+    if (t.druh === 'obdelnik') {
+      gDocasna.replaceChildren();
+      if (t.posunuto) {
+        for (const id of vObdelniku(s.pozice, t.m0, doMapy(e.clientX, e.clientY))) s.oznacene.add(id);
+        zvyraznit();
+        vykresliVyber();
+      }
+      return;
     }
+    if (t.druh === 'uzel' && t.posunuto) {
+      ulozitPozice();
+      return;
+    }
+    if (t.posunuto) return;
+    if (t.druh === 'uzel' && t.shift) {
+      if (!t.pridan) s.oznacene.delete(t.id);
+      zvyraznit();
+      vykresliVyber();
+      return;
+    }
+    if (s.oznacene.size) zrusitOznaceni();
+    if (t.druh === 'uzel') vybrat(t.id === s.vybrane ? null : t.id);
+    else vybrat(null);
   };
   plocha.addEventListener('pointerup', konecTahu);
   plocha.addEventListener('pointercancel', () => {
     tah = null;
     gDocasna.replaceChildren();
   });
+
+  // Klávesy na mapě: Ctrl+A vybere vše, Ctrl+Z vrátí přesun, šipky posunou výběr.
+  document.addEventListener('keydown', (e) => {
+    if (!s.viditelna || s.rezim !== 'mapa' || document.querySelector('dialog[open]')) return;
+    const t = e.target;
+    if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement || t?.isContentEditable) return;
+    const ctrl = e.ctrlKey || e.metaKey;
+    if (ctrl && e.key.toLowerCase() === 'a') {
+      e.preventDefault();
+      for (const id of s.pozice.keys()) s.oznacene.add(id);
+      zvyraznit();
+      vykresliVyber();
+    } else if (ctrl && e.key.toLowerCase() === 'z') {
+      e.preventDefault();
+      vratit();
+    } else if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) && !ctrl) {
+      const ids = s.oznacene.size ? [...s.oznacene] : s.vybrane && s.pozice.has(s.vybrane) ? [s.vybrane] : [];
+      if (!ids.length) return;
+      e.preventDefault();
+      const krok = (e.shiftKey ? 40 : 8) / s.zoom.k;
+      const dx = e.key === 'ArrowLeft' ? -krok : e.key === 'ArrowRight' ? krok : 0;
+      const dy = e.key === 'ArrowUp' ? -krok : e.key === 'ArrowDown' ? krok : 0;
+      // Opakované šipky během 1 s jsou pro Ctrl+Z jeden krok.
+      const posledni = s.historie.at(-1);
+      if (!(posledni?.druh === 'sipky' && Date.now() - posledni.cas < 1000)) zaznamenat(ids, 'sipky');
+      else posledni.cas = Date.now();
+      presunout(new Map(ids.map((id) => [id, { x: s.pozice.get(id).x + dx, y: s.pozice.get(id).y + dy }])));
+    }
+  });
+
   plocha.addEventListener('keydown', (e) => {
     const uzel = e.target.closest?.('.uzel');
     if (uzel && (e.key === 'Enter' || e.key === ' ')) {
@@ -552,6 +842,13 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false })
     s.uprava = null;
     s.pridavani = false;
     if (s.nastenka && s.nastenka.pohled !== s.pohled) zrusitNastenku(false);
+    if (!s.nastenka) {
+      s.pevne = nacistPozice(s.pohled);
+      s.pozice = new Map();
+    }
+    s.oznacene.clear();
+    s.fokus = null;
+    s.historie = [];
     ulozit();
     s.prvniPriblizeni = true;
     nacist();
@@ -562,6 +859,9 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false })
     const nastenky = s.data?.nastenky ?? [];
     vyber.replaceChildren(new Option('Celá mapa (automaticky)', ''), ...nastenky.map((n) => new Option(`${n.nazev}${n.pohled === 'druzina' ? ' · družina' : ''}`, n.id)));
     vyber.value = s.nastenka?.id ?? '';
+    const tlacitko = $('#kanon-ulozit');
+    tlacitko.textContent = s.zmenyNastenky ? 'Uložit rozložení •' : 'Uložit rozložení';
+    tlacitko.title = s.zmenyNastenky ? `V nástěnce ${s.nastenka?.nazev ?? ''} jsou neuložené přesuny` : 'Uloží pozice uzlů jako nástěnku v kampan/nastenky/';
   }
 
   $('#kanon-nastenka').addEventListener('change', async (e) => {
@@ -570,6 +870,8 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false })
     try {
       const n = await api(`/api/kanon/nastenky/${encodeURIComponent(id)}`);
       s.nastenka = n;
+      s.zmenyNastenky = false;
+      s.historie = [];
       s.pevne = new Map(n.entity.map((x) => [x.id, { x: x.x, y: x.y }]));
       s.pozice = new Map(s.pevne);
       if (n.pohled !== s.pohled) {
@@ -586,7 +888,9 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false })
 
   function zrusitNastenku(prekreslit) {
     s.nastenka = null;
-    s.pevne = new Map();
+    s.zmenyNastenky = false;
+    s.historie = [];
+    s.pevne = nacistPozice(s.pohled);
     if (prekreslit) {
       s.pozice = new Map();
       prepocitat();
@@ -596,19 +900,24 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false })
   }
 
   if (jenCteni) $('#kanon-ulozit').hidden = true;
-  $('#kanon-ulozit').addEventListener('click', () => {
+  $('#kanon-ulozit').addEventListener('click', () => otevritNastenku(null));
+  /** Dialog Uložit rozložení; jen = Set id (Nástěnka z výběru) nebo null (vše na mapě). */
+  function otevritNastenku(jen) {
+    s.ulozitJen = jen;
     const d = $('#dialog-nastenka');
-    $('#nastenka-nazev').value = s.nastenka?.nazev ?? '';
-    $('#nastenka-jen').checked = s.nastenka ? s.nastenka.jen_tyto : false;
-    $('#nastenka-prepsat').hidden = !s.nastenka;
+    $('#nastenka-nazev').value = jen ? '' : s.nastenka?.nazev ?? '';
+    $('#nastenka-jen').checked = jen ? true : s.nastenka ? s.nastenka.jen_tyto : false;
+    $('#nastenka-prepsat').hidden = !s.nastenka || Boolean(jen);
     $('#nastenka-prepsat').textContent = s.nastenka ? `Uložit do „${s.nastenka.nazev}“` : '';
-    $('#nastenka-smazat').hidden = !s.nastenka;
-    $('#nastenka-nova').className = s.nastenka ? '' : 'hlavni';
     $('#nastenka-chyba').textContent = '';
-    $('#nastenka-popis').textContent = `Uloží pozice ${s.pozice.size} entit na mapě v pohledu ${s.pohled === 'druzina' ? 'družiny' : 'DM'}. Nové entity, které nástěnka nezná, mapa rozmístí sama.`;
+    $('#nastenka-smazat').hidden = !s.nastenka || Boolean(jen);
+    $('#nastenka-nova').className = s.nastenka && !jen ? '' : 'hlavni';
+    $('#nastenka-popis').textContent = jen
+      ? `Uloží jen ${jen.size} vybraných entit a jejich pozice v pohledu ${s.pohled === 'druzina' ? 'družiny' : 'DM'}.`
+      : `Uloží pozice ${s.pozice.size} entit na mapě v pohledu ${s.pohled === 'druzina' ? 'družiny' : 'DM'}. Nové entity, které nástěnka nezná, mapa rozmístí sama.`;
     d.showModal();
     $('#nastenka-nazev').focus();
-  });
+  }
 
   $('#formular-nastenka').addEventListener('submit', async (e) => {
     const akce = e.submitter?.value;
@@ -627,13 +936,17 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false })
         nazev: $('#nastenka-nazev').value,
         pohled: s.pohled,
         jen_tyto: $('#nastenka-jen').checked,
-        entity: [...s.pozice].map(([id, p]) => ({ id, x: Math.round(p.x), y: Math.round(p.y) })),
+        entity: [...s.pozice].filter(([id]) => !s.ulozitJen || s.ulozitJen.has(id)).map(([id, p]) => ({ id, x: Math.round(p.x), y: Math.round(p.y) })),
       };
       const r = akce === 'prepsat' && s.nastenka
         ? await api(`/api/kanon/nastenky/${encodeURIComponent(s.nastenka.id)}`, { metoda: 'PUT', telo })
         : await api('/api/kanon/nastenky', { metoda: 'POST', telo });
       s.nastenka = r.nastenka;
+      s.zmenyNastenky = false;
+      s.ulozitJen = null;
+      s.fokus = null;
       s.pevne = new Map(r.nastenka.entity.map((x) => [x.id, { x: x.x, y: x.y }]));
+      if (r.nastenka.jen_tyto) prepocitat();
       $('#dialog-nastenka').close();
       toast(`Rozložení uloženo do nástěnky ${r.nastenka.nazev}.`);
       vykresliNastenky();
@@ -716,6 +1029,8 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false })
       el('ul', { className: 'napoveda-kanonu' },
         el('li', { textContent: 'Klik na uzel vybere entitu, Esc výběr zruší.' }),
         el('li', { textContent: 'Tažením posuneš uzel nebo celou mapu, kolečkem přiblížíš.' }),
+        el('li', {}, el('kbd', { textContent: 'Shift' }), ' + klik přidá uzel do výběru, ', el('kbd', { textContent: 'Shift' }), ' + tažení po ploše vybere obdélníkem, ', el('kbd', { textContent: 'Ctrl+A' }), ' vše. Tažením vybraného uzlu posuneš celý výběr, šipky ho posunou o kousek, ', el('kbd', { textContent: 'Ctrl+Z' }), ' vrátí přesun.'),
+        el('li', { textContent: 'Ručně posunuté uzly si mapa pamatuje; Rozmístit znovu je zapomene.' }),
         druzina || s.jenCteni ? null : el('li', {}, el('kbd', { textContent: 'Alt' }), ' + tažení z uzlu na uzel založí vazbu a otevře popis vztahu.'),
         el('li', { textContent: 'Celou kartu s textem otevře Wiki.' }),
       ),
@@ -737,6 +1052,7 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false })
       e.popis ? el('p', { className: 'popis-karty', textContent: e.popis }) : null,
       el('div', { className: 'akce-karty' },
         el('a', { className: 'tlacitko hlavni', href: `#kanon/${encodeURIComponent(e.id)}`, textContent: 'Otevřít kartu' }),
+        el('button', { type: 'button', textContent: 'Jen okolí', title: 'Ukázat na mapě jen tuto entitu a to, co s ní souvisí', onclick: () => nastavitFokus(new Set([e.id])) }),
         karta.tlacitkoPoznamky(e),
         karta.tlacitkoObs(e)),
       dm && !s.jenCteni ? karta.prepinace(e) : null,
@@ -814,7 +1130,8 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false })
         s.uprava = null;
         s.pridavani = false;
         ctx.prekreslit();
-      } else if (s.rezim === 'mapa' && s.vybrane) vybrat(null);
+      } else if (s.rezim === 'mapa' && s.oznacene.size) zrusitOznaceni();
+      else if (s.rezim === 'mapa' && s.vybrane) vybrat(null);
     },
     /** Text pro F2 poznámku, když je vybraná entita (odkaz [[id]]). */
     odkazProPoznamku() {

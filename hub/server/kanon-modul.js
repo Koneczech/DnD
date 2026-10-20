@@ -486,8 +486,58 @@ export class Kanon extends EventEmitter {
   }
 
   oznam() {
+    // Hromadná úprava ohlásí změnu jednou na konci, ne po každé kartě.
+    if (this.ticho) {
+      this.cekaOznameni = true;
+      return;
+    }
     this.verze++;
     this.emit('zmena', { verze: this.verze });
+  }
+
+  /**
+   * Hromadná úprava přepínačů na mapě (výběr víc uzlů): { ids, verejne?, aktualni? }.
+   * Karty se mění jedna po druhé přes frontu zápisu; chyba jedné nezastaví ostatní.
+   * @returns {Promise<{zmeneno: number, odlozeno: number, chyby: Array<{id: string, chyba: string}>}>}
+   */
+  async nastavitHromadne(telo) {
+    const ids = Array.isArray(telo?.ids) ? [...new Set(telo.ids.map(String))] : [];
+    if (!ids.length) throw chyba('Není vybraná žádná karta.');
+    if (ids.length > 300) throw chyba('Nejvýš 300 karet najednou.');
+    const zmeny = {};
+    for (const klic of ['verejne', 'aktualni']) {
+      if (!(klic in telo)) continue;
+      if (typeof telo[klic] !== 'boolean') throw chyba(`${klic} musí být true nebo false.`);
+      zmeny[klic] = telo[klic];
+    }
+    if (!Object.keys(zmeny).length) throw chyba('Není co změnit (verejne nebo aktualni).');
+    const vysledek = { zmeneno: 0, odlozeno: 0, chyby: [] };
+    this.ticho = true;
+    try {
+      for (const id of ids) {
+        const e = this.entity.get(id);
+        if (!e) {
+          vysledek.chyby.push({ id, chyba: 'Entita neexistuje.' });
+          continue;
+        }
+        const potreba = ('verejne' in zmeny && e.verejne !== zmeny.verejne) || ('aktualni' in zmeny && e.aktualni !== zmeny.aktualni);
+        if (!potreba) continue;
+        try {
+          const r = await this.nastavit(id, zmeny);
+          vysledek.zmeneno++;
+          if (r.vysledek === 'odlozeno') vysledek.odlozeno++;
+        } catch (err) {
+          vysledek.chyby.push({ id, chyba: err.message });
+        }
+      }
+    } finally {
+      this.ticho = false;
+      if (this.cekaOznameni) {
+        this.cekaOznameni = false;
+        this.oznam();
+      }
+    }
+    return vysledek;
   }
 
   /**

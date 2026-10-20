@@ -328,7 +328,12 @@ test('balíček Kenney: stáhne ZIP jednou do baliky/, vybere soubory podle jmé
     assert.match(s.prubeh.chyba, /v balíčku rpg-audio není „nic“/);
     assert.match(await fs.readFile(path.join(t.audio, 'jednorazove', 'predmety', 'dvere-2.ogg'), 'utf8'), /^OggS dvere 2 /);
     await fs.access(path.join(t.audio, 'baliky', 'kenney_rpg-audio.zip'));
-    const z = JSON.parse(await fs.readFile(path.join(t.audio, 'zdroje.json'), 'utf8')).soubory['jednorazove/predmety/dvere-1.mp3'];
+    // zdroje.json se zapisuje atomicky; na Windows ho může chvíli držet antivir, zápis se pak opakuje.
+    const zdroj = async () => JSON.parse(await fs.readFile(path.join(t.audio, 'zdroje.json'), 'utf8').catch(() => '{}')).soubory?.['jednorazove/predmety/dvere-1.mp3'];
+    await dokud(async () => Boolean(await zdroj()), 5000).catch(() => {});
+    const z = await zdroj();
+    // Na Windows tu test jednou spadl bez vysvětlení: ať je v CI vidět, co sada hlásila.
+    assert.ok(z, `zdroje.json nemá dvere-1; průběh sady hlásil: ${s.prubeh.chyba}`);
     assert.deepEqual([z.autor, z.licence, z.zdroj, z.soubor], ['Kenney', 'CC0', 'Kenney (rpg-audio)', 'jednorazove/predmety/dvere-1.ogg']);
     assert.ok(s.polozky[0].balik.startsWith('Kenney: rpg-audio'));
     assert.ok(t.hub.zvuk.knihovna.jednorazove.some((g) => g.id === 'jednorazove/predmety/dvere' && g.soubory.length === 2));

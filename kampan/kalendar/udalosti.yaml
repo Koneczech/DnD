@@ -41,3 +41,229 @@ udalosti:
     datum: { rok: 1491, mesic: Eleint, den: 18 }
     text: "Koudur: První koncert mimo Mirabar - úspěch"
     verejna: true
+  - id: upast00ll36
+    datum: { rok: 1466, mesic: Mirtul, den: 15 }
+    text: ~ Narození Lety
+    verejna: false
+    vazby: [ "[[leta]]", "[[chovna-stanice]]" ]
+  - id: upast01h3yc
+    datum: { rok: 1466, mesic: Kythorn, den: 1 }
+    text: ~ Vendlino dítě zemře při porodu (DM)
+    verejna: false
+    vazby: [ "[[vendla-treestone]]", "[[dorn-treestone]]", "[[sidlo-treestoneu]]" ]
+  - id: upast02qtfl
+    datum: { rok: 1468, mesic: Ches, den: 1 }
+    text: ~ Krkavčí prapor vyhladí Kruh pod Praotcem (DM)
+    verejna: false
+    vazby: [ "[[praotec]]", "[[krkavci-prapor]]", "[[osric-redgrave]]", "[[bifron-nox]]", "[[corvain-thornroot]]", "[[high-forest]]" ]
+  - id: upast038xwy
+    datum: { rok: 1468, mesic: Flamerule, den: 15 }
+    text: ~ Narození Alby
+    verejna: false
+    vazby: [ "[[alba]]", "[[bifron-nox]]" ]
+  - id: upast04e0ht
+    datum: { rok: 1469, mesic: Ches, den: 10 }
+    text: ~ Narození Koudura
+    verejna: false
+    vazby: [ "[[koudur]]", "[[balgur-hardbeard]]", "[[helga-hardbeard]]" ]
+  - id: upast05zycd
+    datum: { rok: 1474, mesic: Tarsakh, den: 10 }
+    text: ~ Narození Tuskera
+    verejna: false
+    vazby: [ "[[tusker]]" ]
+  - id: upast06ntwz
+    datum: { rok: 1474, mesic: Tarsakh, den: 20 }
+    text: "~ Odveta v Cragách: neznámý muž vytáhne Dorna z ohně, v náručí orčí nemluvně (DM)"
+    verejna: false
+    vazby: [ "[[treestoneovska-stola]]", "[[cragy]]", "[[dorn-treestone]]", "[[bruna-ironvale]]", "[[krkavci-prapor]]", "[[neznamy-muz-tusker]]", "[[tusker]]" ]
+  - id: upast07ps9h
+    datum: { rok: 1474, mesic: Flamerule, den: 1 }
+    text: ~ Neznámý muž přinese Tuskera k Treestoneům (DM)
+    verejna: false
+    vazby: [ "[[neznamy-muz-tusker]]", "[[tusker]]", "[[dorn-treestone]]", "[[vendla-treestone]]", "[[sidlo-treestoneu]]" ]
+  - id: upast08iyr6
+    datum: { rok: 1474, mesic: Hammer, den: 27 }
+    text: "~ Leta: útěk z chovné stanice (7 let)"
+    verejna: false
+    vazby: [ "[[leta]]", "[[chovna-stanice]]" ]
+  - id: upast09l5qe
+    datum: { rok: 1474, svatek: Midwinter }
+    text: "Leta: zimní trh, Thiril ji chytí u pečených jablek"
+    verejna: false
+    vazby: [ "[[leta]]", "[[thiril-ambersedge]]" ]
+  - id: upast0aafsi
+    datum: { rok: 1474, mesic: Alturiak, den: 1 }
+    text: "Leta: druhý den, Thiril jí řekne své jméno"
+    verejna: false
+    vazby: [ "[[leta]]", "[[thiril-ambersedge]]" ]
+  - id: upast0b6kpt
+    datum: { rok: 1474, mesic: Tarsakh, den: 1 }
+    text: "~ Leta: uteče od Thirila oknem s jeho měšcem"
+    verejna: false
+    vazby: [ "[[leta]]", "[[thiril-ambersedge]]", "[[komora-nad-kozeluznou]]" ]
+  - id: upast0c5m8o
+    datum: { rok: 1474, mesic: Tarsakh, den: 11 }
+    text: "~ Leta: jedenáctou noc se vrátí, teplá polévka"
+    verejna: false
+    vazby: [ "[[leta]]", "[[thiril-ambersedge]]", "[[komora-nad-kozeluznou]]" ]
+  - id: upast0dsav2
+    datum: { rok: 1477, mesic: Kythorn, den: 10 }
+    text: "~ Leta: získá zpět Thirilův prsten (11 let), jméno Quickfinger"
+    verejna: false
+    vazby: [ "[[leta]]", "[[thiril-ambersedge]]", "[[thiriluv-prsten]]" ]
+  - id: upast0ej9hs
+    datum: { rok: 1477, mesic: Kythorn, den: 25 }
+    text: "~ Leta: Thiril jí vyřeže amulet (L a šíp)"
+    verejna: false
+    vazby: [ "[[leta]]", "[[thiril-ambersedge]]", "[[letin-amulet]]" ]
+  - id: upast0f9ajq
+    datum: { rok: 1482, mesic: Marpenoth, den: 3 }
+    konec: { rok: 1482, mesic: Marpenoth, den: 5 }
+    text: "~ Leta: dva dny ve sklepě bohatého domu (16 let)"
+    verejna: false
+    vazby: [ "[[leta]]", "[[thiril-ambersedge]]" ]
+  - id: upast0gwjfp
+    datum: { rok: 1491, mesic: Eleasis, den: 28 }
+    text: "~ Leta: opilecká sázka U Roztaveného groše"
+    verejna: false
+    vazby: [ "[[leta]]", "[[u-roztaveneho-grose]]" ]
+  - id: upast0h4fbn
+    datum: { rok: 1491, mesic: Eleasis, den: 29 }
+    text: "~ Leta: stáhne Grimsdalovi prsten z prstu"
+    verejna: false
+    vazby: [ "[[leta]]", "[[halvar-grimsdal]]" ]
+  - id: upast0i7cbt
+    datum: { rok: 1491, mesic: Eleint, den: 1 }
+    text: "~ Leta: Grimsdalův prsten anonymně vrátí"
+    verejna: false
+    vazby: [ "[[leta]]", "[[halvar-grimsdal]]" ]
+  - id: upast0jb9va
+    datum: { rok: 1491, mesic: Eleint, den: 3 }
+    text: ~ Ordwin jde s tou sázkou za Thirilem (DM)
+    verejna: false
+    vazby: [ "[[ordwin-sohla]]", "[[thiril-ambersedge]]", "[[leta]]" ]
+  - id: upast0kbdei
+    datum: { rok: 1491, mesic: Eleint, den: 5 }
+    text: "~ Leta: Thiril se zeptá, jestli to byla ona"
+    verejna: false
+    vazby: [ "[[leta]]", "[[thiril-ambersedge]]", "[[komora-nad-kozeluznou]]" ]
+  - id: upast0lbmbw
+    datum: { rok: 1491, mesic: Eleint, den: 8 }
+    text: Zatčení Thirila
+    verejna: false
+    vazby: [ "[[thiril-ambersedge]]", "[[halvar-grimsdal]]", "[[leta]]" ]
+  - id: upast0me2s5
+    datum: { rok: 1491, mesic: Eleint, den: 11 }
+    text: "Leta: poslední rozhovor s Thirilem ve věznici"
+    verejna: false
+    vazby: [ "[[leta]]", "[[thiril-ambersedge]]", "[[vezeni-pod-radnici]]" ]
+  - id: upast0nxy5a
+    datum: { rok: 1491, mesic: Eleint, den: 13 }
+    text: Poprava Thirila (DM)
+    verejna: false
+    vazby: [ "[[thiril-ambersedge]]", "[[ordwin-sohla]]", "[[ordwinuv-dopis]]" ]
+  - id: upast0oxvtk
+    datum: { rok: 1473, mesic: Marpenoth, den: 10 }
+    text: "~ Alba: přívěsek „po matce“ (5 let)"
+    verejna: false
+    vazby: [ "[[alba]]", "[[albin-privesek]]", "[[bifron-nox]]", "[[tichy-hvozd]]" ]
+  - id: upast0ph4v1
+    datum: { rok: 1475, mesic: Mirtul, den: 12 }
+    text: "~ Alba: srnka, první magie (7 let)"
+    verejna: false
+    vazby: [ "[[alba]]", "[[bifron-nox]]", "[[tichy-hvozd]]" ]
+  - id: upast0qx4sm
+    datum: { rok: 1477, mesic: Kythorn, den: 20 }
+    text: "~ Alba: Pohlcené město a kostra dítěte (9 let)"
+    verejna: false
+    vazby: [ "[[alba]]", "[[bifron-nox]]", "[[tarnwick]]" ]
+  - id: upast0rfw28
+    datum: { rok: 1482, mesic: Uktar, den: 5 }
+    text: "~ Alba: Corvain poprvé přijde za Bifronem (asi 14 let)"
+    verejna: false
+    vazby: [ "[[alba]]", "[[corvain-thornroot]]", "[[bifron-nox]]", "[[tichy-hvozd]]" ]
+  - id: upast0skm1b
+    datum: { rok: 1490, mesic: Eleint, den: 1 }
+    text: ~ Bifron odchází z Tichého hvozdu
+    verejna: false
+    vazby: [ "[[bifron-nox]]", "[[alba]]", "[[tichy-hvozd]]", "[[patyk]]" ]
+  - id: upast0twjx1
+    datum: { rok: 1490, mesic: Uktar, den: 10 }
+    text: "~ Alba: napadne první sníh, Bifron se nevrátil"
+    verejna: false
+    vazby: [ "[[alba]]", "[[bifron-nox]]", "[[tichy-hvozd]]" ]
+  - id: upast0u9id1
+    datum: { rok: 1491, mesic: Alturiak, den: 15 }
+    text: "~ Alba: najde Bifronovy zápisky"
+    verejna: false
+    vazby: [ "[[alba]]", "[[bifron-nox]]", "[[tichy-hvozd]]" ]
+  - id: upast0vwalv
+    datum: { rok: 1491, mesic: Ches, den: 10 }
+    text: "~ Alba: Corvain přijde podruhé a pošle ji do Lurkwoodu"
+    verejna: false
+    vazby: [ "[[alba]]", "[[corvain-thornroot]]", "[[tichy-hvozd]]", "[[lurkwood]]" ]
+  - id: upast0w2934
+    datum: { rok: 1479, mesic: Uktar, den: 20 }
+    text: "~ Koudur: večeře s radními (Grimsdal, Stonewhen, Ironvale), Balgur v Radě"
+    verejna: false
+    vazby: [ "[[koudur]]", "[[balgur-hardbeard]]", "[[hedwiga-hardbeard]]", "[[halvar-grimsdal]]", "[[dagnar-stonewhen]]", "[[bruna-ironvale]]", "[[sidlo-hardbeardu]]" ]
+  - id: upast0xh547
+    datum: { rok: 1482, mesic: Kythorn, den: 10 }
+    text: ~ Koudur (13) se zastane Tuskera (8) na ulici
+    verejna: false
+    vazby: [ "[[koudur]]", "[[tusker]]" ]
+  - id: upast0ys1t8
+    datum: { rok: 1483, mesic: Marpenoth, den: 1 }
+    text: "~ Koudur: dudy od Branna, tajné hraní Na Zvonici"
+    verejna: false
+    vazby: [ "[[koudur]]", "[[brann-kettleborn]]", "[[ulfgar-tinbarrel]]", "[[na-zvonici]]" ]
+  - id: upast0zj6hx
+    datum: { rok: 1491, mesic: Eleasis, den: 12 }
+    text: ~ Koudur oznámí, že jede koncertovat
+    verejna: false
+    vazby: [ "[[koudur]]", "[[balgur-hardbeard]]", "[[helga-hardbeard]]" ]
+  - id: upast1010c4
+    datum: { rok: 1491, mesic: Eleasis, den: 13 }
+    text: ~ Koudur to řekne Viře do očí, Vira ztropí scénu
+    verejna: false
+    vazby: [ "[[koudur]]", "[[vira-stonewhen]]" ]
+  - id: upast11fq7q
+    datum: { rok: 1491, mesic: Eleasis, den: 16 }
+    text: ~ Koudur se domluví s Tuskerem, Balgur a Helga Tuskerovi přidají peníze
+    verejna: false
+    vazby: [ "[[koudur]]", "[[tusker]]", "[[balgur-hardbeard]]", "[[helga-hardbeard]]" ]
+  - id: upast12r1c1
+    datum: { rok: 1491, mesic: Eleasis, den: 17 }
+    text: ~ Helga napíše Norře Ambleforge o koncert (DM)
+    verejna: false
+    vazby: [ "[[helga-hardbeard]]", "[[norra-ambleforge]]", "[[u-kamenne-misy]]", "[[koudur]]" ]
+  - id: upast131umc
+    datum: { rok: 1491, mesic: Eleint, den: 11 }
+    text: "~ Rozloučení: Hardbeardovi a Brann, Vendla a Dorn"
+    verejna: false
+    vazby: [ "[[koudur]]", "[[tusker]]", "[[brann-kettleborn]]", "[[vendla-treestone]]", "[[dorn-treestone]]" ]
+  - id: upast14ch5h
+    datum: { rok: 1480, mesic: Alturiak, den: 5 }
+    text: "~ Tusker (6): „Jsi náš.“"
+    verejna: false
+    vazby: [ "[[tusker]]", "[[vendla-treestone]]", "[[sidlo-treestoneu]]" ]
+  - id: upast15l4h6
+    datum: { rok: 1486, mesic: Marpenoth, den: 20 }
+    text: "~ Tusker (12): „Nevím, odkud jsi.“"
+    verejna: false
+    vazby: [ "[[tusker]]", "[[dorn-treestone]]", "[[sidlo-treestoneu]]" ]
+  - id: upast16ges6
+    datum: { rok: 1489, mesic: Mirtul, den: 1 }
+    text: ~ Tusker nastoupí ke stráži (15 let)
+    verejna: false
+    vazby: [ "[[tusker]]", "[[dorn-treestone]]" ]
+  - id: upast172c7s
+    datum: { rok: 1489, mesic: Eleasis, den: 15 }
+    text: ~ Tusker zmlátí Rurika, Dorn ho dostane zpátky
+    verejna: false
+    vazby: [ "[[tusker]]", "[[rurik-tarn]]", "[[dorn-treestone]]" ]
+  - id: upast18jyj8
+    datum: { rok: 1491, mesic: Eleasis, den: 18 }
+    text: "~ Tusker dá peníze od Hardbeardů rodičům (DM: Koudur neví)"
+    verejna: false
+    vazby: [ "[[tusker]]", "[[dorn-treestone]]", "[[vendla-treestone]]" ]

@@ -1,119 +1,12 @@
-// Modul Kánon v panelu (Blok 3, rozhodnutí 69–71, bod 102): síť entit vlevo, karta vpravo.
+// Modul Kánon v panelu (Blok 3). Hlavní pohled je wiki (kanon-wiki.js, rozhodnutí DM
+// 20. 10. 2026), mapa sítě entit je druhá záložka (rozhodnutí 69, bod 102): síť vlevo, karta vpravo.
 // Kreslí se ze souborů v kampan/ přes /api/kanon, bez knihoven a bez internetu.
 import { rozlozit, polomer, hledat, proHledani } from '/sdilene/sit.js';
-import { naHtml, escapovat } from '/sdilene/markdown.js';
+import { escapovat } from '/sdilene/markdown.js';
+import { $, TYPY, barvaTypu, barvaPostoje, postojText, el, nahradit, svg, vyrezHlavy, oriznoutPortret, obrazekEntity, stitekTypu, STAVY, castiKarty } from '/panel/kanon-spolecne.js';
+import { vytvoritWiki } from '/panel/kanon-wiki.js';
 
-const $ = (sel, koren = document) => koren.querySelector(sel);
-
-export const TYPY = {
-  postava: { mn: 'Postavy', j: 'postava' },
-  padouch: { mn: 'Padouši', j: 'padouch' },
-  frakce: { mn: 'Frakce', j: 'frakce' },
-  npc: { mn: 'NPC', j: 'NPC' },
-  misto: { mn: 'Místa', j: 'místo' },
-  predmet: { mn: 'Předměty', j: 'předmět' },
-  bytost: { mn: 'Bytosti', j: 'bytost' },
-  sezeni: { mn: 'Sezení', j: 'sezení' },
-  kanon: { mn: 'Hráčský kánon', j: 'hráčský kánon' },
-  rozhodnuti: { mn: 'Rozhodnutí', j: 'rozhodnutí' },
-};
-const POSTOJE = { '-3': 'nepřítel', '-2': 'nepřátelský', '-1': 'chladný', 0: 'neutrální', 1: 'vlídný', 2: 'přátelský', 3: 'blízký' };
-const UDAJE = { hrac: 'Hráč', druh: 'Druh', povolani: 'Povolání', stav: 'Stav', oblast: 'Oblast', zaznamenano: 'Zaznamenáno', sezeni: 'Sezení', cislo: 'Číslo', kdo: 'Kdo', doresit: 'Dořešit' };
-const STAVY = { otevrene: 'otevřené', rozhodnuto: 'rozhodnuto', zavrzeno: 'zavrženo' };
-const barvaTypu = (t) => `var(--t-${TYPY[t] ? t : 'npc'})`;
-const barvaPostoje = (p) => (Number.isInteger(p) ? `var(--postoj-${p < 0 ? `m${-p}` : p})` : null);
-const postojText = (p) => (Number.isInteger(p) ? `${p > 0 ? '+' : p < 0 ? '−' : ''}${Math.abs(p)} ${POSTOJE[p]}` : '');
-const SVG = 'http://www.w3.org/2000/svg';
-
-function el(tag, vlastnosti = {}, ...deti) {
-  const e = document.createElement(tag);
-  for (const [k, v] of Object.entries(vlastnosti)) {
-    if (v === undefined || v === null || v === false) continue;
-    if (k === 'style') e.setAttribute('style', v);
-    else if (k.startsWith('data-') || k.startsWith('aria-') || k === 'role' || k === 'for') e.setAttribute(k, v === true ? '' : v);
-    else e[k] = v;
-  }
-  e.append(...deti.flat().filter((d) => d !== null && d !== undefined && d !== false));
-  return e;
-}
-/** replaceChildren bez prázdných hodnot (null by se vypsalo jako text „null“). */
-const nahradit = (kam, ...deti) => kam.replaceChildren(...deti.flat().filter((d) => d !== null && d !== undefined && d !== false));
-function svg(tag, atributy = {}) {
-  const e = document.createElementNS(SVG, tag);
-  for (const [k, v] of Object.entries(atributy)) if (v !== undefined && v !== null) e.setAttribute(k, v);
-  return e;
-}
-
-/**
- * Výřez hlavy z portrétu postavy. Portréty jsou celé figury na průhledném plátně 1080 × 1500
- * a různě vysoké (malý hobit, velký medvěd), proto se hlava hledá podle průhlednosti obrázku.
- * @returns {Promise<{x: number, y: number, s: number, pomer: number}|null>} x a s ve zlomcích šířky, y ve zlomcích výšky
- */
-const vyrezy = new Map();
-function vyrezHlavy(url) {
-  if (!vyrezy.has(url)) {
-    vyrezy.set(url, new Promise((hotovo) => {
-      const obr = new Image();
-      obr.onload = () => {
-        try {
-          const pomer = obr.naturalHeight / obr.naturalWidth;
-          const w = 72;
-          const h = Math.max(1, Math.round(w * pomer));
-          const platno = document.createElement('canvas');
-          platno.width = w;
-          platno.height = h;
-          const g = platno.getContext('2d', { willReadFrequently: true });
-          g.drawImage(obr, 0, 0, w, h);
-          const d = g.getImageData(0, 0, w, h).data;
-          const plny = (x, y) => d[(y * w + x) * 4 + 3] > 40;
-          if (plny(0, 0) && plny(w - 1, 0)) return hotovo(null); // bez průhlednosti: obyčejný obrázek
-          let nahore = -1;
-          let dole = -1;
-          for (let y = 0; y < h; y++) {
-            for (let x = 0; x < w; x++) {
-              if (!plny(x, y)) continue;
-              if (nahore < 0) nahore = y;
-              dole = y;
-              break;
-            }
-          }
-          if (nahore < 0) return hotovo(null);
-          const strana = Math.min(w, Math.max((dole - nahore + 1) * 0.42, w * 0.22));
-          let soucet = 0;
-          let pocet = 0;
-          for (let y = nahore; y < Math.min(h, nahore + strana * 0.7); y++) {
-            for (let x = 0; x < w; x++) {
-              if (plny(x, y)) {
-                soucet += x;
-                pocet++;
-              }
-            }
-          }
-          const stred = pocet ? soucet / pocet : w / 2;
-          hotovo({ x: (stred - strana / 2) / w, y: (nahore - strana * 0.1) / h, s: strana / w, pomer });
-        } catch {
-          hotovo(null);
-        }
-      };
-      obr.onerror = () => hotovo(null);
-      obr.src = url;
-    }));
-  }
-  return vyrezy.get(url);
-}
-
-/** Výřez hlavy na <img> uvnitř čtvercového rámečku s overflow: hidden. */
-function oriznoutPortret(img, url) {
-  vyrezHlavy(url).then((v) => {
-    if (!v) return;
-    img.classList.add('vyrez');
-    img.style.width = `${100 / v.s}%`;
-    img.style.left = `${(-v.x / v.s) * 100}%`;
-    img.style.top = `${((-v.y * v.pomer) / v.s) * 100}%`;
-  });
-  return img;
-}
-
+export { TYPY };
 /** Uložené volby mapy v prohlížeči (filtry, pohled). Bez localStorage to funguje taky. */
 const ULOZENI = 'dmhub-kanon';
 function nacistVolby() {
@@ -155,6 +48,8 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
     nacita: null,
     viditelna: false,
     prvniPriblizeni: true,
+    rezim: 'wiki', // wiki (hlavní pohled) nebo mapa
+    mapaZastarala: true,
   };
   const platno = $('#kanon-platno');
   const plocha = $('#kanon-svg');
@@ -166,6 +61,47 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
   vrstva.append(gHrany, gUzly, gDocasna);
   plocha.append(defs, vrstva);
   const kartaEl = $('#kanon-karta');
+
+  // Společné části karty a wiki. prekreslit překreslí to, co je právě vidět.
+  const ctx = {
+    s,
+    api,
+    toast,
+    otevritPoznamku,
+    prekreslit: () => (s.rezim === 'mapa' ? vykresliKartu() : wiki.prekreslit()),
+    otevrit: (id) => otevritEntitu(id),
+    nacist: () => nacist(),
+    nacistKartu: (id) => nacistKartu(id),
+  };
+  const karta = castiKarty(ctx);
+  const wiki = vytvoritWiki(ctx, karta);
+
+  /** Odkaz na entitu: na mapě ji vybere, ve wiki otevře její stránku. */
+  function otevritEntitu(id) {
+    if (s.rezim === 'mapa') vybrat(id);
+    else location.hash = `kanon/${encodeURIComponent(id)}`;
+  }
+
+  function prepnoutRezim(rezim) {
+    s.rezim = rezim === 'mapa' ? 'mapa' : 'wiki';
+    const obr = $('#obrazovka-kanon');
+    obr.classList.toggle('rezim-mapa', s.rezim === 'mapa');
+    obr.classList.toggle('rezim-wiki', s.rezim === 'wiki');
+    for (const b of document.querySelectorAll('#kanon-rezim button')) b.setAttribute('aria-pressed', String(b.dataset.rezim === s.rezim));
+    if (s.rezim === 'mapa' && s.data) {
+      if (s.mapaZastarala) prepocitat();
+      if (s.prvniPriblizeni) {
+        s.prvniPriblizeni = false;
+        requestAnimationFrame(() => priblizitNa(null, false));
+      }
+    }
+  }
+  for (const b of document.querySelectorAll('#kanon-rezim button')) {
+    b.addEventListener('click', () => {
+      if (b.dataset.rezim === 'mapa') location.hash = s.vybrane ? `kanon/mapa/${encodeURIComponent(s.vybrane)}` : 'kanon/mapa';
+      else location.hash = s.vybrane ? `kanon/${encodeURIComponent(s.vybrane)}` : 'kanon';
+    });
+  }
 
   const ulozit = () => ulozitVolby({ pohled: s.pohled, typy: [...s.typy], jenVeHre: s.jenVeHre });
 
@@ -202,9 +138,10 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
     }
     vykresliFiltry();
     vykresliNastenky();
-    prepocitat();
+    s.mapaZastarala = true;
+    if (s.rezim === 'mapa') prepocitat();
     if (s.vybrane) nacistKartu(s.vybrane);
-    else vykresliKartu();
+    else ctx.prekreslit();
   }
 
   /** Neuspořádané dvojice entit, mezi kterými vede vazba nebo vztah (jen existující cíle). */
@@ -234,6 +171,7 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
     const pevne = new Map([...s.pevne].filter(([id]) => ids.has(id)));
     const start = new Map([...s.pozice].filter(([id]) => ids.has(id)));
     s.pozice = rozlozit(uzly, hrany, { pevne, start });
+    s.mapaZastarala = false;
     vykreslit();
     if (s.prvniPriblizeni && s.viditelna) {
       s.prvniPriblizeni = false;
@@ -539,7 +477,7 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
     const uzMa = a?.vazby.includes(k);
     try {
       const r = await api(`/api/kanon/entita/${encodeURIComponent(od)}/vazby`, { metoda: 'POST', telo: { cil: k } });
-      hlasitZapis(r, uzMa ? `${a?.nazev ?? od} už má vazbu na ${b?.nazev ?? k}: uprav popis vztahu.` : `Vazba ${a?.nazev ?? od} → ${b?.nazev ?? k} založena. Doplň popis vztahu, nebo ji nech bez něj.`);
+      karta.hlasitZapis(r, uzMa ? `${a?.nazev ?? od} už má vazbu na ${b?.nazev ?? k}: uprav popis vztahu.` : `Vazba ${a?.nazev ?? od} → ${b?.nazev ?? k} založena. Doplň popis vztahu, nebo ji nech bez něj.`);
       s.uprava = { cil: k, nova: true };
       s.vybrane = od;
       s.karta = r.karta;
@@ -708,7 +646,7 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
         prepocitat();
       }
       zvyraznit();
-      s.karta = null;
+      if (s.karta?.id !== id) s.karta = null;
       vykresliKartu();
       nacistKartu(id);
       if (priblizit) {
@@ -720,7 +658,7 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
       zvyraznit();
       vykresliKartu();
     }
-    const hash = id ? `#kanon/${encodeURIComponent(id)}` : '#kanon';
+    const hash = id ? `#kanon/mapa/${encodeURIComponent(id)}` : '#kanon/mapa';
     if (location.hash !== hash) history.replaceState(null, '', hash);
   }
 
@@ -729,37 +667,13 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
       const k = await api(`/api/kanon/entita/${encodeURIComponent(id)}?pohled=${s.pohled}`);
       if (s.vybrane !== id) return;
       s.karta = k;
-      vykresliKartu();
+      ctx.prekreslit();
     } catch (chyba) {
       if (s.vybrane === id) toast(chyba.message, { chyba: true });
     }
   }
 
-  function hlasitZapis(r, text) {
-    if (r?.vysledek === 'odlozeno') toast('Soubor karty je otevřený jinde (Obsidian?). Změna se zapíše, až se uvolní.');
-    else if (text) toast(text);
-  }
-
-  async function upravit(cesta, metoda, telo, text) {
-    try {
-      const r = await api(cesta, { metoda, telo });
-      hlasitZapis(r, text);
-      if (r.karta && r.karta.id === s.vybrane) s.karta = r.karta;
-      vykresliKartu();
-      return r;
-    } catch (chyba) {
-      toast(chyba.message, { chyba: true });
-      return null;
-    }
-  }
-
-  const odkazNaEntitu = (id, text) => {
-    const e = s.podleId.get(id);
-    const b = el('button', { type: 'button', className: 'odkaz-entity', textContent: text ?? e?.nazev ?? id });
-    if (e) b.style.setProperty('--c', barvaTypu(e.typ));
-    b.addEventListener('click', () => vybrat(id));
-    return b;
-  };
+  /* ---------- Karta na mapě: přehled entity, vztahy, odkaz do wiki ---------- */
 
   function prehledKarty() {
     const entity = s.data?.entity ?? [];
@@ -771,19 +685,12 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
         r.style.setProperty('--c', barvaTypu(t));
         return r;
       });
-    const postavy = entity.filter((e) => e.typ === 'postava').map((e) => {
-      const b = el('button', { type: 'button', className: 'postava-prehled' }, e.obrazek ? el('span', { className: 'avatar vyrez-portretu' }, e.portret ? oriznoutPortret(el('img', { src: e.obrazek, alt: '' }), e.obrazek) : el('img', { src: e.obrazek, alt: '' })) : el('span', { className: 'ikona-mini', textContent: e.ikona || '·' }), el('span', {}, e.nazev, el('small', { textContent: [e.udaje?.hrac, `${e.stupen} vazeb`].filter(Boolean).join(' · ') })));
-      b.addEventListener('click', () => vybrat(e.id));
-      return b;
-    });
     const druzina = s.pohled === 'druzina';
-    nahradit(kartaEl, 
-      el('h2', { className: 'karta-nazev', textContent: druzina ? 'Co ví družina' : 'Kánon kampaně' }),
+    nahradit(kartaEl,
+      el('h2', { className: 'karta-nazev', textContent: druzina ? 'Co ví družina' : 'Mapa kánonu' }),
       el('p', { className: 'uvod', textContent: druzina
-        ? `${entity.length} entit, které družina zná (verejne: true), a jen vztahy, které zná. Karty ukazují jen oddíl Co ví družina. Slouží k rekapitulaci; repo je dál veřejné.`
-        : `${entity.length} entit a ${vsechnyDvojice().length} vazeb ze složky kampan/. Barva uzlu je typ, barva čáry postoj vztahu. Text karet se píše v Obsidianu.` }),
-      postavy.length ? el('h3', { textContent: 'Postavy hráčů' }) : null,
-      postavy.length ? el('div', { className: 'postavy-prehled' }, postavy) : null,
+        ? `${entity.length} entit, které družina zná, a jen vztahy, které zná.`
+        : `${entity.length} entit a ${vsechnyDvojice().length} vazeb. Barva uzlu je typ, barva čáry postoj vztahu.` }),
       el('h3', { textContent: 'Počty' }),
       el('div', { className: 'pocty-kanonu' }, pocty),
       el('h3', { textContent: 'Ovládání' }),
@@ -791,157 +698,8 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
         el('li', { textContent: 'Klik na uzel vybere entitu, Esc výběr zruší.' }),
         el('li', { textContent: 'Tažením posuneš uzel nebo celou mapu, kolečkem přiblížíš.' }),
         druzina ? null : el('li', {}, el('kbd', { textContent: 'Alt' }), ' + tažení z uzlu na uzel založí vazbu a otevře popis vztahu.'),
-        el('li', {}, 'Hledání je v horní liště (', el('kbd', { textContent: 'Ctrl+K' }), ').'),
+        el('li', { textContent: 'Celou kartu s textem otevře Wiki.' }),
       ),
-      s.data?.chyby?.length ? el('h3', { textContent: 'Karty, které se nenačetly' }) : null,
-      s.data?.chyby?.length ? el('ul', { className: 'chyby-kanonu' }, s.data.chyby.map((c) => el('li', {}, el('code', { textContent: c.soubor }), ` ${c.chyba}`))) : null,
-    );
-  }
-
-  function prepinac(text, zapnuto, popis, zmena) {
-    const vstup = el('input', { type: 'checkbox', role: 'switch', checked: zapnuto });
-    vstup.addEventListener('change', () => zmena(vstup.checked));
-    return el('label', { className: 'prepinac-zap', title: popis }, vstup, el('span', { textContent: text }));
-  }
-
-  function formularVztahu(e, cil, vztah, nova) {
-    const c = s.podleId.get(cil);
-    const popis = el('input', { type: 'text', value: vztah?.popis ?? '', placeholder: 'např. adoptivní otec, dluží mu', maxLength: 200, 'aria-label': 'Popis vztahu' });
-    const postoj = el('select', { 'aria-label': 'Postoj' }, new Option('bez postoje', ''), ...[3, 2, 1, 0, -1, -2, -3].map((p) => new Option(postojText(p), String(p))));
-    postoj.value = Number.isInteger(vztah?.postoj) ? String(vztah.postoj) : '';
-    const druzina = el('input', { type: 'checkbox', checked: vztah?.verejne === true });
-    const ulozitBtn = el('button', { type: 'submit', className: 'hlavni', textContent: 'Uložit vztah' });
-    const zrusitBtn = el('button', { type: 'button', textContent: nova ? 'Nechat bez popisu' : 'Zrušit' });
-    const odebratBtn = vztah ? el('button', { type: 'button', className: 'tiche', textContent: 'Odebrat popis', title: 'Vztah zmizí, vazba (čára) zůstane' }) : null;
-    const f = el('form', { className: 'formular-vztahu' },
-      el('p', { className: 'formular-vztahu-nadpis' }, `${e.nazev} → `, el('strong', { textContent: c?.nazev ?? cil })),
-      el('label', {}, 'Kým je pro ni/něj', popis),
-      el('div', { className: 'radek-vztahu' }, el('label', {}, 'Postoj', postoj), el('label', { className: 'zaskrtavaci' }, druzina, ' Družina zná')),
-      el('div', { className: 'tlacitka' }, ulozitBtn, zrusitBtn, odebratBtn),
-    );
-    f.addEventListener('submit', async (ev) => {
-      ev.preventDefault();
-      if (!popis.value.trim()) {
-        popis.focus();
-        return toast('Napiš popis vztahu, nebo zvol Nechat bez popisu.', { chyba: true });
-      }
-      const r = await upravit(`/api/kanon/entita/${encodeURIComponent(e.id)}/vztahy/${encodeURIComponent(cil)}`, 'PUT', { popis: popis.value, postoj: postoj.value === '' ? null : Number(postoj.value), verejne: druzina.checked }, 'Vztah uložen.');
-      if (r) {
-        s.uprava = null;
-        vykresliKartu();
-      }
-    });
-    zrusitBtn.addEventListener('click', () => {
-      s.uprava = null;
-      vykresliKartu();
-    });
-    odebratBtn?.addEventListener('click', async () => {
-      if (await upravit(`/api/kanon/entita/${encodeURIComponent(e.id)}/vztahy/${encodeURIComponent(cil)}`, 'DELETE', undefined, 'Popis vztahu odebrán, vazba zůstala.')) {
-        s.uprava = null;
-        vykresliKartu();
-      }
-    });
-    queueMicrotask(() => {
-      f.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      popis.focus({ preventScroll: true });
-    });
-    return f;
-  }
-
-  function seznamVztahu(k) {
-    const dm = s.pohled === 'dm';
-    const cile = [...new Set([...k.vztahy.map((v) => v.s), ...k.vazby])];
-    const radky = cile.map((cil) => {
-      const v = k.vztahy.find((x) => x.s === cil) ?? null;
-      if (s.uprava?.cil === cil && dm) return el('li', { className: 'vztah-radek upravuje' }, formularVztahu(k, cil, v, s.uprava.nova));
-      const existuje = s.podleId.has(cil);
-      const tecka = el('span', { className: 'tecka-postoje', title: v && Number.isInteger(v.postoj) ? `Postoj ${postojText(v.postoj)}` : v ? 'Bez postoje' : 'Vazba bez popisu' });
-      const barva = v ? barvaPostoje(v.postoj) : null;
-      if (barva) tecka.style.background = barva;
-      if (!v) tecka.classList.add('jen-vazba');
-      const akce = dm
-        ? el('span', { className: 'akce-vztahu' },
-          el('button', { type: 'button', className: 'mala', textContent: v ? 'Upravit' : '+ popis', title: v ? 'Upravit popis, postoj a jestli ho zná družina' : 'Doplnit popis vztahu', onclick: () => { s.uprava = { cil }; vykresliKartu(); } }),
-          el('button', { type: 'button', className: 'mala tiche', textContent: '×', title: 'Odebrat vazbu i vztah', 'aria-label': `Odebrat vazbu na ${s.podleId.get(cil)?.nazev ?? cil}`, onclick: () => odebratVazbu(k, cil) }))
-        : null;
-      return el('li', { className: 'vztah-radek' },
-        tecka,
-        el('span', { className: 'vztah-text' },
-          existuje ? odkazNaEntitu(cil) : el('span', { className: 'odkaz-chybi', textContent: `[[${cil}]]`, title: 'Cíl neexistuje (Kontrola dat)' }),
-          v ? el('span', { className: 'vztah-popis', textContent: ` — ${v.popis}` }) : null,
-          v && dm && v.verejne ? el('span', { className: 'stitek-maly', textContent: 'družina zná' }) : null),
-        akce);
-    });
-    if (s.uprava && !cile.includes(s.uprava.cil) && dm) radky.push(el('li', { className: 'vztah-radek upravuje' }, formularVztahu(k, s.uprava.cil, null, true)));
-    return radky;
-  }
-
-  async function odebratVazbu(k, cil) {
-    const nazev = s.podleId.get(cil)?.nazev ?? cil;
-    const maVztah = k.vztahy.some((v) => v.s === cil);
-    if (!confirm(`Odebrat vazbu ${k.nazev} → ${nazev}${maVztah ? ' i s popisem vztahu' : ''}?`)) return;
-    await upravit(`/api/kanon/entita/${encodeURIComponent(k.id)}/vazby/${encodeURIComponent(cil)}`, 'DELETE', undefined, 'Vazba odebrána.');
-  }
-
-  function pridatVazbuUI(k) {
-    if (!s.pridavani) {
-      return el('button', { type: 'button', className: 'mala', textContent: '+ Přidat vazbu', onclick: () => { s.pridavani = true; vykresliKartu(); } });
-    }
-    const vstup = el('input', { type: 'search', placeholder: 'Hledat entitu…', autocomplete: 'off', 'aria-label': 'Entita pro novou vazbu' });
-    const vysledky = el('ul', { className: 'vysledky-vazby' });
-    const ukaz = () => {
-      const nalez = hledat(s.data.entity.filter((e) => e.id !== k.id && !k.vazby.includes(e.id)), vstup.value, 8);
-      vysledky.replaceChildren(...nalez.map((e) => {
-        const b = el('button', { type: 'button', className: 'polozka-hledani' }, el('span', { className: 'tecka' }), e.nazev, el('small', { textContent: ` ${TYPY[e.typ]?.j ?? e.typ}` }));
-        b.style.setProperty('--c', barvaTypu(e.typ));
-        b.addEventListener('click', async () => {
-          s.pridavani = false;
-          const r = await upravit(`/api/kanon/entita/${encodeURIComponent(k.id)}/vazby`, 'POST', { cil: e.id }, `Vazba na ${e.nazev} založena.`);
-          if (r) {
-            s.uprava = { cil: e.id, nova: true };
-            vykresliKartu();
-          }
-        });
-        return el('li', {}, b);
-      }));
-    };
-    vstup.addEventListener('input', ukaz);
-    vstup.addEventListener('keydown', (ev) => {
-      if (ev.key === 'Escape') {
-        ev.stopPropagation();
-        s.pridavani = false;
-        vykresliKartu();
-      }
-      if (ev.key === 'Enter') {
-        ev.preventDefault();
-        vysledky.querySelector('button')?.click();
-      }
-    });
-    queueMicrotask(() => vstup.focus());
-    return el('div', { className: 'pridat-vazbu' }, vstup, vysledky, el('button', { type: 'button', className: 'mala tiche', textContent: 'Zrušit', onclick: () => { s.pridavani = false; vykresliKartu(); } }));
-  }
-
-  function prezdivky(k) {
-    const dm = s.pohled === 'dm';
-    const cipy = k.aliases.map((a) => el('span', { className: 'prezdivka' }, a, dm ? el('button', { type: 'button', className: 'odebrat-prezdivku', textContent: '×', 'aria-label': `Odebrat přezdívku ${a}`, onclick: () => upravit(`/api/kanon/entita/${encodeURIComponent(k.id)}`, 'PUT', { aliases: k.aliases.filter((x) => x !== a) }, 'Přezdívka odebrána.') }) : null));
-    if (!dm) return cipy.length ? el('div', { className: 'prezdivky' }, cipy) : null;
-    const vstup = el('input', { type: 'text', placeholder: '+ přezdívka', maxLength: 80, 'aria-label': 'Nová přezdívka', className: 'nova-prezdivka' });
-    vstup.addEventListener('keydown', (ev) => {
-      if (ev.key !== 'Enter' || !vstup.value.trim()) return;
-      ev.preventDefault();
-      upravit(`/api/kanon/entita/${encodeURIComponent(k.id)}`, 'PUT', { aliases: [...k.aliases, vstup.value.trim()] }, 'Přezdívka přidána.');
-    });
-    return el('div', { className: 'prezdivky' }, cipy, vstup);
-  }
-
-  function obrazkyKarty(k) {
-    const obr = k.obrazky.filter((o) => s.pohled === 'dm' || !o.skryta);
-    if (!obr.length) return null;
-    const portrety = obr.filter((o) => o.ucel === 'portret');
-    const sceny = obr.filter((o) => o.ucel !== 'portret');
-    return el('div', {},
-      portrety.length ? el('div', { className: 'portrety-karty' }, portrety.map((o) => el('a', { href: o.url, target: '_blank', rel: 'noopener', title: o.varianta ? `Podoba: ${o.varianta}` : 'Portrét' }, el('img', { src: o.url, alt: `${k.nazev}${o.varianta ? `: ${o.varianta}` : ''}`, loading: 'lazy' })))) : null,
-      sceny.length ? el('div', { className: 'sceny-karty' }, sceny.slice(0, 6).map((o) => el('a', { href: o.url, target: '_blank', rel: 'noopener', className: o.skryta ? 'skryta' : '', title: [o.soubor, o.varianta, o.stav, o.skryta ? 'skrytá (jen DM)' : null].filter(Boolean).join(' · ') }, el('img', { src: o.url, alt: o.soubor, loading: 'lazy' })))) : null,
     );
   }
 
@@ -951,115 +709,91 @@ export function vytvoritKanon({ api, toast, otevritPoznamku }) {
     const k = s.karta;
     if (!e) return prehledKarty();
     const dm = s.pohled === 'dm';
-    const ikona = e.obrazek ? el('div', { className: 'ikona-karty s-obrazem vyrez-portretu' }, e.portret ? oriznoutPortret(el('img', { src: e.obrazek, alt: '' }), e.obrazek) : el('img', { src: e.obrazek, alt: '' })) : el('div', { className: 'ikona-karty', textContent: e.ikona || '·' });
-    ikona.style.setProperty('--c', barvaTypu(e.typ));
-    const typ = el('span', { className: 'stitek-typu', textContent: TYPY[e.typ]?.j ?? e.typ });
-    typ.style.setProperty('--c', barvaTypu(e.typ));
-    const stitky = [typ];
+    const stitky = [stitekTypu(e.typ)];
     if (e.udaje?.stav) stitky.push(el('span', { className: `stitek-stavu ${e.udaje.stav}`, textContent: STAVY[e.udaje.stav] ?? e.udaje.stav }));
     const casti = [
       el('button', { type: 'button', className: 'zpet', textContent: '← Přehled', onclick: () => vybrat(null) }),
-      el('div', { className: 'hlava-karty' }, ikona, el('div', {}, el('h2', { className: 'karta-nazev', textContent: e.nazev }), el('div', { className: 'stitky-karty' }, stitky))),
+      el('div', { className: 'hlava-karty' }, obrazekEntity(e), el('div', {}, el('h2', { className: 'karta-nazev', textContent: e.nazev }), el('div', { className: 'stitky-karty' }, stitky))),
+      e.popis ? el('p', { className: 'popis-karty', textContent: e.popis }) : null,
+      el('div', { className: 'akce-karty' },
+        el('a', { className: 'tlacitko hlavni', href: `#kanon/${encodeURIComponent(e.id)}`, textContent: 'Otevřít kartu' }),
+        karta.tlacitkoPoznamky(e),
+        karta.tlacitkoObs(e)),
+      dm ? karta.prepinace(e) : null,
     ];
-    if (dm) {
-      casti.push(el('div', { className: 'prepinace-karty' },
-        prepinac('Ve hře', e.aktualni, 'Štítek aktualni: entita právě hraje roli', (v) => upravit(`/api/kanon/entita/${encodeURIComponent(e.id)}`, 'PUT', { aktualni: v }, v ? 'Označeno: ve hře.' : 'Štítek Ve hře odebrán.')),
-        prepinac('Družina zná', e.verejne, 'verejne: true — entita se ukáže v pohledu družiny a na hráčské stránce', (v) => upravit(`/api/kanon/entita/${encodeURIComponent(e.id)}`, 'PUT', { verejne: v }, v ? 'Družina entitu zná (pohled družiny ji ukáže).' : 'Entita je jen pro DM.'))));
-      const udaje = Object.entries(e.udaje ?? {}).filter(([kl]) => kl !== 'stav').map(([kl, v]) => el('div', {}, el('dt', { textContent: UDAJE[kl] ?? kl }), el('dd', { textContent: kl === 'oblast' && s.podleId.has(v) ? s.podleId.get(v).nazev : v })));
-      if (udaje.length) casti.push(el('dl', { className: 'udaje-karty' }, udaje));
-    }
-    const akce = [];
-    if (dm && k?.obsidian) akce.push(el('a', { className: 'tlacitko', href: k.obsidian, textContent: 'Otevřít v Obsidianu', title: k.soubor }));
-    if (dm) akce.push(el('button', { type: 'button', textContent: 'Poznámka', title: `Poznámka F2 s odkazem [[${e.id}]]`, onclick: () => otevritPoznamku(`[[${e.id}]] `) }));
-    if (dm && e.typ === 'misto' && e.obrazky.some((o) => o.ucel === 'scena' && !o.skryta)) {
-      akce.push(el('button', { type: 'button', textContent: 'Ukázat v OBS', title: 'Přepne scénu Místo v OBS na toto místo', onclick: async () => {
-        try {
-          const r = await api('/api/scena/zobrazit', { metoda: 'POST', telo: { misto: e.id, prepnout: true } });
-          toast(r.chybaObs ?? `V OBS je ${e.nazev}.`, { chyba: Boolean(r.chybaObs) });
-        } catch (chyba) {
-          toast(chyba.message, { chyba: true });
-        }
-      } }));
-    }
-    if (akce.length) casti.push(el('div', { className: 'akce-karty' }, akce));
-    const pz = prezdivky(e);
-    if (pz) casti.push(el('h3', { textContent: 'Přezdívky' }), pz);
-
     if (!k) {
       casti.push(el('p', { className: 'uvod', textContent: 'Načítám kartu…' }));
       nahradit(kartaEl, ...casti);
       return;
     }
     const pocet = new Set([...k.vztahy.map((v) => v.s), ...k.vazby]).size;
-    casti.push(el('div', { className: 'sekce-hlava' }, el('h3', { textContent: `Vztahy a vazby (${pocet})` }), dm ? pridatVazbuUI(k) : null));
-    const radky = seznamVztahu(k);
+    casti.push(el('div', { className: 'sekce-hlava' }, el('h3', { textContent: `Vztahy a vazby (${pocet})` }), dm ? karta.pridatVazbuUI(k) : null));
+    const radky = karta.seznamVztahu(k);
     casti.push(radky.length ? el('ul', { className: 'vztahy-karty' }, radky) : el('p', { className: 'poznamka', textContent: dm ? 'Zatím bez vazeb. Přidej ji tlačítkem, nebo Alt + tažením na mapě.' : 'Družina o žádném vztahu neví.' }));
-    const zpetne = k.odkazujici.filter((o) => !k.vazby.includes(o.id));
-    if (zpetne.length) {
-      casti.push(el('h3', { textContent: `Odkazují sem (${zpetne.length})` }));
-      casti.push(el('ul', { className: 'vztahy-karty zpetne' }, zpetne.map((o) => {
-        const tecka = el('span', { className: `tecka-postoje${o.vztah ? '' : ' jen-vazba'}` });
-        const b = o.vztah ? barvaPostoje(o.vztah.postoj) : null;
-        if (b) tecka.style.background = b;
-        return el('li', { className: 'vztah-radek' }, tecka, el('span', { className: 'vztah-text' }, odkazNaEntitu(o.id), o.vztah ? el('span', { className: 'vztah-popis', textContent: ` — ${e.nazev} je pro ni/něj: ${o.vztah.popis}` }) : null));
-      })));
-    }
-    const obr = obrazkyKarty(k);
-    if (obr) casti.push(el('h3', { textContent: 'Ilustrace' }), obr);
-    casti.push(el('h3', { textContent: dm ? 'Karta' : 'Co ví družina' }));
-    if (k.telo.trim()) {
-      const text = el('div', { className: 'text-karty' });
-      text.innerHTML = naHtml(k.telo, { existuje: (id) => s.podleId.has(id), vynechatNadpis: e.nazev, oznacitDm: dm });
-      casti.push(text);
-    } else {
-      casti.push(el('p', { className: 'poznamka', textContent: dm ? 'Karta nemá text.' : `Družina o ${e.nazev} zatím nic nezapsala. Oddíl „## Co ví družina“ se doplňuje v Obsidianu.` }));
-    }
+    casti.push(karta.zpetneOdkazy(k, e.nazev));
     nahradit(kartaEl, ...casti);
   }
 
-  kartaEl.addEventListener('click', (ev) => {
-    const a = ev.target.closest?.('a.odkaz-entity');
-    if (!a) return;
-    ev.preventDefault();
-    vybrat(a.dataset.id);
-  });
-
   /* ---------- Veřejné rozhraní pro app.js ---------- */
 
+  const dekodovat = (x) => {
+    try {
+      return decodeURIComponent(x);
+    } catch {
+      return '';
+    }
+  };
+
   return {
-    /** Obrazovka Kánon se ukázala (případně s vybranou entitou z adresy #kanon/<id>). */
-    async ukazat(id) {
+    /**
+     * Obrazovka Kánon se ukázala. cesta je část adresy za #kanon/:
+     * '' přehled wiki, '<id>' stránka entity, '<id>/upravit' editor, 'typ/<typ>', 'udalosti',
+     * 'udalost/<id>', 'mapa' nebo 'mapa/<id>'.
+     */
+    async ukazat(cesta = '') {
       s.viditelna = true;
       if (!s.data) await nacist();
-      if (s.prvniPriblizeni && s.data) {
-        s.prvniPriblizeni = false;
-        requestAnimationFrame(() => priblizitNa(null, false));
+      const casti = String(cesta).split('/').filter((x, i) => x || i === 0).map(dekodovat);
+      if (casti[0] === 'mapa') {
+        await wiki.opustit();
+        prepnoutRezim('mapa');
+        const id = casti[1] || null;
+        if (id !== s.vybrane || !s.karta) vybrat(id, { priblizit: Boolean(id) });
+        else vykresliKartu();
+        return;
       }
-      if (id !== undefined && id !== s.vybrane) vybrat(id || null);
+      prepnoutRezim('wiki');
+      await wiki.ukazat(casti);
     },
-    skryt() {
+    async skryt() {
       s.viditelna = false;
+      await wiki.opustit();
     },
     /** Živá změna ze serveru (událost „kanon“). */
     zmena(data) {
       if (!s.data || data?.verze === s.data.verze) return;
+      if (wiki.upravuje()) return; // editor si změny pohlídá sám (kontrola souběžné úpravy)
       nacist();
     },
-    /** Hledání v liště: zvýrazní uzly, vrátí výsledky. */
+    /** Hledání v liště: na mapě zvýrazní uzly, vrátí výsledky. */
     async hledat(dotaz) {
       if (!s.data) await nacist();
       s.dotaz = dotaz;
-      if (s.data) zvyraznit();
+      if (s.data && s.rezim === 'mapa') zvyraznit();
       return s.data ? hledat(s.data.entity, dotaz, 8).map((e) => ({ ...e, typText: TYPY[e.typ]?.j ?? e.typ, barva: barvaTypu(e.typ) })) : [];
     },
-    vybrat,
+    /** Adresa entity: na mapě zůstane mapa, jinak stránka wiki. */
+    adresa(id) {
+      return s.viditelna && s.rezim === 'mapa' ? `kanon/mapa/${encodeURIComponent(id)}` : `kanon/${encodeURIComponent(id)}`;
+    },
+    vybrat: (id) => otevritEntitu(id),
     /** Esc na obrazovce Kánon. */
     zrusitVyber() {
       if (s.uprava || s.pridavani) {
         s.uprava = null;
         s.pridavani = false;
-        vykresliKartu();
-      } else if (s.vybrane) vybrat(null);
+        ctx.prekreslit();
+      } else if (s.rezim === 'mapa' && s.vybrane) vybrat(null);
     },
     /** Text pro F2 poznámku, když je vybraná entita (odkaz [[id]]). */
     odkazProPoznamku() {

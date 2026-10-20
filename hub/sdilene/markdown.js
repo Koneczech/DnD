@@ -52,7 +52,8 @@ const bunky = (r) => r.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').m
  *   oznacitDm: oddíly s nadpisem „DM…“ se zabalí do <section class="oddil-dm">
  */
 export function naHtml(md, { existuje, vynechatNadpis, oznacitDm = false } = {}) {
-  const radky = String(md ?? '').replace(/\r\n?/g, '\n').split('\n');
+  // Komentáře Obsidianu %%…%% (i značka odkryté odrážky %%zná%%) se v náhledu nezobrazují.
+  const radky = String(md ?? '').replace(/\r\n?/g, '\n').replace(/[ \t]*%%[\s\S]*?%%/g, '').split('\n');
   const vystup = [];
   let odstavec = [];
   let seznam = null; // { typ: 'ul'|'ol', polozky: [] }

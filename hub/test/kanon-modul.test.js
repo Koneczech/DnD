@@ -45,7 +45,9 @@ Tajemství.
 
 ## Co ví družina
 
-Ork s kyjem a šedým stromem na batohu.
+Ork s kyjem a šedým stromem na batohu. %%zná%%
+
+- Je adoptovaný.
 
 ### Na cestě
 
@@ -53,7 +55,7 @@ Chrání [[koudur|Koudura]].
 
 #### DM poznámka
 
-Jen pro DM uvnitř oddílu družiny.
+Jen pro DM uvnitř oddílu družiny. %%zná%%
 
 ## Poznámky
 
@@ -187,11 +189,13 @@ test('hlavička: rozbitý YAML se neupraví', () => {
 
 /* ---------- Pohled družiny ---------- */
 
-test('pohled družiny: z textu jen oddíl Co ví družina s pododdíly, bez oddílů DM', () => {
+test('pohled družiny: z oddílu Co ví družina jen odkryté odrážky, nikdy oddíly DM', () => {
   const t = teloDruziny(TUSKER.split('---\n').slice(2).join('---\n'), 'postava');
   assert.match(t, /^## Co ví družina/);
-  assert.match(t, /Ork s kyjem/);
-  assert.match(t, /### Na cestě/);
+  assert.match(t, /Ork s kyjem a šedým stromem na batohu\.$/m);
+  assert.doesNotMatch(t, /%%/);
+  // Pododdíl bez odkrytého obsahu se neukáže ani nadpisem.
+  assert.doesNotMatch(t, /Na cestě|Chrání|adoptovaný/);
   assert.doesNotMatch(t, /Úvod karty|Dlouhý příběh|Tajemství|Jen pro DM|Konec/);
   // Hráčský kánon je záznam toho, co družina zažila: celý kromě oddílu DM.
   const k = teloDruziny('## Co se stalo\n\nŠli.\n\n## DM\n\nSkryté.\n', 'kanon');

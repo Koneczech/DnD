@@ -17,6 +17,6 @@ Kdo to je, jednou až dvěma větami.
 
 ## Co ví družina
 
-Jen to, co hráči opravdu vědí. Tento oddíl ukáže pohled družiny.
+%% Odrážky, které družina zná. Každá se odkrývá zvlášť: v Hubu okem u odrážky, v Obsidianu značkou zná ve dvojitých procentech na konci řádku. %%
 
 ## DM

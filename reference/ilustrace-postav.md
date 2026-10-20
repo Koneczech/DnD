@@ -13,7 +13,7 @@ Všechny portréty postav, NPC, bytostí a podob mají stejné plátno, aby veli
 | Velikost | Výška postavy | Příklad |
 | --- | --- | --- |
 | Tiny (drobná) | 400 px | |
-| Small (malá) | 750 px | Leta (717), goblin |
+| Small (malá) | 750 px | Leta, goblin |
 | Medium (střední) | 1100 px | Tusker, Alba, bandité, Malk Orren |
 | Large (velká) | 1300 px | Albiny podoby (vlk lítý, medvěd) |
 | Huge, Gargantuan | 1340 px (víc se na plátno nevejde) | |

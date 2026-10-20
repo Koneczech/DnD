@@ -4,6 +4,7 @@ id: mirabar
 typ: misto
 nazev: Mirabar
 verejne: true
+tags: [aktualni]
 # Anglický popis vzhledu místa pro prompty dílny (doplní DM). Dílna ho vloží do promptu.
 popis_obrazu: ""
 ilustrace:

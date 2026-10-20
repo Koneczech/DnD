@@ -53,7 +53,9 @@ svetla:
     lampa: { barva: [ 31, 35, 255 ], jas: 21 }
 zvuk:
   den:
-    hudba: { spotify: spotify:playlist:2TIkuVsxQjj1MmSlUZ7ziF, zaloha: hudba/divocina/ }
+    hudba:
+      spotify: spotify:playlist:0fQfvbqzfXTb9zruh9vTpu
+      zaloha: hudba/divocina/
     ambient: tabor-ohen.mp3
     nahodne:
       - { zvuk: nahodne/tabor/kun, kazdych_s: 60, nahodilost: 0.8, hlasitost: 0.8, vzdalenost: 0.7 }

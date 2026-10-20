@@ -30,6 +30,7 @@ import { PruchodIniciativy } from './iniciativa-pruchod.js';
 import { SledovaniHp } from './iniciativa-hp.js';
 import { CteniPlayerView } from './iniciativa-cteni.js';
 import { ZivyPlayerView } from './iniciativa-zive.js';
+import { Spotify } from './spotify.js';
 import { Udery } from './udery.js';
 import { Zaznam } from './zaznam.js';
 import { createReadStream } from 'node:fs';
@@ -129,7 +130,7 @@ export class Hub {
    * @param {boolean} [volby.gitSit] kontrolovat GitHub při startu (výchozí true)
    * @param {object} [volby.prostredi] proměnné prostředí pro zkušební režim (testy; výchozí process.env)
    */
-  constructor({ cesty = vychoziCesty(), obsKlient, gitSit = true, port, ovladaceSvetel, sparovatHue, fetchZvuky, ziveIniciativa, prostredi = process.env } = {}) {
+  constructor({ cesty = vychoziCesty(), obsKlient, gitSit = true, port, ovladaceSvetel, sparovatHue, fetchZvuky, ziveIniciativa, fetchSpotify, prostredi = process.env } = {}) {
     this.c = cesty;
     this.env = prostredi;
     /** Zkušební režim v Codespaces (zkouska.js); povolené adresy se doplní po startu, až je znám port. */
@@ -159,7 +160,16 @@ export class Hub {
       scena: () => this.scena.stav,
       ovladace: ovladaceSvetel,
     });
+    // Spotify (DM 20. 10. 2026): Hub řídí aplikaci Spotify na PC, zvuk jde přes virtuální kabel do stránky u stolu.
+    this.spotify = new Spotify({
+      nastaveni: () => this.nastaveni.hodnoty,
+      ulozit: (zmeny) => this.nastaveni.ulozit(zmeny),
+      port: () => this.server?.address()?.port ?? this.nastaveni.port,
+      prolnutiMs: () => this.zvuk?.prolnutiMs ?? 2000,
+      ...(fetchSpotify ? { fetch: fetchSpotify, cekat: async () => {} } : {}),
+    });
     this.zvuk = new Zvuk({
+      spotify: this.spotify,
       cesty: this.c,
       nastaveni: () => this.nastaveni.hodnoty,
       misto: (id) => this.mista.mista.get(id) ?? null,
@@ -284,9 +294,13 @@ export class Hub {
     this.obs.on('stav', (s) => {
       z.zmena('obs', 'obs', s.pripojeno ? 'info' : s.nastaveno ? 'varovani' : 'info', s.pripojeno ? `OBS připojené, scéna ${s.aktualniScena ?? '?'}` : `OBS nepřipojené${s.chyba ? `: ${s.chyba}` : ''}`);
     });
+    this.spotify.on('stav', (sp) => {
+      if (!sp.prihlaseno) return z.zmena('spotify', 'spotify', 'info', 'Spotify: nepřihlášeno');
+      z.zmena('spotify', 'spotify', sp.chyba ? 'varovani' : 'info', sp.chyba ? `Spotify: ${sp.chyba}` : `Spotify: ${sp.zarizeni ?? '?'}${sp.hraje ? `, hraje ${sp.hraje}` : ''}`);
+    });
     this.zvuk.on('zvuk', (v) => {
       const amb = v.ambient.map((a) => `${a.soubor} ${Math.round(a.hlasitost * 100)} %`).join(', ') || 'žádný';
-      z.zmena('zvuk-co', 'zvuk', 'info', `Hraje: hudba ${v.hudba?.soubor ?? 'žádná'} (${v.hudbaKde}) · ambient ${amb}${v.smycky?.length ? ` · smyčky ${v.smycky.map((x) => x.soubor).join(', ')}` : ''}${v.nahodne?.length ? ` · náhodné ${v.nahodne.map((n) => n.zvuk).join(', ')}` : ''}${v.dozvuk && v.dozvuk !== 'zadny' ? ` · dozvuk ${v.dozvuk}` : ''}${v.ticho ? ' · TICHO' : ''}${v.tlumeni?.aktivni ? ' · ucpané uši' : ''}`);
+      z.zmena('zvuk-co', 'zvuk', 'info', `Hraje: hudba ${v.hudba?.spotify ? `Spotify ${v.hudba.uri}${v.hudba.hraje ? '' : ' (přepíná se)'}` : v.hudba?.soubor ?? 'žádná'} (${v.hudbaKde}) · ambient ${amb}${v.smycky?.length ? ` · smyčky ${v.smycky.map((x) => x.soubor).join(', ')}` : ''}${v.nahodne?.length ? ` · náhodné ${v.nahodne.map((n) => n.zvuk).join(', ')}` : ''}${v.dozvuk && v.dozvuk !== 'zadny' ? ` · dozvuk ${v.dozvuk}` : ''}${v.ticho ? ' · TICHO' : ''}${v.tlumeni?.aktivni ? ' · ucpané uši' : ''}`);
     });
     this.zvuk.on('stav', (s) => {
       for (const [nazev, x] of Object.entries(s.stranky ?? {})) {
@@ -396,6 +410,8 @@ export class Hub {
       this.zvuk.zmenaSceny();
     });
     this.zvuk.on('zvuk', (z) => this.vysilac.vyslat('zvuk', z));
+    // Spotify se přihlásil, aplikace naběhla nebo začala hrát: zvuk přepočítá, co hraje (Spotify, nebo záloha).
+    this.spotify.on('stav', () => this.zvuk.oznam());
     this.zvuk.on('efekt', (e) => this.vysilac.vyslat('zvuk-efekt', e));
     this.zvuk.on('stav', (z) => this.vysilac.vyslat('zvuk-stav', z));
     this.zvuk.on('soubory', () => this.data.naplanovatKontrolu());
@@ -415,6 +431,7 @@ export class Hub {
     await this.scena.nacist();
     await this.svetla.nacist();
     await this.zvuk.nacist();
+    this.spotify.spustit();
     await this.iniciativa.nacist();
     this.cteniPlayerView.spustit();
     this.sledovaniHp.spustit();
@@ -642,6 +659,7 @@ export class Hub {
       }
       if (url.pathname.startsWith('/api/')) return await this.api(req, res, url);
       if (url.pathname.startsWith('/audio/')) return await this.zvukovySoubor(req, res, url);
+      if (url.pathname === '/spotify/prihlaseni') return await this.navratSpotify(req, res, url);
       return await this.staticky(req, res, url);
     } catch (e) {
       const status = e.status || 500;
@@ -649,6 +667,29 @@ export class Hub {
       if (!res.headersSent) poslatJson(res, status, { chyba: e.message, ...(e.kod ? { kod: e.kod } : {}) });
       else res.end();
     }
+  }
+
+  /**
+   * Návrat z přihlášení ke Spotify (adresa http://127.0.0.1:<port>/spotify/prihlaseni, zapsaná v aplikaci
+   * DM na developer.spotify.com). Jen z tohoto počítače; ukáže krátkou stránku a odkaz zpět do panelu.
+   */
+  async navratSpotify(req, res, url) {
+    if (!LOOPBACK.has(req.socket.remoteAddress)) throw Object.assign(new Error('Přihlášení ke Spotify jde jen na tomto počítači.'), { status: 403 });
+    let ok = true;
+    let zprava;
+    try {
+      const v = await this.spotify.dokoncitPrihlaseni({ code: url.searchParams.get('code'), state: url.searchParams.get('state'), error: url.searchParams.get('error') });
+      zprava = `Hub je přihlášený ke Spotify${v.uzivatel ? ` jako ${v.uzivatel}` : ''}.${v.zarizeni ? '' : ' Ještě spusť aplikaci Spotify na tomto PC.'}`;
+    } catch (e) {
+      ok = false;
+      zprava = e.message;
+    }
+    const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+    const html = `<!doctype html><html lang="cs"><meta charset="utf-8"><title>DM Hub – Spotify</title>
+<style>body{font:16px/1.5 system-ui,sans-serif;background:#16130f;color:#eee;display:grid;place-items:center;min-height:90vh;margin:0}main{max-width:32rem;padding:2rem;border-radius:12px;background:#221d17}a{color:#e9b45a}</style>
+<main><h1>${ok ? 'Spotify připojen' : 'Spotify se nepřipojil'}</h1><p>${esc(zprava)}</p><p><a href="http://localhost:${this.nastaveni.port}/#nastaveni-zvuk">Zpět do Hubu</a> (okno můžeš zavřít)</p></main></html>`;
+    res.writeHead(ok ? 200 : 400, { ...HLAVICKY_BEZPECNOSTI, 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(html);
   }
 
   async prihlaseni(req, res, url) {
@@ -706,6 +747,13 @@ export class Hub {
       }
       if (telo.iiRelace || telo.smazatIiRelace) await this.zajistitPruchod();
       if (telo.freesoundKlic || telo.smazatFreesoundKlic) this.zvuk.oznamStav();
+      delete telo.spotifyObnova; // obnovovací token zapisuje jen přihlášení na serveru
+      if (['spotifyKlient', 'spotifyZarizeni', 'spotifyKabel'].some((k) => telo[k] !== undefined)) {
+        this.spotify.pristup = null;
+        this.spotify.uzivatel = null;
+        this.spotify.overit().catch(() => {});
+        this.zvuk.oznam();
+      }
       this.svetla.sestavitZarizeni();
       this.svetla.zmenaSceny();
       this.svetla.overit().catch(() => {});
@@ -798,6 +846,23 @@ export class Hub {
       const v = await this.souboj(telo.zapnout !== false, { fanfara: telo.fanfara !== false });
       this.zaznam[v.chybaObs ? 'varovani' : 'info']('souboj', `${telo.zapnout !== false ? 'Souboj začal' : `Konec souboje${telo.fanfara === false ? ' potichu' : ''}`}${v.chybaObs ? `: ${v.chybaObs}` : ''}`);
       return poslatJson(res, 200, v);
+    }
+    if (p.startsWith('/api/spotify')) {
+      const sp = this.spotify;
+      if (p === '/api/spotify' && m === 'GET') return poslatJson(res, 200, sp.verejny());
+      if (p === '/api/spotify/prihlasit' && m === 'POST') {
+        await nacistJson(req);
+        return poslatJson(res, 200, { url: sp.zacitPrihlaseni() });
+      }
+      if (p === '/api/spotify/odhlasit' && m === 'POST') {
+        await nacistJson(req);
+        return poslatJson(res, 200, await sp.odhlasit());
+      }
+      if (p === '/api/spotify/overit' && m === 'POST') {
+        await nacistJson(req);
+        return poslatJson(res, 200, await sp.overit());
+      }
+      if (p === '/api/spotify/playlisty' && m === 'GET') return poslatJson(res, 200, { playlisty: await sp.playlisty() });
     }
     if (p.startsWith('/api/zvuk')) {
       const v = await this.apiZvuk(req, m, p, url);
@@ -1394,6 +1459,7 @@ export class Hub {
     this.scena.zastavit();
     this.svetla.zastavit();
     this.zvuk.zastavit();
+    this.spotify.zastavit();
     this.vysilac.zavrit();
     await this.hlidac.zastavit();
     await this.obs.ukoncit();

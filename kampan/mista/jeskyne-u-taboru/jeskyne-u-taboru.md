@@ -13,11 +13,11 @@ tags: []
 popis_obrazu: ""
 ilustrace: []
 # Zvuk (DM 19. 10. 2026, ⚠ návrh): kapající voda, netopýři a padající kamínky v ozvěně jeskyně.
-# Dozvuk platí pro náhodné zvuky a soundboard. Hudba je playlist temné hudby.
+# Dozvuk platí pro náhodné zvuky a soundboard. Hudba je playlist temné hudby ze Spotify (záloha ze složky).
 zvuk:
   dozvuk: jeskyne
   den:
-    hudba: hudba/jeskyne/
+    hudba: { spotify: spotify:playlist:569We1c9zxwc9uHjtHP1N2, zaloha: hudba/jeskyne/ }
     ambient: jeskyne-kapani.mp3
     nahodne:
       - { zvuk: nahodne/jeskyne/kapka, kazdych_s: 12, nahodilost: 0.8, hlasitost: 0.6, vzdalenost: 0.4 }

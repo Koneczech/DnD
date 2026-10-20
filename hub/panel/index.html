@@ -674,6 +674,31 @@
               <p class="poznamka">Když je na tahu postava s málo HP, hudba nezeslábne, ale zní tupě, jako přes ucpané uši. Zkouška pustí i pulz lampy a kraje obrazu v OBS (stejně jako v Nastavení → Světla → Málo HP).</p>
               <label class="prepinac-zap samostatny"><input type="checkbox" id="zvuk-tahy-hraci" role="switch"> <span>Zvuky tahů jen pro postavy hráčů (bez společného zvuku nepřátel)</span></label>
               <p class="ulozeni" id="zvuk-volby-vysledek" aria-live="polite"></p>
+              <h2 id="nastaveni-spotify">Spotify</h2>
+              <div class="formular siroky">
+                <ul class="kontrolni-stav" id="spotify-kontrola"></ul>
+                <div class="pole-s-tlacitkem">
+                  <label>Client ID aplikace Spotify
+                    <input id="pole-spotify-klient" autocomplete="off" spellcheck="false" placeholder="32 znaků z developer.spotify.com/dashboard">
+                  </label>
+                  <button type="button" id="spotify-prihlasit">Přihlásit ke Spotify</button>
+                  <button type="button" class="tiche" id="spotify-odhlasit" hidden>Odhlásit</button>
+                </div>
+                <details class="spotify-pokrocile">
+                  <summary>Kabel a zařízení</summary>
+                  <div class="pole-s-tlacitkem">
+                    <label>Vstup virtuálního kabelu
+                      <input id="pole-spotify-kabel" autocomplete="off" spellcheck="false" placeholder="CABLE Output">
+                    </label>
+                    <label>Zařízení Spotify
+                      <input id="pole-spotify-zarizeni" autocomplete="off" spellcheck="false" placeholder="prázdné = tento počítač">
+                    </label>
+                    <button type="button" id="spotify-ulozit">Uložit</button>
+                  </div>
+                </details>
+                <p class="ulozeni" id="spotify-vysledek" aria-live="polite"></p>
+                <small class="poznamka">Hudba ze Spotify hraje přes Hub, takže na ni fungují ucpané uši, ztišení pod efekty, Ticho i prolnutí. Jednou: nainstaluj VB-CABLE, ve Windows <em>Směšovač hlasitosti</em> pošli <strong>Spotify</strong> do <em>CABLE Input</em>, na developer.spotify.com založ aplikaci s adresou pro přesměrování <code id="spotify-presmerovani">http://127.0.0.1:7420/spotify/prihlaseni</code> a vlož sem její Client ID. Postup je v <code>reference/zvuk.md</code>. Když Spotify nejede, hraje záloha ze složky.</small>
+              </div>
               <h2 id="nastaveni-sada">Zvuková sada</h2>
               <div class="formular siroky">
                 <p class="ulozeni" id="sada-klic-stav" aria-live="polite"></p>

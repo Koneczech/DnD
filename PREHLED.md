@@ -46,6 +46,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Soundboard s variantami, smyčky, klávesy 1–9 | ◐ |
 | | Náhodné zvuky, vzdálenost, dozvuk, vlastní zvuk místa v souboji | ◐ |
 | | Playlisty hudby (složka = playlist), hudba scény Start, konec souboje bubnem v dozvuku | ◐ |
+| | Hudba ze Spotify přes virtuální kabel (s efekty Hubu a zálohou ze složky) | ◐ |
 | | Zvuk míst Longsaddle, Tábor lupičů (den i noc) a Jeskyně u tábora | ◐ |
 | | Zvuková sada: Freesound, Openverse, balíčky Kenney, hudba, Vyměnit a ↻ | ◐ |
 | | Srovnání hlasitosti a přeskočení ticha na začátku | ◐ |
@@ -76,7 +77,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 1. **Vyzkoušet u stolu** všechno označené ◐ (sezení 3, tábor lupičů). Návrhy v `ZADANI.md` DM potvrdil 19. 10.; co u stolu nefunguje, se opraví.
 2. **Zjednodušit Kontrolu dat:** chybějící zvuky v jednom řádku s tlačítkem Doplnit, chyby nahoře.
 3. **Zvuk u stolu po restartu:** ověřit, jestli prohlížeč chce kliknutí; když ano, otevírat ho v samostatném okně.
-4. **Zvuk před sezením 3:** stáhnout sadu (Nastavení → Zvuk → Doplnit chybějící zvuky), vyměnit zvuky, které vyšly špatně, a poslechnout playlisty. Nápad **Spotify** (hudba ze Spotify místo složky) čeká na rozhodnutí DM: chce Premium a vlastní aplikaci u Spotify.
+4. **Zvuk před sezením 3:** stáhnout sadu (Nastavení → Zvuk → Doplnit chybějící zvuky), vyměnit zvuky, které vyšly špatně, a poslechnout playlisty. **Spotify:** nainstalovat VB-CABLE, poslat Spotify do kabelu, založit aplikaci na developer.spotify.com a přihlásit Hub (`reference/zvuk.md`, Hudba ze Spotify).
 5. **Blok 3 Kánon:** rozpory R1–R16 jsou rozhodnuté (19. 10.). DM zazálohuje Notion, pak převod po skupinách podle `reference/kanon-prevod.md` (včetně návrhů vztahů). Kánon je wiki s editorem (◐): vyzkoušet, doplnit u karet Družina zná a odrážky Co ví družina, navázat události. Zápis sezení 2 vznikne z přepisu nahrávky, kterou DM dodá.
 6. **Verze 2.**
 

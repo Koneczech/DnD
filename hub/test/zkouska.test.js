@@ -111,7 +111,8 @@ test('zkušební režim: Aktualizovat jen stáhne, rozdělané změny zůstanou 
     assert.equal(vysledek.stazeno, 1);
     assert.equal(vysledek.push, false);
     assert.equal((await fs.readFile(path.join(k.b, 'hub', 'novy.js'), 'utf8')).replace(/\r\n/g, '\n'), 'z GitHubu\n');
-    assert.equal(await fs.readFile(path.join(k.b, 'kampan', 'poznamka.md'), 'utf8'), 'jen zkouška\n', 'rozdělaná změna zůstala');
+    // Na Windows může Git při vrácení z úschovny vyměnit konce řádků (autocrlf).
+    assert.equal((await fs.readFile(path.join(k.b, 'kampan', 'poznamka.md'), 'utf8')).replace(/\r\n/g, '\n'), 'jen zkouška\n', 'rozdělaná změna zůstala');
     assert.equal(await git(k.vzdaleny, ['rev-parse', 'main']), pred, 'na GitHub nic neodešlo');
     assert.equal(await git(k.b, ['status', '--porcelain', '--', 'kampan']), '?? kampan/poznamka.md', 'nic se necommitovalo');
 

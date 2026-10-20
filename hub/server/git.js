@@ -4,6 +4,7 @@ import { promisify } from 'node:util';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { maZnackyKonfliktu } from '../hooks/pre-commit.js';
+import { HLASKA_BEZ_ULOZENI } from './zkouska.js';
 
 const spust = promisify(execFile);
 
@@ -18,8 +19,14 @@ export async function git(koren, argumenty, { timeout = 30000 } = {}) {
 }
 
 export class Git {
-  constructor(koren) {
+  /**
+   * @param {string} koren kořen repa
+   * @param {object} [volby]
+   * @param {boolean} [volby.jenStahovat] zkušební režim: nic necommituje ani neodešle, jen stahuje
+   */
+  constructor(koren, { jenStahovat = false } = {}) {
     this.koren = koren;
+    this.jenStahovat = jenStahovat;
     this.stav = { dostupny: null, vetev: null, zmeneno: 0, pozadu: 0, napred: 0, upstream: null, chyba: null, kontrolovano: null };
     this.fronta = Promise.resolve();
   }
@@ -122,6 +129,7 @@ export class Git {
    * @returns {Promise<{commit:boolean, push:boolean, zprava:string}>}
    */
   async _ulozit(zprava, cesty = ['kampan'], { odeslat = true } = {}) {
+    if (this.jenStahovat) throw Object.assign(new Error(HLASKA_BEZ_ULOZENI), { status: 409 });
     await this._lokalniStav();
     if (!this.stav.dostupny) throw Object.assign(new Error(this.stav.chyba || 'Git není dostupný.'), { status: 409 });
     const nesloucene = (await git(this.koren, ['diff', '--name-only', '--diff-filter=U'])).split('\n').filter(Boolean);
@@ -202,7 +210,7 @@ export class Git {
    * Stáhne novinky z GitHubu a lokální commity přeskládá za ně (pull --rebase), pak odešle.
    * Neuložené změny mimo commity jdou do úschovny a po stažení se vrátí. Při konfliktu se vše vrátí.
    */
-  async _stahnoutSPreskladanim() {
+  async _stahnoutSPreskladanim({ odeslat = !this.jenStahovat } = {}) {
     const znacka = `dm-hub-pred-slucovanim-${new Date().toISOString()}`;
     let uschovna = false;
     if (this.stav.zmeneno > 0) {
@@ -246,11 +254,13 @@ export class Git {
       }
     }
     let push = false;
-    try {
-      await git(this.koren, ['push', '--quiet'], { timeout: 60000 });
-      push = true;
-    } catch {
-      push = false;
+    if (odeslat) {
+      try {
+        await git(this.koren, ['push', '--quiet'], { timeout: 60000 });
+        push = true;
+      } catch {
+        push = false;
+      }
     }
     await this._zkontrolovatVzdaleny();
     return { push, uschovna, uschovnaNevracena, vracenoZGitHubu };
@@ -266,6 +276,7 @@ export class Git {
     await this._zkontrolovatVzdaleny();
     if (!this.stav.dostupny) throw Object.assign(new Error(this.stav.chyba || 'Git není dostupný.'), { status: 409 });
     if (!this.stav.upstream) throw Object.assign(new Error('Větev nemá nastavenou vzdálenou větev na GitHubu.'), { status: 409 });
+    if (this.jenStahovat) return this._jenStahnout();
     const ulozeni = await this._ulozit(zprava, ['kampan'], { odeslat: false });
     await this._zkontrolovatVzdaleny();
     if (this.stav.chyba) {
@@ -288,12 +299,25 @@ export class Git {
   }
 
   /**
+   * Aktualizovat ve zkušebním režimu: jen stáhne novinky z GitHubu. Rozdělané změny jdou do úschovny
+   * a po stažení se vrátí (jako u Aktualizovat); nic se necommituje ani neodešle.
+   */
+  async _jenStahnout() {
+    if (this.stav.chyba) throw Object.assign(new Error(this.stav.chyba), { status: 409 });
+    const stazeno = this.stav.pozadu;
+    let vysledek = { push: false, uschovnaNevracena: false, vracenoZGitHubu: [] };
+    if (stazeno > 0) vysledek = await this._stahnoutSPreskladanim({ odeslat: false });
+    return { ulozeno: false, stazeno, ...vysledek };
+  }
+
+  /**
    * Sloučit rozešlé verze (lokální commity i novinky na GitHubu): neuložené změny se odloží do úschovny,
    * lokální commity se přeskládají za novinky z GitHubu a odešlou. Při konfliktu se všechno vrátí zpět.
    * Nic se nemaže: co se nepodaří vrátit do pracovní složky, zůstane v úschovně (`git stash list`).
    * @returns {Promise<{sloucene:true, push:boolean, uschovna:boolean, uschovnaNevracena:boolean}>}
    */
   async _sloucit() {
+    if (this.jenStahovat) throw Object.assign(new Error(HLASKA_BEZ_ULOZENI), { status: 409 });
     await this._zkontrolovatVzdaleny();
     if (!this.stav.dostupny || !this.stav.upstream) throw Object.assign(new Error('Větev nemá nastavenou vzdálenou větev na GitHubu.'), { status: 409 });
     if (this.stav.chyba) throw Object.assign(new Error(this.stav.chyba), { status: 409 });

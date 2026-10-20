@@ -601,6 +601,9 @@ button:has(> .ik) { display: inline-flex; align-items: center; gap: var(--m-2); 
 .odznak-sezeni[data-bezi="true"] { color: var(--text); }
 .odznak-sezeni[data-bezi="true"] .tecka { background: var(--ok); }
 .odznak-sezeni:hover { color: var(--text); }
+.lista-odznaky { display: flex; align-items: center; gap: var(--m-2); }
+.odznak-zkouska { padding: var(--m-1) var(--m-3); border-radius: 999px; border: 1px solid var(--varovani); color: var(--varovani); font-size: var(--t-popisek); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; cursor: help; }
+.odznak-zkouska[hidden] { display: none; }
 .system { position: relative; }
 .system > summary { list-style: none; display: inline-flex; align-items: center; gap: var(--m-3); padding: var(--m-2) var(--m-3); border: 1px solid var(--linka); border-radius: var(--zaobleni); color: var(--text-tlumeny); font-size: var(--t-popisek); cursor: pointer; }
 .system > summary::-webkit-details-marker { display: none; }

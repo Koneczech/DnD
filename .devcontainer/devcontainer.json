@@ -1,0 +1,22 @@
+{
+  // DM Hub ve zkušebním režimu v GitHub Codespaces: panel v prohlížeči mimo domov,
+  // bez světel, OBS a zvuku, na GitHub se odsud nic neukládá. Návod: reference/zkouska-v-cloudu.md
+  "name": "DM Hub – zkouška",
+  "image": "mcr.microsoft.com/devcontainers/base:bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "24" }
+  },
+  "hostRequirements": { "cpus": 2 },
+  // Pojistka navíc: odesílání na GitHub vede na neexistující adresu, takže push z Codespace selže vždy.
+  "postCreateCommand": "npm --prefix hub ci --no-audit --no-fund && git remote set-url --push origin ZKOUSKA-NIC-NEODESILA",
+  // Spustí Hub při každém otevření Codespace; když už běží, spouštěč jen skončí.
+  "postAttachCommand": "DMHUB_ZKOUSKA=1 DMHUB_NEOTEVIRAT=1 npm --prefix hub start",
+  "forwardPorts": [7420],
+  "portsAttributes": {
+    "7420": { "label": "DM Hub", "onAutoForward": "openBrowser" }
+  },
+  "otherPortsAttributes": { "onAutoForward": "ignore" },
+  "customizations": {
+    "codespaces": { "openFiles": ["reference/zkouska-v-cloudu.md"] }
+  }
+}

@@ -1078,6 +1078,8 @@ export class Hub {
     const u = /^\/api\/kalendar\/udalosti\/([A-Za-z0-9_-]{1,80})$/.exec(p);
     if (u && m === 'PUT') return k.upravit(u[1], await nacistJson(req));
     if (u && m === 'DELETE') return k.smazat(u[1]);
+    const po = /^\/api\/kalendar\/udalosti\/([A-Za-z0-9_-]{1,80})\/poradi$/.exec(p);
+    if (po && m === 'POST') return k.posunoutVDni(po[1], (await nacistJson(req)).smer);
     if (p === '/api/kalendar/dnes' && m === 'PUT') {
       const telo = await nacistJson(req);
       if (telo.posun !== undefined) {

@@ -583,7 +583,51 @@ export class Kanon extends EventEmitter {
         }),
         poradi: Harptos.absolutni(u.datum),
       }))
-      .sort((a, b) => a.poradi - b.poradi);
+      .sort((a, b) => a.poradi - b.poradi)
+      // Pořadí v rámci dne (víc událostí téhož dne): podle pořadí zápisu, mění se v Kalendáři.
+      .map((u, i, vse) => {
+        const den = vse.filter((x) => x.poradi === u.poradi);
+        return { ...u, vDni: den.indexOf(u) + 1, vDniPocet: den.length, index: i };
+      });
+  }
+
+  /**
+   * Hráčský kánon v čase: karty typu kanon v pořadí událostí, na které jsou navázané
+   * (událost po události, v rámci události v pořadí jejích vazeb). Karta bez události v řadě není.
+   * @returns {Array<{id: string, nazev: string, udalost: object}>}
+   */
+  chronologie(pohled = 'dm') {
+    const videno = new Set();
+    const rada = [];
+    for (const u of this.udalosti(pohled)) {
+      for (const id of u.vazby) {
+        const e = this.entity.get(id);
+        if (e?.typ !== 'kanon' || videno.has(id)) continue;
+        videno.add(id);
+        rada.push({ id, nazev: e.nazev, udalost: { id: u.id, text: u.text, datumText: u.datumText, vDni: u.vDni, vDniPocet: u.vDniPocet } });
+      }
+    }
+    return rada;
+  }
+
+  /** Místa, která v místě leží (i hlouběji), v daném pohledu. Map id → id přímého podmísta cesty. */
+  podmistaVPohledu(id, pohled) {
+    const deti = new Map();
+    for (const e of this.entity.values()) {
+      const v = vPohledu(e, pohled, this.najit);
+      if (v?.leziV) deti.set(v.leziV, [...(deti.get(v.leziV) ?? []), e.id]);
+    }
+    const vysledek = new Map();
+    const fronta = [id];
+    while (fronta.length && vysledek.size < 500) {
+      const m = fronta.shift();
+      for (const d of deti.get(m) ?? []) {
+        if (d === id || vysledek.has(d)) continue;
+        vysledek.set(d, d);
+        fronta.push(d);
+      }
+    }
+    return vysledek;
   }
 
   /** Seznam pro wiki a mapu (bez textu karet). */
@@ -630,6 +674,26 @@ export class Kanon extends EventEmitter {
         const konec = dalsi.findIndex((x) => x.druh === 'nadpis' && x.uroven <= b.uroven);
         return (konec === -1 ? dalsi : dalsi.slice(0, konec)).some((x) => x.druh !== 'nadpis');
       });
+    // Místo: události a hráčský kánon i z míst, která v něm leží (pres = id podmísta).
+    const podmista = e.typ === 'misto' ? this.podmistaVPohledu(id, p) : new Map();
+    const udalosti = this.udalosti(p)
+      .map((u) => ({ ...u, pres: u.vazby.includes(id) ? null : u.vazby.find((x) => podmista.has(x)) ?? undefined }))
+      .filter((u) => u.pres !== undefined);
+    let zde = null;
+    if (e.typ === 'misto') {
+      const poradi = new Map(this.chronologie(p).map((x, i) => [x.id, x]));
+      zde = [];
+      for (const jina of this.entity.values()) {
+        if (jina.typ !== 'kanon') continue;
+        const jv = vPohledu(jina, p, this.najit);
+        if (!jv) continue;
+        const pres = jv.vazby.includes(id) ? null : jv.vazby.find((x) => podmista.has(x));
+        if (pres === undefined) continue;
+        zde.push({ id: jina.id, nazev: jina.nazev, pres, udalost: poradi.get(jina.id)?.udalost ?? null });
+      }
+      const klic = [...poradi.keys()];
+      zde.sort((a, b) => (klic.indexOf(a.id) + 1 || 1e9) - (klic.indexOf(b.id) + 1 || 1e9) || a.nazev.localeCompare(b.nazev, 'cs'));
+    }
     let telo;
     if (p === 'dm') telo = teloBezDruziny(e.telo);
     else telo = e.typ === 'kanon' ? teloDruziny(e.telo, e.typ) : '';
@@ -638,12 +702,22 @@ export class Kanon extends EventEmitter {
       telo,
       druzina: druzinaCista,
       maOddilDruziny: Boolean(najitOddilDruziny(e.telo.split('\n'))),
-      udalosti: this.udalosti(p).filter((u) => u.vazby.includes(id)),
+      udalosti,
+      chronologie: e.typ === 'kanon' ? this.chronologieKarty(id, p) : null,
+      zde,
       pole: p === 'dm' ? e.pole : {},
       odkazujici,
       odkazyVTextu: p === 'dm' ? e.odkazyVTextu.filter((x) => this.entity.has(x)) : [],
       obsidian: p === 'dm' ? odkazObsidian(this.trezor(), e.soubor) : null,
     };
+  }
+
+  /** Kdy se záznam hráčského kánonu stal a co bylo před ním a po něm. */
+  chronologieKarty(id, pohled) {
+    const rada = this.chronologie(pohled);
+    const i = rada.findIndex((x) => x.id === id);
+    if (i < 0) return { udalost: null, predtim: null, potom: null };
+    return { udalost: rada[i].udalost, predtim: rada[i - 1] ?? null, potom: rada[i + 1] ?? null };
   }
 
   get(id) {

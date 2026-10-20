@@ -976,6 +976,8 @@ main:has(> #obrazovka-kanon:not([hidden])) { display: flex; flex-direction: colu
 .cip[aria-pressed="false"] .tecka { background: transparent; box-shadow: inset 0 0 0 1.5px var(--c); }
 .cip-ve-hre { --c: var(--akcent); }
 .kanon-nastenky { display: flex; gap: var(--m-2); align-items: center; }
+.kanon-prepinace { display: flex; gap: var(--m-1); align-items: center; }
+.kanon-prepinace button[aria-pressed="true"] { background: var(--povrch-2); border-color: var(--akcent); color: var(--akcent); }
 .kanon-nastenky select { max-width: 16rem; }
 .kanon-telo { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 27rem; gap: var(--m-3); }
 .kanon-platno { position: relative; min-width: 0; min-height: 0; overflow: hidden; border: 1px solid var(--linka); border-radius: var(--zaobleni-karta); background: radial-gradient(ellipse at 50% 45%, var(--povrch-1), var(--povrch-0) 75%); }
@@ -989,6 +991,7 @@ main:has(> #obrazovka-kanon:not([hidden])) { display: flex; flex-direction: colu
 .kanon-legenda .vzorek.bez { background: var(--postoj-0); opacity: 0.5; margin-left: var(--m-2); }
 .kanon-legenda .vzorek.vazba { background: var(--linka); margin-left: var(--m-2); }
 .kanon-legenda .vzorek.lezi-v { background: repeating-linear-gradient(90deg, var(--t-misto) 0 2px, transparent 2px 5px); margin-left: var(--m-2); }
+.kanon-legenda .vzorek.souhrn { background: repeating-linear-gradient(90deg, var(--linka) 0 6px, transparent 6px 9px); margin-left: var(--m-2); }
 .pohled-druziny .kanon-legenda .vzorek.vazba, .pohled-druziny .kanon-legenda .vzorek.vazba + .legenda-text { display: none; }
 
 /* Síť */
@@ -999,6 +1002,28 @@ main:has(> #obrazovka-kanon:not([hidden])) { display: flex; flex-direction: colu
 .hrana:hover .cara { stroke-width: 3.2; }
 /* Místo v místě (⚠ bod 116): přerušovaná čára v barvě míst. */
 .hrana.lezi-v .cara { stroke: var(--t-misto); stroke-opacity: 0.75; stroke-width: 1.6; stroke-dasharray: 2 3; }
+/* Vazby schovaných podmíst (⚠ návrh): čárkovaná čára k místu, které je zastupuje. */
+.hrana.souhrn .cara { stroke-dasharray: 6 3; stroke-opacity: 0.8; }
+/* Časová osa (⚠ návrh) */
+.hrana.hrana-udalosti .cara { stroke: var(--akcent); stroke-opacity: 0.35; stroke-width: 1; stroke-dasharray: 1 3; }
+.osa .cara-osy { stroke: var(--akcent); stroke-opacity: 0.55; stroke-width: 2; fill: none; }
+.uzel-udalosti { cursor: pointer; }
+.uzel-udalosti .telo-udalosti { fill: var(--povrch-0); stroke: var(--akcent); stroke-width: 2.5; }
+.uzel-udalosti.skryta .telo-udalosti { stroke-dasharray: 3 2; }
+.uzel-udalosti.vybrany .telo-udalosti { fill: var(--akcent); }
+.uzel-udalosti text { pointer-events: none; font-family: var(--pismo); paint-order: stroke; stroke: var(--povrch-0); stroke-width: 3.5px; stroke-linejoin: round; }
+.uzel-udalosti .popisek-osy { font-size: var(--pismo-uzlu, 11.5px); fill: var(--text); }
+.uzel-udalosti .datum-osy { font-family: var(--pismo-svet); font-size: calc(var(--pismo-uzlu, 11.5px) * 0.95); fill: var(--akcent); }
+.uzel-udalosti:focus { outline: none; }
+.uzel-udalosti:focus-visible .telo-udalosti { stroke: var(--jantar); stroke-width: 3.5; }
+.ztlumeno .uzel-udalosti { opacity: 0.3; }
+.ztlumeno .uzel-udalosti.okoli, .ztlumeno .uzel-udalosti.vybrany { opacity: 1; }
+.odznak-podmist { cursor: pointer; }
+.odznak-podmist circle { fill: var(--povrch-0); stroke: var(--t-misto); stroke-width: 1.5; }
+.odznak-podmist text { fill: var(--t-misto); font-family: var(--pismo); font-size: 8.5px; font-weight: 700; pointer-events: none; }
+.odznak-podmist.rozbalene circle { stroke-opacity: 0.6; }
+.odznak-podmist:hover circle { fill: var(--povrch-2); }
+.uzel .odznak-podmist text { pointer-events: none; }
 .uzel { cursor: pointer; }
 .uzel .telo { fill: var(--c); stroke: var(--povrch-0); stroke-width: 2; }
 .uzel .ram { fill: none; stroke: var(--c); stroke-width: 2.5; pointer-events: none; }
@@ -1169,6 +1194,25 @@ button.mala { padding: 0.1rem var(--m-2); font-size: var(--t-popisek); }
 .udalost-odkaz:hover .udalost-text { color: var(--akcent); text-decoration: underline; }
 .udalost-datum { font-family: var(--pismo-svet); color: var(--akcent); white-space: nowrap; min-width: 9.5rem; }
 .udalost-text { font-weight: 600; }
+.udalost-pres { color: var(--text-tlumeny); font-size: var(--t-popisek); }
+.poradi-v-dni { color: var(--text-tlumeny); font-size: var(--t-popisek); white-space: nowrap; }
+.cas-kanonu { margin: 0 0 var(--m-4); padding: var(--m-2) var(--m-3); border: 1px solid var(--linka); border-radius: var(--zaobleni); background: var(--povrch-1); }
+.cas-kanonu > p { margin: 0; display: flex; flex-wrap: wrap; gap: var(--m-1) var(--m-3); align-items: baseline; }
+p.cas-kanonu { color: var(--text-tlumeny); }
+.navigace-casu { display: grid; grid-template-columns: 1fr 1fr; gap: var(--m-2); margin-top: var(--m-3); }
+.navigace-casu a { display: grid; gap: 1px; padding: var(--m-2) var(--m-3); border-radius: var(--zaobleni); background: var(--povrch-0); border: 1px solid var(--linka); color: var(--text); text-decoration: none; min-width: 0; }
+.navigace-casu a:hover { border-color: var(--akcent); }
+.navigace-casu .cas-potom { text-align: right; }
+.navigace-casu small { color: var(--akcent); font-size: var(--t-stitek); }
+.navigace-casu span { color: var(--text-tlumeny); font-size: var(--t-popisek); }
+.navigace-casu strong { overflow: hidden; text-overflow: ellipsis; }
+.clanek-udalosti .navigace-casu { margin-top: var(--m-5); }
+.seznam-udalosti-mapy { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.seznam-udalosti-mapy li { display: flex; align-items: center; gap: var(--m-2); }
+.seznam-udalosti-mapy .tecka { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--c); flex: none; }
+.seznam-udalosti-mapy small { color: var(--text-tlumeny); font-size: var(--t-popisek); }
+.odkaz-entity-mapa { background: none; border: none; padding: 0; color: var(--text); text-align: left; cursor: pointer; }
+.odkaz-entity-mapa:hover { color: var(--akcent); text-decoration: underline; }
 .udalost-vazby { display: flex; flex-wrap: wrap; gap: 4px; }
 .cip-entity { font-size: var(--t-stitek); padding: 0.05rem var(--m-2); border-radius: 999px; border: 1px solid var(--c); color: var(--text); text-decoration: none; }
 .cip-entity:hover { background: var(--povrch-2); }

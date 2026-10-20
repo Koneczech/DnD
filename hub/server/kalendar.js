@@ -172,6 +172,23 @@ export class Kalendar extends EventEmitter {
     return { udalost: n, vysledek: await this.ulozit() };
   }
 
+  /**
+   * Pořadí události v rámci dne: smer -1 = dřív, 1 = později. Prohodí ji v souboru se sousední
+   * událostí téhož dne (řazení podle data je stabilní, takže pořadí zápisu je pořadí v dni).
+   */
+  async posunoutVDni(id, smer) {
+    if (smer !== -1 && smer !== 1) throw chyba('Směr musí být -1 (dřív) nebo 1 (později).');
+    const u = this.udalosti.find((x) => x.id === id);
+    if (!u) throw chyba('Událost neexistuje.', 404);
+    const den = seradit(this.udalosti).filter((x) => Harptos.absolutni(x.datum) === Harptos.absolutni(u.datum));
+    const soused = den[den.indexOf(u) + smer];
+    if (!soused) throw chyba(smer < 0 ? 'Událost je v tom dni už první.' : 'Událost je v tom dni už poslední.', 409);
+    const a = this.udalosti.indexOf(u);
+    const b = this.udalosti.indexOf(soused);
+    [this.udalosti[a], this.udalosti[b]] = [this.udalosti[b], this.udalosti[a]];
+    return { vysledek: await this.ulozit() };
+  }
+
   async smazat(id) {
     const i = this.udalosti.findIndex((u) => u.id === id);
     if (i < 0) throw chyba('Událost neexistuje.', 404);

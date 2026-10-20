@@ -7,6 +7,7 @@ verejne: false
 # Anglický popis vzhledu místa pro prompty dílny (doplní DM).
 popis_obrazu: ""
 aliases: []
+lezi_v: # "[[mirabar]]" = místo, ve kterém nebo u kterého toto místo leží (jde nastavit i v Hubu)
 vazby: []
 vztahy: [] # - { s: "[[id]]", popis: adoptivní otec, postoj: 3 }  postoj −3 až +3, verejne: true = zná družina
 tags: []

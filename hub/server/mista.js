@@ -9,6 +9,7 @@ import { rozebrat, upravitDokument } from './frontmatter.js';
 import { zapsatAtomicky } from './zapis.js';
 import { normalizujZvukMista, platneJmeno, platnaHudba, platnaVzdalenost, normalizujNahodne, DOZVUKY, NAHODNE, CASTI_ZVUKU_MISTA } from './zvuk.js';
 import { platneId } from './zvuky-knihovna.js';
+import { leziV } from './kanon-modul.js';
 
 export const UCELY = Object.freeze(['scena', 'portret', 'token', 'karta']);
 export const VARIANTY = Object.freeze(['den', 'noc']);
@@ -136,6 +137,8 @@ export class Mista extends EventEmitter {
       nazev: String(d.nazev ?? id),
       verejne: d.verejne !== false,
       popisObrazu: typeof d.popis_obrazu === 'string' ? d.popis_obrazu : '',
+      // Nadřazené místo (⚠ bod 116); nastavuje se přes Kánon (kanon-modul.js).
+      leziV: leziV({ ...d, typ: 'misto', id }),
       // Světla místa pro den a noc (Blok 4); skládá je svetla.js.
       svetla: normalizujSvetlaMista(d.svetla),
       // Hudba a ambient místa pro den a noc (Blok 5); soubory ze složky zvuku mimo repo.

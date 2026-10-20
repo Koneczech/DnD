@@ -2,7 +2,7 @@
 // pohled družiny, malé úpravy hlavičky a nástěnky (uložená rozložení mapy).
 //
 // Hub čte všechny karty ze složek typů (TYPY_SLOZEK). Mění jen vazby, vztahy, přezdívky,
-// štítek `aktualni` a `verejne` (hlavicka.js); text karty se píše v Obsidianu.
+// štítek `aktualni`, `verejne` a u místa `lezi_v` (hlavicka.js); text karty se píše v Obsidianu.
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { EventEmitter } from 'node:events';
@@ -102,6 +102,16 @@ function obrazky(data, entita) {
   return seznam;
 }
 
+/**
+ * Nadřazené místo (`lezi_v: "[[mirabar]]"`, ⚠ bod 116). Jen u místa; jiný tvar se ignoruje
+ * (Kontrola dat ho ohlásí).
+ */
+export function leziV(d) {
+  if (d?.typ !== 'misto' || typeof d.lezi_v !== 'string') return null;
+  const id = odkazy(d.lezi_v)[0] ?? '';
+  return SLUG.test(id) && id !== d.id ? id : null;
+}
+
 const textovePole = (x) => (typeof x === 'string' ? x : Number.isFinite(x) ? String(x) : null);
 
 /** Karta ze souboru v jednotném tvaru pro panel. */
@@ -125,6 +135,7 @@ export function nacistEntitu(text, { slozka, soubor, slozkaEntity }) {
     tags: (Array.isArray(d.tags) ? d.tags : []).map(String).filter(Boolean),
     vazby: [...new Set(odkazy(JSON.stringify(d.vazby ?? [])))],
     vztahy: (Array.isArray(d.vztahy) ? d.vztahy : []).map(normalizujVztah).filter(Boolean),
+    leziV: leziV(d),
     odkazyVTextu: [...new Set(odkazy(r.telo))],
     udaje: {},
     telo: r.telo,
@@ -158,7 +169,7 @@ export function vPohledu(e, pohled, najit) {
     const obrazky = e.obrazky;
     return {
       id: e.id, typ: e.typ, nazev: e.nazev, verejne: e.verejne, ikona: e.ikona, aliases: e.aliases, tags: e.tags,
-      aktualni: e.aktualni, vazby: e.vazby, vztahy: e.vztahy, udaje: e.udaje, soubor: e.soubor,
+      aktualni: e.aktualni, vazby: e.vazby, vztahy: e.vztahy, leziV: e.leziV, udaje: e.udaje, soubor: e.soubor,
       obrazek: obrazekUzlu(obrazky)?.url ?? null, portret: obrazekUzlu(obrazky)?.ucel === 'portret', obrazky,
     };
   }
@@ -168,6 +179,8 @@ export function vPohledu(e, pohled, najit) {
   return {
     id: e.id, typ: e.typ, nazev: e.nazev, verejne: true, ikona: e.ikona, aliases: [], tags: [], aktualni: false,
     vazby: vztahy.map((v) => v.s), vztahy, udaje: {}, soubor: null,
+    // Kde místo leží, družina ví, když zná obě místa.
+    leziV: e.leziV && najit(e.leziV)?.verejne ? e.leziV : null,
     obrazek: obrazekUzlu(obrazky)?.url ?? null, portret: obrazekUzlu(obrazky)?.ucel === 'portret', obrazky,
   };
 }
@@ -451,6 +464,23 @@ export class Kanon extends EventEmitter {
   async odebratVztah(id, cil) {
     this.get(id);
     return this.upravitHlavicku(id, (e) => (e.vztahy.some((v) => v.s === cil) ? { vztahy: e.vztahy.filter((v) => v.s !== cil) } : null));
+  }
+
+  /**
+   * Nadřazené místo (⚠ bod 116): `cil` = id místa, nebo null (místo nikam nepatří).
+   * Jen místo v místě, jeden rodič, bez cyklu (Mirabar nesmí ležet v komoře, která leží v Mirabaru).
+   */
+  async nastavitLeziV(id, cil) {
+    const e = this.get(id);
+    if (e.typ !== 'misto') throw chyba('Leží v jde nastavit jen u místa.');
+    if (cil !== null) {
+      this.overitCil(id, cil);
+      if (this.entity.get(cil).typ !== 'misto') throw chyba('Místo může ležet jen v jiném místě.');
+      for (let m = this.entity.get(cil), kroku = 0; m && kroku < 100; m = m.leziV ? this.entity.get(m.leziV) : null, kroku++) {
+        if (m.id === id) throw chyba(`${this.entity.get(cil).nazev} leží v ${e.nazev}, nemůže být zároveň naopak.`);
+      }
+    }
+    return this.upravitHlavicku(id, (a) => ((a.leziV ?? null) === cil ? null : { lezi_v: cil }));
   }
 
   nastenka(id) {

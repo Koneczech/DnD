@@ -41,8 +41,10 @@ export async function nacistStyl(koren) {
 /**
  * Prompt pro novou ilustraci místa. S `predloha: true` jde o jinou variantu existujícího
  * obrázku (noc, jiný stav): ChatGPT dostane obrázek a má zachovat kompozici.
+ * `rodic` = místo, ve kterém místo leží (⚠ bod 116): jeho popis vzhledu dá nové kompozici prostředí
+ * (hospoda v Mirabaru vypadá jako Mirabar).
  */
-export function sestavPrompt({ misto, zaber = 'celek', varianta = 'den', stav = null, pocasi = 'zadne', predloha = false, styl }) {
+export function sestavPrompt({ misto, rodic = null, zaber = 'celek', varianta = 'den', stav = null, pocasi = 'zadne', predloha = false, styl }) {
   const popis = misto.popisObrazu?.trim() || `${misto.nazev}, a place on the northern Sword Coast`;
   const casti = [];
   if (predloha) {
@@ -52,6 +54,8 @@ export function sestavPrompt({ misto, zaber = 'celek', varianta = 'den', stav = 
     );
   } else {
     casti.push(`${ZABERY[zaber] ?? ZABERY.celek} ${popis}, ${VARIANTY[varianta] ?? VARIANTY.den}.`);
+    const okoli = rodic?.popisObrazu?.trim();
+    if (okoli) casti.push(`It is located in ${rodic.nazev}: ${okoli}`);
   }
   if (stav) casti.push(`State of the place: ${stav.replace(/-/g, ' ')} (describe the change here).`);
   if (POCASI[pocasi]) casti.push(POCASI[pocasi]);

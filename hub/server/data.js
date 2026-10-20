@@ -209,6 +209,30 @@ export async function kontrolaDat(c) {
     if (kde.length > 1) for (const s of kde) pridej(s, 'chyba', `Duplicitní id „${id}“ (${kde.length}×)`);
   }
 
+  // Nadřazené místo (⚠ bod 116): lezi_v jen u místa, vede na jiné místo a netvoří kruh.
+  const typPodleId = new Map(zaznamy.filter((z) => z.data.id).map((z) => [String(z.data.id), z.data.typ]));
+  const rodicPodleId = new Map();
+  for (const z of zaznamy) {
+    if (!('lezi_v' in z.data) || z.data.lezi_v == null) continue;
+    const cil = typeof z.data.lezi_v === 'string' ? odkazy(z.data.lezi_v)[0] : null;
+    if (!cil) pridej(z.soubor, 'chyba', 'lezi_v musí být odkaz na místo, např. "[[mirabar]]"');
+    else if (z.data.typ !== 'misto') pridej(z.soubor, 'varovani', 'lezi_v má smysl jen u místa (typ misto)');
+    else if (cil === String(z.data.id)) pridej(z.soubor, 'chyba', 'Místo nemůže ležet samo v sobě');
+    else if (!typPodleId.has(cil)) pridej(z.soubor, 'varovani', `lezi_v vede na neexistující místo [[${cil}]]`);
+    else if (typPodleId.get(cil) !== 'misto') pridej(z.soubor, 'chyba', `lezi_v [[${cil}]] není místo`);
+    else rodicPodleId.set(String(z.data.id), { cil, soubor: z.soubor });
+  }
+  for (const [id, { soubor }] of rodicPodleId) {
+    const videno = new Set([id]);
+    for (let m = rodicPodleId.get(id)?.cil; m; m = rodicPodleId.get(m)?.cil) {
+      if (videno.has(m)) {
+        if (m === id) pridej(soubor, 'chyba', 'lezi_v tvoří kruh (místo nakonec leží samo v sobě)');
+        break;
+      }
+      videno.add(m);
+    }
+  }
+
   // Vazby a obrázky
   for (const z of zaznamy) {
     const cile = new Set([...odkazy(JSON.stringify(z.data.vazby ?? [])), ...odkazy(z.telo), ...z.cileVztahu]);

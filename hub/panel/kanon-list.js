@@ -1,9 +1,9 @@
 // List postavy z dat list.yaml (⚠ bod 151): rozvržení podle D&D Beyond, celé anglicky
 // (DM 21. 10. 2026). Nahoře hlavička, pak pás šesti vlastností a bojových hodnot, pod ním tři
-// sloupce: záchrany, smysly, obrana a zdatnosti; dovednosti; záložky Actions, Spells, Inventory,
-// Features & Traits a Notes (jen DM). Sloupce se řídí šířkou listu (container queries ve styly.css).
-// Hodnoty počítá sdilene/list-postavy-data.js na serveru; tady se jen kreslí.
-// Rozpory s původním listem (pole stated) vidí DM jako jantarovou hodnotu s ⚠.
+// sloupce: záchrany, smysly, obrana a zdatnosti; dovednosti; záložky Actions, Spells, Inventory
+// a Features & Traits. Sloupce se řídí šířkou listu (container queries ve styly.css).
+// Hodnoty počítá sdilene/list-postavy-data.js na serveru; tady se jen kreslí. List vidí i družina,
+// poznámky DM v něm nejsou (⚠ bod 152); rozpory s původním listem (stated) vidí jen DM s ⚠.
 import { el } from '/panel/kanon-spolecne.js';
 
 /** Poslední otevřená záložka listu pro každou postavu (jen v paměti stránky). */
@@ -14,7 +14,6 @@ const ZALOZKY = [
   ['spells', 'Spells'],
   ['inventory', 'Inventory'],
   ['features', 'Features & Traits'],
-  ['notes', 'Notes'],
 ];
 
 const titulekRozporu = (r) => (r ? `Original sheet: ${r.uvedeno} · by the rules: ${r.spocteno}` : null);
@@ -101,7 +100,7 @@ function zdatnosti(l) {
     el('span', { className: 'ls-popisek', textContent: z.nazev }), el('p', { textContent: z.polozky.join(', ') }))));
 }
 
-function dovednosti(l, dm) {
+function dovednosti(l) {
   return karticka('Skills',
     el('ul', { className: 'ls-radky ls-dovednosti' }, l.dovednosti.map((s) => el('li', { className: s.stupen >= 1 ? 'zdatna' : '' },
       tecka(s.stupen), el('span', { className: 'ls-zkratka', textContent: s.vlastnost }), el('span', { className: 'ls-nazev', textContent: s.nazev, title: s.extra ? `includes ${znamenko(s.extra)} bonus` : null }),
@@ -109,8 +108,7 @@ function dovednosti(l, dm) {
     el('p', { className: 'ls-legenda' },
       el('span', {}, tecka(1), 'proficient'),
       el('span', {}, tecka(2), 'expertise'),
-      l.vsestrannost ? el('span', {}, tecka(0.5), 'Jack of All Trades') : null),
-    dm ? poznamky(l.dovednostiPoznamky) : null);
+      l.vsestrannost ? el('span', {}, tecka(0.5), 'Jack of All Trades') : null));
 }
 
 function utoky(l) {
@@ -132,7 +130,7 @@ function utoky(l) {
   ];
 }
 
-function kouzla(l, dm) {
+function kouzla(l) {
   if (!l.kouzla.length) return el('p', { className: 'ls-prazdne', textContent: 'No spellcasting.' });
   return l.kouzla.map((k) => el('div', { className: 'ls-kouzla' },
     el('div', { className: 'ls-sesilani-hlava' },
@@ -153,18 +151,16 @@ function kouzla(l, dm) {
     // Pozice bez kouzel dané úrovně (Druid vybírá připravená kouzla po odpočinku).
     k.pozice.filter((p) => !k.podleUrovne.some((u) => u.uroven === p.uroven)).length
       ? el('p', { className: 'ls-seznam' }, el('b', { textContent: 'Other slots: ' }), k.pozice.filter((p) => !k.podleUrovne.some((u) => u.uroven === p.uroven)).map((p) => `level ${p.uroven}: ${p.pocet}`).join(', '))
-      : null,
-    dm ? poznamky(k.poznamky) : null));
+      : null));
 }
 
-function vybava(l, dm) {
+function vybava(l) {
   const v = l.vybava;
   return [
     v.mince.length ? el('div', { className: 'ls-mince' }, v.mince.map((m) => el('span', { className: 'ls-minca' }, el('strong', { textContent: m.pocet }), ` ${m.mena}`))) : null,
     v.polozky.length
       ? el('ul', { className: 'ls-vybava' }, v.polozky.map((p) => el('li', { title: p.poznamka || null }, el('span', { textContent: p.nazev }), p.pocet > 1 ? el('span', { className: 'ls-pocet', textContent: `×${p.pocet}` }) : null)))
       : el('p', { className: 'ls-prazdne', textContent: 'No equipment on the sheet.' }),
-    dm ? poznamky(l.vybavaPoznamky) : null,
   ];
 }
 
@@ -175,19 +171,6 @@ function rysy(l) {
     el('ul', { className: 'ls-rysy' }, g.polozky.map((r) => el('li', {}, el('strong', { textContent: r.nazev }), r.text ? el('span', { textContent: ` ${r.text}` }) : null)))));
 }
 
-function poznamkyDm(l) {
-  const bloky = [
-    ['Source', l.zdroj ? [l.zdroj] : []],
-    ['Hit Points', l.bvPoznamka ? [l.bvPoznamka] : []],
-    ['Skills', l.dovednostiPoznamky],
-    ['Spells', l.kouzla.flatMap((k) => k.poznamky)],
-    ['Inventory', l.vybavaPoznamky],
-    ['Other', l.poznamky],
-  ].filter(([, t]) => t.length);
-  if (!bloky.length) return el('p', { className: 'ls-prazdne', textContent: 'No notes.' });
-  return bloky.map(([nadpis, t]) => el('div', { className: 'ls-podkarta' }, el('h4', { textContent: nadpis }), poznamky(t)));
-}
-
 /** Upozornění pro DM: chyby v list.yaml a rozpory s původním listem (česky, je to práce Hubu). */
 function upozorneni(l, souborListu, odkazUpravit) {
   if (!l.chyby?.length && !l.rozpory?.length) return null;
@@ -195,7 +178,8 @@ function upozorneni(l, souborListu, odkazUpravit) {
     l.chyby.length ? el('p', {}, el('strong', { textContent: `Chyba v listu (${l.chyby.length}): ` }), l.chyby.join(' · ')) : null,
     l.rozpory.length ? el('p', {}, el('strong', { textContent: `⚠ Rozpor s původním listem (${l.rozpory.length}): ` }),
       l.rozpory.map((r) => `${r.nazev} — v listu ${r.uvedeno}, podle pravidel ${r.spocteno}`).join(' · ')) : null,
-    el('p', { className: 'ls-jak' }, `Hub ukazuje hodnotu podle pravidel. Až rozhodneš, smaž v ${souborListu} řádek pod stated (nebo oprav data). `,
+    el('p', { className: 'ls-jak' },
+      l.rozpory.length ? `Hub ukazuje hodnotu podle pravidel. Až rozhodneš, smaž v ${souborListu} řádek pod stated (nebo oprav data). ` : `Oprav soubor ${souborListu}. `,
       odkazUpravit ? el('a', { href: odkazUpravit, target: '_blank', rel: 'noopener', textContent: 'Upravit na GitHubu' }) : null));
 }
 
@@ -210,7 +194,7 @@ export function vykreslitList(l, { e, portret, dm, souborListu, odkazUpravit }) 
       el('p', {}, el('strong', { textContent: 'List postavy nejde přečíst: ' }), l.chybaSouboru),
       el('p', { className: 'ls-jak', textContent: `Oprav soubor ${souborListu}; Systém → Kontrola dat ukáže, kde je chyba.` })));
   }
-  const nabidka = ZALOZKY.filter(([id]) => id !== 'notes' || dm);
+  const nabidka = ZALOZKY;
   let aktivni = zalozky.get(e.id);
   if (!nabidka.some(([id]) => id === aktivni)) aktivni = 'actions';
   const obsahZalozky = el('div', { className: 'ls-obsah-zalozky', role: 'tabpanel' });
@@ -223,7 +207,7 @@ export function vykreslitList(l, { e, portret, dm, souborListu, odkazUpravit }) 
       t.classList.toggle('aktivni', ano);
       t.setAttribute('aria-selected', String(ano));
     }
-    const kreslit = { actions: () => utoky(l), spells: () => kouzla(l, dm), inventory: () => vybava(l, dm), features: () => rysy(l), notes: () => poznamkyDm(l) }[id];
+    const kreslit = { actions: () => utoky(l), spells: () => kouzla(l), inventory: () => vybava(l), features: () => rysy(l) }[id];
     obsahZalozky.replaceChildren(...[kreslit()].flat(2).filter(Boolean));
   };
   for (const t of tlacitka) t.addEventListener('click', () => prepnout(t.dataset.zalozka));
@@ -235,7 +219,7 @@ export function vykreslitList(l, { e, portret, dm, souborListu, odkazUpravit }) 
     el('div', { className: 'ls-souhrn' }, vlastnosti(l), bojovyPas(l)),
     el('div', { className: 'ls-mrizka' },
       el('div', { className: 'ls-sloupec' }, zachrany(l), smysly(l), obrana(l), zdatnosti(l)),
-      el('div', { className: 'ls-sloupec' }, dovednosti(l, dm)),
+      el('div', { className: 'ls-sloupec' }, dovednosti(l)),
       el('div', { className: 'ls-sloupec ls-hlavni' },
         el('section', { className: 'ls-karta ls-zalozky-karta' }, el('div', { className: 'ls-zalozky', role: 'tablist' }, tlacitka), obsahZalozky))),
     dm ? el('p', { className: 'poznamka ls-zapati' }, `Data: ${souborListu}. Opravy, záchrany, dovednosti, pasivní hodnoty, iniciativu, SO a pozice kouzel Hub počítá podle pravidel 2024.`) : null);

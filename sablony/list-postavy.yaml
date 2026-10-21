@@ -5,9 +5,10 @@
 # záchrany, všech 18 dovedností, pasivní vnímání / vhled / pátrání, zdatnostní bonus (z úrovně),
 # iniciativu, SO a útok kouzlem, kostky obnovy (z povolání) a pozice kouzel (plní a poloviční
 # sesilatelé). Chybu v souboru ukáže Systém → Kontrola dat.
+#
+# List vidí i družina. Poznámky DM sem nepatří, patří do karty postavy (oddíl DM).
 schema: 1
-public: false            # true = list uvidí i Pohled družiny
-source: ""               # odkud list je a k jakému datu (vidí jen DM)
+public: true             # false = list uvidí jen DM
 classes:                 # víc povolání = víc řádků
   - { name: Druid, level: 1, subclass: "" }
 species: ""
@@ -26,7 +27,6 @@ skills:
   expertise: []          # dvojnásobný zdatnostní bonus
   jack_of_all_trades: false  # Bard: +½ ZB k dovednostem bez zdatnosti
   bonus: {}              # navíc k dovednosti, např. { Nature: 2 }; „pb“ = zdatnostní bonus
-  notes: []              # poznámky k ověření (vidí jen DM)
 
 senses: []               # Darkvision 60 ft
 
@@ -34,10 +34,9 @@ combat:
   ac: 10
   ac_notes: []           # jiná výzbroj, štít, podoby
   hp: 1                  # maximum bodů výdrže
-  hp_note: ""            # jak vzniklo (vidí jen DM)
   initiative_bonus: 0    # navíc k DEX; Alert = pb
   speed: { walk: 30 }    # případně climb, swim, fly
-  speed_note: ""
+  speed_note: ""         # odkud je zvláštní rychlost (ukáže se po najetí myší)
   resistances: []
   immunities: []
 
@@ -55,7 +54,7 @@ equipment:
   items: []              # „Rope“, „Arrows x20“ nebo { name: Arrows, qty: 20, note: "" }
   coins: {}              # { gp: 10, sp: 5 }
 
-attacks:                 # count = víc stejných zbraní
+attacks:                 # count = víc stejných zbraní; notes = vlastnosti zbraně
   - { name: Unarmed Strike, hit: +0, damage: "1", type: Bludgeoning, range: "", notes: "" }
 
 spellcasting: []         # - class: Druid
@@ -63,11 +62,8 @@ spellcasting: []         # - class: Druid
                          #   slots: { 1: 2 }       (jen u povolání, které Hub nepočítá, např. Warlock)
                          #   spells:
                          #     - { name: Guidance, level: 0, source: Druid cantrip, ritual: false, note: "" }
-                         #   notes: []             (vidí jen DM)
 
-notes: []                # další poznámky k listu (vidí jen DM)
-
-# Hodnoty z původního listu, které nesedí s výpočtem (Hub ukáže ⚠ rozpor):
+# Hodnoty z původního listu, které nesedí s výpočtem (Hub ukáže ⚠ rozpor, vidí jen DM):
 # save.cha, skill.persuasion, passive.perception, initiative, proficiency_bonus,
 # spell_dc, spell_attack, slots.1 … Po vyřešení řádek smaž.
 stated: {}

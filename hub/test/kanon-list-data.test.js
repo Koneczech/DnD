@@ -111,18 +111,33 @@ test('list: výbava a útoky z krátkého zápisu', () => {
   assert.deepEqual(l.utoky.map((a) => [a.nazev, a.pocet, a.zasah, a.zraneni]), [['Dagger', 2, '+4', '1d4+2']]);
 });
 
-test('list: pohled družiny jen s public: true a bez poznámek DM', () => {
-  const data = { ...ZAKLAD, source: 'Notion', notes: ['tajné'], stated: { 'save.cha': 3 } };
+test('list: pohled družiny jen s public: true, bez rozporů a chyb (ty jsou pro DM)', () => {
+  const data = { ...ZAKLAD, stated: { 'save.cha': 3 } };
   assert.equal(listVPohledu({ data, chyba: null }, 'druzina'), null);
   assert.equal(listVPohledu({ data: null, chyba: 'Chyba v YAML' }, 'druzina'), null);
   assert.deepEqual(listVPohledu({ data: null, chyba: 'Chyba v YAML' }, 'dm'), { chybaSouboru: 'Chyba v YAML' });
   assert.equal(listVPohledu({ data, chyba: null }, 'dm').rozpory.length, 1);
   const druzina = listVPohledu({ data: { ...data, public: true }, chyba: null }, 'druzina');
-  assert.equal(druzina.zdroj, '');
-  assert.deepEqual(druzina.poznamky, []);
+  assert.deepEqual(druzina.chyby, []);
   assert.deepEqual(druzina.rozpory, []);
   assert.equal(druzina.vlastnosti.find((v) => v.klic === 'cha').rozpor, null);
   assert.deepEqual(listProDruzinu(spocitatList(ZAKLAD)).vlastnosti.map((v) => v.zachrana), spocitatList(ZAKLAD).vlastnosti.map((v) => v.zachrana));
+});
+
+test('list: poznámky DM do listu nepatří, Kontrola dat je ohlásí (⚠ bod 152)', () => {
+  const l = spocitatList({
+    ...ZAKLAD,
+    source: 'Notion',
+    notes: ['tajné'],
+    skills: { ...ZAKLAD.skills, notes: ['ověřeno'] },
+    combat: { ...ZAKLAD.combat, hp_note: 'naházeno' },
+    spellcasting: [{ ...ZAKLAD.spellcasting[0], notes: ['📌'] }],
+  });
+  assert.deepEqual(l.chyby.map((c) => c.split(':')[0]), ['source', 'notes', 'combat.hp_note', 'skills.notes', 'spellcasting.notes']);
+  // Herní poznámky zůstávají: výhody záchran, varianty OČ, vlastnosti zbraní.
+  const h = spocitatList({ ...ZAKLAD, saves: { ...ZAKLAD.saves, notes: ['Advantage vs Poisoned'] }, combat: { ...ZAKLAD.combat, ac_notes: ['Shield: 15'] } });
+  assert.deepEqual(h.chyby, []);
+  assert.deepEqual([h.zachranyPoznamky, h.ocPoznamky], [['Advantage vs Poisoned'], ['Shield: 15']]);
 });
 
 test('list: Kánon načte list.yaml ke kartě, změna karty ho neztratí, Kontrola dat hlásí rozpory', async () => {
@@ -154,7 +169,7 @@ test('list: postavy v kampani se dají spočítat bez chyb a sedí s původním 
   for (const id of ['alba', 'koudur', 'leta', 'tusker']) {
     const l = spocitatList(YAML.parse(await fs.readFile(path.join(KOREN_REPA, 'kampan', 'postavy', id, 'list.yaml'), 'utf8')));
     assert.deepEqual(l.chyby, [], id);
-    assert.equal(l.verejne, false, `${id}: list je zatím jen pro DM`);
+    assert.equal(l.verejne, true, `${id}: list vidí i družina (DM 21. 10. 2026)`);
     if (l.rozpory.length) rozpory[id] = l.rozpory.map((r) => r.klic);
   }
   // Jediný rozpor při převodu: Koudur má zdatnost v záchraně na CHA, list uváděl +3.

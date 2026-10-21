@@ -6,6 +6,8 @@
 // list je ukáže jako ⚠ rozpor, dokud je DM nevyřeší (smazáním řádku nebo opravou dat).
 //
 // Klíče souboru jsou anglicky jako list sám (DM 21. 10. 2026: celý list anglicky).
+// Poznámky DM do listu nepatří (DM 21. 10. 2026, ⚠ bod 152): list vidí i družina, poznámky
+// patří do karty postavy. Pole pro ně (source, notes, hp_note…) Kontrola dat ohlásí jako chybu.
 // Sdílí ho server (karta, Kontrola dat) i prohlížeč (web), proto bez importů z Node.
 
 export const SOUBOR_LISTU = 'list.yaml';
@@ -122,6 +124,17 @@ export function spocitatList(d) {
   const rozpory = [];
   if (!jeMapa(d)) return { chyby: ['list.yaml musí být mapa klíč: hodnota'], rozpory, prazdny: true };
   if (d.schema !== undefined && d.schema !== 1) chyby.push(`Neznámá verze schématu ${d.schema}`);
+  // Poznámky DM do listu nepatří (⚠ bod 152).
+  const poleDm = [
+    ['source', d.source], ['notes', d.notes],
+    ['combat.hp_note', jeMapa(d.combat) ? d.combat.hp_note : undefined],
+    ['skills.notes', jeMapa(d.skills) ? d.skills.notes : undefined],
+    ['equipment.notes', jeMapa(d.equipment) ? d.equipment.notes : undefined],
+    ...seznam(d.spellcasting).filter(jeMapa).map((s) => ['spellcasting.notes', s.notes]),
+  ].filter(([, x]) => (Array.isArray(x) ? x.length : text(x))).map(([pole]) => pole);
+  for (const pole of new Set(poleDm)) {
+    chyby.push(`${pole}: poznámky do listu nepatří, list vidí i družina; napiš je do karty postavy (oddíl DM)`);
+  }
 
   // Povolání a úroveň
   const tridy = [];
@@ -308,7 +321,6 @@ export function spocitatList(d) {
       utokRozpor: porovnat(`spell_attack${pripona}`, `${trida} Spell Attack`, utok),
       pozice,
       podleUrovne: urovne.map((u) => ({ uroven: u, nazev: u === 0 ? 'Cantrips' : nazevUrovne(u), pozice: pozice.find((p) => p.uroven === u)?.pocet ?? null, kouzla: seznamKouzel.filter((k) => k.uroven === u) })),
-      poznamky: texty(s.notes),
     });
   });
 
@@ -352,7 +364,6 @@ export function spocitatList(d) {
     chyby,
     rozpory,
     verejne: d.public === true,
-    zdroj: text(d.source),
     hlava: {
       tridy: tridy.map((t) => `${t.nazev} ${t.uroven}${t.podtrida ? ` (${t.podtrida})` : ''}`).join(' / '),
       tridyKratce: tridy.map((t) => `${t.nazev} ${t.uroven}`).join(' / '),
@@ -369,7 +380,6 @@ export function spocitatList(d) {
     oc,
     ocPoznamky: texty(boj.ac_notes),
     bv,
-    bvPoznamka: text(boj.hp_note),
     kostky,
     kostkyRozpor,
     rychlost,
@@ -379,31 +389,28 @@ export function spocitatList(d) {
     vlastnosti,
     zachranyPoznamky: texty(zachrany.notes),
     dovednosti,
-    dovednostiPoznamky: texty(dov.notes),
     vsestrannost,
     pasivni,
     smysly: texty(d.senses),
     zdatnosti,
     rysy,
     vybava,
-    vybavaPoznamky: texty(vyb.notes),
     utoky,
     kouzla,
-    poznamky: texty(d.notes),
   };
 }
 
 /**
- * List pro pohled družiny: bez poznámek k ověření a rozporů (to je práce DM).
+ * List pro pohled družiny: bez chyb v souboru a rozporů s původním listem (to je práce DM).
  * Družina list vidí jen s `public: true` (rozhoduje volající).
  */
 export function listProDruzinu(l) {
   const bez = (x) => ({ ...x, rozpor: null });
   return {
     ...l,
-    chyby: [], rozpory: [], zdroj: '', bvPoznamka: '', dovednostiPoznamky: [], vybavaPoznamky: [], poznamky: [],
+    chyby: [], rozpory: [],
     zbRozpor: null, iniciativaRozpor: null, kostkyRozpor: null,
     vlastnosti: l.vlastnosti.map(bez), dovednosti: l.dovednosti.map(bez), pasivni: l.pasivni.map(bez),
-    kouzla: l.kouzla.map((k) => ({ ...k, poznamky: [], soRozpor: null, utokRozpor: null, pozice: k.pozice.map(bez) })),
+    kouzla: l.kouzla.map((k) => ({ ...k, soRozpor: null, utokRozpor: null, pozice: k.pozice.map(bez) })),
   };
 }

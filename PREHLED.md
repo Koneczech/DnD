@@ -62,7 +62,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Wiki kánonu: přehled, kategorie, stránka karty, Pohled družiny, hledání v liště | ◐ |
 | | Co ví družina po odrážkách (oko 👁 u každé), rychlé přidání u stolu | ◐ |
 | | Odkrývání odstavců a odrážek z celého textu karty (oko 👁 u bloku, i z příběhu postavy) | ◐ |
-| | List postavy jako character sheet z dat (`list.yaml` u každé postavy): vlastnosti, bojové hodnoty, záchrany, dovednosti, smysly, obrana, zdatnosti a záložky Actions, Spells, Inventory, Features & Traits, Notes; odvozené hodnoty počítá Hub podle pravidel 2024, rozpory s původním listem ukáže ⚠ (u Koudura záchrana na Charismu); v Hubu, na webu i na telefonu | ◐ |
+| | List postavy jako character sheet z dat (`list.yaml` u každé postavy): vlastnosti, bojové hodnoty, záchrany, dovednosti, smysly, obrana, zdatnosti a záložky Actions, Spells, Inventory, Features & Traits; odvozené hodnoty počítá Hub podle pravidel 2024, rozpory s původním listem ukáže jen DM s ⚠ (u Koudura záchrana na Charismu); list vidí i družina, poznámky DM v něm nejsou; v Hubu, na webu i na telefonu | ◐ |
 | | Plný editor karty (text, pole, portrét, našeptávání odkazů), nová karta ze šablony | ◐ |
 | | Živý náhled v editoru karty (jako Obsidian): nadpisy, tučné, odkazy, odrážky a oko 👁 rovnou v textu, značky jen na řádku s kurzorem; text se ukládá beze změny formátu; Enter pokračuje v seznamu | ◐ |
 | | Příkazy „/“ v editoru: nabídka prvků (nadpis, odrážka, odrážka pro družinu, citace, odkaz, tučně, kurzíva, skrytá poznámka, tabulka, oddělovač, chybějící oddíly typu), v Hubu i na webu | ◐ |

@@ -14,6 +14,7 @@ export const jeNadpisDm = (nadpis) => /^DM(\b|\s|—|-|:|$)/.test(String(nadpis 
  * @param {(id: string) => boolean} [existuje] neexistující cíl se vykreslí jako prostý text
  */
 export function radek(text, existuje = () => true) {
+  text = String(text).replace(/\u0005\d+\u0005/g, '');
   const kody = [];
   // `kód` se vyjme dřív, aby se v něm nic dalšího neformátovalo.
   let t = String(text).replace(/`([^`]+)`/g, (_, k) => `\u0000${kody.push(k) - 1}\u0000`);
@@ -43,6 +44,11 @@ export function radek(text, existuje = () => true) {
 }
 
 const ODKAZ_DM = '\u0003';
+/** Blok textu, který jde odkrýt družině (sdilene/odkryvani.js, oznacitBloky): data-blok="N". */
+const atributBloku = (text) => {
+  const m = /^\u0005(\d+)\u0005/.exec(String(text ?? ''));
+  return m ? ` data-blok="${m[1]}"` : '';
+};
 const CIL_DM = '\u0004';
 
 /**
@@ -119,11 +125,11 @@ export function naHtml(md, { existuje, vynechatNadpis, oznacitDm = false, dmDolu
   let prvniNadpis = true;
 
   const ukoncitOdstavec = () => {
-    if (odstavec.length) vystup.push(`<p>${odstavec.map((r) => radek(r, existuje)).join('<br>')}</p>`);
+    if (odstavec.length) vystup.push(`<p${atributBloku(odstavec[0])}>${odstavec.map((r) => radek(r, existuje)).join('<br>')}</p>`);
     odstavec = [];
   };
   const ukoncitSeznam = () => {
-    if (seznam) vystup.push(`<${seznam.typ}>${seznam.polozky.map((p) => `<li${p.ukol !== null ? ' class="ukol"' : ''}>${p.ukol !== null ? `<input type="checkbox" disabled${p.ukol ? ' checked' : ''}> ` : ''}${radek(p.text, existuje)}</li>`).join('')}</${seznam.typ}>`);
+    if (seznam) vystup.push(`<${seznam.typ}>${seznam.polozky.map((p) => `<li${p.ukol !== null ? ' class="ukol"' : ''}${atributBloku(p.text)}>${p.ukol !== null ? `<input type="checkbox" disabled${p.ukol ? ' checked' : ''}> ` : ''}${radek(p.text, existuje)}</li>`).join('')}</${seznam.typ}>`);
     seznam = null;
   };
   const ukoncitCitaci = () => {

@@ -13,6 +13,7 @@ import { rozebrat, odkazy } from './frontmatter.js';
 import { TYPY_SLOZEK } from './cesty.js';
 import { upravitKartu, idZOdkazu, normalizujVztah, teloKarty, nahraditTelo, TEXTOVA_POLE, ODKAZOVA_KLICE } from './hlavicka.js';
 import { OSUDY, ODKAZOVA_POLE, POLE_TYPU } from '../sdilene/typy-karet.js';
+import { textDruziny, prepnoutBlokTextu, blokyTextu } from '../sdilene/odkryvani.js';
 import { PRIPONA_DOCASNA, zapsatAtomicky } from './zapis.js';
 import { Harptos } from '../sdilene/harptos.js';
 import { STAVY_ROZHODNUTI } from './data.js';
@@ -346,7 +347,9 @@ export function nacistEntitu(text, { slozka, soubor, slozkaEntity, upraveno = nu
   const bloky = blokyDruziny(r.telo).filter((b) => b.index >= 0);
   entita.odkryto = { zna: bloky.filter((b) => b.zna).length, celkem: bloky.length };
   entita.popis = kratkyPopis(teloBezDruziny(r.telo));
-  entita.popisDruziny = kratkyPopis(teloDruziny(r.telo, entita.typ));
+  // Popisek dlaždice pro družinu: z Co ví družina, jinak z odkrytého textu karty (rozhodnutí 75).
+  entita.popisDruziny = kratkyPopis(teloDruziny(r.telo, entita.typ)) || (entita.typ === 'kanon' ? '' : kratkyPopis(textDruziny(r.telo)));
+  entita.odkrytoTextu = entita.typ === 'kanon' ? 0 : blokyTextu(r.telo).filter((b) => b.zna).length;
   return entita;
 }
 
@@ -368,7 +371,7 @@ export function vPohledu(e, pohled, najit) {
     return {
       id: e.id, typ: e.typ, nazev: e.nazev, verejne: e.verejne, ikona: e.ikona, aliases: e.aliases, tags: e.tags,
       aktualni: e.aktualni, vazby: e.vazby, vztahy: e.vztahy, leziV: e.leziV, udaje: e.udaje, odkazyPole: e.odkazyPole ?? {}, soubor: e.soubor,
-      kdo: e.kdo ?? [], odkryto: e.odkryto ?? { zna: 0, celkem: 0 },
+      kdo: e.kdo ?? [], odkryto: e.odkryto ?? { zna: 0, celkem: 0 }, odkrytoTextu: e.odkrytoTextu ?? 0,
       obrazek: obrazekUzlu(obrazky)?.url ?? null, portret: obrazekUzlu(obrazky)?.ucel === 'portret', obrazky,
       popis: e.popis, upraveno: e.upraveno,
     };
@@ -727,7 +730,8 @@ export class Kanon extends EventEmitter {
     odkazujePolem.sort((a, b) => a.nazev.localeCompare(b.nazev, 'cs'));
     let telo;
     if (p === 'dm') telo = teloBezDruziny(e.telo);
-    else telo = e.typ === 'kanon' ? teloDruziny(e.telo, e.typ) : '';
+    // Družina vidí z textu karty jen odkryté odstavce a odrážky (rozhodnutí 75).
+    else telo = e.typ === 'kanon' ? teloDruziny(e.telo, e.typ) : textDruziny(e.telo);
     return {
       ...v,
       telo,
@@ -870,6 +874,24 @@ export class Kanon extends EventEmitter {
     if (!Number.isInteger(index) || index < 0) throw chyba('Neplatná odrážka.');
     if (typeof zna !== 'boolean') throw chyba('zna musí být true nebo false.');
     const r = await this.upravitSoubor(id, (text) => nahraditTelo(text, prepnoutBlok(teloKarty(text), index, zna)));
+    return { vysledek: r.vysledek, karta: r.karta };
+  }
+
+  /**
+   * Odkryje nebo skryje odstavec, odrážku nebo citaci z textu karty (rozhodnutí 75). Blok se
+   * pozná podle prvního řádku a pořadí mezi bloky se stejným prvním řádkem.
+   */
+  async prepnoutText(id, { prvni, poradi = 0, zna } = {}) {
+    if (typeof prvni !== 'string' || !prvni.trim() || prvni.length > 2000) throw chyba('Chybí první řádek odstavce.');
+    if (!Number.isInteger(poradi) || poradi < 0) throw chyba('Neplatné pořadí odstavce.');
+    if (typeof zna !== 'boolean') throw chyba('zna musí být true nebo false.');
+    const e = this.get(id);
+    if (e.typ === 'kanon') throw chyba('Hráčský kánon vidí družina celý, odkrývat v něm není co.');
+    const r = await this.upravitSoubor(id, (text) => {
+      const nove = prepnoutBlokTextu(teloKarty(text), { prvni, poradi }, zna);
+      if (nove === null) throw chyba('Tenhle odstavec v kartě není (karta se mezitím změnila?). Načti ji znovu.', 409);
+      return nahraditTelo(text, nove);
+    });
     return { vysledek: r.vysledek, karta: r.karta };
   }
 

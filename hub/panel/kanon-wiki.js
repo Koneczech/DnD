@@ -3,6 +3,7 @@
 // kalendáře s navázanými kartami a plný editor karty (kanon-editor.js). Mapa je druhá záložka.
 import { hledat, proHledani } from '/sdilene/sit.js';
 import { naHtml } from '/sdilene/markdown.js';
+import { blokyTextu, oznacitBloky } from '/sdilene/odkryvani.js';
 import { $, TYPY, STAVY, barvaTypu, el, nahradit, obrazekEntity, stitekTypu } from '/panel/kanon-spolecne.js';
 import { vytvoritEditor } from '/panel/kanon-editor.js';
 
@@ -256,11 +257,43 @@ export function vytvoritWiki(ctx, karta) {
     await karta.upravit(`/api/kanon/entita/${encodeURIComponent(e.id)}/druzina/${b.index}`, 'PUT', { zna: !b.zna }, b.zna ? 'Skryto před družinou.' : 'Družina to teď ví.');
   }
 
+  /**
+   * Oko u každého odstavce, odrážky a citace textu karty (rozhodnutí 75): odkrytý blok uvidí
+   * družina pod Co ví družina, aniž by se musel přepisovat. Značka %%zná%% jako u odrážek.
+   */
+  function okaVTextu(e, text, bloky) {
+    text.classList.add('s-oky');
+    for (const prvek of text.querySelectorAll('[data-blok]')) {
+      const b = bloky[Number(prvek.dataset.blok)];
+      if (!b) continue;
+      prvek.classList.add('blok-textu');
+      prvek.classList.toggle('zna', b.zna);
+      if (!uprav()) {
+        if (b.zna) prvek.prepend(el('span', { className: 'oko oko-textu zna', textContent: '👁', title: 'Družina to ví.' }));
+        continue;
+      }
+      const oko = el('button', {
+        type: 'button', className: `oko oko-textu${b.zna ? ' zna' : ''}`, textContent: b.zna ? '👁' : '🔒',
+        title: b.zna ? 'Družina to ví. Klik skryje.' : 'Jen DM. Klik odkryje družině (bez přepisování do Co ví družina).',
+        'aria-pressed': String(b.zna), 'aria-label': b.zna ? 'Skrýt před družinou' : 'Odkrýt družině',
+      });
+      oko.addEventListener('click', async (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        const hlaska = b.zna ? 'Skryto před družinou.' : e.verejne ? 'Družina to teď ví.' : 'Odkryto. Družina kartu zatím nezná, uvidí to, až zapneš Družina zná.';
+        await karta.upravit(`/api/kanon/entita/${encodeURIComponent(e.id)}/text`, 'PUT', { prvni: b.prvni, poradi: b.poradi, zna: !b.zna }, hlaska);
+      });
+      prvek.prepend(oko);
+    }
+  }
+
   function coViDruzina(e, k) {
     const bloky = k.druzina ?? [];
     const odkryte = bloky.filter((b) => b.zna).length;
     const celkem = bloky.filter((b) => b.index >= 0).length;
     if (!dm() && !bloky.length) {
+      // Odkrytý text karty (rozhodnutí 75) následuje pod oddílem, prázdné hlášení by mu odporovalo.
+      if (k.telo?.trim()) return null;
       return el('section', { className: 'co-vi-druzina' }, el('h3', { textContent: 'Co ví družina' }), el('p', { className: 'poznamka', textContent: `Družina o ${e.nazev} zatím nic dalšího neví.` }));
     }
     const polozky = bloky.map((b) => {
@@ -292,7 +325,7 @@ export function vytvoritWiki(ctx, karta) {
       pridat = el('div', { className: 'pridat-druzina' }, vstup, el('label', { className: 'zaskrtavaci', title: 'Připravit dopředu, odkryješ u stolu' }, skryte, ' zatím skryté'), el('button', { type: 'button', textContent: 'Přidat', onclick: odeslat }));
     }
     return el('section', { className: 'co-vi-druzina' },
-      el('div', { className: 'sekce-hlava' }, el('h3', { textContent: 'Co ví družina' }), dm() ? el('span', { className: 'ulozeni', textContent: celkem ? `odkryto ${odkryte} z ${celkem}${e.verejne ? '' : ' · karta je jen pro DM'}` : '' }) : null),
+      el('div', { className: 'sekce-hlava' }, el('h3', { textContent: 'Co ví družina' }), dm() ? el('span', { className: 'ulozeni', textContent: [celkem ? `odkryto ${odkryte} z ${celkem}` : '', k.odkrytoTextu ? `z textu karty ${k.odkrytoTextu}` : '', (celkem || k.odkrytoTextu) && !e.verejne ? 'karta je jen pro DM' : ''].filter(Boolean).join(' · ') }) : null),
       dm() && !e.verejne && odkryte ? el('p', { className: 'poznamka varovani-druzina', textContent: 'Družina kartu zatím nezná (přepínač Družina zná je vypnutý), odkryté odrážky uvidí, až ho zapneš.' }) : null,
       polozky.length ? el('ul', { className: 'bloky-druziny' }, polozky) : el('p', { className: 'poznamka', textContent: 'Zatím nic. Každá odrážka se odkrývá zvlášť: družina uvidí jen ty s okem 👁.' }),
       pridat);
@@ -382,7 +415,12 @@ export function vytvoritWiki(ctx, karta) {
     }
     const text = el('div', { className: 'text-karty' });
     // DM oddíly wiki ukáže dole, na jejich místě v textu zůstane odkaz (rozhodnutí 74).
-    if (k.telo.trim()) text.innerHTML = naHtml(k.telo, { existuje: (id) => s.podleId.has(id), vynechatNadpis: e.nazev, oznacitDm: dm(), dmDolu: dm() });
+    // Pohled DM: u odstavců a odrážek mimo Co ví družina a DM oddíly oko na odkrytí (rozhodnutí 75).
+    const blokyKarty = dm() && e.typ !== 'kanon' ? blokyTextu(k.telo) : [];
+    if (k.telo.trim()) {
+      text.innerHTML = naHtml(blokyKarty.length ? oznacitBloky(k.telo, blokyKarty) : k.telo, { existuje: (id) => s.podleId.has(id), vynechatNadpis: e.nazev, oznacitDm: dm(), dmDolu: dm() });
+      if (blokyKarty.length) okaVTextu(e, text, blokyKarty);
+    }
     const portret = k.obrazky.find((o) => o.url === k.obrazek && o.ucel === 'portret');
     const pocetVazeb = new Set([...k.vztahy.map((v) => v.s), ...k.vazby]).size;
     const infobox = el('aside', { className: 'infobox karta' },

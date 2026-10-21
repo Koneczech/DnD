@@ -1270,6 +1270,8 @@ export class Hub {
       const telo = await nacistJson(req);
       return this.poUpraveKanonu(await k.pridatDruzinu(druzina[1], telo.text, telo.zna ?? true));
     }
+    const odkrytText = /^\/api\/kanon\/entita\/([a-z0-9-]{1,80})\/text$/.exec(p);
+    if (odkrytText && m === 'PUT') return this.poUpraveKanonu(await k.prepnoutText(odkrytText[1], await nacistJson(req)));
     const blok = /^\/api\/kanon\/entita\/([a-z0-9-]{1,80})\/druzina\/(\d{1,4})$/.exec(p);
     if (blok && m === 'PUT') return this.poUpraveKanonu(await k.prepnoutDruzinu(blok[1], Number(blok[2]), (await nacistJson(req)).zna));
     const udVazby = /^\/api\/kanon\/udalosti\/([A-Za-z0-9_-]{1,40})\/vazby$/.exec(p);

@@ -49,11 +49,13 @@ export { stromMist };
 /**
  * @param {object} volby
  * @param {boolean} [volby.jenCteni] čtecí verze (GitHub Pages): bez úprav, poznámek a OBS
+ * @param {(soubor: string) => string} [volby.upravitNaGitHubu] čtecí verze: adresa souboru karty v editoru GitHubu
  */
-export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false }) {
+export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false, upravitNaGitHubu = null }) {
   const ulozene = nacistVolby();
   const s = {
     jenCteni,
+    upravitNaGitHubu,
     pohled: ulozene.pohled === 'druzina' ? 'druzina' : 'dm',
     typy: new Set(Array.isArray(ulozene.typy) ? ulozene.typy : Object.keys(TYPY).filter((t) => t !== 'rozhodnuti')),
     jenVeHre: ulozene.jenVeHre === true,

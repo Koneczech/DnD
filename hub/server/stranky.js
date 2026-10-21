@@ -140,7 +140,12 @@ export async function sestavitStranky({ cesty: c, cil, cas = new Date(), heslo =
       await zapsatJson(path.join(cil, 'data', 'dm.json'), zasifrovat(balik, heslo));
     }
     // `sestaveno` pozná otevřená stránka, že vyšla nová verze, a načte se znovu.
-    await zapsatJson(path.join(cil, 'data', 'stranky.json'), { dm: Boolean(heslo), sestaveno: cas.toISOString() });
+    // `upravy`: adresa editoru GitHubu, kam pohled DM posílá tlačítko Upravit na GitHubu (⚠ bod 144).
+    await zapsatJson(path.join(cil, 'data', 'stranky.json'), {
+      dm: Boolean(heslo),
+      sestaveno: cas.toISOString(),
+      upravy: heslo ? `https://github.com/${repo}/edit/${vetev}/` : null,
+    });
 
     // Obrázky karet (portréty, ilustrace míst) ze stejných cest jako v repu.
     const chybiObrazky = [];

@@ -175,7 +175,7 @@ function toast(text, { chyba = false } = {}) {
 
 stranky = await nactiJson('data/stranky.json').catch(() => ({ dm: false }));
 sestaveno = stranky.sestaveno ?? null;
-setInterval(zkontrolovatVerzi, 5 * 60000);
+setInterval(zkontrolovatVerzi, 60000);
 document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && zkontrolovatVerzi());
 // Kdo heslo na tomto zařízení nezadal (hráči), začíná v pohledu družiny, bez dotazu na heslo.
 if (!stranky.dm || !(await nacistKlic())) {
@@ -187,7 +187,11 @@ if (!stranky.dm || !(await nacistKlic())) {
   }
 }
 
-const kanon = vytvoritKanon({ api, toast, otevritPoznamku: () => {}, jenCteni: true });
+/** Soubor karty (kampan/…/karta.md) v editoru GitHubu; GitHub si sám řekne o přihlášení. */
+const upravitNaGitHubu = stranky.upravy
+  ? (soubor) => `${stranky.upravy}${soubor.split('/').map(encodeURIComponent).join('/')}`
+  : null;
+const kanon = vytvoritKanon({ api, toast, otevritPoznamku: () => {}, jenCteni: true, upravitNaGitHubu });
 if (!stranky.dm) $('#kanon-pohled [data-pohled="dm"]').hidden = true;
 
 $('#zamknout-dm').addEventListener('click', () => {

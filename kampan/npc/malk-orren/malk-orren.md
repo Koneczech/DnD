@@ -3,13 +3,13 @@ schema: 1
 id: malk-orren
 typ: npc
 nazev: "Malk Orren"
-verejne: false
+verejne: true
 ikona: 📨
 aliases: ["Malk", "Kontakt v Longsaddle"]
-vazby: ["[[ordwin-sohla]]", "[[thiril-ambersedge]]", "[[leta]]", "[[koudur]]", "[[longsaddle]]", "[[tabor-lupicu]]", "[[na-zvonici]]", "[[sezeni-3-zacatek]]"]
+vazby: ["[[ordwin-sohla]]", "[[thiril-ambersedge]]", "[[leta]]", "[[koudur]]", "[[longsaddle]]", "[[tabor-lupicu]]", "[[na-zvonici]]", "[[sezeni-3-zacatek]]", "[[malkova-zasilka]]", "[[u-deraveho-grose]]", "[[artur]]", "[[s02]]"]
 vztahy:
   - { s: "[[ordwin-sohla]]", popis: "pracuje pro něj" }
-tags: []
+tags: [aktualni]
 ilustrace:
   - { soubor: /monsters/malk-orren.png, ucel: portret }
 zdroj: https://app.notion.com/p/3c49ed226736818ca0a3f971cd6e6994
@@ -19,6 +19,17 @@ zdroj: https://app.notion.com/p/3c49ed226736818ca0a3f971cd6e6994
 Člověk, ke kterému [[thiril-ambersedge|Thiril]] poslal [[leta|Letu]] s vymyšleným úkolem — údajně jí vysvětlí podmínky výměnného obchodu za Thirilovu svobodu.
 
 **Ve skutečnosti je to [[ordwin-sohla|Ordwinův]] člověk.** Existuje a dá se najít, ale ví jenom to, co mu Ordwin řekl.
+
+## Co ví družina
+
+- Kurýr, nosí poštu. Člověk se staršími rysy a šedinami, ale bez vrásek. Kapuce, obyčejné cestovní oblečení, nic, čeho by si člověk všiml. %%zná%%
+- Lupiči mu ukradli [[malkova-zasilka|zásilku]] dokumentů, když spal na cestě čtvrt dne severně od Longsaddle. Jeho klientela je netrpělivá, potřebuje ji zpátky co nejdřív. %%zná%%
+- Záznamy o poslední zakázce z Mirabaru, které hledá [[leta|Leta]], jsou podle něj nejspíš součástí zásilky. %%zná%%
+- Za vrácení zásilky slíbil zaplatit zlatem a nabídl obchod s informacemi. Jde s družinou, protože bez něj by zásilka byla ztracená. %%zná%%
+- Zná [[koudur|Koudura]] z hospody [[na-zvonici|Na Zvonici]] v Mirabaru. %%zná%%
+- Nepije pivo ani pálenku a své jméno řekl až napotřetí. %%zná%%
+- [[artur|Artura]] od brodu má za tlachala, ve věci zásilek mu ale dává za pravdu. %%zná%%
+- Je netrpělivý. Družinu ráno budil kopancem a v lese, kde se ztratily stopy, byl přesvědčený, že bloudí. %%zná%%
 
 ## Jak ho Leta najde
 

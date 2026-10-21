@@ -52,3 +52,8 @@ strop: jeskyne
 # Lurkwood
 
 Popis místa doplní DM.
+
+## Co ví družina
+
+- Uprostřed podzimu se tu zelená a kvete jako na jaře. %%zná%%
+- [[drevorubci-z-lurkwoodu|Dřevorubci z Mirabaru]] říkají, že se les letos urodil jako nikdy a že tam musí být něco špatně. %%zná%%

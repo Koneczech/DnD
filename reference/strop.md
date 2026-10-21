@@ -21,6 +21,18 @@ Výstup je `vystupy/strop.html`. Adresu najdeš v Nastavení → Výstupy pro OB
 
 Změny se prolínají: počasí asi 3 s, den a noc asi 4 s. Blesky drží limit 3 záblesky za sekundu jako světla a obraz (rozhodnutí 64). Blesky přicházejí z Hubu, takže je vypne i vypínač Blesky v Nastavení. Strop blýská i bez zapnutého Řídit světla, stejně jako obraz v OBS.
 
+## Ptáci
+
+Přes strop občas přeletí ptáci. Letí pod mraky, v lese se schovávají za listím a drží se tvaru i masek.
+
+| Kdo | Jak letí | Kdy sami |
+| --- | --- | --- |
+| Hejno | 35–70 špačků, drží se pohromadě a vlní se | Ve dne venku za pěkného počasí; jedno hejno uletí taky na začátku bouřky |
+| Klín | 9–17 hus ve tvaru V, pomalu mávají a občas plachtí | Ve dne venku za pěkného počasí |
+| Netopýři | Pár netopýrů, cik cak; nad táborem je zespodu chytá záře ohně | V noci v táboře a v lese, v jeskyni kdykoli |
+
+Sami přiletí asi jednou za 1–4 minuty, v souboji ne. Vypnout to jde v kalibraci (Ptáci přeletí sami). Hned je pošleš z Hubu: **U stolu → Strop → Hejno / Klín / Netopýři**, nebo na stropě klávesou **P** (vybere podle doby a motivu) a ve zkoušce tlačítky Přelet.
+
 ## Motiv podle místa
 
 Co je na stropě, určuje místo ve scéně. Nastavuje se v **Místa → Zvuk → Prostor → Strop**:

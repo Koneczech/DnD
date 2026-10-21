@@ -25,7 +25,7 @@ export function filtrUdalosti(url) {
 const chce = (filtr, udalost) => !filtr || udalost === 'verze' || filtr.has(udalost);
 
 /** Události, které platí jen v okamžiku odeslání (blesk po obnovení stránky znovu neblýskne). */
-const JEDNORAZOVE = new Set(['zvuk-efekt', 'zvuk-povel', 'blesk']);
+const JEDNORAZOVE = new Set(['zvuk-efekt', 'zvuk-povel', 'blesk', 'strop-povel']);
 
 export class Vysilac {
   constructor({ srdceMs = 15000 } = {}) {

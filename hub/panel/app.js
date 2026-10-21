@@ -2010,7 +2010,7 @@ function vykresliScenu() {
   const mini = $('#mista-mini');
   mini.hidden = !s.misto;
   mini.textContent = s.misto?.nazev ?? '';
-  for (const seg of document.querySelectorAll('.prepinace .segment')) {
+  for (const seg of document.querySelectorAll('.prepinace .segment[data-pole]')) {
     if (seg.dataset.pole === 'pocasi') {
       // Počasí jsou přepínače: déšť, sníh a mlha jdou zapnout i naráz, Žádné je vypne všechny.
       const zap = pocasiSeznam(s.pocasi);
@@ -2045,7 +2045,7 @@ async function scenaApi(cesta, metoda, telo) {
   }
 }
 
-for (const seg of document.querySelectorAll('.prepinace .segment')) {
+for (const seg of document.querySelectorAll('.prepinace .segment[data-pole]')) {
   seg.addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (!b) return;
@@ -2812,6 +2812,18 @@ $('#sc-blesk').addEventListener('click', async () => {
   try {
     const r = await api('/api/svetla/blesk', { metoda: 'POST', telo: {} });
     if (!r.blesk) toast(r.duvod, { chyba: true });
+  } catch (chyba) {
+    toast(chyba.message, { chyba: true });
+  }
+});
+
+// Přelet ptáků přes strop z projektoru (⚠ bod 144): jen pokyn, strop sám vybere cestu.
+$('#sc-ptaci').addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-druh]');
+  if (!b) return;
+  try {
+    await api('/api/strop/ptaci', { metoda: 'POST', telo: { druh: b.dataset.druh } });
+    toast(`Přes strop letí: ${b.textContent.toLowerCase()}.`);
   } catch (chyba) {
     toast(chyba.message, { chyba: true });
   }

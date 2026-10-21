@@ -160,3 +160,27 @@ test('Hub: motiv stropu u místa se uloží do hlavičky a scéna ho pošle stro
     await repo.smazat();
   }
 });
+
+test('Hub: přelet ptáků je jednorázový pokyn pro strop, Ptáci sami jde vypnout', async () => {
+  assert.equal(overitKalibraci({}).ptaci, true);
+  assert.equal(overitKalibraci({ ptaci: false }).ptaci, false);
+  assert.throws(() => overitKalibraci({ ptaci: 'ano' }), /Ptáci/);
+
+  const repo = await docasneRepo();
+  const hub = new Hub({ cesty: repo.c, obsKlient: new FalesnyObs(), gitSit: false, port: 0 });
+  await hub.spustit();
+  const vyslano = [];
+  const puvodni = hub.vysilac.vyslat.bind(hub.vysilac);
+  hub.vysilac.vyslat = (u, d) => (u === 'strop-povel' && vyslano.push(d), puvodni(u, d));
+  const post = (telo) => fetch(hub.adresa + '/api/strop/ptaci', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(telo) });
+  try {
+    assert.equal((await post({ druh: 'klin' })).status, 200);
+    assert.equal((await post({})).status, 200);
+    assert.equal((await post({ druh: 'drak' })).status, 400);
+    assert.deepEqual(vyslano, [{ ptaci: 'klin' }, { ptaci: 'auto' }]);
+    assert.equal(hub.vysilac.posledni.has('strop-povel'), false, 'obnovený strop hejno znovu nepustí');
+  } finally {
+    await hub.zastavit();
+    await repo.smazat();
+  }
+});

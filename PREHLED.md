@@ -44,6 +44,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Kalibrace (K): čtyři rohy, měkký okraj, jas, převrácení pro zrcadlo; zkouška bez zásahu do Hubu (Z) | ◐ |
 | | Volný tvar, který se pomalu přelévá (členitost), masky míst, kam nesvítit | ◐ |
 | | Motiv podle místa: nebe, les, tábor, jeskyně, interiér (Místa → Zvuk → Prostor, jinak podle dozvuku) | ◐ |
+| | Ptáci: hejno, klín a netopýři přeletí sami nebo z U stolu → Strop | ◐ |
 | **Souboj** | Improved Initiative v záložce (Epic účet přes Hub), Player View hlídaný Hubem | ✓ |
 | | Animace zásahu (velký zásah, rozpad poražených, šedé karty) | ◐ |
 | | Zvuky na tah podle postavy a podoby Alby, živě bez zpoždění (spojení jako Player View) | ◐ |

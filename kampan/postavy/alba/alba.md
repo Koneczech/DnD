@@ -172,7 +172,7 @@ Hráč: Adriana | Class & Level: Druid 3 | Species: Aasimar | Background: Guide 
 | Charisma | 12 | +1 |
 
 ### Saving Throws
-Proficient: Intelligence (+2), Wisdom (+4)
+Proficient: Intelligence (+2), Wisdom (+4) %%zná%%
 Ostatní: Str -1, Dex +1, Con +2, Cha +1
 
 ### Skills

@@ -18,7 +18,7 @@ ilustrace:
     puvod: src/places/Lurkwood/lesok2.png
   - soubor: tabor-zoldaku.png
     ucel: scena
-    skryta: true
+    skryta: false
     puvod: src/places/Lurkwood/les-tabor.png
     varianta: noc
   - soubor: tabor-vuz.png

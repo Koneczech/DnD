@@ -44,7 +44,7 @@ ilustrace:
     puvod: Scorched Letters by the Campfire.png
   - soubor: prsten-kapitana.png
     ucel: scena
-    skryta: false
+    skryta: true
     puvod: Weathered Warrior’s Ring at Sunset.png
 svetla:
   noc:

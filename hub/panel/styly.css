@@ -1407,3 +1407,35 @@ span.oko { cursor: default; }
 
 /* Příkazy „/“ v editoru karty (⚠ bod 149). */
 .polozka-prikazu small code { font-size: 0.8em; color: var(--text-tlumeny); }
+
+/* Živý náhled v editoru karty (⚠ bod 150): markdown s formátováním, značky jen na řádku s kurzorem. */
+.editor-zivy { display: flex; min-height: 16rem; height: 100%; padding: 0; background: var(--povrch-0); border: 1px solid var(--linka); border-radius: var(--zaobleni); overflow: hidden; }
+.editor-zivy:focus-within { border-color: var(--akcent); }
+.editor-zivy .cm-editor { flex: 1; min-width: 0; height: 100%; outline: none; color: var(--text); font: var(--t-text)/1.65 var(--pismo); }
+.editor-zivy .cm-scroller { font-family: inherit; line-height: inherit; overflow: auto; }
+.editor-zivy .cm-content { padding: var(--m-3) var(--m-4); caret-color: var(--akcent); }
+.editor-zivy .cm-line { padding: 0; }
+.editor-zivy .cm-cursor { border-left-color: var(--akcent); }
+.editor-zivy .cm-selectionBackground, .editor-zivy .cm-focused .cm-selectionBackground { background: rgb(198 161 91 / 0.28) !important; }
+.editor-zivy .cm-nadpis { font-family: var(--pismo-svet); color: var(--mosaz); line-height: 1.3; }
+.editor-zivy .cm-nadpis-1 { font-size: var(--t-svet-m); padding-top: var(--m-2); }
+.editor-zivy .cm-nadpis-2 { font-size: var(--t-sekce); padding-top: var(--m-3); }
+.editor-zivy .cm-nadpis-3 { font-size: 1.08rem; color: var(--text); padding-top: var(--m-2); }
+.editor-zivy .cm-nadpis-4, .editor-zivy .cm-nadpis-5, .editor-zivy .cm-nadpis-6 { font-size: var(--t-karta); color: var(--text); font-weight: 600; }
+.editor-zivy .cm-nadpis-dm { color: var(--varovani); }
+.editor-zivy .cm-nadpis-dm::after { content: "jen DM"; margin-left: var(--m-2); padding: 0 var(--m-1); font: 600 var(--t-stitek)/1.6 var(--pismo); color: var(--varovani); border: 1px solid currentColor; border-radius: 4px; vertical-align: middle; }
+.editor-zivy .cm-tucne { font-weight: 700; }
+.editor-zivy .cm-kurziva { font-style: italic; }
+.editor-zivy .cm-preskrtnute { text-decoration: line-through; }
+.editor-zivy .cm-kod { font-family: Consolas, "Cascadia Mono", monospace; font-size: 0.9em; color: var(--kost); background: var(--povrch-2); border-radius: 3px; }
+.editor-zivy .cm-blok-kodu, .editor-zivy .cm-tabulka { font-family: Consolas, "Cascadia Mono", monospace; font-size: 0.88em; background: var(--povrch-1); }
+.editor-zivy .cm-citace { border-left: 3px solid var(--mosaz-tlumena); padding-left: var(--m-3) !important; color: var(--text-tlumeny); }
+.editor-zivy .cm-odrazka { display: inline-block; width: 1ch; color: var(--mosaz); font-weight: 700; }
+.editor-zivy .cm-znacka-seznamu { color: var(--mosaz); }
+.editor-zivy .cm-cara { border-bottom: 1px solid var(--linka); line-height: 0.8; }
+.editor-zivy .cm-odkaz { color: var(--text); text-decoration: underline; text-decoration-color: var(--c, var(--akcent)); text-decoration-thickness: 2px; text-underline-offset: 0.18em; cursor: text; }
+.editor-zivy .cm-odkaz-chybi { color: var(--text-tlumeny); text-decoration-style: dotted; }
+.editor-zivy .cm-odkaz-zdroj, .editor-zivy .cm-odkaz-web { color: var(--akcent); }
+.editor-zivy .cm-oko { font-size: 0.85em; }
+.editor-zivy .cm-zna-zdroj, .editor-zivy .cm-komentar { color: var(--text-tlumeny); font-style: italic; }
+@media (max-width: 52rem) { .editor-zivy { height: 28rem; } }

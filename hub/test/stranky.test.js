@@ -70,6 +70,8 @@ test('sestavitStranky: družina otevřeně, DM jen zašifrovaně, obrázky jen p
     assert.deepEqual((await cist('data/stranky.json')).zapis, { repo: 'Ukazka/Repo', vetev: 'main' }, 'úpravy na webu (bod 148)');
     await fs.access(path.join(cil, 'vendor', 'yaml', 'index.js'));
     await fs.access(path.join(cil, 'sdilene', 'upravy-webu.js'));
+    await fs.access(path.join(cil, 'panel', 'vendor', 'codemirror.js'));
+    await fs.access(path.join(cil, 'panel', 'kanon-zivy-nahled.js'));
     const druzina = await cist('data/kanon-druzina.json');
     assert.deepEqual(druzina.entity.map((e) => e.id).sort(), ['tabor', 'tusker']);
     await assert.rejects(fs.access(path.join(cil, 'data', 'entita', 'druzina', 'tajny.json')), 'karta jen pro DM v pohledu družiny není');

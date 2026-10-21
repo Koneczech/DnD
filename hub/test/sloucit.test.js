@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { Git, git } from '../server/git.js';
+import { Git, git, jeVKampani } from '../server/git.js';
 
 // Autor commitů v dočasných repozitářích (testy nesahají na globální nastavení Gitu).
 Object.assign(process.env, {
@@ -265,6 +265,34 @@ test('Aktualizovat: jen uložit (GitHub nemá nic nového) i nic k dělání', a
   } finally {
     await k.smazat();
   }
+});
+
+test('Aktualizovat: nastavení Obsidianu mimo kampaň nedrží tlačítko na Uložit (DM 20. 10. 2026)', async () => {
+  const k = await dvaKlony();
+  try {
+    await zapsat(k.b, '.obsidian/app.json', '{}');
+    const hub = new Git(k.b);
+    await hub.lokalniStav();
+    assert.equal(hub.stav.zmeneno, 1);
+    assert.equal(hub.stav.zmenenoKampan, 0, 'Aktualizovat by soubor mimo kampan/ neuložil');
+    await zapsat(k.b, 'kampan/stav.md', 'datum: 4\n');
+    await hub.lokalniStav();
+    assert.equal(hub.stav.zmenenoKampan, 1);
+    const r = await hub.aktualizovat('Úpravy z panelu');
+    assert.equal(r.ulozeno, true);
+    assert.deepEqual([hub.stav.zmeneno, hub.stav.zmenenoKampan], [1, 0]);
+  } finally {
+    await k.smazat();
+  }
+});
+
+test('jeVKampani: cesty v uvozovkách i přejmenování', () => {
+  assert.equal(jeVKampani(' M kampan/stav.md'), true);
+  assert.equal(jeVKampani('M kampan/stav.md'), true, 'první řádek ořezaného výstupu');
+  assert.equal(jeVKampani('?? "kampan/mista/Hřejivá krčma.png"'), true);
+  assert.equal(jeVKampani('R  stare.md -> kampan/nove.md'), true);
+  assert.equal(jeVKampani('?? .obsidian/'), false);
+  assert.equal(jeVKampani(' M hub/server/app.js'), false);
 });
 
 test('Aktualizovat s konfliktem: nic se neztratí, úpravy zůstanou v lokálním commitu', async () => {

@@ -52,6 +52,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Zvuková sada: Freesound, Openverse, balíčky Kenney, hudba, Vyměnit a ↻ | ◐ |
 | | Srovnání hlasitosti a přeskočení ticha na začátku | ◐ |
 | **Údržba** | Aktualizovat jedním tlačítkem, restart sám, Kontrola dat, Záznam událostí | ◐ |
+| | Tlačítko ukáže „Uložit na GitHub“ jen u změn v `kampan/`; jiné soubory (nastavení Obsidianu) zmíní v popisu | ◐ |
 | | Zkouška v cloudu (GitHub Codespaces): panel v prohlížeči mimo domov, bez světel, OBS a zvuku, na GitHub se nic neukládá | ◐ |
 | **Kánon** (Blok 3) | Příprava převodu: audit zdrojů, mapa převodu, šablony, report `npm run kanon` | ◐ |
 | | Vztahy s popisem a postojem: formát, šablony, Kontrola dat | ◐ |

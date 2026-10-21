@@ -10,7 +10,7 @@ import { DataKampane } from '../server/data.js';
 import { Kalendar, rozebratKalendarData } from '../server/kalendar.js';
 import { vybratPripominky } from '../server/dalsiden.js';
 import { Obchody, overSortiment, slug } from '../server/obchody.js';
-import { rozebrat } from '../server/frontmatter.js';
+import { rozebrat } from '../sdilene/frontmatter.js';
 import { docasneRepo, dokud, FalesnyObs } from './pomoc.js';
 
 const HESLO = 'spravne';

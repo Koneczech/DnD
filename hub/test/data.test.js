@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { rozebrat, upravitHlavicku, odkazy } from '../server/frontmatter.js';
+import { rozebrat, upravitHlavicku, odkazy } from '../sdilene/frontmatter.js';
 import { kontrolaDat, DataKampane, slug } from '../server/data.js';
 import { Zapisovac } from '../server/zapis.js';
 import { docasneRepo, STAV_MD } from './pomoc.js';

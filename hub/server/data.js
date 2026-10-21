@@ -3,18 +3,18 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { EventEmitter } from 'node:events';
 import YAML from 'yaml';
-import { rozebrat, upravitHlavicku, odkazy } from './frontmatter.js';
+import { rozebrat, upravitHlavicku, odkazy } from '../sdilene/frontmatter.js';
 import { TYPY_SLOZEK, TYPY } from './cesty.js';
 import { WIZ_SCENY } from './zarizeni/wiz.js';
 import { PRIPONA_DOCASNA } from './zapis.js';
 import { Harptos } from '../sdilene/harptos.js';
-import { OSUDY, ODKAZOVA_POLE, POLE_TYPU } from '../sdilene/typy-karet.js';
+import { OSUDY, ODKAZOVA_POLE, POLE_TYPU, STAVY_ROZHODNUTI } from '../sdilene/typy-karet.js';
 
 export const SCHEMA = 1;
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const POVINNE_ENTITY = ['schema', 'id', 'typ', 'nazev', 'verejne'];
 /** Stav záznamu v registru rozhodnutí (Blok 3, převod z Notionu). */
-export const STAVY_ROZHODNUTI = Object.freeze(['otevrene', 'rozhodnuto', 'zavrzeno']);
+export { STAVY_ROZHODNUTI };
 
 /**
  * Pole `vztahy` v hlavičce (ZADANI.md, Datový model → Vztahy; rozhodnutí 70).

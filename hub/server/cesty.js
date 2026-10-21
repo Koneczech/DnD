@@ -29,18 +29,9 @@ export function cesty(koren = korenRepa()) {
   };
 }
 
-/** Složky entit v kampan/ a typ, který k nim patří (Datový model v ZADANI.md). */
-export const TYPY_SLOZEK = Object.freeze({
-  postavy: 'postava',
-  npc: 'npc',
-  padouchove: 'padouch',
-  frakce: 'frakce',
-  mista: 'misto',
-  predmety: 'predmet',
-  bytosti: 'bytost',
-  sezeni: 'sezeni',
-  rozhodnuti: 'rozhodnuti',
-  kanon: 'kanon',
-});
+// Složky entit a typy jsou ve sdíleném modulu (čte je i čtecí verze v prohlížeči).
+import { TYPY_SLOZEK } from '../sdilene/typy-karet.js';
+
+export { TYPY_SLOZEK };
 
 export const TYPY = Object.freeze(Object.values(TYPY_SLOZEK));

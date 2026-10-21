@@ -8,11 +8,15 @@
   <link rel="stylesheet" href="panel/styly.css">
   <link rel="icon" href="panel/ikona.svg" type="image/svg+xml">
   <!-- Moduly Hubu se importují absolutními cestami (/panel/…, /sdilene/…); na GitHub Pages leží stránky v podsložce repa. -->
-  <script type="importmap">{ "imports": { "/panel/": "./panel/", "/sdilene/": "./sdilene/" } }</script>
+  <!-- yaml: hlavička karet při úpravách na webu (⚠ bod 146). -->
+  <script type="importmap">{ "imports": { "/panel/": "./panel/", "/sdilene/": "./sdilene/", "yaml": "./vendor/yaml/index.js" } }</script>
   <style>
     .lista.stranky-lista { grid-template-columns: auto minmax(10rem, 22rem) 1fr auto; }
     .stranky-lista #zamknout-dm { justify-self: end; }
     .stranky-lista .kampan-detail a { color: inherit; }
+    .postup-tokenu { margin: 0 0 1rem; padding-left: 1.3rem; line-height: 1.5; }
+    .postup-tokenu li { margin-bottom: .35rem; }
+    #dialog-github { max-width: 34rem; }
     @media (max-width: 52rem) { .lista.stranky-lista { grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -20,7 +24,7 @@
   <header class="lista stranky-lista">
     <a class="kampan" href="#kanon" title="Přehled kánonu">
       <p class="kampan-datum">{{NAZEV}}</p>
-      <p class="kampan-detail">Čtecí verze kánonu · stav k {{STAV}}</p>
+      <p class="kampan-detail">Kánon na webu · stav k {{STAV}}</p>
     </a>
     <div class="hledani-lista" role="search">
       <label class="vizualne-skryte" for="hledat-kanon">Hledat v kánonu</label>
@@ -28,7 +32,7 @@
       <ul class="hledat-vysledky" id="hledat-vysledky" role="listbox" hidden></ul>
     </div>
     <span></span>
-    <button type="button" id="zamknout-dm" class="tiche" hidden title="Zapomene heslo na tomto zařízení a přepne na pohled družiny">Zamknout DM</button>
+    <button type="button" id="zamknout-dm" class="tiche" hidden title="Zapomene heslo a token GitHubu na tomto zařízení a přepne na pohled družiny">Zamknout DM</button>
   </header>
 
   <main>
@@ -49,6 +53,28 @@
       <div class="tlacitka">
         <button type="submit" value="odemknout" class="hlavni">Odemknout</button>
         <button type="submit" value="zrusit" formnovalidate class="tiche">Pohled družiny</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dialog-github" class="dialog">
+    <form method="dialog" id="formular-github">
+      <h2>Úpravy na webu</h2>
+      <p class="uvod">Úpravy se ukládají rovnou na GitHub (do repa kampaně). Na každém zařízení k tomu jednou zadáš osobní token GitHubu.</p>
+      <ol class="postup-tokenu">
+        <li>Otevři <a id="odkaz-token" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Nový token na GitHubu</a> (název, platnost a právo Contents jsou předvyplněné).</li>
+        <li><strong>Repository access</strong>: Only select repositories → <strong id="repo-tokenu">DnD</strong>.</li>
+        <li>Zkontroluj <strong>Permissions → Contents: Read and write</strong>, pak <strong>Generate token</strong>.</li>
+        <li>Zkopíruj token (začíná <code>github_pat_</code>) a vlož ho sem.</li>
+      </ol>
+      <label>Token
+        <input type="password" id="pole-token" autocomplete="off" spellcheck="false" required placeholder="github_pat_…">
+      </label>
+      <label class="zaskrtavaci"><input type="checkbox" id="pamatovat-token" checked> Zapamatovat na tomto zařízení (Zamknout DM ho zapomene)</label>
+      <p class="ulozeni chyba" id="token-chyba" aria-live="polite"></p>
+      <div class="tlacitka">
+        <button type="submit" value="ulozit" class="hlavni">Připojit</button>
+        <button type="submit" value="zrusit" formnovalidate class="tiche">Zrušit</button>
       </div>
     </form>
   </dialog>

@@ -67,6 +67,9 @@ test('sestavitStranky: družina otevřeně, DM jen zašifrovaně, obrázky jen p
     assert.equal((await cist('data/stranky.json')).dm, true);
     assert.match((await cist('data/stranky.json')).sestaveno, /^\d{4}-\d{2}-\d{2}T/);
     assert.equal((await cist('data/stranky.json')).upravy, 'https://github.com/Ukazka/Repo/edit/main/', 'Upravit na GitHubu (bod 144)');
+    assert.deepEqual((await cist('data/stranky.json')).zapis, { repo: 'Ukazka/Repo', vetev: 'main' }, 'úpravy na webu (bod 148)');
+    await fs.access(path.join(cil, 'vendor', 'yaml', 'index.js'));
+    await fs.access(path.join(cil, 'sdilene', 'upravy-webu.js'));
     const druzina = await cist('data/kanon-druzina.json');
     assert.deepEqual(druzina.entity.map((e) => e.id).sort(), ['tabor', 'tusker']);
     await assert.rejects(fs.access(path.join(cil, 'data', 'entita', 'druzina', 'tajny.json')), 'karta jen pro DM v pohledu družiny není');
@@ -98,6 +101,8 @@ test('sestavitStranky: družina otevřeně, DM jen zašifrovaně, obrázky jen p
     const html = await fs.readFile(path.join(cil, 'index.html'), 'utf8');
     assert.match(html, /<section id="obrazovka-kanon"/);
     assert.match(html, /<dialog id="dialog-nastenka"/);
+    assert.match(html, /<dialog id="dialog-github"/, 'připojení GitHubu pro úpravy na webu');
+    assert.match(html, /"yaml": "\.\/vendor\/yaml\/index\.js"/);
     assert.match(html, /stav k 20\. 10\. 2026/);
     assert.match(html, /"\/panel\/": "\.\/panel\/"/, 'import map pro moduly panelu');
     assert.doesNotMatch(html, /\{\{|<!-- KANON -->/);

@@ -7,6 +7,7 @@
 // rozhodnutí 2, heslo tedy brání nahlédnutí na webu, ne čtení repa).
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 import zlib from 'node:zlib';
@@ -16,6 +17,8 @@ import { Zapisovac } from './zapis.js';
 import { DataKampane } from './data.js';
 import { Kalendar } from './kalendar.js';
 import { Kanon } from './kanon-modul.js';
+
+const require = createRequire(import.meta.url);
 
 /** PBKDF2 pro heslo DM: stejné parametry čte prohlížeč z hlavičky souboru. */
 export const ITERACE_HESLA = 600000;
@@ -140,11 +143,13 @@ export async function sestavitStranky({ cesty: c, cil, cas = new Date(), heslo =
       await zapsatJson(path.join(cil, 'data', 'dm.json'), zasifrovat(balik, heslo));
     }
     // `sestaveno` pozná otevřená stránka, že vyšla nová verze, a načte se znovu.
-    // `upravy`: adresa editoru GitHubu, kam pohled DM posílá tlačítko Upravit na GitHubu (⚠ bod 144).
+    // `upravy`: adresa editoru GitHubu (tlačítko Na GitHubu, ⚠ bod 144). `zapis`: kam pohled DM
+    // ukládá úpravy přes GitHub API (⚠ bod 148). Obojí jen s pohledem DM.
     await zapsatJson(path.join(cil, 'data', 'stranky.json'), {
       dm: Boolean(heslo),
       sestaveno: cas.toISOString(),
       upravy: heslo ? `https://github.com/${repo}/edit/${vetev}/` : null,
+      zapis: heslo ? { repo, vetev } : null,
     });
 
     // Obrázky karet (portréty, ilustrace míst) ze stejných cest jako v repu.
@@ -166,6 +171,9 @@ export async function sestavitStranky({ cesty: c, cil, cas = new Date(), heslo =
     const panel = path.join(HUB_DIR, 'panel');
     await kopirovatSlozku(panel, path.join(cil, 'panel'), (jmeno) => SOUBORY_PANELU.includes(jmeno));
     await kopirovatSlozku(path.join(HUB_DIR, 'sdilene'), path.join(cil, 'sdilene'), (jmeno) => jmeno.endsWith('.js'));
+    // Knihovna yaml pro prohlížeč (hlavička karet při úpravách na webu); import map v index.html.
+    await fs.cp(path.join(path.dirname(require.resolve('yaml/package.json')), 'browser'), path.join(cil, 'vendor', 'yaml'), { recursive: true });
+    await fs.copyFile(path.join(path.dirname(require.resolve('yaml/package.json')), 'LICENSE'), path.join(cil, 'vendor', 'yaml', 'LICENSE'));
     await fs.copyFile(path.join(HUB_DIR, 'stranky', 'app.js'), path.join(cil, 'app.js'));
 
     const indexPanelu = await fs.readFile(path.join(panel, 'index.html'), 'utf8');

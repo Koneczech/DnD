@@ -14,6 +14,9 @@ const PRODLEVA_MS = 1500;
 export function vytvoritEditor(ctx) {
   const { s, api, toast, kam } = ctx;
   let st = null; // stav otevřeného editoru
+  // Na webu (čtecí verze s úpravami, ⚠ bod 148) je každé uložení commit na GitHubu: ukládá se
+  // tlačítkem Uložit, Ctrl+S nebo při Hotovo, ne samo po každé pauze v psaní.
+  const naWebu = () => Boolean(s.jenCteni);
 
   const stavText = (text, trida = '') => {
     if (!st) return;
@@ -43,7 +46,8 @@ export function vytvoritEditor(ctx) {
         st.konflikt?.remove();
         st.konflikt = null;
         if (r.karta) s.karta = r.karta;
-        stavText(r.vysledek === 'odlozeno' ? 'Soubor je otevřený jinde, zápis počká.' : `Uloženo ${new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}`, r.vysledek === 'odlozeno' ? 'varovani' : 'ok');
+        const cas = new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+        stavText(r.vysledek === 'odlozeno' ? 'Soubor je otevřený jinde, zápis počká.' : naWebu() ? `Uloženo na GitHub ${cas}` : `Uloženo ${cas}`, r.vysledek === 'odlozeno' ? 'varovani' : 'ok');
       } catch (chyba) {
         if (!st || st.id !== id) return;
         if (pole) Object.assign(st.zmenenaPole, pole, st.zmenenaPole);
@@ -64,6 +68,7 @@ export function vytvoritEditor(ctx) {
 
   const naplanovat = () => {
     if (!st) return;
+    if (naWebu()) return stavText('Neuloženo: Uložit nebo Ctrl+S', 'varovani');
     stavText('Neuloženo…');
     clearTimeout(st.casovac);
     st.casovac = setTimeout(() => ulozit(), PRODLEVA_MS);
@@ -73,7 +78,7 @@ export function vytvoritEditor(ctx) {
     stavText('Karta se změnila jinde', 'chyba');
     if (st.konflikt) return;
     st.konflikt = el('div', { className: 'zprava varovani konflikt' },
-      el('span', { textContent: 'Kartu mezitím změnil někdo jiný (nejspíš Obsidian). Tvoje úprava se zatím neuložila.' }),
+      el('span', { textContent: naWebu() ? 'Kartu mezitím změnil někdo jiný (Hub doma nebo jiné zařízení). Tvoje úprava se zatím neuložila.' : 'Kartu mezitím změnil někdo jiný (nejspíš Obsidian). Tvoje úprava se zatím neuložila.' }),
       el('button', { type: 'button', textContent: 'Načíst jejich verzi', title: 'Zahodí tvoje neuložené změny textu', onclick: () => nacistZnovu() }),
       el('button', { type: 'button', textContent: 'Přepsat mou verzí', onclick: () => ulozit({ prepsat: true }) }));
     st.formular.prepend(st.konflikt);
@@ -231,7 +236,7 @@ export function vytvoritEditor(ctx) {
   }
 
   function portret(z) {
-    if (!z.slozkaEntity) return null;
+    if (!z.slozkaEntity || naWebu()) return null; // portrét nahraješ v Hubu doma
     const e = s.podleId.get(z.id);
     const nahledEl = el('div', { className: 'portret-editoru' }, e ? obrazekEntity(e, 'ikona-karty') : null);
     const soubor = el('input', { type: 'file', accept: 'image/png,image/jpeg,image/webp', className: 'vizualne-skryte' });
@@ -304,7 +309,7 @@ export function vytvoritEditor(ctx) {
       /* bez úložiště */
     }
     const nahledEl = el('div', { className: 'text-karty editor-nahled', hidden: nahledVypnuty });
-    const stavEl = el('span', { className: 'ulozeni stav-editoru', textContent: 'Ukládá se samo' });
+    const stavEl = el('span', { className: 'ulozeni stav-editoru', textContent: naWebu() ? 'Uloží se tlačítkem Uložit nebo Hotovo' : 'Ukládá se samo' });
     const nastroj = (text, titul, akce) => el('button', { type: 'button', className: 'mala', textContent: text, title: titul, onclick: akce });
     const tlacitkoNahledu = el('button', { type: 'button', className: 'mala', textContent: 'Náhled', 'aria-pressed': String(!nahledEl.hidden) });
     tlacitkoNahledu.addEventListener('click', () => {
@@ -323,7 +328,8 @@ export function vytvoritEditor(ctx) {
         el('div', { className: 'radek-hlavy' },
           el('h2', { className: 'wiki-nadpis', textContent: `Úprava: ${z.pole.nazev ?? id}` }),
           stavEl,
-          el('a', { className: 'tlacitko hlavni', href: `#kanon/${encodeURIComponent(id)}`, textContent: 'Hotovo' }))),
+          naWebu() ? el('button', { type: 'button', textContent: 'Uložit', title: 'Uloží na GitHub (Ctrl+S)', onclick: () => ulozit() }) : null,
+          el('a', { className: 'tlacitko hlavni', href: `#kanon/${encodeURIComponent(id)}`, textContent: 'Hotovo', title: naWebu() ? 'Uloží a zavře' : undefined }))),
       el('div', { className: 'editor-pole' }, ...[]),
       el('div', { className: 'editor-psani' },
         el('div', { className: 'editor-nastroje', role: 'toolbar', 'aria-label': 'Formátování' },

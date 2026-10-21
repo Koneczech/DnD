@@ -3,6 +3,23 @@
 // (kontrola a zápis), panel (boční panel, editor) i šablony v sablony/.
 
 /** Osud postavy z příběhu (NPC, padouch). Živý je výchozí a v bočním panelu se neukazuje. */
+/** Složky entit v kampan/ a typ, který k nim patří (Datový model v ZADANI.md). */
+export const TYPY_SLOZEK = Object.freeze({
+  postavy: 'postava',
+  npc: 'npc',
+  padouchove: 'padouch',
+  frakce: 'frakce',
+  mista: 'misto',
+  predmety: 'predmet',
+  bytosti: 'bytost',
+  sezeni: 'sezeni',
+  rozhodnuti: 'rozhodnuti',
+  kanon: 'kanon',
+});
+
+/** Stavy karty rozhodnutí. */
+export const STAVY_ROZHODNUTI = Object.freeze(['otevrene', 'rozhodnuto', 'zavrzeno']);
+
 export const OSUDY = Object.freeze({ zije: 'živý', mrtvy: 'mrtvý', nezvestny: 'nezvěstný' });
 
 /**

@@ -50,12 +50,14 @@ export { stromMist };
  * @param {object} volby
  * @param {boolean} [volby.jenCteni] čtecí verze (GitHub Pages): bez úprav, poznámek a OBS
  * @param {(soubor: string) => string} [volby.upravitNaGitHubu] čtecí verze: adresa souboru karty v editoru GitHubu
+ * @param {boolean} [volby.webUpravy] čtecí verze: text karty, přepínače, přezdívky a Co ví družina jde upravit (přes GitHub)
  */
-export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false, upravitNaGitHubu = null }) {
+export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false, upravitNaGitHubu = null, webUpravy = false }) {
   const ulozene = nacistVolby();
   const s = {
     jenCteni,
     upravitNaGitHubu,
+    webUpravy: jenCteni && webUpravy,
     pohled: ulozene.pohled === 'druzina' ? 'druzina' : 'dm',
     typy: new Set(Array.isArray(ulozene.typy) ? ulozene.typy : Object.keys(TYPY).filter((t) => t !== 'rozhodnuti')),
     jenVeHre: ulozene.jenVeHre === true,
@@ -1513,7 +1515,7 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false, u
         sbalovat() && detiMist().has(e.id) ? el('button', { type: 'button', textContent: s.rozbalena.has(e.id) ? 'Sbalit místa uvnitř' : 'Rozbalit místa uvnitř', onclick: () => prepnoutPodmista(e.id) }) : null,
         karta.tlacitkoPoznamky(e),
         karta.tlacitkoObs(e)),
-      dm && !s.jenCteni ? karta.prepinace(e) : null,
+      dm && (!s.jenCteni || s.webUpravy) ? karta.prepinace(e) : null,
     ];
     if (!k) {
       casti.push(el('p', { className: 'uvod', textContent: 'Načítám kartu…' }));
@@ -1570,6 +1572,8 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false, u
       if (wiki.upravuje()) return; // editor si změny pohlídá sám (kontrola souběžné úpravy)
       nacist();
     },
+    /** Je otevřený editor karty? (čtecí verze kvůli němu odloží načtení nové verze) */
+    upravuje: () => wiki.upravuje(),
     /** Hledání v liště: na mapě zvýrazní uzly, vrátí výsledky. */
     async hledat(dotaz) {
       if (!s.data) await nacist();

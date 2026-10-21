@@ -5,7 +5,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { WebSocket } from 'ws';
 import { Hub } from '../server/app.js';
-import { rozebrat } from '../server/frontmatter.js';
+import { rozebrat } from '../sdilene/frontmatter.js';
 import { docasneRepo, dokud, FalesnyObs } from './pomoc.js';
 
 const HESLO = 'spravne';

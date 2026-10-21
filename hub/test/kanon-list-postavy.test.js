@@ -5,7 +5,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { oddelitList, souhrnListu, oddilyListu, jeTabulkaVlastnosti } from '../sdilene/list-postavy.js';
 import { oznacitBloky } from '../sdilene/odkryvani.js';
-import { rozebrat } from '../server/frontmatter.js';
+import { rozebrat } from '../sdilene/frontmatter.js';
 
 const KOREN_REPA = path.resolve(import.meta.dirname, '..', '..');
 

@@ -6,7 +6,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import YAML from 'yaml';
 import { blokyDruziny, prepnoutBlok, pridatBlok, teloDruziny, teloBezDruziny, kratkyPopis, Kanon, hashTela } from '../server/kanon-modul.js';
-import { upravitKartu, nahraditTelo, teloKarty } from '../server/hlavicka.js';
+import { upravitKartu, nahraditTelo, teloKarty } from '../sdilene/hlavicka.js';
 import { Zapisovac } from '../server/zapis.js';
 import { Kalendar, slozitUdalosti } from '../server/kalendar.js';
 import { kontrolaDat } from '../server/data.js';

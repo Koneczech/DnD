@@ -5,7 +5,7 @@ import path from 'node:path';
 import { Sezeni, radekPoznamky, idSezeni, casIso } from '../server/sezeni.js';
 import { DataKampane, kontrolaDat } from '../server/data.js';
 import { Zapisovac } from '../server/zapis.js';
-import { rozebrat } from '../server/frontmatter.js';
+import { rozebrat } from '../sdilene/frontmatter.js';
 import { docasneRepo } from './pomoc.js';
 
 async function priprava() {

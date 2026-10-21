@@ -42,6 +42,8 @@ export function vytvoritWiki(ctx, karta) {
   const dm = () => s.pohled === 'dm';
   /** Ovládání, které mění data (čtecí verze na GitHub Pages ho nemá). */
   const uprav = () => dm() && !s.jenCteni;
+  /** Úpravy jedné karty (text, přepínače, přezdívky, Co ví družina): v Hubu i na webu přes GitHub (⚠ bod 146). */
+  const upravKartu = () => dm() && (!s.jenCteni || s.webUpravy);
   const entity = () => s.data?.entity ?? [];
   const udalosti = () => s.data?.udalosti ?? [];
 
@@ -113,7 +115,7 @@ export function vytvoritWiki(ctx, karta) {
       el('div', { className: 'wiki-hlava' },
         el('h2', { className: 'wiki-nadpis', textContent: dm() ? 'Kánon kampaně' : 'Co ví družina' }),
         el('p', { className: 'uvod', textContent: s.jenCteni && dm()
-          ? `${vse.length} karet a ${ud.length} událostí. Čtecí verze: kartu upravíš tlačítkem Upravit na GitHubu (web se obnoví za pár minut), ostatní úpravy v Hubu doma.`
+          ? `${vse.length} karet a ${ud.length} událostí. ${s.webUpravy ? 'Na webu upravíš text karty, přepínače, přezdívky a Co ví družina; ukládá se na GitHub a web se obnoví za 2–3 minuty. Nové karty, vazby a události v Hubu doma.' : 'Čtecí verze: kartu upravíš tlačítkem Upravit na GitHubu (web se obnoví za pár minut), ostatní úpravy v Hubu doma.'}`
           : dm()
           ? `${vse.length} karet a ${ud.length} událostí. Karty upravíš tady i v Obsidianu; co z nich zná družina, odkrýváš po odrážkách v oddílu Co ví družina.`
           : `${vse.length} karet, které družina zná, a jen to, co o nich ví. Slouží k rekapitulaci.` })),
@@ -269,13 +271,13 @@ export function vytvoritWiki(ctx, karta) {
       text.innerHTML = naHtml(b.text, { existuje: (id) => s.podleId.has(id) });
       if (!dm()) return el('li', { className: 'blok' }, text);
       if (b.dm) return el('li', { className: 'blok blok-dm' }, el('span', { className: 'oko', textContent: '🔒', title: 'Pododdíl DM: družina ho nevidí nikdy' }), text);
-      if (!uprav()) return el('li', { className: `blok${b.zna ? ' zna' : ''}` }, el('span', { className: `oko${b.zna ? ' zna' : ''}`, textContent: b.zna ? '👁' : '🔒', title: b.zna ? 'Družina to ví.' : 'Družina to zatím neví.' }), text);
+      if (!upravKartu()) return el('li', { className: `blok${b.zna ? ' zna' : ''}` }, el('span', { className: `oko${b.zna ? ' zna' : ''}`, textContent: b.zna ? '👁' : '🔒', title: b.zna ? 'Družina to ví.' : 'Družina to zatím neví.' }), text);
       const oko = el('button', { type: 'button', className: `oko${b.zna ? ' zna' : ''}`, textContent: b.zna ? '👁' : '🔒', title: b.zna ? 'Družina to ví. Klik skryje.' : 'Družina to zatím neví. Klik odkryje.', 'aria-pressed': String(b.zna), 'aria-label': b.zna ? 'Skrýt před družinou' : 'Odkrýt družině' });
       oko.addEventListener('click', () => prepnoutBlok(e, b));
       return el('li', { className: `blok${b.zna ? ' zna' : ''}` }, oko, text);
     });
     let pridat = null;
-    if (uprav()) {
+    if (upravKartu()) {
       const vstup = el('input', { type: 'text', placeholder: 'Co se družina dozvěděla… (Enter přidá jako odkryté)', maxLength: 600, 'aria-label': 'Nová odrážka Co ví družina' });
       const skryte = el('input', { type: 'checkbox' });
       const odeslat = async () => {
@@ -364,11 +366,11 @@ export function vytvoritWiki(ctx, karta) {
     if (e.aktualni) stitky.push(el('span', { className: 'stitek-ve-hre', textContent: 've hře' }));
     if (dm()) stitky.push(el('span', { className: e.verejne ? 'stitek-maly' : 'stitek-dm', textContent: e.verejne ? 'družina zná' : 'jen DM' }));
     const akce = el('div', { className: 'akce-clanku' },
-      uprav() ? el('a', { className: 'tlacitko hlavni', href: `#kanon/${encodeURIComponent(e.id)}/upravit`, textContent: 'Upravit' }) : null,
+      upravKartu() ? el('a', { className: 'tlacitko hlavni', href: `#kanon/${encodeURIComponent(e.id)}/upravit`, textContent: 'Upravit' }) : null,
       uprav() && k?.obsidian ? el('a', { className: 'tlacitko', href: k.obsidian, textContent: 'Otevřít v Obsidianu', title: k.soubor }) : null,
       // Čtecí verze: soubor karty v editoru GitHubu (uložení = commit do main, web se pak sestaví znovu).
       s.jenCteni && dm() && s.upravitNaGitHubu && e.soubor
-        ? el('a', { className: 'tlacitko hlavni', href: s.upravitNaGitHubu(e.soubor), target: '_blank', rel: 'noopener', textContent: 'Upravit na GitHubu', title: `${e.soubor}. Po uložení (Commit changes) se web obnoví za 2–3 minuty, doma pak Aktualizovat.` })
+        ? el('a', { className: s.webUpravy ? 'tlacitko' : 'tlacitko hlavni', href: s.upravitNaGitHubu(e.soubor), target: '_blank', rel: 'noopener', textContent: s.webUpravy ? 'Soubor na GitHubu' : 'Upravit na GitHubu', title: `${e.soubor}. Po uložení (Commit changes) se web obnoví za 2–3 minuty, doma pak Aktualizovat.` })
         : null,
       karta.tlacitkoPoznamky(e),
       el('a', { className: 'tlacitko', href: `#kanon/mapa/${encodeURIComponent(e.id)}`, textContent: 'Na mapě' }),
@@ -391,10 +393,10 @@ export function vytvoritWiki(ctx, karta) {
     const pocetVazeb = new Set([...k.vztahy.map((v) => v.s), ...k.vazby]).size;
     const infobox = el('aside', { className: 'infobox karta' },
       portret ? el('a', { href: portret.url, target: '_blank', rel: 'noopener', className: 'infobox-portret' }, el('img', { src: portret.url, alt: e.nazev })) : k.obrazek ? el('a', { href: k.obrazek, target: '_blank', rel: 'noopener', className: 'infobox-scena' }, el('img', { src: k.obrazek, alt: e.nazev })) : null,
-      uprav() ? karta.prepinace(e) : null,
+      upravKartu() ? karta.prepinace(e) : null,
       karta.udaje(e),
       e.typ === 'misto' ? karta.sekceMista(e) : null,
-      (uprav() || e.aliases.length) ? el('h3', { textContent: 'Přezdívky' }) : null,
+      (upravKartu() || e.aliases.length) ? el('h3', { textContent: 'Přezdívky' }) : null,
       karta.prezdivky(e),
       karta.dopocitane(k),
       el('div', { className: 'sekce-hlava' }, el('h3', { textContent: `Vztahy a vazby (${pocetVazeb})` }), uprav() ? karta.pridatVazbuUI(k) : null),
@@ -411,7 +413,7 @@ export function vytvoritWiki(ctx, karta) {
       e.typ === 'kanon' ? casKanonu(k) : null,
       // Hráčský kánon je celý pro družinu, oddíl Co ví družina má jen karta, která ho opravdu obsahuje.
       e.typ !== 'kanon' || (k.druzina ?? []).length ? coViDruzina(e, k) : null,
-      k.telo.trim() ? text : uprav() ? el('p', { className: 'poznamka', textContent: 'Karta zatím nemá další text. Napiš ho přes Upravit.' }) : null,
+      k.telo.trim() ? text : upravKartu() ? el('p', { className: 'poznamka', textContent: 'Karta zatím nemá další text. Napiš ho přes Upravit.' }) : null,
       e.typ === 'misto' ? coSeTuStalo(e, k) : null,
       udalostiEntity(e, k));
     nahradit(obsah, el('article', { className: 'clanek' }, hlava, el('div', { className: 'clanek-telo' }, hlavni, infobox)));
@@ -483,7 +485,7 @@ export function vytvoritWiki(ctx, karta) {
     /** casti: [''] přehled, ['typ', t], ['udalosti'], ['udalost', id], [id], [id, 'upravit'] */
     async ukazat(casti) {
       const [a, b] = casti;
-      const editovat = b === 'upravit' && a && s.pohled === 'dm' && !s.jenCteni;
+      const editovat = b === 'upravit' && a && upravKartu();
       if (!editovat) await editor.zavrit();
       w.navazovani = false;
       w.pridavaniKarty = false;

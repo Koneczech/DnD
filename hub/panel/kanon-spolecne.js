@@ -414,7 +414,7 @@ export function castiKarty(ctx) {
   }
 
   function prezdivky(k) {
-    const dm = s.pohled === 'dm' && !s.jenCteni;
+    const dm = s.pohled === 'dm' && (!s.jenCteni || s.webUpravy);
     const cipy = k.aliases.map((a) => el('span', { className: 'prezdivka' }, a, dm ? el('button', { type: 'button', className: 'odebrat-prezdivku', textContent: '×', 'aria-label': `Odebrat přezdívku ${a}`, onclick: () => upravit(`/api/kanon/entita/${encodeURIComponent(k.id)}`, 'PUT', { aliases: k.aliases.filter((x) => x !== a) }, 'Přezdívka odebrána.') }) : null));
     if (!dm) return cipy.length ? el('div', { className: 'prezdivky' }, cipy) : null;
     const vstup = el('input', { type: 'text', placeholder: '+ přezdívka', maxLength: 80, 'aria-label': 'Nová přezdívka', className: 'nova-prezdivka' });

@@ -5,7 +5,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { EventEmitter } from 'node:events';
 import YAML from 'yaml';
-import { rozebrat, upravitDokument } from './frontmatter.js';
+import { rozebrat, upravitDokument } from '../sdilene/frontmatter.js';
 import { zapsatAtomicky } from './zapis.js';
 import { normalizujZvukMista, platneJmeno, platnaHudba, platnaVzdalenost, normalizujNahodne, DOZVUKY, NAHODNE, CASTI_ZVUKU_MISTA } from './zvuk.js';
 import { platneId } from './zvuky-knihovna.js';

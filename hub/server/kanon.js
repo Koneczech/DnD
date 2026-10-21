@@ -5,7 +5,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import YAML from 'yaml';
-import { rozebrat } from './frontmatter.js';
+import { rozebrat } from '../sdilene/frontmatter.js';
 import { TYPY_SLOZEK, cesty } from './cesty.js';
 import { kontrolaDat } from './data.js';
 

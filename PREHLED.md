@@ -21,7 +21,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | Družina se něco dozví | Karta v Kánonu → **Co ví družina** → oko 👁 u odrážky, nebo napiš novou a Enter | Kánon |
 | Něco nejde | **Systém → Záznam událostí → Stáhnout** a pošli Claudovi | Systém |
 | Mimo domov | Codespace na GitHubu → panel se štítkem **Zkouška**, nic se neukládá | `reference/zkouska-v-cloudu.md` |
-| Mimo domov | Kánon v prohlížeči, i z práce; pohled DM po zadání hesla, text karet přes Upravit na GitHubu | [koneczech.github.io/DnD](https://koneczech.github.io/DnD/) |
+| Mimo domov | Kánon v prohlížeči, i z práce; pohled DM po zadání hesla, úpravy karet přímo na stránce (token GitHubu) | [koneczech.github.io/DnD](https://koneczech.github.io/DnD/) |
 
 ## Co Hub umí
 
@@ -71,8 +71,10 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Časová osa: pořadí událostí v dni (Kalendář ↑ ↓), na mapě pás událostí s hráčským kánonem, Předtím / Potom v kartě a události, Co se tu stalo u místa | ◐ |
 | | Mapa: Rozložit podle (Síť, Čas, Čas a místa, Kdy a kde, Kdo a kdy, Blízkost, Spojenci a nepřátelé, Co družina ví, Zapomenutá vlákna, Mosty) | ◐ |
 | | Přiřazení existujících míst (kam co patří), nová místa High Forest, Triboar, Cragy, Long Road | ✓ |
-| | Čtecí verze kánonu na GitHub Pages: wiki, mapa, Pohled družiny, hledání, bez úprav; obnoví se po každém pushi | ◐ |
-| | Čtecí verze: tlačítko Upravit na GitHubu u karty (pohled DM) otevře její soubor v editoru GitHubu; stránka si novou verzi načte sama | ◐ |
+| | Čtecí verze kánonu na GitHub Pages: wiki, mapa, Pohled družiny, hledání; obnoví se po každém pushi | ◐ |
+| | Úpravy na webu (pohled DM): editor karty z Hubu, Ve hře, Družina zná, přezdívky, oko a nové odrážky Co ví družina; ukládá se commitem přes GitHub API s osobním tokenem; stránka si novou verzi načte sama | ◐ |
+| | Na webu chybí: nová karta, vazby a vztahy, Leží v, portrét, události, nástěnky (dál jen v Hubu) | ✗ |
+| | Soubor na GitHubu: odkaz na soubor karty v editoru GitHubu (záloha) | ◐ |
 | | Heslo na pohled DM ve čtecí verzi (pohled družiny otevřený, Zamknout DM) | ◐ |
 | | Hráčská stránka na GitHub Pages (pohled družiny) | ✗ |
 | **Verze 2** | Příprava Lazy DM, generátor obchodů, dílna portrétů, export do IIO | ✗ |
@@ -105,7 +107,8 @@ Vlastní combat tracker, sledování zdrojů postav (BV, kouzla, Zuřivost), mix
 | Zadání, rozhodnutí, otevřené body | `ZADANI.md` |
 | Návody (zvuk, OBS, ilustrace, zkouška v cloudu) | `reference/` |
 | Prostředí pro zkoušku v cloudu (Codespaces) | `.devcontainer/` |
-| Čtecí verze kánonu (GitHub Pages) | `hub/stranky/`, `hub/server/stranky.js`, `.github/workflows/stranky.yml` |
+| Čtecí verze kánonu (GitHub Pages) | `hub/stranky/`, `hub/server/stranky.js`, `.github/workflows/stranky.yml`; úpravy na webu `hub/sdilene/upravy-webu.js` |
+| Text karty kánonu (server i web) | `hub/sdilene/karta-kanonu.js`, `hub/sdilene/hlavicka.js`, `hub/sdilene/frontmatter.js` |
 | Data kampaně | `kampan/` |
 | Šablony pro nové soubory (Obsidian) | `sablony/` |
 | Nástěnky mapy kánonu (uložená rozložení) | `kampan/nastenky/` |

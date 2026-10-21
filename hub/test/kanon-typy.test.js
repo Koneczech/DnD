@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { Kanon } from '../server/kanon-modul.js';
-import { upravitKartu } from '../server/hlavicka.js';
+import { upravitKartu } from '../sdilene/hlavicka.js';
 import { Zapisovac } from '../server/zapis.js';
 import { kontrolaDat } from '../server/data.js';
 import { naHtml, dmOddilyDolu } from '../sdilene/markdown.js';

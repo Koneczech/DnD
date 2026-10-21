@@ -7,7 +7,7 @@
 // změněné řádky). Celkové přeformátování přes YAML.stringify by změnilo mezery v [ ] u všech
 // polí (akceptační kritérium Bloku 3).
 import YAML from 'yaml';
-import { ODKAZOVA_POLE } from '../sdilene/typy-karet.js';
+import { ODKAZOVA_POLE } from './typy-karet.js';
 
 const OTEVRENI = /^(﻿)?---\r?\n/;
 

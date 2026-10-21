@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { upravitKartu } from '../server/hlavicka.js';
+import { upravitKartu } from '../sdilene/hlavicka.js';
 import { Kanon, teloDruziny, oddily, odkazObsidian, slugNastenky } from '../server/kanon-modul.js';
 import { Zapisovac } from '../server/zapis.js';
 import { Hub } from '../server/app.js';

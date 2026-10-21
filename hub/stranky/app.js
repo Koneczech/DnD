@@ -1,12 +1,17 @@
 // Čtecí verze kánonu na GitHub Pages (Blok 3, rozhodnutí 3).
-// Stejný modul Kánon jako v Hubu, jen místo serveru čte předgenerovaná data (skripty/stranky.js)
-// a nic nemění: ovládání úprav, poznámek a OBS se nezobrazuje (jenCteni).
+// Stejný modul Kánon jako v Hubu, jen místo serveru čte předgenerovaná data (skripty/stranky.js).
+// Ovládání poznámek, OBS a úprav celé sítě se nezobrazuje (jenCteni). Text karty, přepínače,
+// přezdívky a odrážky Co ví družina jde v pohledu DM upravit: ukládají se přes GitHub API
+// s osobním tokenem DM (webUpravy, ⚠ bod 146).
 // Pohled družiny je otevřený, pohled DM je zašifrovaný heslem (⚠ bod 124).
 import { vytvoritKanon } from '/panel/kanon.js';
+import { GitHubSoubory, vytvoritUpravyWebu } from '/sdilene/upravy-webu.js';
 
 const $ = (sel) => document.querySelector(sel);
 /** Klíč k pohledu DM zapamatovaný na tomto zařízení (ne heslo samo). */
 const ULOZENY_KLIC = 'dmhub-stranky-klic';
+/** Osobní token GitHubu pro úpravy na webu (jen na tomto zařízení). */
+const ULOZENY_TOKEN = 'dmhub-stranky-token';
 /** Volby modulu Kánon (stejný klíč jako v kanon.js). */
 const VOLBY_KANONU = 'dmhub-kanon';
 
@@ -25,9 +30,13 @@ async function nactiJson(cesta) {
 
 let sestaveno = null;
 let obnovuje = false;
+/** Modul Kánon (vzniká níž, až jsou načtená data stránky). */
+let kanon = null;
 /** Vyšla od načtení stránky nová verze? Když ano, stránku za chvíli načte znovu a vrátí true. */
 async function zkontrolovatVerzi() {
   if (obnovuje) return true;
+  // Rozepsanou kartu nová verze nepřeruší; načte se po zavření editoru (další kontrola).
+  if (kanon?.upravuje()) return false;
   try {
     const nove = (await (await fetch('data/stranky.json', { cache: 'no-cache' })).json()).sestaveno ?? null;
     if (!sestaveno || !nove || nove === sestaveno) return false;
@@ -139,10 +148,107 @@ async function dataDm() {
   return odemykani;
 }
 
-/* ---------- Náhrada API Hubu: jen čtení z předgenerovaných souborů ve složce data/ ---------- */
+/* ---------- Úpravy na webu: token GitHubu a zápis přes GitHub API (⚠ bod 146) ---------- */
 
-async function api(cesta, { metoda = 'GET' } = {}) {
-  if (metoda !== 'GET') throw new Error('Tohle je čtecí verze. Měnit jde jen v Hubu doma.');
+let token = '';
+try {
+  token = localStorage.getItem(ULOZENY_TOKEN) ?? '';
+} catch {
+  /* soukromé okno */
+}
+function zapomenoutToken() {
+  token = '';
+  try {
+    localStorage.removeItem(ULOZENY_TOKEN);
+  } catch {
+    /* soukromé okno */
+  }
+}
+
+/** Zeptá se na token a ověří ho na GitHubu. Vrací true, když je připojený. */
+async function pripojitGitHub(chyba = '') {
+  const { repo } = stranky.zapis;
+  const [vlastnik, nazevRepa] = repo.split('/');
+  const dialog = $('#dialog-github');
+  const pole = $('#pole-token');
+  const odkaz = new URL('https://github.com/settings/personal-access-tokens/new');
+  odkaz.search = new URLSearchParams({
+    name: 'DM Hub web', description: `Úpravy kánonu z ${location.host} (jen repo ${repo}, Contents: Read and write)`,
+    target_name: vlastnik, expires_in: '90', contents: 'write',
+  }).toString();
+  $('#odkaz-token').href = odkaz.href;
+  $('#repo-tokenu').textContent = nazevRepa;
+  for (;;) {
+    $('#token-chyba').textContent = chyba;
+    pole.value = '';
+    dialog.returnValue = '';
+    dialog.showModal();
+    pole.focus();
+    const odpoved = await new Promise((hotovo) => {
+      dialog.addEventListener('close', () => hotovo(dialog.returnValue === 'ulozit' && pole.value.trim() ? { token: pole.value.trim(), pamatovat: $('#pamatovat-token').checked } : null), { once: true });
+    });
+    if (!odpoved) return false;
+    let r;
+    try {
+      r = await fetch(`https://api.github.com/repos/${repo}`, { cache: 'no-store', headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${odpoved.token}` } });
+    } catch {
+      chyba = 'GitHub není dostupný. Zkontroluj připojení.';
+      continue;
+    }
+    if (r.status === 401) {
+      chyba = 'Token neplatí. Zkopíruj ho celý (začíná github_pat_).';
+      continue;
+    }
+    if (!r.ok) {
+      chyba = `Token nevidí repo ${repo}. Při vytváření vyber Only select repositories → ${nazevRepa}.`;
+      continue;
+    }
+    token = odpoved.token;
+    if (odpoved.pamatovat) {
+      try {
+        localStorage.setItem(ULOZENY_TOKEN, token);
+      } catch {
+        /* soukromé okno: token platí jen do zavření stránky */
+      }
+    }
+    toast('GitHub připojený. Úpravy se ukládají do repa, web se obnoví za 2–3 minuty.');
+    return true;
+  }
+}
+
+let upravyWebu = null;
+/** Zápis přes GitHub; bez tokenu (nebo s neplatným) se zeptá a zkusí to znovu. */
+async function zapsatNaWebu(cesta, volby) {
+  upravyWebu ??= vytvoritUpravyWebu({
+    soubory: new GitHubSoubory({ repo: stranky.zapis.repo, vetev: stranky.zapis.vetev, token: () => token }),
+    balik: () => balikDm,
+    // Seznam v modulu Kánon je tentýž objekt jako balíček; jiná verze ho přiměje načíst se znovu.
+    poZmene: () => setTimeout(() => kanon.zmena({ verze: null }), 0),
+  });
+  for (let pokus = 0; ; pokus++) {
+    if (!token && !(await pripojitGitHub())) throw new Error('Bez připojení ke GitHubu se úprava neuloží.');
+    try {
+      return await upravyWebu(cesta, volby);
+    } catch (e) {
+      if (e.kod !== 'token' || pokus > 0) throw e;
+      zapomenoutToken();
+      if (!(await pripojitGitHub(e.message))) throw e;
+    }
+  }
+}
+
+/* ---------- Náhrada API Hubu: čtení z předgenerovaných souborů ve složce data/ ---------- */
+
+async function api(cesta, volby = {}) {
+  const { metoda = 'GET' } = volby;
+  const zapis = metoda !== 'GET' || /\/api\/kanon\/entita\/[a-z0-9-]{1,80}\/zdroj$/.test(new URL(cesta, location.href).pathname);
+  if (zapis) {
+    if (!stranky.zapis) throw new Error('Tohle je čtecí verze. Měnit jde jen v Hubu doma.');
+    await dataDm();
+    const r = await zapsatNaWebu(cesta, volby);
+    if (r === undefined) throw new Error('Tohle jde změnit jen v Hubu doma.');
+    return r;
+  }
   const url = new URL(cesta, location.href);
   const pohled = url.searchParams.get('pohled') === 'druzina' ? 'druzina' : 'dm';
   let m = /\/api\/kanon\/nastenky\/([a-z0-9-]{1,60})$/.exec(url.pathname);
@@ -191,15 +297,16 @@ if (!stranky.dm || !(await nacistKlic())) {
 const upravitNaGitHubu = stranky.upravy
   ? (soubor) => `${stranky.upravy}${soubor.split('/').map(encodeURIComponent).join('/')}`
   : null;
-const kanon = vytvoritKanon({ api, toast, otevritPoznamku: () => {}, jenCteni: true, upravitNaGitHubu });
+kanon = vytvoritKanon({ api, toast, otevritPoznamku: () => {}, jenCteni: true, upravitNaGitHubu, webUpravy: Boolean(stranky.zapis) });
 if (!stranky.dm) $('#kanon-pohled [data-pohled="dm"]').hidden = true;
 
 $('#zamknout-dm').addEventListener('click', () => {
   zapomenoutKlic();
+  zapomenoutToken();
   balikDm = null;
   $('#zamknout-dm').hidden = true;
   prepnoutNaDruzinu();
-  toast('Pohled DM je na tomto zařízení zase zamčený.');
+  toast('Pohled DM je na tomto zařízení zase zamčený, token GitHubu zapomenutý.');
 });
 
 function ukazat() {

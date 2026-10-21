@@ -2,7 +2,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import YAML from 'yaml';
-import { rozebrat, upravitHlavicku, slozit } from './frontmatter.js';
+import { rozebrat, upravitHlavicku, slozit } from '../sdilene/frontmatter.js';
 import { SCHEMA } from './data.js';
 import { Harptos } from '../sdilene/harptos.js';
 

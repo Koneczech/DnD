@@ -1404,3 +1404,6 @@ span.oko { cursor: default; }
 .list-postavy .text-karty.s-oky { padding-left: 1.7rem; }
 .list-postavy .text-karty .blok-textu > .oko-textu { left: -1.9rem; width: 1.6rem; }
 .list-postavy .text-karty li.blok-textu > .oko-textu { left: -3.1rem; }
+
+/* Příkazy „/“ v editoru karty (⚠ bod 149). */
+.polozka-prikazu small code { font-size: 0.8em; color: var(--text-tlumeny); }

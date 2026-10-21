@@ -64,6 +64,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Odkrývání odstavců a odrážek z celého textu karty (oko 👁 u bloku, i z příběhu postavy) | ◐ |
 | | List postavy jako záložka stránky postavy: souhrn vlastností a bojových hodnot, pododdíly jako karty | ◐ |
 | | Plný editor karty (text, pole, portrét, našeptávání odkazů), nová karta ze šablony | ◐ |
+| | Příkazy „/“ v editoru: nabídka prvků (nadpis, odrážka, odrážka pro družinu, citace, odkaz, tučně, kurzíva, skrytá poznámka, tabulka, oddělovač, chybějící oddíly typu), v Hubu i na webu | ◐ |
 | | Typové stránky: boční panel podle typu (role, osud, kde ho najít, patří k, sídlo, u koho je), Kdo tu je, Členové a Má u sebe, vztahy po skupinách, DM oddíly dole s odkazem, editor nabídne chybějící oddíly | ◐ |
 | | Události z Kalendáře ve wiki: navázané karty, co se rozhodlo, události v kartě | ◐ |
 | | Mapa (záložka): vazby a vztahy, malé úpravy, nástěnky; Otevřít v Obsidianu, F2 s odkazem | ◐ |

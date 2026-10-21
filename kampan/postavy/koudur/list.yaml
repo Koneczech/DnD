@@ -3,8 +3,7 @@
 # SO a útok kouzlem, kostky obnovy a pozice kouzel Hub dopočítá podle pravidel 2024.
 # Popis polí: sablony/list-postavy.yaml.
 schema: 1
-public: false
-source: "Z projektu v Claude, stav k 21. 8. 2026. Mechanika (jazyky, dovednosti) platí podle listu (R9)."
+public: true
 classes:
   - { name: Bard, level: 3, subclass: College of Lore }
 species: Dwarf
@@ -22,8 +21,6 @@ skills:
   proficient: [Animal Handling, Perception, Performance, History, Religion]
   expertise: [Persuasion, Sleight of Hand]
   jack_of_all_trades: true
-  notes:
-    - "✅ Ověřeno: počet nástrojů (Bagpipes, Bowls, Cartographer's Tools, Darts, Flute, Lute, Woodcarver's Tools) potvrzen jako v pořádku. Darts = hra vrhání šipek (Gaming Set), ne zbraň."
 
 senses: [Darkvision 120 ft]
 
@@ -31,7 +28,6 @@ combat:
   ac: 13
   ac_notes: [Leather Armor + DEX]
   hp: 20
-  hp_note: "V rozsahu možného 16–30 pro Bard 3 / k8 / CON +1 / Dwarven Toughness +3 — OK."
   speed: { walk: 30 }
   resistances: [Poison]
 

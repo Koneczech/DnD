@@ -3,8 +3,7 @@
 # SO a útok kouzlem, kostky obnovy a pozice kouzel Hub dopočítá podle pravidel 2024.
 # Popis polí: sablony/list-postavy.yaml.
 schema: 1
-public: false
-source: "Z projektu v Claude, stav k 21. 8. 2026. Mechanika (jazyky, dovednosti) platí podle listu (R9)."
+public: true
 classes:
   - { name: Druid, level: 3, subclass: Circle of the Moon }
 species: Aasimar
@@ -19,20 +18,17 @@ saves:
 skills:
   proficient: [Animal Handling, Nature, Stealth, Survival]
   bonus: { Arcana: 2, Nature: 2 }
-  notes:
-    - "Arcana a Nature +2 z Primal Order: Magician; Arcana bez zdatnosti."
 
 senses: [Darkvision 60 ft]
 
 combat:
   ac: 11
   ac_notes:
-    - "Unarmored: 11 (confirmed as the base)"
+    - "Unarmored: 11"
     - "Leather Armor (no shield): 12"
     - "Leather Armor + Shield: 14"
     - "Wild Shape (Circle Forms): AC 15 if higher than the form's AC, +9 Temp HP on transforming"
   hp: 18
-  hp_note: "V rozsahu možného 16–30 pro Druid 3 / k8 / CON +2 — OK."
   speed: { walk: 30 }
   resistances: [Radiant, Necrotic]
 
@@ -106,5 +102,3 @@ spellcasting:
       - { name: Cure Wounds, level: 1, source: Always prepared }
       - { name: Speak with Animals, level: 1, source: Always prepared }
       - { name: Moonbeam, level: 2, source: Always prepared }
-    notes:
-      - "📌 Normální připravená kouzla z celého Druid listu (nárok: úroveň 3 + WIS mod 2 = 5 kouzel) zatím nejsou vybraná — na sheetu je zobrazený celý dostupný seznam. To je v pořádku: podle pravidel (Changing Your Prepared Spells) si Druid volí/mění připravená kouzla vždy po Long Restu, takže výběr proběhne přirozeně před/na hraní, není to chyba buildu."

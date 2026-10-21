@@ -3,8 +3,7 @@
 # SO a útok kouzlem, kostky obnovy a pozice kouzel Hub dopočítá podle pravidel 2024.
 # Popis polí: sablony/list-postavy.yaml.
 schema: 1
-public: false
-source: "Z projektu v Claude, stav k 21. 8. 2026. Mechanika (jazyky, dovednosti) platí podle listu (R9)."
+public: true
 classes:
   - { name: Rogue, level: 3, subclass: Thief }
 species: Halfling
@@ -21,8 +20,6 @@ saves:
 skills:
   proficient: [Acrobatics, Animal Handling, Arcana, Stealth]
   expertise: [Insight, Sleight of Hand]
-  notes:
-    - "✅ Ověřeno: Criminal background v tomto D&D Beyond zdroji dává volný výběr 2 dovedností (zvoleno Animal Handling + Arcana), zbylé 4 (Acrobatics, Stealth, Insight, Sleight of Hand) pocházejí z Rogue classu (\"choose 4\"). Insight a Sleight of Hand mají navíc Expertise z Rogue level1 feature. Celkem 6 proficiency, vše sedí."
 
 senses: []
 
@@ -30,7 +27,6 @@ combat:
   ac: 14
   ac_notes: [Leather Armor + DEX]
   hp: 24
-  hp_note: "V rozsahu možného 22–36 pro Rogue 3 / k8 / CON +4 — OK."
   initiative_bonus: pb  # Alert
   speed: { walk: 30, climb: 30 }
   speed_note: "Climb speed from Second-Story Work"

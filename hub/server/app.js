@@ -13,7 +13,7 @@ import { Git } from './git.js';
 import { Vysilac, filtrUdalosti } from './sse.js';
 import { Sezeni, datumCesky } from './sezeni.js';
 import { Odpocet } from './odpocet.js';
-import { Strop } from './strop.js';
+import { Strop, DRUHY_PTAKU } from './strop.js';
 import { jeVOneDrive, nainstalovatHook } from './prostredi.js';
 import { zkusebniRezim } from './zkouska.js';
 import { Kalendar } from './kalendar.js';
@@ -825,6 +825,14 @@ export class Hub {
     if (p === '/api/odpocet' && m === 'GET') return poslatJson(res, 200, this.odpocet.verejny());
     if (p === '/api/strop' && m === 'GET') return poslatJson(res, 200, this.strop.verejny());
     if (p === '/api/strop' && m === 'PUT') return poslatJson(res, 200, await this.strop.nastavit(await nacistJson(req)));
+    if (p === '/api/strop/ptaci' && m === 'POST') {
+      // Hejno přes strop hned (⚠ bod 144): jednorázový pokyn pro výstup strop.html.
+      const druh = (await nacistJson(req)).druh ?? 'auto';
+      if (!DRUHY_PTAKU.includes(druh)) throw Object.assign(new Error(`Přeletět může: ${DRUHY_PTAKU.join(', ')}.`), { status: 400 });
+      this.vysilac.vyslat('strop-povel', { ptaci: druh });
+      this.zaznam.info('strop', `Přelet: ${druh}`);
+      return poslatJson(res, 200, { ok: true, druh });
+    }
     if (p === '/api/zaznam' && m === 'GET') {
       const n = Number(url.searchParams.get('n')) || 300;
       const od = Number(url.searchParams.get('od')) || 0;

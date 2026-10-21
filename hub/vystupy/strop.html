@@ -105,6 +105,7 @@
     <label>Okraj <input type="range" id="k-okraj" min="0" max="0.4" step="0.01"><output id="o-okraj"></output></label>
     <label>Jas <input type="range" id="k-jas" min="0.05" max="1" step="0.01"><output id="o-jas"></output></label>
     <label class="zaskrt"><input type="checkbox" id="k-hvezdy"> Hvězdy v noci</label>
+    <label class="zaskrt"><input type="checkbox" id="k-ptaci"> Ptáci přeletí sami (ve dne hejna, v noci netopýři)</label>
     <div class="rada">
       <button type="button" id="k-zrcadlit-x" title="Obraz přes zrcadlo je převrácený">Převrátit ↔</button>
       <button type="button" id="k-zrcadlit-y">Převrátit ↕</button>
@@ -161,6 +162,12 @@
       <button type="button" data-hodnota="1">1</button>
       <button type="button" data-hodnota="2">2</button>
       <button type="button" data-hodnota="3">3</button>
+    </div>
+    <div class="nadpis">Přelet</div>
+    <div class="rada" id="z-ptaci">
+      <button type="button" data-druh="hejno">Hejno</button>
+      <button type="button" data-druh="klin">Klín</button>
+      <button type="button" data-druh="netopyri">Netopýři</button>
     </div>
     <div class="rada">
       <button type="button" id="z-souboj">Souboj</button>
@@ -269,6 +276,7 @@
       uniform float uBlesk, uBleskR; uniform vec2 uBleskPos;
       uniform float uOkraj, uJas, uHvezdy, uKalibrace, uVolny, uClenitost;
       uniform float uNebe, uLes, uTabor, uJeskyne, uInterier;
+      uniform sampler2D uPtaci; uniform float uPtaciZap;
 
       float hash(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
       float sum(vec2 p) {
@@ -327,6 +335,14 @@
 
           // Blesk: rozsvítí mraky zevnitř, kde jsou nejhustší, svítí nejvíc.
           obloha += svetloBlesku * dosah * (0.30 + 1.1 * m * (0.6 + 0.6 * detail));
+
+          // Ptáci letí pod mraky: tmavé siluety proti nebi (v noci proti měsíci a záři ohně).
+          if (uPtaciZap > 0.5) {
+            float ptak = texture2D(uPtaci, uv).a;
+            // V noci je chytá zespodu záře ohně (tábor), jinak jen svit měsíce.
+            vec3 nocni = mix(vec3(0.09, 0.08, 0.085), vec3(0.30, 0.13, 0.05), uTabor);
+            obloha = mix(obloha, mix(vec3(0.07, 0.07, 0.085), nocni, uNoc), ptak * 0.9);
+          }
 
           // Mlha.
           vec3 mlha = mix(vec3(0.62, 0.64, 0.66), vec3(0.05, 0.055, 0.065), uNoc);
@@ -394,6 +410,7 @@
           kamen += vec3(0.55, 0.26, 0.08) * exp(-pow(length(vec2((uv.x - 0.08) * asp, uv.y - 0.9)), 2.0) * 3.0) * 0.28 * uOhen;
           // Blesk venku jen slabě prosvitne vchodem.
           kamen += svetloBlesku * 0.12 * smoothstep(0.3, 0.8, uv.x);
+          if (uPtaciZap > 0.5) kamen = mix(kamen, vec3(0.012, 0.01, 0.01), texture2D(uPtaci, uv).a * 0.9); // netopýři
           barva += kamen * uJeskyne;
         }
 
@@ -449,6 +466,7 @@
       }`;
 
     let program = null;
+    let texturaPtaku = null;
     const U = {};
     function pripravitGl() {
       if (!gl) return false;
@@ -473,9 +491,19 @@
       gl.vertexAttribPointer(a, 2, gl.FLOAT, false, 0, 0);
       for (const jmeno of ['uRes', 'uCas', 'uPosun', 'uTvarCas', 'uVitr', 'uOhen', 'uNoc', 'uMraky', 'uTemno', 'uMlha', 'uSnih', 'uTma', 'uRudy',
         'uHp', 'uHpFaze', 'uBlesk', 'uBleskR', 'uBleskPos', 'uOkraj', 'uJas', 'uHvezdy', 'uKalibrace', 'uVolny', 'uClenitost',
-        'uNebe', 'uLes', 'uTabor', 'uJeskyne', 'uInterier']) {
+        'uNebe', 'uLes', 'uTabor', 'uJeskyne', 'uInterier', 'uPtaci', 'uPtaciZap']) {
         U[jmeno] = gl.getUniformLocation(program, jmeno);
       }
+      // Ptáci se kreslí do vlastního plátna a do oblohy jdou jako textura (pod mraky, s tvarem i maskami).
+      texturaPtaku = gl.createTexture();
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, texturaPtaku);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
+      gl.uniform1i(U.uPtaci, 0);
       return true;
     }
     let glOk = false;
@@ -488,7 +516,7 @@
     if (!glOk) zapsat('WebGL nejde: obloha je jen barevný přechod.');
 
     /* ---------- Kalibrace: čtyři rohy → perspektivní transformace (jednoduchý videomapping) ---------- */
-    const VYCHOZI_KALIBRACE = { rohy: [[0, 0], [1, 0], [1, 1], [0, 1]], okraj: 0.12, jas: 0.75, hvezdy: true, tvar: 'volny', clenitost: 0.5, masky: [] };
+    const VYCHOZI_KALIBRACE = { rohy: [[0, 0], [1, 0], [1, 1], [0, 1]], okraj: 0.12, jas: 0.75, hvezdy: true, tvar: 'volny', clenitost: 0.5, masky: [], ptaci: true };
     let kalibrace = structuredClone(VYCHOZI_KALIBRACE);
     let tazeno = null; // něco se právě táhne: echo z Hubu to nepřepíše
     const plocha = $('#plocha');
@@ -497,6 +525,8 @@
     const platnoMasek = $('#masky');
     const mc = platnoMasek.getContext('2d');
     const editor = $('#editor');
+    const platnoPtaku = document.createElement('canvas');
+    const pc = platnoPtaku.getContext('2d');
     const bodyRohu = [...document.querySelectorAll('.roh')];
 
     /** Matice čtverce W × H na čtyřúhelník (Heckbert): rohy v pořadí LH, PH, PD, LD v pixelech. */
@@ -521,6 +551,8 @@
       klikatice.height = H;
       platnoMasek.width = W;
       platnoMasek.height = H;
+      platnoPtaku.width = nebe.width;
+      platnoPtaku.height = nebe.height;
       editor.setAttribute('viewBox', `0 0 ${W} ${H}`);
       if (gl) gl.viewport(0, 0, nebe.width, nebe.height);
       ukazatKalibraci();
@@ -663,6 +695,7 @@
       $('#k-jas').value = kalibrace.jas;
       $('#o-jas').textContent = Math.round(kalibrace.jas * 100) + ' %';
       $('#k-hvezdy').checked = kalibrace.hvezdy;
+      $('#k-ptaci').checked = kalibrace.ptaci !== false;
       umistitRohy();
       kreslitMasky();
       kreslitEditor();
@@ -726,6 +759,7 @@
     $('#k-okraj').addEventListener('input', (e) => ulozit({ okraj: Number(e.target.value) }));
     $('#k-jas').addEventListener('input', (e) => ulozit({ jas: Number(e.target.value) }));
     $('#k-hvezdy').addEventListener('change', (e) => ulozit({ hvezdy: e.target.checked }));
+    $('#k-ptaci').addEventListener('change', (e) => ulozit({ ptaci: e.target.checked }));
     // Převrácení prohodí rohy: obraz přes zrcadlo pod 45° je zrcadlově obrácený.
     $('#k-zrcadlit-x').addEventListener('click', () => { const [a, b, c, d] = kalibrace.rohy; ulozit({ rohy: [b, a, d, c] }); });
     $('#k-zrcadlit-y').addEventListener('click', () => { const [a, b, c, d] = kalibrace.rohy; ulozit({ rohy: [d, c, b, a] }); });
@@ -748,6 +782,7 @@
       else if (e.key === 'k' || e.key === 'K') prepnout('kalibrace');
       else if (e.key === 'z' || e.key === 'Z') prepnout('zkouska');
       else if (e.key === 'b' || e.key === 'B') zablesknout({ vzdalenost: ucinny().bourka });
+      else if (e.key === 'p' || e.key === 'P') vypustit('auto');
       else if (e.key === 'Escape') {
         if (novaMaska) {
           novaMaska = null;
@@ -805,9 +840,16 @@
       zablesknout({ vzdalenost: v });
       kanal?.postMessage({ blesk: v });
     });
+    $('#z-ptaci').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-druh]');
+      if (!b) return;
+      vypustit(b.dataset.druh);
+      kanal?.postMessage({ ptaci: b.dataset.druh });
+    });
     kanal?.addEventListener('message', (e) => {
       if ('zkouska' in (e.data ?? {})) nastavitZkousku(e.data.zkouska, true);
       if (e.data?.blesk) zablesknout({ vzdalenost: e.data.blesk });
+      if (e.data?.ptaci) vypustit(e.data.ptaci);
     });
 
     /* ---------- Blesky: z Hubu (bouřka v Hubu), nebo samy ve zkoušce s bouřkou ---------- */
@@ -910,6 +952,178 @@
       }, prumer * (0.5 + Math.random()) * 1000);
     }
 
+
+    /* ---------- Ptáci: hejno (špačci), klín (husy), netopýři. Letí přes strop a zmizí za krajem ---------- */
+    const hejna = [];
+    if (ladeni) window.__hejna = hejna; // ?ladeni: polohy ptáků pro kontrolu
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    const DRUHY = {
+      // rozpětí a rychlost jako podíl šířky plátna; mávání v Hz
+      hejno: { pocet: [35, 70], rozpeti: 0.024, rychlost: 0.065, mavani: 7 },
+      klin: { pocet: [9, 17], rozpeti: 0.036, rychlost: 0.045, mavani: 2.4 },
+      netopyri: { pocet: [5, 9], rozpeti: 0.034, rychlost: 0.07, mavani: 11 },
+    };
+
+    function druhPodleSceny() {
+      const venku = cil.nebe + cil.les + cil.tabor > 0.5;
+      if (!venku || cil.noc > 0.5) return 'netopyri';
+      return Math.random() < 0.6 ? 'hejno' : 'klin';
+    }
+
+    /** Vypustí hejno: přiletí za krajem plátna a přeletí napříč, kousek mimo střed. */
+    function vypustit(druh = 'auto') {
+      if (!DRUHY[druh]) druh = druhPodleSceny();
+      if (hejna.length >= 3) return;
+      const W = platnoPtaku.width, H = platnoPtaku.height;
+      const d = DRUHY[druh];
+      const uhel = rnd(0, Math.PI * 2);
+      const smer = [Math.cos(uhel), Math.sin(uhel)];
+      const kolmo = [-smer[1], smer[0]];
+      const posun = rnd(-0.25, 0.25) * Math.min(W, H);
+      const dosah = Math.hypot(W, H) * 0.62;
+      const start = [W / 2 - smer[0] * dosah + kolmo[0] * posun, H / 2 - smer[1] * dosah + kolmo[1] * posun];
+      const rychlost = d.rychlost * W * rnd(0.85, 1.15);
+      const n = Math.round(rnd(...d.pocet));
+      const ptaci = [];
+      for (let i = 0; i < n; i++) {
+        let x, y;
+        if (druh === 'klin') {
+          // Klín: vůdce vpředu, ostatní střídavě vlevo a vpravo za ním.
+          const k = Math.ceil(i / 2), strana = i % 2 ? 1 : -1, mezera = d.rozpeti * W * 1.1;
+          x = start[0] - smer[0] * k * mezera + kolmo[0] * strana * k * mezera * 0.8;
+          y = start[1] - smer[1] * k * mezera + kolmo[1] * strana * k * mezera * 0.8;
+        } else {
+          const r = Math.sqrt(Math.random()) * (druh === 'hejno' ? 0.09 : 0.12) * W, a = rnd(0, Math.PI * 2);
+          x = start[0] + Math.cos(a) * r;
+          y = start[1] + Math.sin(a) * r;
+        }
+        ptaci.push({ x, y, vx: smer[0] * rychlost, vy: smer[1] * rychlost, faze: rnd(0, 6.3), vel: rnd(0.8, 1.2), kluz: 0 });
+      }
+      hejna.push({ druh, d, ptaci, smer, kolmo, start, rychlost, uhel, vek: 0, vlna: rnd(0, 6.3) });
+      zapsat('přelet ' + druh + ' (' + n + ')');
+    }
+
+    function krokHejna(h, dt, W, H) {
+      h.vek += dt;
+      const { ptaci, d } = h;
+      let cx = 0, cy = 0, vx = 0, vy = 0;
+      for (const p of ptaci) { cx += p.x; cy += p.y; vx += p.vx; vy += p.vy; }
+      cx /= ptaci.length; cy /= ptaci.length; vx /= ptaci.length; vy /= ptaci.length;
+      // Hejno vede bod, který jede rovně přes strop a jen se vlní do stran: hejno nezabloudí ke kraji.
+      const vlna = (h.druh === 'klin' ? 0.04 : 0.12) * Math.min(W, H) * Math.sin(h.vek * 0.35 + h.vlna);
+      const ujeto = h.rychlost * h.vek;
+      const vodic = [h.start[0] + h.smer[0] * ujeto + h.kolmo[0] * vlna, h.start[1] + h.smer[1] * ujeto + h.kolmo[1] * vlna];
+      const kVodici = (x, y) => [h.smer[0] * h.rychlost + (vodic[0] - x) * 0.5, h.smer[1] * h.rychlost + (vodic[1] - y) * 0.5];
+      const cilV = kVodici(cx, cy);
+      const blizko = d.rozpeti * W * 1.4;
+      ptaci.forEach((p, i) => {
+        let ax = 0, ay = 0;
+        if (h.druh === 'hejno') {
+          // Boids: držet se středu, letět jako ostatní, nenarážet do sousedů, mířit kam hejno.
+          ax += (cx - p.x) * 0.35 + (vx - p.vx) * 0.9 + (cilV[0] - p.vx) * 0.6;
+          ay += (cy - p.y) * 0.35 + (vy - p.vy) * 0.9 + (cilV[1] - p.vy) * 0.6;
+          for (const q of ptaci) {
+            if (q === p) continue;
+            const dx = p.x - q.x, dy = p.y - q.y, dd = dx * dx + dy * dy;
+            if (dd < blizko * blizko && dd > 0.01) { ax += (dx / dd) * blizko * 18; ay += (dy / dd) * blizko * 18; }
+          }
+          ax += Math.sin(h.vek * 1.7 + i) * h.rychlost * 0.4;
+          ay += Math.cos(h.vek * 1.3 + i * 0.7) * h.rychlost * 0.4;
+        } else if (h.druh === 'klin') {
+          // Klín: každý drží své místo za vůdcem, jen se lehce pohupuje.
+          const vudce = ptaci[0];
+          if (i === 0) { ax += (cilV[0] - p.vx) * 0.8; ay += (cilV[1] - p.vy) * 0.8; }
+          else {
+            const k = Math.ceil(i / 2), strana = i % 2 ? 1 : -1, mezera = d.rozpeti * W * 1.1;
+            const sm = Math.atan2(vudce.vy, vudce.vx), s0 = [Math.cos(sm), Math.sin(sm)], k0 = [-s0[1], s0[0]];
+            const tx = vudce.x - s0[0] * k * mezera + k0[0] * strana * k * mezera * 0.8 + Math.sin(h.vek * 0.9 + i) * mezera * 0.12;
+            const ty = vudce.y - s0[1] * k * mezera + k0[1] * strana * k * mezera * 0.8 + Math.cos(h.vek * 0.8 + i) * mezera * 0.12;
+            ax += (tx - p.x) * 1.6 + (vudce.vx - p.vx) * 1.2;
+            ay += (ty - p.y) * 1.6 + (vudce.vy - p.vy) * 1.2;
+          }
+        } else {
+          // Netopýři: každý sám, cik cak, ale celkově přes strop.
+          const [tx, ty] = kVodici(p.x, p.y);
+          ax += (tx - p.vx) * 1.2 + rnd(-1, 1) * h.rychlost * 9;
+          ay += (ty - p.vy) * 1.2 + rnd(-1, 1) * h.rychlost * 9;
+        }
+        p.vx += ax * dt;
+        p.vy += ay * dt;
+        const v = Math.hypot(p.vx, p.vy), max = h.rychlost * (h.druh === 'netopyri' ? 1.8 : 1.35), min = h.rychlost * 0.6;
+        if (v > max) { p.vx *= max / v; p.vy *= max / v; }
+        if (v < min && v > 0) { p.vx *= min / v; p.vy *= min / v; }
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        // Občas chvíli plachtí (husy a špačci), netopýři mávají pořád.
+        if (h.druh !== 'netopyri') {
+          if (p.kluz > 0) p.kluz -= dt;
+          else if (Math.random() < dt * 0.25) p.kluz = rnd(0.4, 1.4);
+        }
+        if (p.kluz <= 0) p.faze += dt * d.mavani * Math.PI * 2 * p.vel;
+      });
+      // Konec: hejno je za krajem na druhé straně (nebo letí moc dlouho).
+      const okraj = d.rozpeti * W * 4;
+      const venku = ptaci.every((p) => p.x < -okraj || p.x > W + okraj || p.y < -okraj || p.y > H + okraj);
+      return !(venku && h.vek > 3) && h.vek < 90;
+    }
+
+    function nakreslitPtaka(x, y, uhel, s, faze, kluz) {
+      const mav = kluz > 0 ? 0.15 : Math.sin(faze);
+      const rozpeti = s * (0.72 + 0.28 * (1 - Math.abs(mav)));
+      const vzad = s * (0.22 + 0.2 * mav);
+      pc.save();
+      pc.translate(x, y);
+      pc.rotate(uhel);
+      pc.lineWidth = Math.max(1, s * 0.16);
+      pc.beginPath();
+      pc.moveTo(-vzad, -rozpeti);
+      pc.quadraticCurveTo(s * 0.1, -rozpeti * 0.45, s * 0.12, 0);
+      pc.quadraticCurveTo(s * 0.1, rozpeti * 0.45, -vzad, rozpeti);
+      pc.stroke();
+      pc.lineWidth = Math.max(1, s * 0.22);
+      pc.beginPath();
+      pc.moveTo(s * 0.32, 0);
+      pc.lineTo(-s * 0.38, 0);
+      pc.stroke();
+      pc.restore();
+    }
+
+    let ptaciNaPlatne = false;
+    function krokPtaku(dt) {
+      const W = platnoPtaku.width, H = platnoPtaku.height;
+      for (let i = hejna.length - 1; i >= 0; i--) if (!krokHejna(hejna[i], dt, W, H)) hejna.splice(i, 1);
+      if (!hejna.length && !ptaciNaPlatne) return false;
+      pc.clearRect(0, 0, W, H);
+      pc.strokeStyle = '#000';
+      pc.lineCap = 'round';
+      for (const h of hejna) for (const p of h.ptaci) nakreslitPtaka(p.x, p.y, Math.atan2(p.vy, p.vx), h.d.rozpeti * W * p.vel * 0.5, p.faze, p.kluz);
+      ptaciNaPlatne = hejna.length > 0;
+      return true;
+    }
+
+    // Ptáci sami: ve dne venku za pěkného počasí hejna a klíny, v noci a v jeskyni netopýři.
+    // Při začátku bouřky přeletí jedno hejno, které před ní utíká.
+    let dalsiPrelet = performance.now() + rnd(30, 90) * 1000;
+    let bylaBourka = false;
+    function hlidatPtaky(ted_) {
+      const s = ucinny();
+      const bourka = s.pocasi.includes('bourka');
+      if (bourka && !bylaBourka && kalibrace.ptaci !== false && cil.noc < 0.5 && cil.nebe + cil.les + cil.tabor > 0.5) {
+        setTimeout(() => vypustit('hejno'), 2500);
+      }
+      bylaBourka = bourka;
+      if (kalibrace.ptaci === false || ted_ < dalsiPrelet) return;
+      dalsiPrelet = ted_ + rnd(70, 230) * 1000;
+      if (s.rezim === 'souboj') return;
+      const venku = cil.nebe + cil.les + cil.tabor > 0.5;
+      const pekne = !s.pocasi.some((p) => p === 'dest' || p === 'snih' || p === 'bourka');
+      const noc = cil.noc > 0.5;
+      if (cil.jeskyne > 0.5) vypustit('netopyri');
+      else if (venku && noc && cil.tabor + cil.les > 0.5) vypustit('netopyri');
+      else if (venku && !noc && pekne) vypustit(Math.random() < 0.6 ? 'hejno' : 'klin');
+    }
+    odebirat(['strop-povel'], (_, data) => data?.ptaci && vypustit(data.ptaci));
+
     /* ---------- Data z Hubu ---------- */
     sledovat('scena', '/api/scena', (s) => {
       if (!s) return;
@@ -949,6 +1163,8 @@
       if (blesk.sila < 0.003) blesk.sila = 0;
       const cas = (t - zacatek) / 1000;
       const kal = document.body.classList.contains('kalibrace');
+      const ptaciZmena = krokPtaku(dt);
+      if (Math.floor(t / 1000) !== Math.floor((t - dt * 1000) / 1000)) hlidatPtaky(t);
 
       if (glOk) {
         gl.uniform2f(U.uRes, nebe.width, nebe.height);
@@ -971,6 +1187,8 @@
         gl.uniform1f(U.uKalibrace, kal ? 1 : 0);
         gl.uniform1f(U.uVolny, kalibrace.tvar === 'volny' ? 1 : 0);
         gl.uniform1f(U.uClenitost, kalibrace.clenitost);
+        if (ptaciZmena) gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, platnoPtaku);
+        gl.uniform1f(U.uPtaciZap, hejna.length ? 1 : 0);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       } else {
         const j = kalibrace.jas;
@@ -996,7 +1214,7 @@
       const vychozi = JSON.stringify(kalibrace.rohy) === JSON.stringify(VYCHOZI_KALIBRACE.rohy);
       if (!vychozi || document.body.classList.contains('ovladani')) return;
       const n = $('#napoveda');
-      n.innerHTML = 'Strop z DM Hubu · <b>K</b> kalibrace · <b>Z</b> zkouška · <b>B</b> blesk · <b>F11</b> celá obrazovka';
+      n.innerHTML = 'Strop z DM Hubu · <b>K</b> kalibrace · <b>Z</b> zkouška · <b>B</b> blesk · <b>P</b> ptáci · <b>F11</b> celá obrazovka';
       n.classList.add('videt');
       setTimeout(() => n.classList.remove('videt'), 9000);
     }, 1500);

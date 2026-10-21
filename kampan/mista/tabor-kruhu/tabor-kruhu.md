@@ -5,13 +5,14 @@ typ: misto
 nazev: "Tábor kruhu v Lurkwoodu"
 verejne: true
 ikona: 🔥
-aliases: ["Tábor kruhu"]
+aliases: [ "Tábor kruhu" ]
 lezi_v: "[[lurkwood]]"
-vazby: ["[[lurkwood]]", "[[torva]]", "[[novacek-kruhu]]", "[[kruh]]", "[[alba]]", "[[tusker]]", "[[koudur]]", "[[leta]]", "[[tavis]]"]
-tags: [aktualni]
+vazby: [ "[[lurkwood]]", "[[torva]]", "[[novacek-kruhu]]", "[[kruh]]", "[[alba]]", "[[tusker]]", "[[koudur]]", "[[leta]]", "[[tavis]]" ]
+tags: [ aktualni ]
 popis_obrazu: ""
 ilustrace: []
 zdroj: https://app.notion.com/p/3c89ed226736817cb3f0d4d6ac4295cc
+strop: tabor
 ---
 # Tábor kruhu v Lurkwoodu
 

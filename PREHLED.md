@@ -64,6 +64,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Odkrývání odstavců a odrážek z celého textu karty (oko 👁 u bloku, i z příběhu postavy) | ◐ |
 | | List postavy jako záložka stránky postavy: souhrn vlastností a bojových hodnot, pododdíly jako karty | ◐ |
 | | Plný editor karty (text, pole, portrét, našeptávání odkazů), nová karta ze šablony | ◐ |
+| | Živý náhled v editoru karty (jako Obsidian): nadpisy, tučné, odkazy, odrážky a oko 👁 rovnou v textu, značky jen na řádku s kurzorem; text se ukládá beze změny formátu; Enter pokračuje v seznamu | ◐ |
 | | Příkazy „/“ v editoru: nabídka prvků (nadpis, odrážka, odrážka pro družinu, citace, odkaz, tučně, kurzíva, skrytá poznámka, tabulka, oddělovač, chybějící oddíly typu), v Hubu i na webu | ◐ |
 | | Typové stránky: boční panel podle typu (role, osud, kde ho najít, patří k, sídlo, u koho je), Kdo tu je, Členové a Má u sebe, vztahy po skupinách, DM oddíly dole s odkazem, editor nabídne chybějící oddíly | ◐ |
 | | Události z Kalendáře ve wiki: navázané karty, co se rozhodlo, události v kartě | ◐ |
@@ -111,6 +112,7 @@ Vlastní combat tracker, sledování zdrojů postav (BV, kouzla, Zuřivost), mix
 | Návody (zvuk, OBS, ilustrace, zkouška v cloudu) | `reference/` |
 | Prostředí pro zkoušku v cloudu (Codespaces) | `.devcontainer/` |
 | Čtecí verze kánonu (GitHub Pages) | `hub/stranky/`, `hub/server/stranky.js`, `.github/workflows/stranky.yml`; úpravy na webu `hub/sdilene/upravy-webu.js` |
+| Editor karty: živý náhled | `hub/panel/kanon-zivy-nahled.js`, CodeMirror 6 v `hub/panel/vendor/codemirror.js` (obnoví `npm run vendor:editor`) |
 | Text karty kánonu (server i web) | `hub/sdilene/karta-kanonu.js`, `hub/sdilene/hlavicka.js`, `hub/sdilene/frontmatter.js` |
 | Data kampaně | `kampan/` |
 | Šablony pro nové soubory (Obsidian) | `sablony/` |

@@ -6,6 +6,7 @@ import { naHtml } from '/sdilene/markdown.js';
 import { TYPY, STAVY, barvaTypu, el, nahradit, obrazekEntity } from '/panel/kanon-spolecne.js';
 import { POLE_TYPU, OSUDY, ODKAZOVA_POLE, NAPOVEDA, popisekPole, chybejiciOddily, vlozitOddil } from '/sdilene/typy-karet.js';
 import { prikazyKarty, najitLomitko, filtrovatPrikazy, provestPrikaz } from '/sdilene/prikazy-editoru.js';
+import { vytvoritPole } from '/panel/kanon-zivy-nahled.js';
 
 const PRODLEVA_MS = 1500;
 
@@ -330,12 +331,18 @@ export function vytvoritEditor(ctx) {
       location.hash = `kanon/${encodeURIComponent(id)}`;
       return;
     }
-    const textarea = el('textarea', { className: 'editor-text', spellcheck: true, value: z.telo, 'aria-label': 'Text karty (markdown)' });
-    textarea.value = z.telo;
+    // Živý náhled (⚠ bod 150): formátování přímo v textu, značky jen na řádku s kurzorem.
+    const textarea = await vytvoritPole(z.telo, {
+      popisekOdkazu: (cil) => {
+        const e = s.podleId.get(cil);
+        return { text: e?.nazev ?? cil, existuje: Boolean(e), barva: e ? barvaTypu(e.typ) : undefined };
+      },
+    });
     const naseptavac = el('ul', { className: 'naseptavac', hidden: true, role: 'listbox' });
-    let nahledVypnuty = false;
+    // Náhled vedle je s živým náhledem navíc: výchozí je skrytý, tlačítko Náhled ho ukáže.
+    let nahledVypnuty = true;
     try {
-      nahledVypnuty = localStorage.getItem('dmhub-editor-nahled') === '0';
+      nahledVypnuty = localStorage.getItem('dmhub-editor-nahled-vedle') !== '1';
     } catch {
       /* bez úložiště */
     }
@@ -347,7 +354,7 @@ export function vytvoritEditor(ctx) {
       nahledEl.hidden = !nahledEl.hidden;
       tlacitkoNahledu.setAttribute('aria-pressed', String(!nahledEl.hidden));
       try {
-        localStorage.setItem('dmhub-editor-nahled', nahledEl.hidden ? '0' : '1');
+        localStorage.setItem('dmhub-editor-nahled-vedle', nahledEl.hidden ? '0' : '1');
       } catch {
         /* bez úložiště */
       }
@@ -381,7 +388,7 @@ export function vytvoritEditor(ctx) {
           el('span', { className: 'oddelovac' }),
           tlacitkoNahledu),
         el('div', { className: 'editor-oddily', 'aria-live': 'polite' }),
-        el('div', { className: 'editor-plochy' }, el('div', { className: 'editor-obal' }, textarea, naseptavac), nahledEl),
+        el('div', { className: 'editor-plochy' }, el('div', { className: 'editor-obal' }, textarea.element, naseptavac), nahledEl),
         el('p', { className: 'poznamka napoveda-editoru' }, 'Markdown jako v Obsidianu. ', el('kbd', { textContent: '/' }), ' nabídne prvek k vložení (nadpis, odrážka, tabulka, oddíl…), ', el('kbd', { textContent: '[[' }), ' našeptá odkaz na kartu, ', el('kbd', { textContent: 'Ctrl+S' }), ' uloží hned. V oddílu ', el('strong', { textContent: 'Co ví družina' }), ' je každá odrážka zvlášť; odkrytá má na konci značku ', el('code', { textContent: '%%zná%%' }), ' (v kartě ji přepneš okem 👁). Stejnou značkou na konci prvního řádku odkryješ i kterýkoli odstavec nebo odrážku jinde v textu. Oddíly ', el('code', { textContent: '## DM…' }), ' družina nikdy neuvidí.')));
     kam.replaceChildren(formular);
     st = { id, nazev: z.pole.nazev ?? id, typ: z.typ, hash: z.hash, ulozeneTelo: z.telo, textarea, naseptavac, nahledEl, stavEl, formular, zmenenaPole: {}, casovac: null, bezi: null, znovu: false, konflikt: null, nalez: [], vybranyNalez: 0, dotazOdkazu: '' };

@@ -26,7 +26,7 @@ export const ITERACE_HESLA = 600000;
 const SUL_HESLA = 'dm-hub:stranky:dm:v1';
 const OBRAZEK = /^\/[^/].*\.(png|jpe?g|webp)$/i;
 /** Soubory panelu, které wiki a mapa potřebují. */
-const SOUBORY_PANELU = ['kanon.js', 'kanon-spolecne.js', 'kanon-wiki.js', 'kanon-editor.js', 'styly.css', 'ikona.svg'];
+const SOUBORY_PANELU = ['kanon.js', 'kanon-spolecne.js', 'kanon-wiki.js', 'kanon-editor.js', 'kanon-zivy-nahled.js', 'styly.css', 'ikona.svg'];
 
 /** Vyřízne z HTML prvek od `<tag id="…"` po jeho konec (stejně odsazený uzavírací tag). */
 export function vyriznout(html, tag, id) {
@@ -170,6 +170,8 @@ export async function sestavitStranky({ cesty: c, cil, cas = new Date(), heslo =
     // Kód: moduly Kánonu z panelu, sdílené moduly a obal čtecí verze.
     const panel = path.join(HUB_DIR, 'panel');
     await kopirovatSlozku(panel, path.join(cil, 'panel'), (jmeno) => SOUBORY_PANELU.includes(jmeno));
+    // CodeMirror pro živý náhled v editoru (⚠ bod 150).
+    await kopirovatSlozku(path.join(panel, 'vendor'), path.join(cil, 'panel', 'vendor'), (jmeno) => jmeno.endsWith('.js'));
     await kopirovatSlozku(path.join(HUB_DIR, 'sdilene'), path.join(cil, 'sdilene'), (jmeno) => jmeno.endsWith('.js'));
     // Knihovna yaml pro prohlížeč (hlavička karet při úpravách na webu); import map v index.html.
     await fs.cp(path.join(path.dirname(require.resolve('yaml/package.json')), 'browser'), path.join(cil, 'vendor', 'yaml'), { recursive: true });

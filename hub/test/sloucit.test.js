@@ -40,7 +40,7 @@ async function dvaKlony() {
   await git(a, ['commit', '-q', '-m', 'základ']);
   await git(a, ['push', '-q', '-u', 'origin', 'main']);
   await git(koren, ['clone', '-q', vzdaleny, 'b']);
-  return { koren, a, b, smazat: () => fs.rm(koren, { recursive: true, force: true }) };
+  return { koren, a, b, smazat: () => fs.rm(koren, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }) };
 }
 
 async function ulozit(klon, relativni, text, zprava, { push = false } = {}) {

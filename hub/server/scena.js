@@ -6,6 +6,7 @@ import path from 'node:path';
 import { EventEmitter } from 'node:events';
 import { zapsatAtomicky } from './zapis.js';
 import { VARIANTY } from './mista.js';
+import { motivStropu } from './strop.js';
 
 export const POCASI = Object.freeze(['zadne', 'dest', 'snih', 'mlha']);
 /** Efekty počasí, které jdou zapnout současně (déšť, sníh i mlha naráz). */
@@ -119,6 +120,7 @@ export class Scena extends EventEmitter {
       stridani: this.stav.stridani,
       bourka: this.stav.bourka,
       rezim: this.stav.rezim,
+      strop: motivStropu(misto), // motiv oblohy na stropě (výstup strop.html)
       // Další ilustrace, aby si ji výstup přednačetl a prolnutí nezačínalo černým snímkem.
       dalsi: seznam.length > 1 && aktualni ? seznam[(seznam.indexOf(aktualni) + 1) % seznam.length].url : null,
     };

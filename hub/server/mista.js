@@ -10,6 +10,7 @@ import { zapsatAtomicky } from './zapis.js';
 import { normalizujZvukMista, platneJmeno, platnaHudba, platnaVzdalenost, normalizujNahodne, DOZVUKY, NAHODNE, CASTI_ZVUKU_MISTA } from './zvuk.js';
 import { platneId } from './zvuky-knihovna.js';
 import { leziV } from './kanon-modul.js';
+import { MOTIVY } from './strop.js';
 
 export const UCELY = Object.freeze(['scena', 'portret', 'token', 'karta']);
 export const VARIANTY = Object.freeze(['den', 'noc']);
@@ -143,6 +144,8 @@ export class Mista extends EventEmitter {
       svetla: normalizujSvetlaMista(d.svetla),
       // Hudba a ambient místa pro den a noc (Blok 5); soubory ze složky zvuku mimo repo.
       zvuk: normalizujZvukMista(d.zvuk),
+      // Motiv stropu z projektoru (⚠ bod 143): nebe, les, tabor, jeskyne, interier; bez pole podle dozvuku.
+      strop: MOTIVY.includes(d.strop) ? d.strop : null,
       ilustrace: ilustrace.map((il) => ({ ...il, url: this.url(id, il.soubor) })),
     };
   }
@@ -246,6 +249,17 @@ export class Mista extends EventEmitter {
       if (dozvuk === 'zadny') zvuk.delete('dozvuk');
       else zvuk.set('dozvuk', dozvuk);
       if (!zvuk.items.length) dok.delete('zvuk');
+    });
+    return { misto: this.get(id) };
+  }
+
+  /** Motiv stropu (`strop`, ⚠ bod 143). `auto` pole smaže: motiv pak určí dozvuk místa. */
+  async nastavitStrop(id, motiv) {
+    this.get(id);
+    if (motiv !== 'auto' && !MOTIVY.includes(motiv)) throw chyba(`Strop je jeden z: auto, ${MOTIVY.join(', ')}.`);
+    await this.upravitSoubor(id, (dok) => {
+      if (motiv === 'auto') dok.delete('strop');
+      else dok.set('strop', motiv);
     });
     return { misto: this.get(id) };
   }

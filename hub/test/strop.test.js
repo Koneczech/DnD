@@ -3,10 +3,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { Strop, overitKalibraci, VYCHOZI } from '../server/strop.js';
+import { Strop, overitKalibraci, VYCHOZI, motivStropu } from '../server/strop.js';
 import { Vysilac } from '../server/sse.js';
 import { Hub } from '../server/app.js';
-import { docasneRepo, FalesnyObs } from './pomoc.js';
+import { docasneRepo, FalesnyObs, dokud } from './pomoc.js';
 
 test('kalibrace stropu: výchozí hodnoty, ověření a zahození neznámých polí', () => {
   const k = overitKalibraci({});
@@ -92,6 +92,69 @@ test('Hub: /api/strop čte a ukládá kalibraci, výstup strop.html se servíruj
     r = await fetch(hub.adresa + '/vystupy/strop.html');
     assert.equal(r.status, 200);
     assert.match(await r.text(), /Kalibrace stropu/);
+  } finally {
+    await hub.zastavit();
+    await repo.smazat();
+  }
+});
+
+test('kalibrace stropu: volný tvar, členitost a masky', () => {
+  const k = overitKalibraci({});
+  assert.equal(k.tvar, 'volny');
+  assert.equal(k.clenitost, 0.5);
+  assert.deepEqual(k.masky, []);
+
+  // Starší soubor bez tvaru a masek dostane výchozí hodnoty.
+  const stary = overitKalibraci({}, { rohy: [[0, 0], [1, 0], [1, 1], [0, 1]], okraj: 0.1, jas: 0.6, hvezdy: true });
+  assert.equal(stary.tvar, 'volny');
+  assert.deepEqual(stary.masky, []);
+
+  const z = overitKalibraci({ tvar: 'obdelnik', clenitost: 0.8, masky: [[[0.1, 0.1], [0.2, 0.1], [0.15, 0.2]]] });
+  assert.equal(z.tvar, 'obdelnik');
+  assert.equal(z.masky.length, 1);
+  assert.throws(() => overitKalibraci({ tvar: 'kruh' }), /Tvar/);
+  assert.throws(() => overitKalibraci({ clenitost: 2 }), /Členitost/);
+  assert.throws(() => overitKalibraci({ masky: [[[0, 0], [1, 1]]] }), /3 až/);
+  assert.throws(() => overitKalibraci({ masky: Array.from({ length: 9 }, () => [[0, 0], [1, 0], [1, 1]]) }), /nejvýš 8/);
+  assert.throws(() => overitKalibraci({ masky: [[[0, 0], [1, 0], [1, 9]]] }), /rozsah/);
+});
+
+test('motiv stropu: z hlavičky místa, jinak podle dozvuku, jinak nebe', () => {
+  assert.equal(motivStropu(null), 'nebe');
+  assert.equal(motivStropu({ strop: 'les' }), 'les');
+  assert.equal(motivStropu({ strop: 'neznamy', zvuk: { dozvuk: 'jeskyne' } }), 'jeskyne');
+  assert.equal(motivStropu({ zvuk: { dozvuk: 'kobka' } }), 'jeskyne');
+  assert.equal(motivStropu({ zvuk: { dozvuk: 'mistnost' } }), 'interier');
+  assert.equal(motivStropu({ zvuk: { dozvuk: 'sal' } }), 'interier');
+  assert.equal(motivStropu({ zvuk: {} }), 'nebe');
+});
+
+test('Hub: motiv stropu u místa se uloží do hlavičky a scéna ho pošle stropu', async () => {
+  const repo = await docasneRepo();
+  const slozka = path.join(repo.c.kampan, 'mista', 'tabor');
+  await fs.mkdir(slozka, { recursive: true });
+  const puvodni = '---\nschema: 1\nid: tabor\ntyp: misto\nnazev: Tábor # komentář zůstane\nverejne: true\n---\nText místa.\n';
+  await fs.writeFile(path.join(slozka, 'tabor.md'), puvodni);
+  const hub = new Hub({ cesty: repo.c, obsKlient: new FalesnyObs(), gitSit: false, port: 0 });
+  await hub.spustit();
+  const put = (cesta, telo) => fetch(hub.adresa + cesta, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(telo) });
+  try {
+    await fetch(hub.adresa + '/api/scena/zobrazit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ misto: 'tabor' }) });
+    assert.equal((await (await fetch(hub.adresa + '/api/scena')).json()).strop, 'nebe');
+
+    let r = await put('/api/mista/tabor/strop', { motiv: 'tabor' });
+    assert.equal(r.status, 200);
+    const text = await fs.readFile(path.join(slozka, 'tabor.md'), 'utf8');
+    assert.match(text, /^strop: tabor$/m);
+    assert.match(text, /# komentář zůstane/);
+    await dokud(async () => (await (await fetch(hub.adresa + '/api/scena')).json()).strop === 'tabor');
+
+    r = await put('/api/mista/tabor/strop', { motiv: 'hvozd' });
+    assert.equal(r.status, 400);
+
+    r = await put('/api/mista/tabor/strop', { motiv: 'auto' });
+    assert.equal(r.status, 200);
+    assert.doesNotMatch(await fs.readFile(path.join(slozka, 'tabor.md'), 'utf8'), /strop:/);
   } finally {
     await hub.zastavit();
     await repo.smazat();

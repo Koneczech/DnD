@@ -3788,7 +3788,26 @@ function vykresliZvukMista(m) {
   sDozvuk.value = m.zvuk?.dozvuk ?? 'zadny';
   sDozvuk.addEventListener('change', () => ulozitZvuk(`/api/mista/${m.id}/zvuk-dozvuk`, { dozvuk: sDozvuk.value }, 'Dozvuk uložen'));
   lDozvuk.append(sDozvuk);
-  prostor.append(lDozvuk, Object.assign(document.createElement('small'), { className: 'poznamka', textContent: 'Ozvěna prostoru pro náhodné zvuky a soundboard. Ambient a hudba zůstávají, jak jsou nahrané.' }));
+  // Motiv oblohy na stropě z projektoru (⚠ bod 143). Bez volby ho určí dozvuk.
+  const lStrop = document.createElement('label');
+  lStrop.textContent = 'Strop';
+  const sStrop = document.createElement('select');
+  const motivPodleDozvuku = () => ({ jeskyne: 'jeskyně', kobka: 'jeskyně', mistnost: 'interiér', sal: 'interiér' })[sDozvuk.value] ?? 'nebe';
+  const moznostAuto = new Option('', 'auto');
+  const popsatAuto = () => (moznostAuto.textContent = `Podle dozvuku (${motivPodleDozvuku()})`);
+  popsatAuto();
+  sStrop.append(moznostAuto, ...[
+    ['nebe', 'Nebe'],
+    ['les', 'Les (koruny stromů)'],
+    ['tabor', 'Tábor (nebe a oheň)'],
+    ['jeskyne', 'Jeskyně'],
+    ['interier', 'Interiér (trámy, svíce)'],
+  ].map(([v, t]) => new Option(t, v)));
+  sStrop.value = m.strop ?? 'auto';
+  sDozvuk.addEventListener('change', popsatAuto);
+  sStrop.addEventListener('change', () => ulozitZvuk(`/api/mista/${m.id}/strop`, { motiv: sStrop.value }, 'Strop uložen'));
+  lStrop.append(sStrop);
+  prostor.append(lDozvuk, lStrop, Object.assign(document.createElement('small'), { className: 'poznamka', textContent: 'Dozvuk: ozvěna prostoru pro náhodné zvuky a soundboard. Strop: co ukáže projektor na stropě; počasí je vidět jen venku.' }));
 
   const NAZVY = { den: 'Den', noc: 'Noc', souboj: 'Souboj' };
   const varianty = ['den', 'noc', 'souboj'].map((varianta) => {

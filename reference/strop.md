@@ -65,6 +65,7 @@ Bez volby (**Podle dozvuku**) vybere motiv dozvuk místa: jeskyně a kobka → J
 4. **Jas:** projektor svítí celou místnost, výchozích 75 %. Když přebíjí světla Hue nebo bledne čtení deníků, ubírej.
 5. **Převrátit ↔ / ↕:** projektor přes zrcadlo pod 45° dává zrcadlově obrácený obraz.
 6. **Tvar:** **Volný, mění se** (výchozí) udělá z obdélníku nepravidelnou plochu s cárovitým okrajem, která se pomalu přelévá; v bouřce a v souboji rychleji. **Členitost** říká, jak moc: 0 % je skoro ovál, 100 % roztrhané cáry. **Obdélník** drží plochu podle rohů jen s měkkým okrajem. Při kalibraci je tvar vidět jako světlejší plocha v mřížce.
+7. **Okraj z mraků:** strop nekončí do tmy, ale do mračen, jako by byla obloha vidět dírou v mracích. Hrany mraků u otvoru chytají svit měsíce, ven postupně tmavnou a mizí. Bouřka je zahustí, blesk rozsvítí, nad táborem je zespodu chytá záře ohně. **V noci** (výchozí) jen v noci, ve dne strop končí do tmy jako dřív. **Vždy** i ve dne (šedobílé mraky, víc nasvítí místnost), **Nikdy** vypne. Platí pro nebe a tábor; les má okraj z korun, jeskyně a interiér žádný.
 7. **Masky:** **+ Nová maska**, pak klikáním obtáhni místo, kam projektor nemá svítit (svítidlo, skříň, kus stěny), a **Enter** (nebo Uzavřít masku). Esc kreslení zruší. Body hotové masky jdou táhnout, pravý klik bod smaže, **× Maska N** smaže celou. Nejvýš 8 masek. Maska drží na místě na stropě, i když pak posuneš rohy.
 8. **Hotovo** nebo znovu K. Panel kalibrace jde přesunout na druhou stranu, když zakrývá roh.
 

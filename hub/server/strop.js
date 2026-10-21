@@ -29,7 +29,10 @@ export const VYCHOZI = Object.freeze({
   clenitost: 0.5, // jak moc je volný tvar rozervaný (0 = skoro ovál, 1 = cáry)
   masky: [], // místa, kam projektor nesvítí: mnohoúhelníky v souřadnicích okna (0–1)
   ptaci: true, // hejna ptáků a netopýři přeletí sami (⚠ bod 144)
+  mraky: 'noc', // okraj z mraků: v noci, vždy, nikdy (⚠ bod 145)
 });
+
+export const OKRAJE_Z_MRAKU = Object.freeze(['noc', 'vzdy', 'nikdy']);
 
 /** Kdo přeletí přes strop na pokyn z Hubu; auto = podle doby a motivu (⚠ bod 144). */
 export const DRUHY_PTAKU = Object.freeze(['auto', 'hejno', 'klin', 'netopyri']);
@@ -86,6 +89,10 @@ export function overitKalibraci(z, puvodni = VYCHOZI) {
   if ('hvezdy' in z) {
     if (typeof z.hvezdy !== 'boolean') throw chyba('Hvězdy jsou zapnuté, nebo vypnuté.');
     k.hvezdy = z.hvezdy;
+  }
+  if ('mraky' in z) {
+    if (!OKRAJE_Z_MRAKU.includes(z.mraky)) throw chyba('Okraj z mraků je v noci, vždy, nebo nikdy.');
+    k.mraky = z.mraky;
   }
   if ('ptaci' in z) {
     if (typeof z.ptaci !== 'boolean') throw chyba('Ptáci sami jsou zapnutí, nebo vypnutí.');

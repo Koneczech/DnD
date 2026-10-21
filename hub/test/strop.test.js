@@ -184,3 +184,10 @@ test('Hub: přelet ptáků je jednorázový pokyn pro strop, Ptáci sami jde vyp
     await repo.smazat();
   }
 });
+
+test('kalibrace stropu: okraj z mraků v noci, vždy, nebo nikdy', () => {
+  assert.equal(overitKalibraci({}).mraky, 'noc');
+  assert.equal(overitKalibraci({ mraky: 'vzdy' }).mraky, 'vzdy');
+  assert.equal(overitKalibraci({ jas: 0.5 }, overitKalibraci({ mraky: 'nikdy' })).mraky, 'nikdy');
+  assert.throws(() => overitKalibraci({ mraky: 'rano' }), /Okraj z mraků/);
+});

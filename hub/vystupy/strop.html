@@ -101,6 +101,12 @@
       <button type="button" data-tvar="volny">Volný, mění se</button>
       <button type="button" data-tvar="obdelnik">Obdélník</button>
     </div>
+    <div class="nadpis">Okraj z mraků</div>
+    <div class="rada" id="k-mraky">
+      <button type="button" data-mraky="noc">V noci</button>
+      <button type="button" data-mraky="vzdy">Vždy</button>
+      <button type="button" data-mraky="nikdy">Nikdy</button>
+    </div>
     <label class="jen-volny">Členitost <input type="range" id="k-clenitost" min="0" max="1" step="0.01"><output id="o-clenitost"></output></label>
     <label>Okraj <input type="range" id="k-okraj" min="0" max="0.4" step="0.01"><output id="o-okraj"></output></label>
     <label>Jas <input type="range" id="k-jas" min="0.05" max="1" step="0.01"><output id="o-jas"></output></label>
@@ -274,7 +280,7 @@
       uniform vec2 uRes; uniform float uCas; uniform vec2 uPosun; uniform float uTvarCas; uniform float uVitr; uniform float uOhen;
       uniform float uNoc, uMraky, uTemno, uMlha, uSnih, uTma, uRudy, uHp, uHpFaze;
       uniform float uBlesk, uBleskR; uniform vec2 uBleskPos;
-      uniform float uOkraj, uJas, uHvezdy, uKalibrace, uVolny, uClenitost;
+      uniform float uOkraj, uJas, uHvezdy, uKalibrace, uVolny, uClenitost, uOkrajMraky;
       uniform float uNebe, uLes, uTabor, uJeskyne, uInterier;
       uniform sampler2D uPtaci; uniform float uPtaciZap;
 
@@ -426,16 +432,11 @@
           barva += drevo * uInterier;
         }
 
-        // ---------- Intenzita, souboj, málo HP: platí pro všechny motivy ----------
-        barva *= 1.0 - uTma;
-        barva = mix(barva, barva * vec3(1.25, 0.5, 0.45) + vec3(0.05, 0.0, 0.0), uRudy * 0.6);
-        float kraj = smoothstep(0.22, 0.55, r) * uHp * (0.45 + 0.55 * uHpFaze);
-        barva = mix(barva, vec3(0.6, 0.0, 0.0), kraj * 0.85);
-
         // ---------- Tvar: volný se pomalu přelévá, obdélník má jen měkký okraj ----------
-        float maska;
+        // e = vzdálenost od okraje tvaru (kladná uvnitř), v půlkách plochy.
+        vec2 c = (uv - 0.5) * 2.0;
+        float e;
         if (uVolny > 0.5) {
-          vec2 c = (uv - 0.5) * 2.0;
           // Míra mezi elipsou a obdélníkem: tvar se drží plochy, kterou daly rohy.
           float rr = pow(pow(abs(c.x), 3.0) + pow(abs(c.y), 3.0), 1.0 / 3.0);
           float ang = atan(c.y, c.x);
@@ -445,11 +446,44 @@
           float cary = sum(kruh * 4.0 + vec2(-t * 0.09, t * 0.07));
           float trhani = fbm(c * 2.4 + vec2(t * 0.03, t * 0.02));
           float hranice = 1.0 - uClenitost * (0.02 + 0.32 * laloky + 0.08 * cary + 0.14 * trhani);
-          maska = smoothstep(0.0, max(0.02, uOkraj * 2.2), hranice - rr);
+          e = hranice - rr;
         } else {
-          float e = min(min(uv.x, 1.0 - uv.x) * asp, min(uv.y, 1.0 - uv.y));
-          maska = uOkraj > 0.001 ? smoothstep(0.0, uOkraj, e) : 1.0;
+          e = min((1.0 - abs(c.x)) * asp, 1.0 - abs(c.y));
         }
+        float okrajPlochy = min(min(uv.x, 1.0 - uv.x) * asp, min(uv.y, 1.0 - uv.y));
+        float maska = uOkraj > 0.001 || uVolny > 0.5 ? smoothstep(0.0, max(0.02, uOkraj * 2.2), e) : 1.0;
+
+        // ---------- Okraj z mraků: strop nekončí do tmy, ale do mračen, jako díra v mracích ----------
+        float okrajM = uOkrajMraky * (uNebe + uTabor) * (1.0 - uKalibrace);
+        if (okrajM > 0.001) {
+          float pas = 0.2 + uOkraj * 0.6; // jak daleko ven mraky sahají
+          vec2 qo = c * 2.4 + uPosun * 0.6 + vec2(uTvarCas * 0.02, -uTvarCas * 0.015);
+          float n1 = fbm(qo + fbm(qo * 0.7 + 4.0) * 1.2);
+          float n2 = fbm(qo * 2.1 + 9.0);
+          float n3 = fbm(qo * 4.3 - 3.0);
+          // Hustota roste od otvoru ven, šum z ní dělá chuchvalce a cáry, které zasahují do otvoru.
+          float hust = clamp(smoothstep(0.24 + 0.1 * uTemno, -0.06, e) * 1.3 + (n1 - 0.5) * 1.2, 0.0, 1.0);
+          // Hrana mraku u otvoru chytá světlo (měsíc, nebe), dál od otvoru je mrak tmavší.
+          // Chuchvalce: světlejší vrcholky a tmavší záhyby, ať okraj není hladký pás.
+          float nasviceni = smoothstep(-pas, 0.12, e) * (0.3 + 0.7 * n2) * (0.65 + 0.55 * n3);
+          vec3 mrakNocO = vec3(0.03, 0.034, 0.05) + vec3(0.16, 0.17, 0.22) * nasviceni * (1.0 - uTemno * 0.55);
+          vec3 mrakDenO = mix(vec3(0.28, 0.29, 0.32), vec3(0.93, 0.93, 0.95), nasviceni * (1.0 - uTemno * 0.55));
+          vec3 mrakO = mix(mrakDenO, mrakNocO, uNoc);
+          mrakO += svetloBlesku * (0.25 + 0.9 * dosah) * (0.4 + 0.6 * nasviceni);
+          mrakO = mix(mrakO, mrakO * vec3(1.0, 0.75, 0.6) + vec3(0.03, 0.012, 0.0), uTabor * uNoc * (1.0 - nasviceni)); // záře ohně zespodu
+          // Uvnitř tvaru je nebe vidět celé (mraky přes něj), za okrajem jen mraky, které ven nepravidelně mizí do tmy.
+          float uvnitr = smoothstep(-0.02, 0.02, e);
+          barva = mix(barva, mrakO, okrajM * max(hust, 1.0 - uvnitr));
+          float ven = smoothstep(-pas, -pas * 0.25, e + (n1 - 0.5) * 0.25) * smoothstep(0.0, 0.16, okrajPlochy + (n2 - 0.5) * 0.1);
+          maska = mix(maska, max(uvnitr, hust * ven), okrajM);
+        }
+
+        // ---------- Intenzita, souboj, málo HP: platí pro všechny motivy ----------
+        barva *= 1.0 - uTma;
+        barva = mix(barva, barva * vec3(1.25, 0.5, 0.45) + vec3(0.05, 0.0, 0.0), uRudy * 0.6);
+        float kraj = smoothstep(0.22, 0.55, r) * uHp * (0.45 + 0.55 * uHpFaze);
+        barva = mix(barva, vec3(0.6, 0.0, 0.0), kraj * 0.85);
+
         maska = maska * maska * (3.0 - 2.0 * maska);
 
         // ---------- Kalibrace: mřížka 8 × 8, rámeček a kříž; tvar je vidět jako světlejší plocha ----------
@@ -490,7 +524,7 @@
       gl.enableVertexAttribArray(a);
       gl.vertexAttribPointer(a, 2, gl.FLOAT, false, 0, 0);
       for (const jmeno of ['uRes', 'uCas', 'uPosun', 'uTvarCas', 'uVitr', 'uOhen', 'uNoc', 'uMraky', 'uTemno', 'uMlha', 'uSnih', 'uTma', 'uRudy',
-        'uHp', 'uHpFaze', 'uBlesk', 'uBleskR', 'uBleskPos', 'uOkraj', 'uJas', 'uHvezdy', 'uKalibrace', 'uVolny', 'uClenitost',
+        'uHp', 'uHpFaze', 'uBlesk', 'uBleskR', 'uBleskPos', 'uOkraj', 'uJas', 'uHvezdy', 'uKalibrace', 'uVolny', 'uClenitost', 'uOkrajMraky',
         'uNebe', 'uLes', 'uTabor', 'uJeskyne', 'uInterier', 'uPtaci', 'uPtaciZap']) {
         U[jmeno] = gl.getUniformLocation(program, jmeno);
       }
@@ -516,7 +550,7 @@
     if (!glOk) zapsat('WebGL nejde: obloha je jen barevný přechod.');
 
     /* ---------- Kalibrace: čtyři rohy → perspektivní transformace (jednoduchý videomapping) ---------- */
-    const VYCHOZI_KALIBRACE = { rohy: [[0, 0], [1, 0], [1, 1], [0, 1]], okraj: 0.12, jas: 0.75, hvezdy: true, tvar: 'volny', clenitost: 0.5, masky: [], ptaci: true };
+    const VYCHOZI_KALIBRACE = { rohy: [[0, 0], [1, 0], [1, 1], [0, 1]], okraj: 0.12, jas: 0.75, hvezdy: true, tvar: 'volny', clenitost: 0.5, masky: [], ptaci: true, mraky: 'noc' };
     let kalibrace = structuredClone(VYCHOZI_KALIBRACE);
     let tazeno = null; // něco se právě táhne: echo z Hubu to nepřepíše
     const plocha = $('#plocha');
@@ -688,6 +722,7 @@
     function ukazatKalibraci() {
       document.body.classList.toggle('volny', kalibrace.tvar === 'volny');
       document.querySelectorAll('#k-tvar [data-tvar]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tvar === kalibrace.tvar)));
+      document.querySelectorAll('#k-mraky [data-mraky]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mraky === (kalibrace.mraky ?? 'noc'))));
       $('#k-clenitost').value = kalibrace.clenitost;
       $('#o-clenitost').textContent = Math.round(kalibrace.clenitost * 100) + ' %';
       $('#k-okraj').value = kalibrace.okraj;
@@ -754,6 +789,10 @@
     $('#k-tvar').addEventListener('click', (e) => {
       const b = e.target.closest('[data-tvar]');
       if (b) ulozit({ tvar: b.dataset.tvar });
+    });
+    $('#k-mraky').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-mraky]');
+      if (b) ulozit({ mraky: b.dataset.mraky });
     });
     $('#k-clenitost').addEventListener('input', (e) => ulozit({ clenitost: Number(e.target.value) }));
     $('#k-okraj').addEventListener('input', (e) => ulozit({ okraj: Number(e.target.value) }));
@@ -1187,6 +1226,7 @@
         gl.uniform1f(U.uKalibrace, kal ? 1 : 0);
         gl.uniform1f(U.uVolny, kalibrace.tvar === 'volny' ? 1 : 0);
         gl.uniform1f(U.uClenitost, kalibrace.clenitost);
+        gl.uniform1f(U.uOkrajMraky, kalibrace.mraky === 'vzdy' ? 1 : kalibrace.mraky === 'nikdy' ? 0 : ted.noc);
         if (ptaciZmena) gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, platnoPtaku);
         gl.uniform1f(U.uPtaciZap, hejna.length ? 1 : 0);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);

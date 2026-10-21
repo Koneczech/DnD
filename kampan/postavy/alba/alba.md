@@ -112,7 +112,7 @@ Pak odešel svou vlastní cestou.
 
 ### 7. Odchod
 
-Trvalo jí to. Vyrostla v jednom lese, jediný člověk, kterého znala, zmizel, a teď měla poprvé v životě projít mezi cizí lidi. Odkládala to a vymýšlela si důvody: ještě zásoby, ještě počasí, ještě tohle dodělat. %%zná%%
+Trvalo jí to. Vyrostla v jednom lese, jediný člověk, kterého znala, zmizel, a teď měla poprvé v životě projít mezi cizí lidi. Odkládala to a vymýšlela si důvody: ještě zásoby, ještě počasí, ještě tohle dodělat.
 
 Nakonec ji zvedly dvě věci. Ta věta o prvním sněhu, která jí nedávala spát. A **[[patyk|Patyk]]**, kterému při odchodu slíbila, že se vrátí.
 

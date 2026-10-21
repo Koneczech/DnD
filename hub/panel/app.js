@@ -335,7 +335,7 @@ function vykresliKontrolky() {
   $('#svetlo-git').dataset.stav = !g || g.dostupny === null ? 'ceka' : !g.dostupny ? 'chyba' : g.pozadu > 0 || g.chyba ? 'varovani' : 'ok';
   $('#svetlo-git').parentElement.title = !g?.dostupny
     ? g?.chyba || 'Zjišťuji'
-    : `Větev ${g.vetev}, neuložených souborů ${g.zmeneno}${g.pozadu ? `, na GitHubu je ${g.pozadu} novějších změn` : ''}${g.chyba ? `. ${g.chyba}` : ''}`;
+    : `Větev ${g.vetev}, neuložených souborů kampaně ${g.zmenenoKampan ?? g.zmeneno}${g.pozadu ? `, na GitHubu je ${g.pozadu} novějších změn` : ''}${g.chyba ? `. ${g.chyba}` : ''}`;
   const sv = p?.svetla;
   const zar = sv?.zarizeni ?? [];
   $('#svetlo-svetla').dataset.stav = !zar.length ? 'ceka' : zar.some((z) => z.ok === false) ? (zar.every((z) => z.ok === false) ? 'chyba' : 'varovani') : zar.every((z) => z.ok) ? 'ok' : 'ceka';
@@ -1418,7 +1418,7 @@ for (const [id, akce] of [['#odpocet-spustit', 'spustit'], ['#odpocet-pauza', 'p
 function popisTlacitkaAktualizovat(g) {
   if (!g?.dostupny) return 'Aktualizovat';
   if (g.pozadu > 0) return `Aktualizovat (${g.pozadu} nových)`;
-  if (g.zmeneno > 0) return 'Uložit na GitHub';
+  if ((g.zmenenoKampan ?? g.zmeneno) > 0) return 'Uložit na GitHub';
   return 'Aktualizovat';
 }
 
@@ -1435,7 +1435,10 @@ function vykresliGit() {
     return;
   }
   const kdy = g.kontrolovano ? ` Naposledy zkontrolováno v ${new Date(g.kontrolovano).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}.` : '';
-  popis.textContent = `${g.zmeneno ? `Neuložené úpravy: ${g.zmeneno} ${g.zmeneno === 1 ? 'soubor' : g.zmeneno < 5 ? 'soubory' : 'souborů'}. ` : 'Všechno je uložené. '}${g.pozadu > 0 ? `Na GitHubu je nová verze (${g.pozadu}). ` : ''}${kdy.trim()} Aktualizovat uloží tvoje úpravy kampaně, stáhne novou verzi a odešle vše na GitHub; při nové verzi Hubu ho restartuje.`;
+  const kampan = g.zmenenoKampan ?? g.zmeneno;
+  const mimo = g.zmeneno - kampan;
+  const soubory = (n) => `${n} ${n === 1 ? 'soubor' : n < 5 ? 'soubory' : 'souborů'}`;
+  popis.textContent = `${kampan ? `Neuložené úpravy kampaně: ${soubory(kampan)}. ` : 'Kampaň je uložená. '}${mimo > 0 ? `Mimo kampaň je změněno ${soubory(mimo)} (třeba nastavení Obsidianu), Aktualizovat je neukládá. ` : ''}${g.pozadu > 0 ? `Na GitHubu je nová verze (${g.pozadu}). ` : ''}${kdy.trim()} Aktualizovat uloží tvoje úpravy kampaně, stáhne novou verzi a odešle vše na GitHub; při nové verzi Hubu ho restartuje.`;
 }
 
 /** Jedno tlačítko místo Uložit, Stáhnout a Sloučit. */

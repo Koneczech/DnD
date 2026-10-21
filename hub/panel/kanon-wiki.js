@@ -114,7 +114,7 @@ export function vytvoritWiki(ctx, karta) {
       el('div', { className: 'wiki-hlava' },
         el('h2', { className: 'wiki-nadpis', textContent: dm() ? 'Kánon kampaně' : 'Co ví družina' }),
         el('p', { className: 'uvod', textContent: s.jenCteni && dm()
-          ? `${vse.length} karet a ${ud.length} událostí. Čtecí verze: karty se upravují v Hubu doma nebo v Obsidianu.`
+          ? `${vse.length} karet a ${ud.length} událostí. Čtecí verze: kartu upravíš tlačítkem Upravit na GitHubu (web se obnoví za pár minut), ostatní úpravy v Hubu doma.`
           : dm()
           ? `${vse.length} karet a ${ud.length} událostí. Karty upravíš tady i v Obsidianu; co z nich zná družina, odkrýváš po odrážkách v oddílu Co ví družina.`
           : `${vse.length} karet, které družina zná, a jen to, co o nich ví. Slouží k rekapitulaci.` })),
@@ -399,6 +399,10 @@ export function vytvoritWiki(ctx, karta) {
     const akce = el('div', { className: 'akce-clanku' },
       uprav() ? el('a', { className: 'tlacitko hlavni', href: `#kanon/${encodeURIComponent(e.id)}/upravit`, textContent: 'Upravit' }) : null,
       uprav() && k?.obsidian ? el('a', { className: 'tlacitko', href: k.obsidian, textContent: 'Otevřít v Obsidianu', title: k.soubor }) : null,
+      // Čtecí verze: soubor karty v editoru GitHubu (uložení = commit do main, web se pak sestaví znovu).
+      s.jenCteni && dm() && s.upravitNaGitHubu && e.soubor
+        ? el('a', { className: 'tlacitko hlavni', href: s.upravitNaGitHubu(e.soubor), target: '_blank', rel: 'noopener', textContent: 'Upravit na GitHubu', title: `${e.soubor}. Po uložení (Commit changes) se web obnoví za 2–3 minuty, doma pak Aktualizovat.` })
+        : null,
       karta.tlacitkoPoznamky(e),
       el('a', { className: 'tlacitko', href: `#kanon/mapa/${encodeURIComponent(e.id)}`, textContent: 'Na mapě' }),
       karta.tlacitkoObs(e));

@@ -18,6 +18,14 @@ export async function git(koren, argumenty, { timeout = 30000 } = {}) {
   return stdout.trim();
 }
 
+/** Řádek `git status --porcelain` patří složce kampan/ (i cesta v uvozovkách, i přejmenování do ní). */
+export function jeVKampani(radek) {
+  // Stavový kód zleva odřízneme regulárním výrazem: git() ořezává výstup, takže první řádek
+  // „ M kampan/…“ přijde bez úvodní mezery a pevné slice(3) by usekl začátek cesty.
+  const cesty = radek.replace(/^\s*\S{1,2}\s+/, '').split(' -> ');
+  return cesty.some((c) => /^"?kampan\//.test(c));
+}
+
 export class Git {
   /**
    * @param {string} koren kořen repa
@@ -27,7 +35,7 @@ export class Git {
   constructor(koren, { jenStahovat = false } = {}) {
     this.koren = koren;
     this.jenStahovat = jenStahovat;
-    this.stav = { dostupny: null, vetev: null, zmeneno: 0, pozadu: 0, napred: 0, upstream: null, chyba: null, kontrolovano: null };
+    this.stav = { dostupny: null, vetev: null, zmeneno: 0, zmenenoKampan: 0, pozadu: 0, napred: 0, upstream: null, chyba: null, kontrolovano: null };
     this.fronta = Promise.resolve();
   }
 
@@ -93,11 +101,15 @@ export class Git {
       } catch {
         upstream = null;
       }
+      const radky = porcelain ? porcelain.split('\n') : [];
       Object.assign(this.stav, {
         dostupny: true,
         vetev,
         upstream,
-        zmeneno: porcelain ? porcelain.split('\n').length : 0,
+        zmeneno: radky.length,
+        // Jen to, co Aktualizovat opravdu uloží (kampan/). Jiné soubory, třeba nastavení Obsidianu
+        // v .obsidian/, by jinak držely tlačítko na „Uložit na GitHub“, které nic neudělá.
+        zmenenoKampan: radky.filter(jeVKampani).length,
         chyba: null,
       });
     } catch (e) {

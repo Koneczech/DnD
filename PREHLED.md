@@ -21,7 +21,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | Družina se něco dozví | Karta v Kánonu → **Co ví družina** → oko 👁 u odrážky, nebo napiš novou a Enter. Hotový odstavec z textu karty odkryješ okem 👁 vedle něj | Kánon |
 | Něco nejde | **Systém → Záznam událostí → Stáhnout** a pošli Claudovi | Systém |
 | Mimo domov | Codespace na GitHubu → panel se štítkem **Zkouška**, nic se neukládá | `reference/zkouska-v-cloudu.md` |
-| Mimo domov, jen čtení | Kánon v prohlížeči, i z práce; pohled DM po zadání hesla | [koneczech.github.io/DnD](https://koneczech.github.io/DnD/) |
+| Mimo domov | Kánon v prohlížeči, i z práce; pohled DM po zadání hesla, text karet přes Upravit na GitHubu | [koneczech.github.io/DnD](https://koneczech.github.io/DnD/) |
 
 ## Co Hub umí
 
@@ -52,6 +52,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Zvuková sada: Freesound, Openverse, balíčky Kenney, hudba, Vyměnit a ↻ | ◐ |
 | | Srovnání hlasitosti a přeskočení ticha na začátku | ◐ |
 | **Údržba** | Aktualizovat jedním tlačítkem, restart sám, Kontrola dat, Záznam událostí | ◐ |
+| | Tlačítko ukáže „Uložit na GitHub“ jen u změn v `kampan/`; jiné soubory (nastavení Obsidianu) zmíní v popisu | ◐ |
 | | Zkouška v cloudu (GitHub Codespaces): panel v prohlížeči mimo domov, bez světel, OBS a zvuku, na GitHub se nic neukládá | ◐ |
 | **Kánon** (Blok 3) | Příprava převodu: audit zdrojů, mapa převodu, šablony, report `npm run kanon` | ◐ |
 | | Vztahy s popisem a postojem: formát, šablony, Kontrola dat | ◐ |
@@ -72,6 +73,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Mapa: Rozložit podle (Síť, Čas, Čas a místa, Kdy a kde, Kdo a kdy, Blízkost, Spojenci a nepřátelé, Co družina ví, Zapomenutá vlákna, Mosty) | ◐ |
 | | Přiřazení existujících míst (kam co patří), nová místa High Forest, Triboar, Cragy, Long Road | ✓ |
 | | Čtecí verze kánonu na GitHub Pages: wiki, mapa, Pohled družiny, hledání, bez úprav; obnoví se po každém pushi | ◐ |
+| | Čtecí verze: tlačítko Upravit na GitHubu u karty (pohled DM) otevře její soubor v editoru GitHubu; stránka si novou verzi načte sama | ◐ |
 | | Heslo na pohled DM ve čtecí verzi (pohled družiny otevřený, Zamknout DM) | ◐ |
 | | Hráčská stránka na GitHub Pages (pohled družiny) | ✗ |
 | **Verze 2** | Příprava Lazy DM, generátor obchodů, dílna portrétů, export do IIO | ✗ |

@@ -103,5 +103,4 @@ Rozpočet čtyř postav na 3. úrovni: **600 / 900 / 1600**
 Doporučeno prostřední — pět těl a mezi nimi sedmnáctiletý kluk, který se pere nejhůř ze všech a hráči to na něm uvidí.
 
 ## Když prohraje
-
 Nepadne mrtvá. Posadí se a přestane rozumět — pro ni je útěk návrat do světa, který ji sem dohnal.

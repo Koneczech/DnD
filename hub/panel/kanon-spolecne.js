@@ -1,6 +1,7 @@
 // Společné části modulu Kánon: typy, barvy, tvorba prvků a části karty (vztahy, přezdívky,
 // přepínače, ilustrace), které používá wiki i karta na mapě.
 import { hledat } from '/sdilene/sit.js';
+import { POLE_TYPU, OSUDY, ODKAZOVA_POLE, popisekPole, nadpisZpetnehoPole } from '/sdilene/typy-karet.js';
 
 export const $ = (sel, koren = document) => koren.querySelector(sel);
 
@@ -198,9 +199,55 @@ export function castiKarty(ctx) {
       prepinac('Družina zná', e.verejne, 'verejne: true: entita se ukáže v pohledu družiny a na hráčské stránce (jen odkryté odrážky Co ví družina)', (v) => upravit(`/api/kanon/entita/${encodeURIComponent(e.id)}`, 'PUT', { verejne: v }, v ? 'Družina entitu zná. Co o ní ví, odkryješ v oddílu Co ví družina.' : 'Entita je jen pro DM.')));
   }
 
+  /**
+   * Údaje z hlavičky v pořadí podle typu karty (typové stránky, rozhodnutí 74). Odkazová pole
+   * (kde, frakce, sidlo, u_koho) jsou proklikávací. Stav rozhodnutí je štítek u názvu.
+   */
   function udaje(e) {
-    const radky = Object.entries(e.udaje ?? {}).filter(([kl]) => kl !== 'stav').map(([kl, v]) => el('div', {}, el('dt', { textContent: UDAJE[kl] ?? kl }), el('dd', { textContent: kl === 'oblast' && s.podleId.has(v) ? s.podleId.get(v).nazev : v })));
+    const hodnoty = { ...(e.udaje ?? {}) };
+    const odkazy = e.odkazyPole ?? {};
+    const poradi = [...(POLE_TYPU[e.typ] ?? []), ...Object.keys(hodnoty), ...Object.keys(odkazy)];
+    const radky = [];
+    for (const kl of new Set(poradi)) {
+      if (kl === 'stav') continue;
+      let dd = null;
+      if (kl in ODKAZOVA_POLE) {
+        if (!odkazy[kl]) continue;
+        dd = el('dd', {}, s.podleId.has(odkazy[kl]) ? odkazNaEntitu(odkazy[kl]) : el('span', { className: 'odkaz-chybi', textContent: `[[${odkazy[kl]}]]`, title: 'Cíl neexistuje (Kontrola dat)' }));
+      } else {
+        const v = hodnoty[kl];
+        if (v === undefined || v === '') continue;
+        const text = kl === 'oblast' && s.podleId.has(v) ? s.podleId.get(v).nazev : kl === 'osud' ? OSUDY[v] ?? v : v;
+        dd = el('dd', { textContent: text, className: kl === 'osud' ? `osud ${v}` : null });
+      }
+      radky.push(el('div', {}, el('dt', { textContent: popisekPole(kl, e.typ) ?? UDAJE[kl] ?? kl }), dd));
+    }
     return radky.length ? el('dl', { className: 'udaje-karty' }, radky) : null;
+  }
+
+  /**
+   * Co Hub dopočítá z polí jiných karet: u místa Kdo tu je, Sídlí tu a Předměty tady, u frakce
+   * Členové, u postavy a NPC Má u sebe (rozhodnutí 74). U místa i z míst uvnitř („v Na Zvonici“).
+   */
+  function dopocitane(k) {
+    const skupiny = new Map();
+    for (const o of k.odkazujePolem ?? []) {
+      const nadpis = nadpisZpetnehoPole(o.pole, k.typ);
+      if (!skupiny.has(nadpis)) skupiny.set(nadpis, []);
+      skupiny.get(nadpis).push(o);
+    }
+    return [...skupiny].flatMap(([nadpis, polozky]) => [
+      el('h3', { textContent: `${nadpis} (${polozky.length})` }),
+      el('ul', { className: 'vztahy-karty dopocitane' }, polozky.map((o) => {
+        const osud = s.podleId.get(o.id)?.udaje?.osud;
+        return el('li', { className: 'vztah-radek' },
+          el('span', { className: 'tecka-typu', style: `--c: ${barvaTypu(o.typ)}` }),
+          el('span', { className: 'vztah-text' },
+            odkazNaEntitu(o.id),
+            osud ? el('span', { className: `osud ${osud}`, textContent: ` (${OSUDY[osud] ?? osud})` }) : null,
+            o.pres && s.podleId.has(o.pres) ? el('span', { className: 'vztah-popis', textContent: ` — v ${s.podleId.get(o.pres).nazev}` }) : null));
+      })),
+    ]);
   }
 
   function formularVztahu(e, cil, vztah, nova) {
@@ -260,7 +307,7 @@ export function castiKarty(ctx) {
     const cile = [...new Set([...k.vztahy.map((v) => v.s), ...k.vazby])];
     const radky = cile.map((cil) => {
       const v = k.vztahy.find((x) => x.s === cil) ?? null;
-      if (s.uprava?.cil === cil && uprava) return el('li', { className: 'vztah-radek upravuje' }, formularVztahu(k, cil, v, s.uprava.nova));
+      if (s.uprava?.cil === cil && uprava) return el('li', { className: 'vztah-radek upravuje', 'data-cil': cil }, formularVztahu(k, cil, v, s.uprava.nova));
       const existuje = s.podleId.has(cil);
       const tecka = el('span', { className: 'tecka-postoje', title: v && Number.isInteger(v.postoj) ? `Postoj ${postojText(v.postoj)}` : v ? 'Bez postoje' : 'Vazba bez popisu' });
       const barva = v ? barvaPostoje(v.postoj) : null;
@@ -271,7 +318,7 @@ export function castiKarty(ctx) {
           el('button', { type: 'button', className: 'mala', textContent: v ? 'Upravit' : '+ popis', title: v ? 'Upravit popis, postoj a jestli ho zná družina' : 'Doplnit popis vztahu', onclick: () => { s.uprava = { cil }; ctx.prekreslit(); } }),
           el('button', { type: 'button', className: 'mala tiche', textContent: '×', title: 'Odebrat vazbu i vztah', 'aria-label': `Odebrat vazbu na ${s.podleId.get(cil)?.nazev ?? cil}`, onclick: () => odebratVazbu(k, cil) }))
         : null;
-      return el('li', { className: 'vztah-radek' },
+      return el('li', { className: 'vztah-radek', 'data-cil': cil },
         tecka,
         el('span', { className: 'vztah-text' },
           existuje ? odkazNaEntitu(cil) : el('span', { className: 'odkaz-chybi', textContent: `[[${cil}]]`, title: 'Cíl neexistuje (Kontrola dat)' }),
@@ -279,8 +326,36 @@ export function castiKarty(ctx) {
           v && dm && v.verejne ? el('span', { className: 'stitek-maly', textContent: 'družina zná' }) : null),
         akce);
     });
-    if (s.uprava && !cile.includes(s.uprava.cil) && uprava) radky.push(el('li', { className: 'vztah-radek upravuje' }, formularVztahu(k, s.uprava.cil, null, true)));
+    if (s.uprava && !cile.includes(s.uprava.cil) && uprava) radky.push(el('li', { className: 'vztah-radek upravuje', 'data-cil': s.uprava.cil }, formularVztahu(k, s.uprava.cil, null, true)));
     return radky;
+  }
+
+  /** Skupiny vztahů v bočním panelu podle typu cíle (typové stránky, rozhodnutí 74). */
+  const SKUPINY_VZTAHU = [
+    ['Lidé', ['postava', 'npc', 'padouch', 'bytost']],
+    ['Frakce', ['frakce']],
+    ['Místa', ['misto']],
+    ['Předměty', ['predmet']],
+    ['Záznamy', ['rozhodnuti', 'kanon', 'sezeni']],
+  ];
+
+  /**
+   * Vztahy a vazby seskupené podle typu cíle. Jedna skupina se vypíše bez mezinadpisu;
+   * cíl, který neexistuje, patří do skupiny Ostatní.
+   */
+  function vztahyPoSkupinach(k) {
+    const radky = seznamVztahu(k);
+    if (!radky.length) return [];
+    const skupiny = new Map();
+    for (const li of radky) {
+      const typ = s.podleId.get(li.dataset.cil)?.typ;
+      const nazev = SKUPINY_VZTAHU.find(([, typy]) => typy.includes(typ))?.[0] ?? 'Ostatní';
+      if (!skupiny.has(nazev)) skupiny.set(nazev, []);
+      skupiny.get(nazev).push(li);
+    }
+    const poradi = [...SKUPINY_VZTAHU.map(([n]) => n), 'Ostatní'].filter((n) => skupiny.has(n));
+    if (poradi.length === 1) return [el('ul', { className: 'vztahy-karty' }, skupiny.get(poradi[0]))];
+    return poradi.flatMap((n) => [el('h4', { className: 'skupina-vztahu', textContent: n }), el('ul', { className: 'vztahy-karty' }, skupiny.get(n))]);
   }
 
   /** Vyhledávací pole s výsledky (vazba, navázání události, odkaz v editoru). */
@@ -445,5 +520,5 @@ export function castiKarty(ctx) {
 
   const tlacitkoPoznamky = (e) => (s.pohled === 'dm' && !s.jenCteni ? el('button', { type: 'button', textContent: 'Poznámka', title: `Poznámka F2 s odkazem [[${e.id}]]`, onclick: () => otevritPoznamku(`[[${e.id}]] `) }) : null);
 
-  return { hlasitZapis, upravit, odkazNaEntitu, prepinac, prepinace, udaje, seznamVztahu, pridatVazbuUI, prezdivky, obrazkyKarty, zpetneOdkazy, tlacitkoObs, tlacitkoPoznamky, vyber, predci, podmista, cestaMista, sekceMista };
+  return { hlasitZapis, upravit, odkazNaEntitu, prepinac, prepinace, udaje, dopocitane, seznamVztahu, vztahyPoSkupinach, pridatVazbuUI, prezdivky, obrazkyKarty, zpetneOdkazy, tlacitkoObs, tlacitkoPoznamky, vyber, predci, podmista, cestaMista, sekceMista };
 }

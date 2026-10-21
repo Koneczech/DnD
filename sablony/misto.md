@@ -4,6 +4,7 @@ id: # slug: na-zvonici
 typ: misto
 nazev: "{{title}}"
 verejne: false
+druh: # město, vesnice, hostinec, divočina, podzemí
 # Anglický popis vzhledu místa pro prompty dílny (doplní DM).
 popis_obrazu: ""
 aliases: []
@@ -18,10 +19,12 @@ zdroj:
 
 Jak místo vypadá a k čemu slouží.
 
-## Co se tu stalo
-
 ## Co ví družina
 
 %% Odrážky, které družina zná. Každá se odkrývá zvlášť: v Hubu okem u odrážky, v Obsidianu značkou zná ve dvojitých procentech na konci řádku. %%
+
+## Co tu najdou
+
+Tři zajímavé věci na místě. Kdo tu je, co se tu stalo a místa uvnitř dopočítá Hub.
 
 ## DM

@@ -42,6 +42,55 @@ export function radek(text, existuje = () => true) {
   return t.replace(/\u0000(\d+)\u0000/g, (_, i) => `<code>${escapovat(kody[i])}</code>`);
 }
 
+const ODKAZ_DM = '\u0003';
+const CIL_DM = '\u0004';
+
+/**
+ * DM oddíly na konec textu (typové stránky, rozhodnutí 74). Oddíl začíná nadpisem „DM…“
+ * libovolné úrovně a končí nadpisem stejné nebo vyšší úrovně. Na konci dostane úroveň ##.
+ * Na jeho původním místě zůstane řádek s odkazem, když za ním v textu ještě něco pro stůl je.
+ * @returns {{md: string, oddily: {n: number, nadpis: string, odkaz: boolean}[]}}
+ */
+export function dmOddilyDolu(md) {
+  const radky = String(md ?? '').replace(/\r\n?/g, '\n').split('\n');
+  const nadpisy = [];
+  let vKodu = false;
+  radky.forEach((r, i) => {
+    if (/^\s*(```|~~~)/.test(r)) vKodu = !vKodu;
+    const m = !vKodu && /^(#{1,6})\s+(.*?)\s*#*\s*$/.exec(r);
+    if (m) nadpisy.push({ i, uroven: m[1].length, text: m[2] });
+  });
+  const oddily = [];
+  for (let k = 0; k < nadpisy.length; k++) {
+    const n = nadpisy[k];
+    if (!jeNadpisDm(n.text) || oddily.some((o) => n.i < o.do)) continue;
+    const konec = nadpisy.slice(k + 1).find((x) => x.uroven <= n.uroven);
+    oddily.push({ od: n.i, do: konec ? konec.i : radky.length, nadpis: n.text });
+  }
+  if (!oddily.length) return { md: radky.join('\n'), oddily: [] };
+  const vDm = (i) => oddily.some((o) => i >= o.od && i < o.do);
+  const vysledek = [];
+  const konec = [];
+  const info = [];
+  oddily.forEach((o, n) => {
+    // Odkaz má smysl, jen když pod oddílem ještě něco pro stůl následuje.
+    let dalsi = false;
+    for (let i = o.do; i < radky.length && !dalsi; i++) if (!vDm(i) && radky[i].trim()) dalsi = true;
+    info.push({ n, nadpis: o.nadpis, odkaz: dalsi });
+    konec.push('', `${CIL_DM}${n}`, `## ${o.nadpis}`, ...radky.slice(o.od + 1, o.do));
+  });
+  for (let i = 0; i < radky.length; i++) {
+    const o = oddily.findIndex((x) => x.od === i);
+    if (o !== -1) {
+      if (info[o].odkaz) vysledek.push('', `${ODKAZ_DM}${o}`, '');
+      i = oddily[o].do - 1;
+      continue;
+    }
+    vysledek.push(radky[i]);
+  }
+  return { md: [...vysledek, ...konec].join('\n'), oddily: info };
+}
+
 const bunky = (r) => r.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((b) => b.trim());
 
 /**
@@ -51,9 +100,17 @@ const bunky = (r) => r.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').m
  *   vynechatNadpis: první nadpis # se stejným textem se vynechá (karta už název ukazuje)
  *   oznacitDm: oddíly s nadpisem „DM…“ se zabalí do <section class="oddil-dm">
  */
-export function naHtml(md, { existuje, vynechatNadpis, oznacitDm = false } = {}) {
+export function naHtml(md, { existuje, vynechatNadpis, oznacitDm = false, dmDolu = false } = {}) {
   // Komentáře Obsidianu %%…%% (i značka odkryté odrážky %%zná%%) se v náhledu nezobrazují.
-  const radky = String(md ?? '').replace(/\r\n?/g, '\n').replace(/[ \t]*%%[\s\S]*?%%/g, '').split('\n');
+  let cisty = String(md ?? '').replace(/\r\n?/g, '\n').replace(/[ \t]*%%[\s\S]*?%%/g, '');
+  const nadpisyDm = new Map();
+  if (dmDolu) {
+    const d = dmOddilyDolu(cisty);
+    cisty = d.md;
+    for (const o of d.oddily) nadpisyDm.set(o.n, o.nadpis);
+  }
+  const radky = cisty.split('\n');
+  let cilDm = null;
   const vystup = [];
   let odstavec = [];
   let seznam = null; // { typ: 'ul'|'ol', polozky: [] }
@@ -100,6 +157,13 @@ export function naHtml(md, { existuje, vynechatNadpis, oznacitDm = false } = {})
       continue;
     }
     ukoncitCitaci();
+    const znacka = /^([\u0003\u0004])(\d+)$/.exec(r);
+    if (znacka) {
+      ukoncitVse();
+      if (znacka[1] === CIL_DM) cilDm = Number(znacka[2]);
+      else vystup.push(`<p class="odkaz-dm"><a href="#oddil-dm-${znacka[2]}" class="odkaz-na-dm" data-dm="${znacka[2]}">↓ ${radek(nadpisyDm.get(Number(znacka[2])) ?? 'DM', existuje)}</a></p>`);
+      continue;
+    }
     if (!r.trim()) {
       ukoncitOdstavec();
       ukoncitSeznam();
@@ -121,7 +185,8 @@ export function naHtml(md, { existuje, vynechatNadpis, oznacitDm = false } = {})
           dmUroven = 0;
         }
         if (!dmUroven && jeNadpisDm(text)) {
-          vystup.push('<section class="oddil-dm"><p class="oddil-dm-stitek">Jen pro DM</p>');
+          vystup.push(`<section class="oddil-dm"${cilDm !== null ? ` id="oddil-dm-${cilDm}"` : ''}><p class="oddil-dm-stitek">Jen pro DM</p>`);
+          cilDm = null;
           dmUroven = uroven;
         }
       }

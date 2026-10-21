@@ -18,15 +18,15 @@ zdroj: # odkaz na původní kartu v Notionu
 
 > Druh, povolání a úroveň, věk, BV. Jedna věta o tom, kdo to je.
 
+## Co ví družina
+
+%% Odrážky, které družina zná. Každá se odkrývá zvlášť: v Hubu okem u odrážky, v Obsidianu značkou zná ve dvojitých procentech na konci řádku. %%
+
 ## Příběh
 
 Kapitoly životopisu, jak vznikly s hráčem. Odkazy na lidi a místa jako [[id|Jméno]].
 
 ## Výchozí stav (před sezením 1)
-
-## Co ví družina
-
-%% Odrážky, které družina zná. Každá se odkrývá zvlášť: v Hubu okem u odrážky, v Obsidianu značkou zná ve dvojitých procentech na konci řádku. %%
 
 ## DM — co postava neví
 

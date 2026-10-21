@@ -4,15 +4,9 @@
 import { hledat } from '/sdilene/sit.js';
 import { naHtml } from '/sdilene/markdown.js';
 import { TYPY, STAVY, barvaTypu, el, nahradit, obrazekEntity } from '/panel/kanon-spolecne.js';
+import { POLE_TYPU, OSUDY, ODKAZOVA_POLE, NAPOVEDA, popisekPole, chybejiciOddily, vlozitOddil } from '/sdilene/typy-karet.js';
 
 const PRODLEVA_MS = 1500;
-
-/** Pole hlavičky podle typu karty (jen ta, která šablony a převod opravdu používají). */
-const POLE_TYPU = {
-  postava: [['hrac', 'Hráč'], ['druh', 'Druh'], ['povolani', 'Povolání']],
-  rozhodnuti: [['stav', 'Stav'], ['oblast', 'Oblast'], ['zaznamenano', 'Zaznamenáno']],
-  kanon: [['sezeni', 'Sezení'], ['kdo', 'Kdo'], ['doresit', 'Dořešit']],
-};
 
 /**
  * @param {{s, api, toast, kam: HTMLElement, poZavreni: () => void}} ctx
@@ -180,9 +174,22 @@ export function vytvoritEditor(ctx) {
     const ikona = el('input', { type: 'text', value: z.pole.ikona ?? '', maxLength: 8, className: 'pole-ikona', placeholder: '–', title: 'Jeden emoji znak, ukáže se místo obrázku' });
     ikona.addEventListener('input', () => zmena('ikona', ikona.value));
     pole.push(el('label', { className: 'pole-nazev' }, 'Název', nazev), el('label', { className: 'pole-ikony' }, 'Ikona', ikona));
-    for (const [klic, popisek] of POLE_TYPU[typ] ?? []) {
+    for (const klic of POLE_TYPU[typ] ?? []) {
+      const popisek = popisekPole(klic, typ);
       let vstup;
-      if (klic === 'stav') {
+      if (klic in ODKAZOVA_POLE) {
+        // Kde ho najít, Patří k, Sídlo, U koho je: výběr z karet povoleného typu (rozhodnutí 74).
+        const typy = ODKAZOVA_POLE[klic].cil;
+        const karty = (s.data?.entity ?? []).filter((e) => typy.includes(e.typ) && e.id !== z.id).sort((a, b) => a.nazev.localeCompare(b.nazev, 'cs'));
+        vstup = el('select', {}, new Option('—', ''), ...karty.map((e) => new Option(typy.length > 1 ? `${e.nazev} (${TYPY[e.typ]?.j ?? e.typ})` : e.nazev, e.id)));
+        vstup.value = z.pole[klic] ?? '';
+        vstup.addEventListener('change', () => zmena(klic, vstup.value));
+      } else if (klic === 'osud') {
+        vstup = el('select', {}, ...Object.entries(OSUDY).map(([h, t]) => new Option(t, h)));
+        vstup.value = z.pole.osud || 'zije';
+        // Živý je výchozí: v hlavičce se nepíše (prázdná hodnota klíč odebere).
+        vstup.addEventListener('change', () => zmena('osud', vstup.value === 'zije' ? '' : vstup.value));
+      } else if (klic === 'stav') {
         vstup = el('select', {}, ...Object.entries(STAVY).map(([h, t]) => new Option(t, h)));
         vstup.value = z.pole.stav || 'otevrene';
         vstup.addEventListener('change', () => zmena('stav', vstup.value));
@@ -200,7 +207,8 @@ export function vytvoritEditor(ctx) {
         vstup = el('input', { type: 'text', value: (z.pole.kdo ?? []).join(', '), placeholder: 'parta, nebo id postav: tusker, leta' });
         vstup.addEventListener('input', () => zmena('kdo', vstup.value.split(',').map((x) => x.trim()).filter(Boolean)));
       } else {
-        vstup = el('input', { type: 'text', value: z.pole[klic] ?? '', maxLength: 200 });
+        const napoveda = NAPOVEDA[klic];
+        vstup = el('input', { type: 'text', value: z.pole[klic] ?? '', maxLength: 200, placeholder: typeof napoveda === 'string' ? napoveda : napoveda?.[typ] ?? '' });
         vstup.addEventListener('input', () => zmena(klic, vstup.value));
       }
       pole.push(el('label', {}, popisek, vstup));
@@ -251,6 +259,29 @@ export function vytvoritEditor(ctx) {
       }
     });
     return el('div', { className: 'pole-portretu' }, nahledEl, el('div', {}, tlacitko, soubor, el('small', { className: 'poznamka', textContent: 'PNG, JPEG nebo WebP. Uloží se do složky karty jako portret.' })));
+  }
+
+  /**
+   * Doporučené oddíly podle typu, které karta ještě nemá (typové stránky, rozhodnutí 74).
+   * Klik oddíl vloží na místo podle doporučeného pořadí; nic se nepřejmenovává.
+   */
+  function oddily() {
+    if (!st) return;
+    const kam = st.formular.querySelector('.editor-oddily');
+    const chybi = chybejiciOddily(st.typ, st.textarea.value);
+    if (!chybi.length) return nahradit(kam);
+    nahradit(kam, el('span', { className: 'poznamka', textContent: 'Chybí oddíly:' }), chybi.map((nadpis) => el('button', {
+      type: 'button', className: 'mala', textContent: `+ ${nadpis}`, title: 'Vloží prázdný oddíl na místo podle šablony',
+      onclick: () => {
+        const t = st.textarea;
+        t.value = vlozitOddil(st.typ, t.value, nadpis);
+        const kde = t.value.indexOf(`## ${nadpis}\n`);
+        t.focus();
+        if (kde !== -1) t.selectionStart = t.selectionEnd = kde + nadpis.length + 4;
+        t.dispatchEvent(new Event('input'));
+        oddily();
+      },
+    })));
   }
 
   async function otevrit(id) {
@@ -304,13 +335,6 @@ export function vytvoritEditor(ctx) {
             vlozit('[[', '');
             naseptavani();
           }),
-          nastroj('+ Co ví družina', 'Přidá oddíl Co ví družina na konec karty', () => {
-            if (/^#{1,6}\s+Co ví družina\s*$/m.test(textarea.value)) return toast('Karta oddíl Co ví družina už má.');
-            textarea.value = `${textarea.value.replace(/\s+$/, '')}\n\n## Co ví družina\n\n- `;
-            textarea.focus();
-            textarea.selectionStart = textarea.selectionEnd = textarea.value.length;
-            textarea.dispatchEvent(new Event('input'));
-          }),
           nastroj('+ Jen pro DM', 'Přidá oddíl DM (družina ho nikdy neuvidí)', () => {
             textarea.value = `${textarea.value.replace(/\s+$/, '')}\n\n## DM\n\n`;
             textarea.focus();
@@ -319,12 +343,16 @@ export function vytvoritEditor(ctx) {
           }),
           el('span', { className: 'oddelovac' }),
           tlacitkoNahledu),
+        el('div', { className: 'editor-oddily', 'aria-live': 'polite' }),
         el('div', { className: 'editor-plochy' }, el('div', { className: 'editor-obal' }, textarea, naseptavac), nahledEl),
         el('p', { className: 'poznamka napoveda-editoru' }, 'Markdown jako v Obsidianu. ', el('kbd', { textContent: '[[' }), ' našeptá odkaz na kartu, ', el('kbd', { textContent: 'Ctrl+S' }), ' uloží hned. V oddílu ', el('strong', { textContent: 'Co ví družina' }), ' je každá odrážka zvlášť; odkrytá má na konci značku ', el('code', { textContent: '%%zná%%' }), ' (v kartě ji přepneš okem 👁). Oddíly ', el('code', { textContent: '## DM…' }), ' družina nikdy neuvidí.')));
     kam.replaceChildren(formular);
     st = { id, nazev: z.pole.nazev ?? id, typ: z.typ, hash: z.hash, ulozeneTelo: z.telo, textarea, naseptavac, nahledEl, stavEl, formular, zmenenaPole: {}, casovac: null, bezi: null, znovu: false, konflikt: null, nalez: [], vybranyNalez: 0, dotazOdkazu: '' };
     nahradit(formular.querySelector('.editor-pole'), ...poleFormulare(z, z.typ), prezdivky(z), portret(z));
+    oddily();
     textarea.addEventListener('input', () => {
+      clearTimeout(st.casovacOddilu);
+      st.casovacOddilu = setTimeout(oddily, 400);
       naplanovat();
       naseptavani();
       clearTimeout(st.casovacNahledu);

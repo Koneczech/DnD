@@ -1352,3 +1352,16 @@ span.oko { cursor: default; }
 .hudba-ted small { display: block; color: var(--text-tlumeny); }
 .hudba-posuvnik { display: grid; grid-template-columns: 4.5rem 1fr 3rem; align-items: center; gap: var(--m-2); font-size: var(--t-popisek); }
 .hudba-posuvnik output { text-align: right; color: var(--text-tlumeny); }
+
+/* Typové stránky wiki (rozhodnutí 74): boční panel podle typu, skupiny vztahů, DM oddíly dole. */
+.udaje-karty .osud.mrtvy, .vztah-text .osud.mrtvy { color: var(--rez); }
+.udaje-karty .osud.nezvestny, .vztah-text .osud.nezvestny { color: var(--jantar); }
+.vztah-text .osud { font-size: var(--t-popisek); }
+.tecka-typu { flex: none; width: 0.7rem; height: 0.7rem; margin-top: 0.4rem; border-radius: 2px; background: var(--c); opacity: 0.9; }
+.infobox .skupina-vztahu { margin: var(--m-2) 0 var(--m-1); font-size: var(--t-popisek); font-weight: 500; color: var(--text-tlumeny); }
+.odkaz-dm { margin: var(--m-1) 0; font-size: var(--t-popisek); }
+.odkaz-dm a { color: var(--rez); text-decoration: none; }
+.odkaz-dm a:hover, .odkaz-dm a:focus-visible { text-decoration: underline; }
+.oddil-dm.zvyraznit { outline: 2px solid var(--rez); outline-offset: 2px; }
+.editor-oddily { display: flex; flex-wrap: wrap; align-items: center; gap: var(--m-1); }
+.editor-oddily .poznamka { margin: 0; }

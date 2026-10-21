@@ -1,6 +1,6 @@
 # DM Hub v kostce
 
-Stav k 20. 10. 2026. Tenhle soubor odpovídá na tři otázky: **co Hub umí, co je rozdělané a co jsme vědomě vynechali.** Podrobná pravidla a rozhodnutí jsou v `ZADANI.md`, návody v `reference/`.
+Stav k 21. 10. 2026. Tenhle soubor odpovídá na tři otázky: **co Hub umí, co je rozdělané a co jsme vědomě vynechali.** Podrobná pravidla a rozhodnutí jsou v `ZADANI.md`, návody v `reference/`.
 
 ## Hub jednou větou
 
@@ -62,6 +62,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Wiki kánonu: přehled, kategorie, stránka karty, Pohled družiny, hledání v liště | ◐ |
 | | Co ví družina po odrážkách (oko 👁 u každé), rychlé přidání u stolu | ◐ |
 | | Plný editor karty (text, pole, portrét, našeptávání odkazů), nová karta ze šablony | ◐ |
+| | Typové stránky: boční panel podle typu (role, osud, kde ho najít, patří k, sídlo, u koho je), Kdo tu je, Členové a Má u sebe, vztahy po skupinách, DM oddíly dole s odkazem, editor nabídne chybějící oddíly | ◐ |
 | | Události z Kalendáře ve wiki: navázané karty, co se rozhodlo, události v kartě | ◐ |
 | | Mapa (záložka): vazby a vztahy, malé úpravy, nástěnky; Otevřít v Obsidianu, F2 s odkazem | ◐ |
 | | Mapa: výběr víc uzlů (Shift), přesun skupiny, Ctrl+Z, kruh a mřížka, fokus, hromadně Ve hře a Družina zná, paměť rozložení | ◐ |
@@ -81,7 +82,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 2. **Zjednodušit Kontrolu dat:** chybějící zvuky v jednom řádku s tlačítkem Doplnit, chyby nahoře.
 3. **Zvuk u stolu po restartu:** ověřit, jestli prohlížeč chce kliknutí; když ano, otevírat ho v samostatném okně.
 4. **Zvuk před sezením 3:** stáhnout sadu (Nastavení → Zvuk → Doplnit chybějící zvuky), vyměnit zvuky, které vyšly špatně, a poslechnout playlisty. **Spotify:** nainstalovat VB-CABLE, poslat Spotify do kabelu, založit aplikaci na developer.spotify.com a přihlásit Hub (`reference/zvuk.md`, Hudba ze Spotify).
-5. **Blok 3 Kánon:** rozpory R1–R16 jsou rozhodnuté (19. 10.). DM zazálohuje Notion, pak převod po skupinách podle `reference/kanon-prevod.md` (včetně návrhů vztahů). Kánon je wiki s editorem (◐): vyzkoušet, doplnit u karet Družina zná a odrážky Co ví družina, navázat události. Zápis sezení 2 vznikne z přepisu nahrávky, kterou DM dodá.
+5. **Blok 3 Kánon:** rozpory R1–R16 jsou rozhodnuté (19. 10.). DM zazálohuje Notion, pak převod po skupinách podle `reference/kanon-prevod.md` (včetně návrhů vztahů). Kánon je wiki s editorem (◐): vyzkoušet, doplnit u karet Družina zná a odrážky Co ví družina, navázat události. Typové stránky: Claude navrhne hodnoty nových polí (role, osud, kde, patří k, druh, sídlo, u koho je) z textu karet, DM potvrdí. Zápis sezení 2 vznikne z přepisu nahrávky, kterou DM dodá.
 6. **Verze 2.**
 
 ## Vědomě vynecháno

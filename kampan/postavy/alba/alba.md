@@ -7,7 +7,7 @@ verejne: true
 ikona: 🌙
 hrac: Adriana
 druh: ásimar
-povolani: Druid 3 (Kruh Měsíce)
+povolani: Druid - Kruh Měsíce
 aliases: ["Alba", "Albalunna", "Albalunna Nox"]
 vazby: ["[[bifron-nox]]", "[[tichy-hvozd]]", "[[patyk]]", "[[albin-privesek]]", "[[tarnwick]]", "[[uhliri-a-lovci]]", "[[corvain-thornroot]]", "[[albina-matka]]", "[[praotec]]", "[[lurkwood]]", "[[tabor-kruhu]]", "[[torva]]", "[[stopa-do-yartaru]]"]
 vztahy:
@@ -24,9 +24,11 @@ zdroj: https://app.notion.com/p/3c79ed22673681d28d10e5b68c977bab
 ---
 # Albalunna „Alba“ Nox
 
-> Aasimar, druidka (Druid 3, Circle of the Moon), 23 let. 18 HP, AC 14. Nejkřehčí člen party.
+> Aasimar, druidka (Druid 3, Circle of the Moon), 23 let. 18 HP, AC 14.
 
-Velmi dlouhé bílé vlasy, výrazné zelené oči, zlaté pihy kolem nosu a pod očima, dva červené pruhy malované přes tváře. *(Jazyky: Common, Halfling, Druidic — Druidic nelze zadat do vlastnosti, viz zde.)* *(Jazyky platí podle listu postavy níže, R9.)*
+Velmi dlouhé bílé vlasy, výrazné zelené oči, zlaté pihy kolem nosu a pod očima, dva červené pruhy malované přes tváře. 
+
+Jazyky: Common, Halfling, Druidic
 
 ## Příběh
 

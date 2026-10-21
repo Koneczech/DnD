@@ -1542,7 +1542,7 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false, u
   return {
     /**
      * Obrazovka Kánon se ukázala. cesta je část adresy za #kanon/:
-     * '' přehled wiki, '<id>' stránka entity, '<id>/upravit' editor, 'typ/<typ>', 'udalosti',
+     * '' přehled wiki, '<id>' stránka entity, '<id>/upravit' editor, '<id>/list' List postavy, 'typ/<typ>', 'udalosti',
      * 'udalost/<id>', 'mapa' nebo 'mapa/<id>'.
      */
     async ukazat(cesta = '') {

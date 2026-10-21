@@ -3,6 +3,8 @@
 // kalendáře s navázanými kartami a plný editor karty (kanon-editor.js). Mapa je druhá záložka.
 import { hledat, proHledani } from '/sdilene/sit.js';
 import { naHtml } from '/sdilene/markdown.js';
+import { blokyTextu, oznacitBloky } from '/sdilene/odkryvani.js';
+import { oddelitList, souhrnListu, oddilyListu, jeTabulkaVlastnosti, NAZEV_LISTU } from '/sdilene/list-postavy.js';
 import { $, TYPY, STAVY, barvaTypu, el, nahradit, obrazekEntity, stitekTypu } from '/panel/kanon-spolecne.js';
 import { vytvoritEditor } from '/panel/kanon-editor.js';
 
@@ -31,6 +33,7 @@ export function vytvoritWiki(ctx, karta) {
   koren.append(menu, obsah);
   const w = {
     stranka: 'prehled',
+    zalozka: 'karta', // stránka postavy: 'karta' nebo 'list' (List postavy, rozhodnutí 76)
     typ: null,
     udalost: null,
     filtr: '',
@@ -256,11 +259,74 @@ export function vytvoritWiki(ctx, karta) {
     await karta.upravit(`/api/kanon/entita/${encodeURIComponent(e.id)}/druzina/${b.index}`, 'PUT', { zna: !b.zna }, b.zna ? 'Skryto před družinou.' : 'Družina to teď ví.');
   }
 
+  /**
+   * Záložka List postavy (rozhodnutí 76): souhrn nahoře (vlastnosti, OČ, BV, iniciativa…),
+   * pod ním pododdíly listu jako karty. Tabulku vlastností nahradí dlaždice souhrnu.
+   */
+  function listPostavy(e, list, blokyKarty) {
+    const souhrn = souhrnListu(list);
+    const { uvod, oddily } = oddilyListu(list);
+    const md = (t) => {
+      const d = el('div', { className: 'text-karty' });
+      d.innerHTML = naHtml(t, { existuje: (id) => s.podleId.has(id), oznacitDm: dm() });
+      if (blokyKarty.length) okaVTextu(e, d, blokyKarty);
+      return d;
+    };
+    const dlazdice = (zkratka, hodnota, nazev, mala) => el('div', { className: 'dlazdice-listu', title: nazev },
+      el('span', { className: 'dlazdice-popisek', textContent: zkratka }),
+      el('strong', { textContent: hodnota }),
+      mala ? el('span', { className: 'dlazdice-mala', textContent: mala }) : null);
+    const maSouhrn = souhrn.vlastnosti.length || souhrn.boj.length;
+    return el('section', { className: 'list-postavy' },
+      maSouhrn ? el('div', { className: 'souhrn-listu' },
+        souhrn.vlastnosti.length ? el('div', { className: 'vlastnosti-listu' }, souhrn.vlastnosti.map((v) => dlazdice(v.zkratka, v.oprava || String(v.hodnota), v.nazev, v.oprava ? String(v.hodnota) : null))) : null,
+        souhrn.boj.length ? el('div', { className: 'boj-listu' }, souhrn.boj.map((b) => dlazdice(b.zkratka, b.hodnota, b.nazev))) : null,
+        souhrn.kouzla ? el('p', { className: 'kouzla-listu', textContent: `Kouzla: ${souhrn.kouzla}` }) : null) : null,
+      uvod ? el('div', { className: 'uvod-listu' }, md(uvod)) : null,
+      el('div', { className: 'oddily-listu' }, oddily
+        .filter((o) => !(maSouhrn && jeTabulkaVlastnosti(o.nadpis) && souhrn.vlastnosti.length))
+        // Kouzla a pododdíly s tabulkou (zbraně) jdou přes celou šířku.
+        .map((o) => el('section', { className: `oddil-listu karta${/^spells|^kouzla/i.test(o.nadpis) || /^\s*\|/m.test(o.text) ? ' siroky' : ''}` }, el('h3', { textContent: o.nadpis }), o.text ? md(o.text) : null))),
+      dm() ? el('p', { className: 'poznamka', textContent: 'Souhrn nahoře Hub čte z tabulky Ability Scores a odrážek Combat. Opravuje se v textu listu (Upravit).' }) : null);
+  }
+
+  /**
+   * Oko u každého odstavce, odrážky a citace textu karty (rozhodnutí 75): odkrytý blok uvidí
+   * družina pod Co ví družina, aniž by se musel přepisovat. Značka %%zná%% jako u odrážek.
+   */
+  function okaVTextu(e, text, bloky) {
+    text.classList.add('s-oky');
+    for (const prvek of text.querySelectorAll('[data-blok]')) {
+      const b = bloky[Number(prvek.dataset.blok)];
+      if (!b) continue;
+      prvek.classList.add('blok-textu');
+      prvek.classList.toggle('zna', b.zna);
+      if (!uprav()) {
+        if (b.zna) prvek.prepend(el('span', { className: 'oko oko-textu zna', textContent: '👁', title: 'Družina to ví.' }));
+        continue;
+      }
+      const oko = el('button', {
+        type: 'button', className: `oko oko-textu${b.zna ? ' zna' : ''}`, textContent: b.zna ? '👁' : '🔒',
+        title: b.zna ? 'Družina to ví. Klik skryje.' : 'Jen DM. Klik odkryje družině (bez přepisování do Co ví družina).',
+        'aria-pressed': String(b.zna), 'aria-label': b.zna ? 'Skrýt před družinou' : 'Odkrýt družině',
+      });
+      oko.addEventListener('click', async (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        const hlaska = b.zna ? 'Skryto před družinou.' : e.verejne ? 'Družina to teď ví.' : 'Odkryto. Družina kartu zatím nezná, uvidí to, až zapneš Družina zná.';
+        await karta.upravit(`/api/kanon/entita/${encodeURIComponent(e.id)}/text`, 'PUT', { prvni: b.prvni, poradi: b.poradi, zna: !b.zna }, hlaska);
+      });
+      prvek.prepend(oko);
+    }
+  }
+
   function coViDruzina(e, k) {
     const bloky = k.druzina ?? [];
     const odkryte = bloky.filter((b) => b.zna).length;
     const celkem = bloky.filter((b) => b.index >= 0).length;
     if (!dm() && !bloky.length) {
+      // Odkrytý text karty (rozhodnutí 75) následuje pod oddílem, prázdné hlášení by mu odporovalo.
+      if (k.telo?.trim()) return null;
       return el('section', { className: 'co-vi-druzina' }, el('h3', { textContent: 'Co ví družina' }), el('p', { className: 'poznamka', textContent: `Družina o ${e.nazev} zatím nic dalšího neví.` }));
     }
     const polozky = bloky.map((b) => {
@@ -292,7 +358,7 @@ export function vytvoritWiki(ctx, karta) {
       pridat = el('div', { className: 'pridat-druzina' }, vstup, el('label', { className: 'zaskrtavaci', title: 'Připravit dopředu, odkryješ u stolu' }, skryte, ' zatím skryté'), el('button', { type: 'button', textContent: 'Přidat', onclick: odeslat }));
     }
     return el('section', { className: 'co-vi-druzina' },
-      el('div', { className: 'sekce-hlava' }, el('h3', { textContent: 'Co ví družina' }), dm() ? el('span', { className: 'ulozeni', textContent: celkem ? `odkryto ${odkryte} z ${celkem}${e.verejne ? '' : ' · karta je jen pro DM'}` : '' }) : null),
+      el('div', { className: 'sekce-hlava' }, el('h3', { textContent: 'Co ví družina' }), dm() ? el('span', { className: 'ulozeni', textContent: [celkem ? `odkryto ${odkryte} z ${celkem}` : '', k.odkrytoTextu ? `z textu karty ${k.odkrytoTextu}` : '', (celkem || k.odkrytoTextu) && !e.verejne ? 'karta je jen pro DM' : ''].filter(Boolean).join(' · ') }) : null),
       dm() && !e.verejne && odkryte ? el('p', { className: 'poznamka varovani-druzina', textContent: 'Družina kartu zatím nezná (přepínač Družina zná je vypnutý), odkryté odrážky uvidí, až ho zapneš.' }) : null,
       polozky.length ? el('ul', { className: 'bloky-druziny' }, polozky) : el('p', { className: 'poznamka', textContent: 'Zatím nic. Každá odrážka se odkrývá zvlášť: družina uvidí jen ty s okem 👁.' }),
       pridat);
@@ -386,7 +452,28 @@ export function vytvoritWiki(ctx, karta) {
     }
     const text = el('div', { className: 'text-karty' });
     // DM oddíly wiki ukáže dole, na jejich místě v textu zůstane odkaz (rozhodnutí 74).
-    if (k.telo.trim()) text.innerHTML = naHtml(k.telo, { existuje: (id) => s.podleId.has(id), vynechatNadpis: e.nazev, oznacitDm: dm(), dmDolu: dm() });
+    // Pohled DM: u odstavců a odrážek mimo Co ví družina a DM oddíly oko na odkrytí (rozhodnutí 75).
+    const blokyKarty = dm() && e.typ !== 'kanon' ? blokyTextu(k.telo) : [];
+    let teloStranky = blokyKarty.length ? oznacitBloky(k.telo, blokyKarty) : k.telo;
+    // Postava: List postavy je vlastní záložka (rozhodnutí 76), z textu karty se vyjme.
+    let list = null;
+    if (e.typ === 'postava') {
+      const d = oddelitList(teloStranky);
+      if (d.list?.trim()) {
+        list = d.list;
+        teloStranky = d.zbytek;
+      }
+    }
+    const naListu = Boolean(list) && w.zalozka === 'list';
+    if (teloStranky.trim() && !naListu) {
+      text.innerHTML = naHtml(teloStranky, { existuje: (id) => s.podleId.has(id), vynechatNadpis: e.nazev, oznacitDm: dm(), dmDolu: dm() });
+      if (blokyKarty.length) okaVTextu(e, text, blokyKarty);
+    }
+    const zalozky = list
+      ? el('nav', { className: 'zalozky-karty', 'aria-label': 'Části stránky postavy' },
+        el('a', { href: `#kanon/${encodeURIComponent(e.id)}`, className: `zalozka${naListu ? '' : ' aktivni'}`, 'aria-current': naListu ? null : 'page', textContent: 'Karta' }),
+        el('a', { href: `#kanon/${encodeURIComponent(e.id)}/list`, className: `zalozka${naListu ? ' aktivni' : ''}`, 'aria-current': naListu ? 'page' : null, textContent: NAZEV_LISTU }))
+      : null;
     const portret = k.obrazky.find((o) => o.url === k.obrazek && o.ucel === 'portret');
     const pocetVazeb = new Set([...k.vztahy.map((v) => v.s), ...k.vazby]).size;
     const infobox = el('aside', { className: 'infobox karta' },
@@ -407,11 +494,12 @@ export function vytvoritWiki(ctx, karta) {
         const obr = karta.obrazkyKarty(k, { bezPrvniho: true });
         return obr ? [el('h3', { textContent: 'Ilustrace' }), obr] : null;
       })());
-    const hlavni = el('div', { className: 'clanek-hlavni' },
+    const hlavni = naListu ? el('div', { className: 'clanek-hlavni' }, zalozky, listPostavy(e, list, blokyKarty)) : el('div', { className: 'clanek-hlavni' },
+      zalozky,
       e.typ === 'kanon' ? casKanonu(k) : null,
       // Hráčský kánon je celý pro družinu, oddíl Co ví družina má jen karta, která ho opravdu obsahuje.
       e.typ !== 'kanon' || (k.druzina ?? []).length ? coViDruzina(e, k) : null,
-      k.telo.trim() ? text : uprav() ? el('p', { className: 'poznamka', textContent: 'Karta zatím nemá další text. Napiš ho přes Upravit.' }) : null,
+      teloStranky.trim() ? text : uprav() ? el('p', { className: 'poznamka', textContent: 'Karta zatím nemá další text. Napiš ho přes Upravit.' }) : null,
       e.typ === 'misto' ? coSeTuStalo(e, k) : null,
       udalostiEntity(e, k));
     nahradit(obsah, el('article', { className: 'clanek' }, hlava, el('div', { className: 'clanek-telo' }, hlavni, infobox)));
@@ -480,9 +568,10 @@ export function vytvoritWiki(ctx, karta) {
   }
 
   return {
-    /** casti: [''] přehled, ['typ', t], ['udalosti'], ['udalost', id], [id], [id, 'upravit'] */
+    /** casti: [''] přehled, ['typ', t], ['udalosti'], ['udalost', id], [id], [id, 'upravit'], [id, 'list'] */
     async ukazat(casti) {
       const [a, b] = casti;
+      w.zalozka = b === 'list' ? 'list' : 'karta';
       const editovat = b === 'upravit' && a && s.pohled === 'dm' && !s.jenCteni;
       if (!editovat) await editor.zavrit();
       w.navazovani = false;

@@ -76,10 +76,21 @@ zvuk:
       - { zvuk: nahodne/boj/rinceni, kazdych_s: 6, nahodilost: 0.8, hlasitost: 0.7, vzdalenost: 0.4 }
       - { zvuk: nahodne/boj/sip, kazdych_s: 12, nahodilost: 0.9, hlasitost: 0.7, vzdalenost: 0.3 }
       - { zvuk: nahodne/boj/pokrik, kazdych_s: 15, nahodilost: 0.9, hlasitost: 0.6, vzdalenost: 0.6 }
+vazby: ["[[longsaddle]]", "[[malk-orren]]", "[[malkova-zasilka]]", "[[kapitan-lupicu]]", "[[jeskyne-u-taboru]]", "[[s02]]"]
+tags: [aktualni]
 strop: tabor
 ---
 # Tábor lupičů
 
-Pilotní místo Bloku 2 (rozhodnutí 37): tábor lupičů kousek od Longsaddle. Popis místa doplní DM.
+Pilotní místo Bloku 2 (rozhodnutí 37): tábor lupičů kousek od Longsaddle.
 
 Ilustrace: celek ve dne a v noci, stavy poplach, hoří, po boji a mapa shora; skryté stopy spálené dopisy a prsten na ruce kapitána (sezení 2).
+
+## Co ví družina
+
+- Čtvrt dne severně od Longsaddle je u Long Road remízek s potůčkem. Tam lupiči přepadají zásilky. %%zná%%
+- Od remízku vedou koňské stopy mimo cestu na severovýchod do kopců. Po hodině chůze přejdou z řídkého travnatého dubového lesa do hustého, kde se v listí ztratí. %%zná%%
+- Srnka v lese viděla jít tím směrem bytosti, co chodí po zadních, a podle ní tam pořád jsou. %%zná%%
+- Tábor stojí mezi nízkými mladými stromy: několik stanů a hromada zavazadel. Žádná cesta, po které by sem dojel vůz, nevede. %%zná%%
+- V táboře je osm lidí, jeden z nich celou dobu leží. Ostatní popíjejí, nudí se a pokřikují na sebe o tom, co komu ukradli. %%zná%%
+- Hlídka s krátkým mečem si družiny všimla asi sto metrů od tábora. %%zná%%

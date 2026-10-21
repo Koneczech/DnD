@@ -64,7 +64,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Vztahy s popisem a postojem: formát, šablony, Kontrola dat | ◐ |
 | | Převedené karty: postavy (4), padouši a frakce (6), NPC (23), místa (16), předměty (6), registr rozhodnutí (39), zápis sezení 1 | ◐ |
 | | Karty mimo Notion (8), hráčský kánon sezení 1 | ◐ |
-| | Zápis a hráčský kánon sezení 2 | ✗ |
+| | Zápis a hráčský kánon sezení 2, nové karty ze sezení 2 (Jorun, Artur, Marwen, Gerd, dřevorubci, brod, Malkova zásilka), události v Kalendáři | ◐ |
 | | Wiki kánonu: přehled, kategorie, stránka karty, Pohled družiny, hledání v liště | ◐ |
 | | Co ví družina po odrážkách (oko 👁 u každé), rychlé přidání u stolu | ◐ |
 | | Odkrývání odstavců a odrážek z celého textu karty (oko 👁 u bloku, i z příběhu postavy) | ◐ |
@@ -95,7 +95,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 2. **Zjednodušit Kontrolu dat:** chybějící zvuky v jednom řádku s tlačítkem Doplnit, chyby nahoře.
 3. **Zvuk u stolu po restartu:** ověřit, jestli prohlížeč chce kliknutí; když ano, otevírat ho v samostatném okně.
 4. **Zvuk před sezením 3:** stáhnout sadu (Nastavení → Zvuk → Doplnit chybějící zvuky), vyměnit zvuky, které vyšly špatně, a poslechnout playlisty. **Spotify:** nainstalovat VB-CABLE, poslat Spotify do kabelu, založit aplikaci na developer.spotify.com a přihlásit Hub (`reference/zvuk.md`, Hudba ze Spotify).
-5. **Blok 3 Kánon:** rozpory R1–R16 jsou rozhodnuté (19. 10.). DM zazálohuje Notion, pak převod po skupinách podle `reference/kanon-prevod.md` (včetně návrhů vztahů). Kánon je wiki s editorem (◐): vyzkoušet, doplnit u karet Družina zná a odrážky Co ví družina, navázat události. Typové stránky: Claude navrhne hodnoty nových polí (role, osud, kde, patří k, druh, sídlo, u koho je) z textu karet, DM potvrdí. Zápis sezení 2 vznikne z přepisu nahrávky, kterou DM dodá.
+5. **Blok 3 Kánon:** rozpory R1–R16 jsou rozhodnuté (19. 10.). DM zazálohuje Notion, pak převod po skupinách podle `reference/kanon-prevod.md` (včetně návrhů vztahů). Kánon je wiki s editorem (◐): vyzkoušet, doplnit u karet Družina zná a odrážky Co ví družina, navázat události. Typové stránky: Claude navrhne hodnoty nových polí (role, osud, kde, patří k, druh, sídlo, u koho je) z textu karet, DM potvrdí. Zápis sezení 2 je z přepisu nahrávky hotový (◐): projít a doplnit, co přepis nezachytil.
 6. **Verze 2.**
 
 ## Vědomě vynecháno

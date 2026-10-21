@@ -5,7 +5,7 @@ typ: misto
 nazev: Longsaddle
 ikona: 🛤️
 aliases: []
-vazby: ["[[leta]]", "[[thiril-ambersedge]]", "[[malk-orren]]", "[[ordwin-sohla]]", "[[co-longsaddle-vyda]]"]
+vazby: ["[[leta]]", "[[thiril-ambersedge]]", "[[malk-orren]]", "[[ordwin-sohla]]", "[[co-longsaddle-vyda]]", "[[u-deraveho-grose]]", "[[ilma-dunwarova]]", "[[gerd]]", "[[marwen-fellova]]", "[[brod-na-long-road]]", "[[tabor-lupicu]]", "[[s02]]"]
 tags: []
 zdroj: https://app.notion.com/p/3c49ed22673681af9ef7d5d6a2958cc8
 verejne: true
@@ -53,3 +53,10 @@ Osada na Long Road severně od Mirabaru *(Neplatí: jižně od Mirabaru, R8.)*, 
 Cíl, který [[thiril-ambersedge|Thiril]] [[leta|Letě]] vymyslel jako past na čas. Má se tam sejít s kontaktem, který jí údajně vysvětlí podmínky výměny za Thirilovu svobodu.
 
 [[malk-orren|Kontakt]] je **[[ordwin-sohla|Ordwinův]] člověk** — existuje, ale vydá jen tolik, kolik mu Ordwin dovolil. Kolik to je, zůstává otevřené (viz [[co-longsaddle-vyda|registr rozhodnutí]]). *(Rozhodnuto, kontaktem byl Malk Orren, R1, R15.)*
+
+## Co ví družina
+
+- Obyčejná lidská vesnice na Long Road. Nad ní stojí sídlo, kde žije někdo mezi majitelem a starostou osady. %%zná%%
+- Ze sídla se občas ozve rána nebo zableskne světlo. Místní si toho nevšímají. %%zná%%
+- Pocestní spí v hostinci [[u-deraveho-grose|U Děravého groše]]. %%zná%%
+- Čtvrt dne severně od vesnice, u remízku s potůčkem, v posledním měsíci mizí zásilky. %%zná%%

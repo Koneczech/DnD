@@ -28,19 +28,47 @@ udalosti:
     konec: { rok: 1491, mesic: Eleint, den: 18 }
     text: Cesta Long road směr Longsaddle
     verejna: true
+    vazby: [ "[[long-road-mirabar-longsaddle]]", "[[s02]]" ]
+  - id: us02jorun
+    datum: { rok: 1491, mesic: Eleint, den: 14 }
+    text: Kupec Jorun najme družinu jako doprovod
+    verejna: true
+    vazby: [ "[[jorun]]", "[[s02-jorun-najal-druzinu]]", "[[s02-sipky-u-cesty]]", "[[s02-leta-prohledala-joruna]]" ]
+  - id: us02bifron
+    datum: { rok: 1491, mesic: Eleint, den: 15 }
+    text: Alba se ptá Joruna na Bifrona
+    verejna: true
+    vazby: [ "[[jorun]]", "[[s02-alba-podezira-joruna]]" ]
+  - id: us02brod
+    datum: { rok: 1491, mesic: Eleint, den: 16 }
+    text: Brod a Arturova kniha jmen
+    verejna: true
+    vazby: [ "[[brod-na-long-road]]", "[[artur]]", "[[s02-leta-falesne-jmeno-u-brodu]]" ]
+  - id: us02drevorubci
+    datum: { rok: 1491, mesic: Eleint, den: 18 }
+    text: Dřevorubci z Lurkwoodu a mízová pálenka
+    verejna: true
+    vazby: [ "[[drevorubci-z-lurkwoodu]]", "[[lurkwood]]", "[[s02-zprava-o-lurkwoodu]]" ]
   - id: umtwxfng7qivb
     datum: { rok: 1491, mesic: Eleint, den: 18 }
     text: Longsaddle
     verejna: true
-    vazby: [ "[[longsaddle]]" ]
+    vazby: [ "[[longsaddle]]", "[[u-deraveho-grose]]", "[[s02-patrani-v-longsaddle]]" ]
   - id: umutn742q4xjx
     datum: { rok: 1491, mesic: Eleint, den: 18 }
     text: Setkání s Malkem
     verejna: true
+    vazby: [ "[[malk-orren]]", "[[s02-dohoda-s-malkem]]", "[[s02-leta-rekla-o-thirilovi]]" ]
   - id: umutnd8lfm2t8
     datum: { rok: 1491, mesic: Eleint, den: 18 }
     text: "Koudur: První koncert mimo Mirabar - úspěch"
     verejna: true
+    vazby: [ "[[u-deraveho-grose]]", "[[s02-koudur-hral-u-deraveho-grose]]" ]
+  - id: us02tabor
+    datum: { rok: 1491, mesic: Eleint, den: 19 }
+    text: Stopa k táboru lupičů
+    verejna: true
+    vazby: [ "[[tabor-lupicu]]", "[[malk-orren]]", "[[s02-stopa-k-taboru-lupicu]]" ]
   - id: upast00ll36
     datum: { rok: 1466, mesic: Mirtul, den: 15 }
     text: ~ Narození Lety

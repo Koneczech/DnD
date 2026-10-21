@@ -11,7 +11,7 @@ ilustrace:
   - soubor: celek-den.png
     ucel: scena
     varianta: den
-    skryta: false
+    skryta: true
     puvod: Golden Hour Bandit Camp in the Pines.png
   - soubor: celek-noc.png
     ucel: scena
@@ -21,7 +21,7 @@ ilustrace:
   - soubor: poplach.png
     ucel: scena
     stav: poplach
-    skryta: false
+    skryta: true
     puvod: Bandit Camp Alarm at Golden Hour.png
   - soubor: hori.png
     ucel: scena

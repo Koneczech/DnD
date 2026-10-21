@@ -62,6 +62,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Wiki kánonu: přehled, kategorie, stránka karty, Pohled družiny, hledání v liště | ◐ |
 | | Co ví družina po odrážkách (oko 👁 u každé), rychlé přidání u stolu | ◐ |
 | | Odkrývání odstavců a odrážek z celého textu karty (oko 👁 u bloku, i z příběhu postavy) | ◐ |
+| | List postavy jako záložka stránky postavy: souhrn vlastností a bojových hodnot, pododdíly jako karty | ◐ |
 | | Plný editor karty (text, pole, portrét, našeptávání odkazů), nová karta ze šablony | ◐ |
 | | Typové stránky: boční panel podle typu (role, osud, kde ho najít, patří k, sídlo, u koho je), Kdo tu je, Členové a Má u sebe, vztahy po skupinách, DM oddíly dole s odkazem, editor nabídne chybějící oddíly | ◐ |
 | | Události z Kalendáře ve wiki: navázané karty, co se rozhodlo, události v kartě | ◐ |

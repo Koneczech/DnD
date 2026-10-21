@@ -66,6 +66,7 @@ test('sestavitStranky: družina otevřeně, DM jen zašifrovaně, obrázky jen p
     const cist = async (rel) => JSON.parse(await fs.readFile(path.join(cil, ...rel.split('/')), 'utf8'));
     assert.equal((await cist('data/stranky.json')).dm, true);
     assert.match((await cist('data/stranky.json')).sestaveno, /^\d{4}-\d{2}-\d{2}T/);
+    assert.equal((await cist('data/stranky.json')).upravy, 'https://github.com/Ukazka/Repo/edit/main/', 'Upravit na GitHubu (bod 144)');
     const druzina = await cist('data/kanon-druzina.json');
     assert.deepEqual(druzina.entity.map((e) => e.id).sort(), ['tabor', 'tusker']);
     await assert.rejects(fs.access(path.join(cil, 'data', 'entita', 'druzina', 'tajny.json')), 'karta jen pro DM v pohledu družiny není');
@@ -79,6 +80,7 @@ test('sestavitStranky: družina otevřeně, DM jen zašifrovaně, obrázky jen p
     const dm = rozsifrovat(sifrovane, heslo);
     assert.deepEqual(dm.seznam.entity.map((e) => e.id).sort(), ['tabor', 'tajny', 'tusker']);
     assert.equal(dm.karty.tusker.obsidian, null);
+    assert.match(dm.seznam.entity.find((e) => e.id === 'tajny').soubor, /^kampan\/npc\/tajny\/[^/]+\.md$/, 'soubor karty pro Upravit na GitHubu');
     assert.equal(dm.karty.tusker.obrazek, 'Tusker.png', 'obrázek, který zná družina, je na webu');
     assert.equal(dm.karty.tajny.obrazek, 'https://raw.githubusercontent.com/Ukazka/Repo/main/kampan/npc/tajny/portret.png', 'obrázek jen pro DM z repa');
     assert.equal(dm.karty.tusker.druzina.length, 2, 'DM vidí i skrytou odrážku');
@@ -112,6 +114,7 @@ test('sestavitStranky bez hesla: jen pohled družiny', async () => {
     const v = await sestavitStranky({ cesty: repo.c, cil });
     assert.equal(v.dm, false);
     assert.equal(JSON.parse(await fs.readFile(path.join(cil, 'data', 'stranky.json'), 'utf8')).dm, false);
+    assert.equal(JSON.parse(await fs.readFile(path.join(cil, 'data', 'stranky.json'), 'utf8')).upravy, null, 'bez pohledu DM není co upravovat');
     await assert.rejects(fs.access(path.join(cil, 'data', 'dm.json')));
     await fs.access(path.join(cil, 'data', 'kanon-druzina.json'));
   } finally {

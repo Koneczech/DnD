@@ -24,8 +24,8 @@ export function filtrUdalosti(url) {
 // „verze“ (otisk kódu panelu a výstupů) dostává každý klient: po změně kódu se stránka sama obnoví.
 const chce = (filtr, udalost) => !filtr || udalost === 'verze' || filtr.has(udalost);
 
-/** Události, které platí jen v okamžiku odeslání. */
-const JEDNORAZOVE = new Set(['zvuk-efekt', 'zvuk-povel']);
+/** Události, které platí jen v okamžiku odeslání (blesk po obnovení stránky znovu neblýskne). */
+const JEDNORAZOVE = new Set(['zvuk-efekt', 'zvuk-povel', 'blesk']);
 
 export class Vysilac {
   constructor({ srdceMs = 15000 } = {}) {

@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <title>DM Hub — strop</title>
+  <style>
+    /* Obloha na strop z projektoru. Okno prohlížeče přes celou obrazovku projektoru (F11),
+       nebo zdroj Browser 1920 × 1080 ve vlastní scéně OBS s projektorem na celou obrazovku.
+       Řídí ji scéna z Hubu: den a noc, počasí, bouřka s blesky, intenzita, souboj, málo HP.
+       Kalibrace projekce (čtyři rohy, měkký okraj, jas) se ukládá v Hubu: klávesa K.
+       Zkouška bez zásahu do Hubu: klávesa Z nebo adresa ?zkouska. */
+    :root {
+      --panel: rgba(16, 18, 24, 0.92);
+      --text: #e9e6df;
+      --tlumene: #a7a39a;
+      --akcent: #e0b45a;
+      --okraj: rgba(255, 255, 255, 0.16);
+    }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; cursor: none; }
+    body.ovladani { cursor: default; }
+    #plocha { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+    #plocha canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    #nebe { image-rendering: auto; }
+    #klikatice { pointer-events: none; }
+
+    .roh {
+      position: absolute; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%;
+      border: 3px solid var(--akcent); background: rgba(224, 180, 90, 0.25); box-sizing: border-box;
+      cursor: grab; touch-action: none; z-index: 10; display: none;
+    }
+    .roh::after { content: attr(data-cislo); position: absolute; inset: 0; display: grid; place-items: center;
+      font: 700 14px/1 system-ui, sans-serif; color: #fff; }
+    body.kalibrace .roh { display: block; }
+
+    .okno {
+      position: absolute; z-index: 20; display: none; min-width: 280px; max-width: 340px;
+      padding: 14px 16px; border-radius: 10px; background: var(--panel); border: 1px solid var(--okraj);
+      color: var(--text); font: 14px/1.4 system-ui, 'Segoe UI', sans-serif; box-shadow: 0 8px 30px rgba(0,0,0,.5);
+    }
+    .okno h2 { margin: 0 0 8px; font-size: 15px; font-weight: 650; }
+    .okno p { margin: 0 0 10px; color: var(--tlumene); font-size: 13px; }
+    .okno label { display: grid; grid-template-columns: 70px 1fr 44px; align-items: center; gap: 8px; margin: 6px 0; }
+    .okno label.zaskrt { display: flex; gap: 8px; }
+    .okno input[type=range] { width: 100%; accent-color: var(--akcent); }
+    .okno output { text-align: right; color: var(--tlumene); font-variant-numeric: tabular-nums; }
+    .okno .rada { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+    .okno .nadpis { margin: 10px 0 2px; font-size: 12px; color: var(--tlumene); text-transform: uppercase; letter-spacing: .04em; }
+    .okno button {
+      font: inherit; font-size: 13px; padding: 5px 10px; border-radius: 6px; cursor: pointer;
+      background: rgba(255,255,255,.08); color: var(--text); border: 1px solid var(--okraj);
+    }
+    .okno button:hover { background: rgba(255,255,255,.16); }
+    .okno button[aria-pressed=true] { background: var(--akcent); color: #1a1408; border-color: var(--akcent); }
+    .okno button.hlavni { background: var(--akcent); color: #1a1408; border-color: var(--akcent); font-weight: 600; }
+    body.kalibrace #kalibrace, body.zkouska #zkouska { display: block; }
+    #kalibrace { left: 50%; top: 50%; transform: translate(-50%, -50%); }
+    #zkouska { right: 24px; top: 24px; }
+    body.kalibrace.zkouska #zkouska { top: auto; bottom: 24px; }
+
+    #napoveda {
+      position: absolute; left: 50%; bottom: 8%; transform: translateX(-50%); z-index: 15;
+      padding: 10px 16px; border-radius: 8px; background: rgba(0,0,0,.6); color: #eee;
+      font: 18px/1.3 system-ui, sans-serif; opacity: 0; transition: opacity .8s; pointer-events: none; text-align: center;
+    }
+    #napoveda.videt { opacity: 1; }
+    #ladeni { position: absolute; left: 12px; bottom: 12px; margin: 0; padding: 8px 10px; max-width: 70%;
+      white-space: pre-wrap; font: 13px/1.3 monospace; color: #fff; background: rgba(0,0,0,.7); z-index: 30; display: none; }
+  </style>
+</head>
+<body>
+  <div id="plocha">
+    <canvas id="nebe"></canvas>
+    <canvas id="klikatice"></canvas>
+  </div>
+
+  <div class="roh" data-roh="0" data-cislo="1"></div>
+  <div class="roh" data-roh="1" data-cislo="2"></div>
+  <div class="roh" data-roh="2" data-cislo="3"></div>
+  <div class="roh" data-roh="3" data-cislo="4"></div>
+
+  <div class="okno" id="kalibrace" role="dialog" aria-label="Kalibrace stropu">
+    <h2>Kalibrace stropu</h2>
+    <p>Přetáhni kolečka 1–4 do rohů, kam má obloha sahat. Mřížka má na stropě vypadat jako pravoúhlá. Ukládá se samo.</p>
+    <label>Okraj <input type="range" id="k-okraj" min="0" max="0.4" step="0.01"><output id="o-okraj"></output></label>
+    <label>Jas <input type="range" id="k-jas" min="0.05" max="1" step="0.01"><output id="o-jas"></output></label>
+    <label class="zaskrt"><input type="checkbox" id="k-hvezdy"> Hvězdy v noci</label>
+    <div class="rada">
+      <button type="button" id="k-zrcadlit-x" title="Obraz přes zrcadlo je převrácený">Převrátit ↔</button>
+      <button type="button" id="k-zrcadlit-y">Převrátit ↕</button>
+      <button type="button" id="k-otocit">Otočit o 90°</button>
+    </div>
+    <div class="rada">
+      <button type="button" id="k-vychozi">Výchozí</button>
+      <button type="button" class="hlavni" id="k-hotovo">Hotovo (K)</button>
+    </div>
+  </div>
+
+  <div class="okno" id="zkouska" role="dialog" aria-label="Zkouška oblohy">
+    <h2>Zkouška oblohy</h2>
+    <p>Mění jen tuhle oblohu (i v dalších oknech stropu v tomto prohlížeči), Hub ani světla ne.</p>
+    <div class="nadpis">Doba</div>
+    <div class="rada" data-skupina="varianta">
+      <button type="button" data-hodnota="den">Den</button>
+      <button type="button" data-hodnota="noc">Noc</button>
+    </div>
+    <div class="nadpis">Počasí</div>
+    <div class="rada" data-skupina="pocasi">
+      <button type="button" data-hodnota="">Jasno</button>
+      <button type="button" data-hodnota="dest">Déšť</button>
+      <button type="button" data-hodnota="snih">Sníh</button>
+      <button type="button" data-hodnota="mlha">Mlha</button>
+      <button type="button" data-hodnota="bourka">Bouřka</button>
+    </div>
+    <div class="nadpis">Bouřka</div>
+    <div class="rada" data-skupina="bourka">
+      <button type="button" data-hodnota="daleko">Daleko</button>
+      <button type="button" data-hodnota="blizko">Blízko</button>
+      <button type="button" data-hodnota="nad-nami">Nad námi</button>
+      <button type="button" id="z-blesk" class="hlavni">⚡ Blesk</button>
+    </div>
+    <div class="nadpis">Intenzita</div>
+    <div class="rada" data-skupina="intenzita">
+      <button type="button" data-hodnota="0">0</button>
+      <button type="button" data-hodnota="1">1</button>
+      <button type="button" data-hodnota="2">2</button>
+      <button type="button" data-hodnota="3">3</button>
+    </div>
+    <div class="rada">
+      <button type="button" id="z-souboj">Souboj</button>
+      <button type="button" id="z-hp">Málo HP</button>
+    </div>
+    <div class="rada">
+      <button type="button" id="z-hub">Zpět podle Hubu</button>
+      <button type="button" class="hlavni" id="z-zavrit">Zavřít (Z)</button>
+    </div>
+  </div>
+
+  <div id="napoveda"></div>
+  <pre id="ladeni"></pre>
+
+  <script type="module">
+    import { sledovat } from '/sdilene/vystup.js';
+    import { odebirat } from '/sdilene/zive.js';
+
+    const $ = (s) => document.querySelector(s);
+    const parametry = new URLSearchParams(location.search);
+
+    /* ---------- Ladění: ?ladeni vypíše do rohu, co obloha právě ukazuje ---------- */
+    const ladeni = parametry.has('ladeni');
+    if (ladeni) $('#ladeni').style.display = 'block';
+    let ladiciText = '';
+    function zapsat(radek) {
+      if (!ladeni) return;
+      ladiciText = (new Date().toLocaleTimeString('cs') + ' ' + radek + '\n' + ladiciText).split('\n').slice(0, 10).join('\n');
+      $('#ladeni').textContent = ladiciText;
+    }
+
+    /* ---------- Stav: co posílá Hub, a místní přepsání ze zkoušky ---------- */
+    let hub = { varianta: 'den', pocasi: [], intenzita: 0, bourka: 'blizko', rezim: 'pruzkum' };
+    let zkouska = null; // { varianta, pocasi, bourka, intenzita, souboj, hp } nebo null = podle Hubu
+    let hpHub = false;
+    const kanal = 'BroadcastChannel' in window ? new BroadcastChannel('dmhub-strop') : null;
+
+    function ucinny() {
+      const s = { ...hub, ...(zkouska ?? {}) };
+      s.pocasi = [].concat(s.pocasi ?? []).filter((p) => p && p !== 'zadne');
+      if (zkouska && 'souboj' in zkouska) s.rezim = zkouska.souboj ? 'souboj' : 'pruzkum';
+      s.hp = zkouska && 'hp' in zkouska ? zkouska.hp : hpHub;
+      return s;
+    }
+
+    /* ---------- Cíle oblohy podle scény; plynule se k nim dojíždí ---------- */
+    // Pokrytí mraky, jejich tma a rychlost podle počasí. Víc efektů naráz: bere se nejsilnější.
+    const POCASI = {
+      jasno: { mraky: 0.45, temno: 0.05, rychlost: 0.012, mlha: 0, snih: 0 },
+      dest: { mraky: 0.86, temno: 0.6, rychlost: 0.028, mlha: 0.08, snih: 0 },
+      snih: { mraky: 0.8, temno: 0.35, rychlost: 0.016, mlha: 0.12, snih: 1 },
+      mlha: { mraky: 0.6, temno: 0.25, rychlost: 0.008, mlha: 0.75, snih: 0 },
+      bourka: { mraky: 0.97, temno: 0.85, rychlost: 0.05, mlha: 0.05, snih: 0 },
+    };
+
+    function cile(s) {
+      const efekty = s.pocasi.length ? s.pocasi : ['jasno'];
+      const c = { mraky: 0, temno: 0, rychlost: 0, mlha: 0, snih: 0 };
+      for (const e of efekty) {
+        const p = POCASI[e] ?? POCASI.jasno;
+        for (const k of Object.keys(c)) c[k] = Math.max(c[k], p[k]);
+      }
+      const i = Math.max(0, Math.min(3, Number(s.intenzita) || 0));
+      const souboj = s.rezim === 'souboj';
+      return {
+        noc: s.varianta === 'noc' ? 1 : 0,
+        mraky: Math.min(1, c.mraky + i * 0.03),
+        temno: Math.min(1, c.temno + i * 0.05),
+        mlha: c.mlha,
+        snih: c.snih,
+        rychlost: c.rychlost * (1 + i * 0.25) * (souboj ? 1.5 : 1),
+        tma: [0, 0.18, 0.32, 0.46][i],
+        rudy: souboj ? 1 : 0,
+        hp: s.hp ? 1 : 0,
+      };
+    }
+
+    const ted = { noc: 0, mraky: 0.38, temno: 0.05, mlha: 0, snih: 0, rychlost: 0.012, tma: 0, rudy: 0, hp: 0 };
+    let cil = { ...ted };
+    // Časové konstanty dojíždění v sekundách: den a noc pomaleji, počasí jako prolnutí scény.
+    const DOJEZD = { noc: 4, mraky: 3, temno: 3, mlha: 3, snih: 2.5, rychlost: 3, tma: 1.5, rudy: 1.5, hp: 1.2 };
+
+    function prepocitat() {
+      const s = ucinny();
+      cil = cile(s);
+      zapsat(`${s.varianta} | ${s.pocasi.join('+') || 'jasno'} | bouřka ${s.bourka} | intenzita ${s.intenzita} | ${s.rezim}${s.hp ? ' | málo HP' : ''}${zkouska ? ' (zkouška)' : ''}`);
+      planovatBlesky();
+      oznacitZkousku();
+    }
+
+    /* ---------- WebGL: obloha jako jeden shader, kreslený v menším rozlišení (měkký obraz) ---------- */
+    const nebe = $('#nebe');
+    const gl = nebe.getContext('webgl', { antialias: false, premultipliedAlpha: false, preserveDrawingBuffer: false });
+    const KVALITA = Math.max(0.25, Math.min(1, Number(parametry.get('kvalita')) || 0.5));
+
+    const VS = `attribute vec2 a; varying vec2 vUv; void main(){ vUv = a * 0.5 + 0.5; vUv.y = 1.0 - vUv.y; gl_Position = vec4(a, 0.0, 1.0); }`;
+    const FS = `
+      precision highp float;
+      varying vec2 vUv;
+      uniform vec2 uRes; uniform float uCas; uniform vec2 uPosun;
+      uniform float uNoc, uMraky, uTemno, uMlha, uSnih, uTma, uRudy, uHp, uHpFaze;
+      uniform float uBlesk, uBleskR; uniform vec2 uBleskPos;
+      uniform float uOkraj, uJas, uHvezdy, uKalibrace;
+
+      float hash(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+      float sum(vec2 p) {
+        vec2 i = floor(p), f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);
+        return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
+      }
+      float fbm(vec2 p) {
+        float v = 0.0, a = 0.5; mat2 r = mat2(0.8, -0.6, 0.6, 0.8);
+        for (int i = 0; i < 5; i++) { v += a * sum(p); p = r * p * 2.02 + 17.0; a *= 0.5; }
+        return v;
+      }
+
+      void main() {
+        vec2 uv = vUv;
+        float asp = uRes.x / uRes.y;
+        vec2 p = vec2(uv.x * asp, uv.y);
+        float r = length(uv - 0.5);
+
+        // Nebe: při pohledu nahoru je zenit uprostřed nejtmavší a nejsytější.
+        vec3 nebeDen = mix(vec3(0.20, 0.42, 0.80), vec3(0.52, 0.70, 0.90), smoothstep(0.0, 0.75, r));
+        vec3 nebeNoc = mix(vec3(0.008, 0.012, 0.040), vec3(0.025, 0.040, 0.095), smoothstep(0.0, 0.75, r));
+        vec3 barva = mix(nebeDen, nebeNoc, uNoc);
+
+        // Měsíc a jeho svit (jen v noci).
+        vec2 mesic = vec2(asp * 0.72, 0.30);
+        float dm = length(p - mesic);
+        float svit = exp(-dm * dm * 9.0);
+        float zakryti = 1.0 - uTemno * 0.9; // za bouřkovými mraky měsíc není vidět
+        barva += vec3(0.30, 0.34, 0.48) * svit * 0.35 * uNoc * zakryti;
+        barva += vec3(0.85, 0.88, 0.95) * smoothstep(0.045, 0.035, dm) * uNoc * zakryti;
+
+        // Hvězdy.
+        vec2 g = p * 70.0; vec2 id = floor(g); vec2 f = fract(g) - 0.5; float h = hash(id);
+        vec2 poloha = (vec2(hash(id + 3.1), hash(id + 7.7)) - 0.5) * 0.6;
+        float hvezda = step(0.982, h) * smoothstep(0.22, 0.0, length(f - poloha));
+        hvezda *= 0.55 + 0.45 * sin(uCas * (0.8 + h * 2.5) + h * 40.0);
+
+        // Mraky: fbm s pokřivením, takže se valí a mění tvar, ne jen posouvají.
+        vec2 q = p * 2.1 + uPosun;
+        vec2 w = vec2(fbm(q + uCas * 0.018), fbm(q + 5.2 - uCas * 0.013));
+        float n = clamp((fbm(q + 1.7 * w) - 0.22) / 0.56, 0.0, 1.0);
+        float m = smoothstep(1.0 - uMraky, 1.0 - uMraky + 0.38, n);
+        float detail = fbm(q * 2.3 + w * 1.3 + 3.0);
+        vec3 mrakDen = mix(vec3(0.97, 0.97, 0.98), vec3(0.36, 0.38, 0.43), uTemno) * (0.78 + 0.32 * detail);
+        mrakDen *= 1.0 - 0.35 * m * uTemno;
+        vec3 mrakNoc = vec3(0.05, 0.055, 0.085) * (0.5 + 1.1 * detail) + vec3(0.16, 0.17, 0.22) * exp(-dm * dm * 3.0) * (1.0 - uTemno * 0.8);
+        vec3 mrak = mix(mrakDen, mrakNoc, uNoc);
+
+        barva += vec3(0.9, 0.92, 1.0) * hvezda * uNoc * uHvezdy * (1.0 - m);
+        barva = mix(barva, mrak, m);
+
+        // Blesk: rozsvítí mraky zevnitř, kde jsou nejhustší, svítí nejvíc.
+        vec2 bp = vec2(uBleskPos.x * asp, uBleskPos.y);
+        float db = length(p - bp);
+        float dosah = exp(-(db * db) / max(0.0001, uBleskR * uBleskR));
+        barva += vec3(0.82, 0.86, 1.0) * uBlesk * dosah * (0.30 + 1.1 * m * (0.6 + 0.6 * detail));
+
+        // Mlha: šedý závoj, pomalu se vlní.
+        vec3 mlha = mix(vec3(0.62, 0.64, 0.66), vec3(0.05, 0.055, 0.065), uNoc);
+        barva = mix(barva, mlha, uMlha * (0.55 + 0.3 * fbm(p * 1.4 + uCas * 0.03)));
+
+        // Sníh: vločky ve třech hloubkách, které se snášejí a kývají.
+        float snih = 0.0;
+        for (int i = 0; i < 3; i++) {
+          float fi = float(i);
+          vec2 sp = p * (5.0 + fi * 4.0) + vec2(uCas * (0.04 + fi * 0.03), uCas * (0.10 + fi * 0.06)) + fi * 13.0;
+          vec2 sid = floor(sp); vec2 sf = fract(sp) - 0.5; float sh = hash(sid + fi);
+          vec2 o = (vec2(hash(sid + 1.3), hash(sid + 2.7)) - 0.5) * 0.6;
+          o.x += sin(uCas * (0.7 + sh) + sh * 10.0) * 0.15;
+          snih += step(0.72, sh) * smoothstep(0.11 + fi * 0.03, 0.01, length(sf - o)) * (0.5 + 0.25 * fi);
+        }
+        barva += vec3(0.88, 0.9, 0.95) * min(snih, 1.0) * uSnih * (1.0 - uNoc * 0.5);
+
+        // Intenzita a souboj.
+        barva *= 1.0 - uTma;
+        barva = mix(barva, barva * vec3(1.25, 0.5, 0.45) + vec3(0.05, 0.0, 0.0), uRudy * 0.6);
+
+        // Málo HP: kraje tepou do červena ve stejném rytmu jako lampa.
+        float kraj = smoothstep(0.22, 0.55, r) * uHp * (0.45 + 0.55 * uHpFaze);
+        barva = mix(barva, vec3(0.6, 0.0, 0.0), kraj * 0.85);
+
+        // Kalibrace: mřížka 8 × 8, rámeček a kříž uprostřed.
+        if (uKalibrace > 0.5) {
+          vec2 c8 = abs(fract(uv * 8.0 + 0.5) - 0.5);
+          float cara = 1.0 - smoothstep(0.0, 0.012 * 8.0, min(c8.x, c8.y));
+          float ramecek = 1.0 - smoothstep(0.004, 0.009, min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y)));
+          float kriz = (1.0 - smoothstep(0.002, 0.005, abs(uv.x - 0.5))) * step(abs(uv.y - 0.5), 0.06)
+                     + (1.0 - smoothstep(0.002, 0.005, abs(uv.y - 0.5))) * step(abs(uv.x - 0.5), 0.06 / asp);
+          barva = mix(barva * 0.35, vec3(1.0), clamp(cara * 0.6 + ramecek + kriz, 0.0, 1.0));
+        }
+
+        // Měkký okraj do tmy: ostrá hrana obdélníku na stropě kazí iluzi nejvíc.
+        float e = min(min(uv.x, 1.0 - uv.x) * asp, min(uv.y, 1.0 - uv.y));
+        float maska = uOkraj > 0.001 && uKalibrace < 0.5 ? smoothstep(0.0, uOkraj, e) : 1.0;
+        maska = maska * maska * (3.0 - 2.0 * maska);
+        gl_FragColor = vec4(barva * maska * uJas, 1.0);
+      }`;
+
+    let program = null;
+    const U = {};
+    function pripravitGl() {
+      if (!gl) return false;
+      const shader = (typ, zdroj) => {
+        const s = gl.createShader(typ);
+        gl.shaderSource(s, zdroj);
+        gl.compileShader(s);
+        if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error('Shader oblohy: ' + gl.getShaderInfoLog(s));
+        return s;
+      };
+      program = gl.createProgram();
+      gl.attachShader(program, shader(gl.VERTEX_SHADER, VS));
+      gl.attachShader(program, shader(gl.FRAGMENT_SHADER, FS));
+      gl.linkProgram(program);
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error('Shader oblohy: ' + gl.getProgramInfoLog(program));
+      gl.useProgram(program);
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+      const a = gl.getAttribLocation(program, 'a');
+      gl.enableVertexAttribArray(a);
+      gl.vertexAttribPointer(a, 2, gl.FLOAT, false, 0, 0);
+      for (const jmeno of ['uRes', 'uCas', 'uPosun', 'uNoc', 'uMraky', 'uTemno', 'uMlha', 'uSnih', 'uTma', 'uRudy', 'uHp', 'uHpFaze',
+        'uBlesk', 'uBleskR', 'uBleskPos', 'uOkraj', 'uJas', 'uHvezdy', 'uKalibrace']) {
+        U[jmeno] = gl.getUniformLocation(program, jmeno);
+      }
+      return true;
+    }
+    let glOk = false;
+    try {
+      glOk = pripravitGl();
+    } catch (e) {
+      console.error(e);
+      zapsat(String(e.message));
+    }
+    if (!glOk) zapsat('WebGL nejde: obloha je jen barevný přechod.');
+
+    /* ---------- Kalibrace: čtyři rohy → perspektivní transformace (jednoduchý videomapping) ---------- */
+    let kalibrace = { rohy: [[0, 0], [1, 0], [1, 1], [0, 1]], okraj: 0.12, jas: 0.75, hvezdy: true };
+    let tazeno = null; // index rohu, který se právě táhne (echo z Hubu ho nepřepíše)
+    const plocha = $('#plocha');
+    const bodyRohu = [...document.querySelectorAll('.roh')];
+
+    /** Matice čtverce W × H na čtyřúhelník (Heckbert): rohy v pořadí LH, PH, PD, LD v pixelech. */
+    function maticeCtyruhelniku(W, H, [[x0, y0], [x1, y1], [x2, y2], [x3, y3]]) {
+      const dx1 = x1 - x2, dx2 = x3 - x2, dx3 = x0 - x1 + x2 - x3;
+      const dy1 = y1 - y2, dy2 = y3 - y2, dy3 = y0 - y1 + y2 - y3;
+      const jm = dx1 * dy2 - dx2 * dy1;
+      const g = Math.abs(jm) < 1e-9 ? 0 : (dx3 * dy2 - dx2 * dy3) / jm;
+      const h = Math.abs(jm) < 1e-9 ? 0 : (dx1 * dy3 - dx3 * dy1) / jm;
+      const a = x1 - x0 + g * x1, b = x3 - x0 + h * x3, c = x0;
+      const d = y1 - y0 + g * y1, e = y3 - y0 + h * y3, f = y0;
+      return [a / W, d / W, 0, g / W, b / H, e / H, 0, h / H, 0, 0, 1, 0, c, f, 0, 1];
+    }
+
+    function rozmerPlochy() {
+      const W = window.innerWidth, H = window.innerHeight;
+      plocha.style.width = W + 'px';
+      plocha.style.height = H + 'px';
+      nebe.width = Math.max(64, Math.round(W * KVALITA));
+      nebe.height = Math.max(36, Math.round(H * KVALITA));
+      klikatice.width = W;
+      klikatice.height = H;
+      if (gl) gl.viewport(0, 0, nebe.width, nebe.height);
+      umistitRohy();
+    }
+
+    function umistitRohy() {
+      const W = window.innerWidth, H = window.innerHeight;
+      const px = kalibrace.rohy.map(([x, y]) => [x * W, y * H]);
+      plocha.style.transform = `matrix3d(${maticeCtyruhelniku(W, H, px).map((v) => +v.toFixed(10)).join(',')})`;
+      bodyRohu.forEach((el, i) => {
+        el.style.left = px[i][0] + 'px';
+        el.style.top = px[i][1] + 'px';
+      });
+    }
+
+    function ukazatKalibraci() {
+      $('#k-okraj').value = kalibrace.okraj;
+      $('#o-okraj').textContent = Math.round(kalibrace.okraj * 100) + ' %';
+      $('#k-jas').value = kalibrace.jas;
+      $('#o-jas').textContent = Math.round(kalibrace.jas * 100) + ' %';
+      $('#k-hvezdy').checked = kalibrace.hvezdy;
+      umistitRohy();
+    }
+
+    let casovacUlozeni = null;
+    function ulozit(zmena) {
+      kalibrace = { ...kalibrace, ...zmena };
+      ukazatKalibraci();
+      clearTimeout(casovacUlozeni);
+      casovacUlozeni = setTimeout(() => {
+        fetch('/api/strop', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(kalibrace) })
+          .then((r) => (r.ok ? r.json() : r.json().then((j) => Promise.reject(new Error(j.chyba ?? j.error ?? r.status)))))
+          .catch((e) => zapsat('Kalibrace se neuložila: ' + e.message));
+      }, 250);
+    }
+
+    function prevzitKalibraci(k) {
+      if (!k?.rohy || tazeno !== null) return;
+      kalibrace = k;
+      ukazatKalibraci();
+    }
+    sledovat('strop', '/api/strop', prevzitKalibraci);
+
+    bodyRohu.forEach((el, i) => {
+      el.addEventListener('pointerdown', (e) => {
+        tazeno = i;
+        el.setPointerCapture(e.pointerId);
+        el.style.cursor = 'grabbing';
+      });
+      el.addEventListener('pointermove', (e) => {
+        if (tazeno !== i) return;
+        const rohy = kalibrace.rohy.map((r) => [...r]);
+        rohy[i] = [e.clientX / window.innerWidth, e.clientY / window.innerHeight].map((v) => Math.max(-1, Math.min(2, v)));
+        ulozit({ rohy });
+      });
+      const pustit = () => {
+        tazeno = null;
+        el.style.cursor = '';
+      };
+      el.addEventListener('pointerup', pustit);
+      el.addEventListener('pointercancel', pustit);
+      // Doladění šipkami: klik na kolečko, pak šipky (se Shiftem víc).
+      el.tabIndex = 0;
+      el.addEventListener('keydown', (e) => {
+        const krok = e.shiftKey ? 0.01 : 0.002;
+        const posun = { ArrowLeft: [-krok, 0], ArrowRight: [krok, 0], ArrowUp: [0, -krok], ArrowDown: [0, krok] }[e.key];
+        if (!posun) return;
+        e.preventDefault();
+        const rohy = kalibrace.rohy.map((r) => [...r]);
+        rohy[i] = [rohy[i][0] + posun[0], rohy[i][1] + posun[1]];
+        ulozit({ rohy });
+      });
+    });
+
+    $('#k-okraj').addEventListener('input', (e) => ulozit({ okraj: Number(e.target.value) }));
+    $('#k-jas').addEventListener('input', (e) => ulozit({ jas: Number(e.target.value) }));
+    $('#k-hvezdy').addEventListener('change', (e) => ulozit({ hvezdy: e.target.checked }));
+    // Převrácení prohodí rohy: obraz přes zrcadlo pod 45° je zrcadlově obrácený.
+    $('#k-zrcadlit-x').addEventListener('click', () => { const [a, b, c, d] = kalibrace.rohy; ulozit({ rohy: [b, a, d, c] }); });
+    $('#k-zrcadlit-y').addEventListener('click', () => { const [a, b, c, d] = kalibrace.rohy; ulozit({ rohy: [d, c, b, a] }); });
+    $('#k-otocit').addEventListener('click', () => { const [a, b, c, d] = kalibrace.rohy; ulozit({ rohy: [d, a, b, c] }); });
+    $('#k-vychozi').addEventListener('click', () => ulozit({ rohy: [[0, 0], [1, 0], [1, 1], [0, 1]], okraj: 0.12, jas: 0.75, hvezdy: true }));
+    $('#k-hotovo').addEventListener('click', () => prepnout('kalibrace', false));
+
+    /* ---------- Režimy ovládání: K = kalibrace, Z = zkouška, Esc zavře ---------- */
+    function prepnout(trida, zap = !document.body.classList.contains(trida)) {
+      document.body.classList.toggle(trida, zap);
+      document.body.classList.toggle('ovladani', document.body.classList.contains('kalibrace') || document.body.classList.contains('zkouska'));
+    }
+    addEventListener('keydown', (e) => {
+      if (e.target instanceof HTMLInputElement) return;
+      if (e.key === 'k' || e.key === 'K') prepnout('kalibrace');
+      else if (e.key === 'z' || e.key === 'Z') prepnout('zkouska');
+      else if (e.key === 'b' || e.key === 'B') zablesknout({ vzdalenost: ucinny().bourka });
+      else if (e.key === 'Escape') { prepnout('kalibrace', false); prepnout('zkouska', false); }
+    });
+    if (parametry.has('zkouska')) prepnout('zkouska', true);
+    if (parametry.has('kalibrace')) prepnout('kalibrace', true);
+
+    /* ---------- Zkouška: místní přepsání scény, sdílené mezi okny stropu v tomhle prohlížeči ---------- */
+    function nastavitZkousku(zmena, odjinud = false) {
+      zkouska = zmena === null ? null : { ...(zkouska ?? {}), ...zmena };
+      if (!odjinud) kanal?.postMessage({ zkouska });
+      prepocitat();
+    }
+    function oznacitZkousku() {
+      const s = ucinny();
+      document.querySelectorAll('#zkouska [data-skupina]').forEach((skupina) => {
+        const klic = skupina.dataset.skupina;
+        skupina.querySelectorAll('[data-hodnota]').forEach((b) => {
+          const v = b.dataset.hodnota;
+          const zap = klic === 'pocasi' ? (v === '' ? s.pocasi.length === 0 : s.pocasi.includes(v)) : String(s[klic]) === v;
+          b.setAttribute('aria-pressed', String(zap));
+        });
+      });
+      $('#z-souboj').setAttribute('aria-pressed', String(s.rezim === 'souboj'));
+      $('#z-hp').setAttribute('aria-pressed', String(Boolean(s.hp)));
+    }
+    document.querySelectorAll('#zkouska [data-skupina]').forEach((skupina) => {
+      skupina.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-hodnota]');
+        if (!b) return;
+        const klic = skupina.dataset.skupina;
+        const v = b.dataset.hodnota;
+        if (klic === 'pocasi') {
+          // Jako v Hubu: efekty jdou kombinovat, Jasno je vypne.
+          const s = ucinny();
+          const p = new Set(s.pocasi);
+          if (v === '') p.clear();
+          else if (p.has(v)) p.delete(v);
+          else p.add(v);
+          nastavitZkousku({ pocasi: [...p] });
+        } else nastavitZkousku({ [klic]: klic === 'intenzita' ? Number(v) : v });
+      });
+    });
+    $('#z-souboj').addEventListener('click', () => nastavitZkousku({ souboj: ucinny().rezim !== 'souboj' }));
+    $('#z-hp').addEventListener('click', () => nastavitZkousku({ hp: !ucinny().hp }));
+    $('#z-hub').addEventListener('click', () => nastavitZkousku(null));
+    $('#z-zavrit').addEventListener('click', () => prepnout('zkouska', false));
+    $('#z-blesk').addEventListener('click', () => {
+      const v = ucinny().bourka;
+      zablesknout({ vzdalenost: v });
+      kanal?.postMessage({ blesk: v });
+    });
+    kanal?.addEventListener('message', (e) => {
+      if ('zkouska' in (e.data ?? {})) nastavitZkousku(e.data.zkouska, true);
+      if (e.data?.blesk) zablesknout({ vzdalenost: e.data.blesk });
+    });
+
+    /* ---------- Blesky: z Hubu (bouřka v Hubu), nebo samy ve zkoušce s bouřkou ---------- */
+    // Vzdálenost bouřky: daleko slabá záře u kraje, blízko jasná skvrna v mracích, nad námi celý strop a klikatice.
+    const BLESK = {
+      daleko: { pulzy: [0.35], dosah: 0.35, klikatice: false },
+      blizko: { pulzy: [0.85, 0.4], dosah: 0.65, klikatice: false },
+      'nad-nami': { pulzy: [1.1, 0.5, 0.95], dosah: 1.6, klikatice: true },
+    };
+    const blesk = { sila: 0, pos: [0.5, 0.5], dosah: 0.6 };
+    let bleskBezi = false;
+    let zablesky = [];
+    const klikatice = $('#klikatice');
+    const kc = klikatice.getContext('2d');
+    let klikaticeAlfa = 0;
+    const cekat = (ms) => new Promise((r) => setTimeout(r, ms));
+
+    function poziceBlesku(vzdalenost) {
+      const n = Math.random;
+      if (vzdalenost === 'daleko') {
+        // U kraje: bouřka je za obzorem, strop jen zasvítí z jedné strany.
+        const strana = Math.floor(n() * 4);
+        const t = 0.15 + n() * 0.7;
+        return [[0.04, t], [0.96, t], [t, 0.04], [t, 0.96]][strana];
+      }
+      if (vzdalenost === 'nad-nami') return [0.35 + n() * 0.3, 0.35 + n() * 0.3];
+      return [0.2 + n() * 0.6, 0.2 + n() * 0.6];
+    }
+
+    function nakreslitKlikatici(pos) {
+      const W = klikatice.width, H = klikatice.height;
+      kc.clearRect(0, 0, W, H);
+      const start = [Math.random() < 0.5 ? W * 0.08 : W * 0.92, H * (0.15 + Math.random() * 0.7)];
+      const konec = [pos[0] * W, pos[1] * H];
+      const vetev = (a, b, sirka, hloubka) => {
+        const body = [a];
+        const kroku = 14;
+        for (let i = 1; i < kroku; i++) {
+          const t = i / kroku;
+          const odchylka = (Math.random() - 0.5) * Math.min(W, H) * 0.06;
+          const nx = -(b[1] - a[1]), ny = b[0] - a[0];
+          const d = Math.hypot(nx, ny) || 1;
+          body.push([a[0] + (b[0] - a[0]) * t + (nx / d) * odchylka, a[1] + (b[1] - a[1]) * t + (ny / d) * odchylka]);
+          if (hloubka < 2 && Math.random() < 0.18) {
+            const z = body[body.length - 1];
+            const uhel = Math.atan2(b[1] - a[1], b[0] - a[0]) + (Math.random() - 0.5) * 1.6;
+            const delka = Math.hypot(b[0] - a[0], b[1] - a[1]) * (0.15 + Math.random() * 0.2);
+            vetev(z, [z[0] + Math.cos(uhel) * delka, z[1] + Math.sin(uhel) * delka], sirka * 0.5, hloubka + 1);
+          }
+        }
+        body.push(b);
+        kc.lineWidth = sirka;
+        kc.beginPath();
+        kc.moveTo(...body[0]);
+        for (const bod of body.slice(1)) kc.lineTo(...bod);
+        kc.stroke();
+      };
+      kc.strokeStyle = 'rgba(235, 240, 255, 0.95)';
+      kc.shadowColor = 'rgba(170, 190, 255, 0.9)';
+      kc.shadowBlur = 24;
+      kc.lineJoin = 'round';
+      vetev(start, konec, 5, 0);
+      klikaticeAlfa = 1;
+    }
+
+    async function zablesknout({ vzdalenost } = {}) {
+      if (bleskBezi) return;
+      bleskBezi = true;
+      const v = BLESK[vzdalenost] ? vzdalenost : 'blizko';
+      const typ = BLESK[v];
+      blesk.pos = poziceBlesku(v);
+      blesk.dosah = typ.dosah;
+      zapsat('blesk ' + v);
+      for (const [i, sila] of typ.pulzy.entries()) {
+        // Nejvýš 3 záblesky za sekundu (rozhodnutí 64), i když jeden blesk má víc pulzů.
+        const t = performance.now();
+        zablesky = zablesky.filter((x) => t - x < 1000);
+        if (zablesky.length >= 3) break;
+        zablesky.push(t);
+        blesk.sila = sila;
+        if (typ.klikatice && i === 0) nakreslitKlikatici(blesk.pos);
+        await cekat(70 + Math.random() * 60);
+        await cekat(130);
+      }
+      bleskBezi = false;
+    }
+    // Blesk z Hubu je jednorázový pokyn: starý se po připojení nehraje (filtrováno i na serveru).
+    odebirat(['blesk'], (_, data) => zablesknout(data));
+
+    // Ve zkoušce s bouřkou blýská obloha sama, jako Hub (průměrně po 28 / 20 / 13 / 8 s podle intenzity).
+    let casovacBlesku = null;
+    function planovatBlesky() {
+      clearTimeout(casovacBlesku);
+      const s = ucinny();
+      if (!zkouska || !s.pocasi.includes('bourka')) return;
+      const prumer = [28, 20, 13, 8][Math.max(0, Math.min(3, Number(s.intenzita) || 0))];
+      casovacBlesku = setTimeout(() => {
+        zablesknout({ vzdalenost: ucinny().bourka });
+        planovatBlesky();
+      }, prumer * (0.5 + Math.random()) * 1000);
+    }
+
+    /* ---------- Data z Hubu ---------- */
+    sledovat('scena', '/api/scena', (s) => {
+      if (!s) return;
+      hub = { varianta: s.varianta ?? 'den', pocasi: s.pocasi ?? [], intenzita: s.intenzita ?? 0, bourka: s.bourka ?? 'blizko', rezim: s.rezim ?? 'pruzkum' };
+      prepocitat();
+    });
+    let hpCyklus = 4;
+    odebirat(['kriticke-hp'], (_, data) => {
+      hpHub = Boolean(data);
+      if (data?.cyklus_s) hpCyklus = Math.max(1, data.cyklus_s);
+      prepocitat();
+    });
+
+    /* ---------- Vykreslování ---------- */
+    let posledni = performance.now();
+    const posun = [0, 0];
+    const SMER = [0.89, 0.45];
+    const zacatek = performance.now();
+    function snimek(t) {
+      const dt = Math.min(0.1, (t - posledni) / 1000);
+      posledni = t;
+      for (const k of Object.keys(ted)) ted[k] += (cil[k] - ted[k]) * (1 - Math.exp(-dt / DOJEZD[k]));
+      posun[0] += SMER[0] * ted.rychlost * dt;
+      posun[1] += SMER[1] * ted.rychlost * dt;
+      blesk.sila *= Math.exp(-dt / 0.16);
+      if (blesk.sila < 0.003) blesk.sila = 0;
+      const cas = (t - zacatek) / 1000;
+      const kal = document.body.classList.contains('kalibrace');
+
+      if (glOk) {
+        gl.uniform2f(U.uRes, nebe.width, nebe.height);
+        gl.uniform1f(U.uCas, cas);
+        gl.uniform2f(U.uPosun, posun[0], posun[1]);
+        gl.uniform1f(U.uNoc, ted.noc);
+        gl.uniform1f(U.uMraky, ted.mraky);
+        gl.uniform1f(U.uTemno, ted.temno);
+        gl.uniform1f(U.uMlha, ted.mlha);
+        gl.uniform1f(U.uSnih, ted.snih);
+        gl.uniform1f(U.uTma, ted.tma);
+        gl.uniform1f(U.uRudy, ted.rudy);
+        gl.uniform1f(U.uHp, ted.hp);
+        gl.uniform1f(U.uHpFaze, 0.5 + 0.5 * Math.sin((cas / hpCyklus) * Math.PI * 2));
+        gl.uniform1f(U.uBlesk, blesk.sila);
+        gl.uniform1f(U.uBleskR, blesk.dosah);
+        gl.uniform2f(U.uBleskPos, blesk.pos[0], blesk.pos[1]);
+        gl.uniform1f(U.uOkraj, kalibrace.okraj);
+        gl.uniform1f(U.uJas, kalibrace.jas);
+        gl.uniform1f(U.uHvezdy, kalibrace.hvezdy ? 1 : 0);
+        gl.uniform1f(U.uKalibrace, kal ? 1 : 0);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      } else {
+        const den = `rgb(${Math.round(60 * (1 - ted.noc) * kalibrace.jas)},${Math.round(110 * (1 - ted.noc * 0.9) * kalibrace.jas)},${Math.round(190 * (1 - ted.noc * 0.8) * kalibrace.jas)})`;
+        plocha.style.background = den;
+      }
+
+      // Klikatice blesku nad námi: krátce a s měkkým okrajem jako obloha.
+      if (klikaticeAlfa > 0) {
+        klikaticeAlfa = Math.max(0, klikaticeAlfa - dt / 0.22);
+        klikatice.style.opacity = String(klikaticeAlfa * kalibrace.jas);
+        if (klikaticeAlfa === 0) kc.clearRect(0, 0, klikatice.width, klikatice.height);
+      }
+      requestAnimationFrame(snimek);
+    }
+
+    addEventListener('resize', rozmerPlochy);
+    rozmerPlochy();
+    prepocitat();
+    requestAnimationFrame(snimek);
+
+    // Nápověda na začátku, dokud strop nemá kalibraci: na stropě se pak ví, co zmáčknout.
+    setTimeout(() => {
+      const vychozi = JSON.stringify(kalibrace.rohy) === JSON.stringify([[0, 0], [1, 0], [1, 1], [0, 1]]);
+      if (!vychozi || document.body.classList.contains('ovladani')) return;
+      const n = $('#napoveda');
+      n.innerHTML = 'Strop z DM Hubu · <b>K</b> kalibrace · <b>Z</b> zkouška · <b>B</b> blesk · <b>F11</b> celá obrazovka';
+      n.classList.add('videt');
+      setTimeout(() => n.classList.remove('videt'), 9000);
+    }, 1500);
+  </script>
+</body>
+</html>

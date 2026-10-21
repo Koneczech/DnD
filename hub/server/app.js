@@ -13,6 +13,7 @@ import { Git } from './git.js';
 import { Vysilac, filtrUdalosti } from './sse.js';
 import { Sezeni, datumCesky } from './sezeni.js';
 import { Odpocet } from './odpocet.js';
+import { Strop } from './strop.js';
 import { jeVOneDrive, nainstalovatHook } from './prostredi.js';
 import { zkusebniRezim } from './zkouska.js';
 import { Kalendar } from './kalendar.js';
@@ -141,6 +142,8 @@ export class Hub {
     this.data = new DataKampane({ cesty: this.c, zapisovac: this.zapisovac });
     this.sezeni = new Sezeni({ cesty: this.c, data: this.data, zapisovac: this.zapisovac });
     this.odpocet = new Odpocet({ soubor: path.join(this.c.lokalniStav, 'odpocet.json') });
+    /** Obloha na strop z projektoru: kalibrace projekce tohoto PC (výstup strop.html). */
+    this.strop = new Strop({ soubor: path.join(this.c.lokalniStav, 'strop.json') });
     this.hlidac = new Hlidac(this.c.kampan);
     this.nastaveni = new Nastaveni(this.c.env);
     this.obs = new Obs(obsKlient ? { klient: obsKlient } : {});
@@ -417,6 +420,7 @@ export class Hub {
     this.zvuk.on('stav', (z) => this.vysilac.vyslat('zvuk-stav', z));
     this.zvuk.on('soubory', () => this.data.naplanovatKontrolu());
     this.svetla.on('stav', (s) => this.vysilac.vyslat('svetla', s));
+    this.strop.on('stav', (k) => this.vysilac.vyslat('strop', k));
     this.svetla.on('blesk', (b) => {
       this.vysilac.vyslat('blesk', b);
       this.zvuk.hrom(b); // hrom za 0–8 s podle vzdálenosti (Blok 4, tabulka Blesky)
@@ -440,6 +444,7 @@ export class Hub {
     if (this.obs.pripojeno) this.iniciativa.doObs().catch(() => {});
     await this.odpocet.nacist();
     this.vysilac.vyslat('odpocet', this.odpocet.verejny());
+    await this.strop.nacist();
     this.vysilac.vyslat('verze', await otiskKodu([this.c.panel, this.c.vystupy, path.join(HUB_DIR, 'sdilene')]));
     await this.hlidac.spustit();
 
@@ -818,6 +823,8 @@ export class Hub {
       return poslatJson(res, 200, await mapa[akce]());
     }
     if (p === '/api/odpocet' && m === 'GET') return poslatJson(res, 200, this.odpocet.verejny());
+    if (p === '/api/strop' && m === 'GET') return poslatJson(res, 200, this.strop.verejny());
+    if (p === '/api/strop' && m === 'PUT') return poslatJson(res, 200, await this.strop.nastavit(await nacistJson(req)));
     if (p === '/api/zaznam' && m === 'GET') {
       const n = Number(url.searchParams.get('n')) || 300;
       const od = Number(url.searchParams.get('od')) || 0;

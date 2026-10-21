@@ -20,6 +20,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | Kdo je kdo | **Hledat v kánonu** nahoře (Ctrl+K) nebo **Kánon**: wiki, karta, mapa, Pohled družiny | Kánon |
 | Družina se něco dozví | Karta v Kánonu → **Co ví družina** → oko 👁 u odrážky, nebo napiš novou a Enter. Hotový odstavec z textu karty odkryješ okem 👁 vedle něj | Kánon |
 | Něco nejde | **Systém → Záznam událostí → Stáhnout** a pošli Claudovi | Systém |
+| Projektor | Edge s adresou Stropu na displeji projektoru, F11; K kalibrace, Z zkouška | Nastavení → Výstupy pro OBS, `reference/strop.md` |
 | Mimo domov | Codespace na GitHubu → panel se štítkem **Zkouška**, nic se neukládá | `reference/zkouska-v-cloudu.md` |
 | Mimo domov | Kánon v prohlížeči, i z práce; pohled DM po zadání hesla, úpravy karet přímo na stránce (token GitHubu) | [koneczech.github.io/DnD](https://koneczech.github.io/DnD/) |
 
@@ -39,6 +40,8 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | **OBS** | Přepínání scén podle rolí, výstupy jako zdroje Browser, živý náhled | ✓ |
 | **Světla** | Hue a WiZ po rolích (hlavní, pozadí, lampa), světla místa, blesky při bouřce | ✓ |
 | | Málo HP: lampa i hlavní světlo pulzují červeně | ◐ |
+| **Strop** | Obloha z projektoru na strop podle scény: den a noc, počasí, bouřka s blesky podle vzdálenosti, intenzita, souboj, málo HP | ◐ |
+| | Kalibrace (K): čtyři rohy, měkký okraj, jas, převrácení pro zrcadlo; zkouška bez zásahu do Hubu (Z) | ◐ |
 | **Souboj** | Improved Initiative v záložce (Epic účet přes Hub), Player View hlídaný Hubem | ✓ |
 | | Animace zásahu (velký zásah, rozpad poražených, šedé karty) | ◐ |
 | | Zvuky na tah podle postavy a podoby Alby, živě bez zpoždění (spojení jako Player View) | ◐ |
@@ -109,7 +112,7 @@ Vlastní combat tracker, sledování zdrojů postav (BV, kouzla, Zuřivost), mix
 | --- | --- |
 | Pravidla práce pro Clauda | `CLAUDE.md` |
 | Zadání, rozhodnutí, otevřené body | `ZADANI.md` |
-| Návody (zvuk, OBS, ilustrace, zkouška v cloudu) | `reference/` |
+| Návody (zvuk, OBS, ilustrace, strop, zkouška v cloudu) | `reference/` |
 | Prostředí pro zkoušku v cloudu (Codespaces) | `.devcontainer/` |
 | Čtecí verze kánonu (GitHub Pages) | `hub/stranky/`, `hub/server/stranky.js`, `.github/workflows/stranky.yml`; úpravy na webu `hub/sdilene/upravy-webu.js` |
 | Editor karty: živý náhled | `hub/panel/kanon-zivy-nahled.js`, CodeMirror 6 v `hub/panel/vendor/codemirror.js` (obnoví `npm run vendor:editor`) |

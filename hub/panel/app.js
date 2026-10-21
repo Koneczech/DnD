@@ -2647,6 +2647,7 @@ $('#adresa-cenik').textContent = `${location.origin}/vystupy/obchod.html`;
 $('#adresa-misto').textContent = `${location.origin}/vystupy/misto.html`;
 $('#adresa-hudba').textContent = `${location.origin}/vystupy/hudba.html`;
 $('#adresa-uder').textContent = `${location.origin}/vystupy/uder.html`;
+$('#adresa-strop').textContent = `${location.origin}/vystupy/strop.html`;
 for (const b of document.querySelectorAll('[data-kopirovat]')) {
   b.addEventListener('click', async () => {
     await navigator.clipboard?.writeText($(`#${b.dataset.kopirovat}`).textContent).catch(() => {});

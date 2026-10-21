@@ -7,11 +7,12 @@ verejne: false
 ikona: 🔥
 aliases: []
 lezi_v: "[[high-forest]]"
-vazby: ["[[alba]]", "[[bifron-nox]]", "[[tichy-hvozd]]"]
+vazby: [ "[[alba]]", "[[bifron-nox]]", "[[tichy-hvozd]]" ]
 tags: []
 popis_obrazu: ""
 ilustrace: []
 zdroj: https://app.notion.com/p/3c79ed22673681199747de8c91643896
+strop: tabor
 ---
 # Uhlíři a lovci na kraji hvozdu
 

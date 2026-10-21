@@ -47,6 +47,7 @@ svetla:
     hlavni: { barva: [ 0, 58, 255 ], jas: 100 }
     pozadi: { barva: [ 129, 255, 0 ], jas: 100 }
     lampa: { barva: [ 31, 35, 255 ], jas: 21 }
+strop: jeskyne
 ---
 # Lurkwood
 

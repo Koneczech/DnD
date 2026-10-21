@@ -5,13 +5,14 @@ typ: misto
 nazev: "U Kamenné mísy"
 verejne: false
 ikona: 🥣
-aliases: ["U Kamenné mísy (Triboar)"]
+aliases: [ "U Kamenné mísy (Triboar)" ]
 lezi_v: "[[triboar]]"
-vazby: ["[[norra-ambleforge]]", "[[helga-hardbeard]]", "[[koudur]]", "[[hedwiga-hardbeard]]"]
-tags: [aktualni]
+vazby: [ "[[norra-ambleforge]]", "[[helga-hardbeard]]", "[[koudur]]", "[[hedwiga-hardbeard]]" ]
+tags: [ aktualni ]
 popis_obrazu: ""
 ilustrace: []
 zdroj: https://app.notion.com/p/3c69ed22673681c5abe0e94daa5e2cb2
+strop: interier
 ---
 # U Kamenné mísy
 

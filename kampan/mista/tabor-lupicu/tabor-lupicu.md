@@ -36,7 +36,7 @@ ilustrace:
   - soubor: mapa-shora.png
     ucel: scena
     stav: mapa
-    skryta: true
+    skryta: false
     puvod: Autumn Woodland Camp with Horses and Treehouse.png
   - soubor: spalene-dopisy.png
     ucel: scena
@@ -76,6 +76,7 @@ zvuk:
       - { zvuk: nahodne/boj/rinceni, kazdych_s: 6, nahodilost: 0.8, hlasitost: 0.7, vzdalenost: 0.4 }
       - { zvuk: nahodne/boj/sip, kazdych_s: 12, nahodilost: 0.9, hlasitost: 0.7, vzdalenost: 0.3 }
       - { zvuk: nahodne/boj/pokrik, kazdych_s: 15, nahodilost: 0.9, hlasitost: 0.6, vzdalenost: 0.6 }
+strop: tabor
 ---
 # Tábor lupičů
 

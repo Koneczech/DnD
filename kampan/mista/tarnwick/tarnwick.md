@@ -5,13 +5,14 @@ typ: misto
 nazev: "Tarnwick"
 verejne: false
 ikona: 🌲
-aliases: ["Pohlcené město"]
+aliases: [ "Pohlcené město" ]
 lezi_v: "[[high-forest]]"
-vazby: ["[[rod-redgrave]]", "[[praotec]]", "[[alba]]", "[[bifron-nox]]", "[[osric-redgrave]]"]
+vazby: [ "[[rod-redgrave]]", "[[praotec]]", "[[alba]]", "[[bifron-nox]]", "[[osric-redgrave]]" ]
 tags: []
 popis_obrazu: ""
 ilustrace: []
 zdroj: https://app.notion.com/p/3c79ed22673681198696fe966bccb0eb
+strop: les
 ---
 # Tarnwick
 

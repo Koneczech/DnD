@@ -12,6 +12,7 @@ tags: []
 popis_obrazu: ""
 ilustrace: []
 zdroj: "DM 20. 10. 2026 (hierarchie míst)"
+strop: nebe
 ---
 # Triboar
 

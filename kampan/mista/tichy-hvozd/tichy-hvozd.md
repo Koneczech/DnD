@@ -7,11 +7,12 @@ verejne: false
 ikona: 🌲
 aliases: []
 lezi_v: "[[high-forest]]"
-vazby: ["[[alba]]", "[[bifron-nox]]", "[[corvain-thornroot]]", "[[albin-privesek]]", "[[tarnwick]]", "[[uhliri-a-lovci]]", "[[patyk]]"]
+vazby: [ "[[alba]]", "[[bifron-nox]]", "[[corvain-thornroot]]", "[[albin-privesek]]", "[[tarnwick]]", "[[uhliri-a-lovci]]", "[[patyk]]" ]
 tags: []
 popis_obrazu: ""
 ilustrace: []
 zdroj: https://app.notion.com/p/3c79ed22673681e896a8d2e49b8c9c04
+strop: les
 ---
 # Tichý hvozd
 

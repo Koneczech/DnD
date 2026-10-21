@@ -7,11 +7,12 @@ verejne: false
 ikona: ⛏️
 aliases: []
 lezi_v: "[[cragy]]"
-vazby: ["[[dorn-treestone]]", "[[bruna-ironvale]]", "[[tusker]]", "[[poloha-treestoneovske-stoly]]"]
+vazby: [ "[[dorn-treestone]]", "[[bruna-ironvale]]", "[[tusker]]", "[[poloha-treestoneovske-stoly]]" ]
 tags: []
 popis_obrazu: ""
 ilustrace: []
 zdroj: https://app.notion.com/p/3c79ed2267368115ab3adf5ce8a98d77
+strop: jeskyne
 ---
 # Treestoneovská štola v Cragách
 

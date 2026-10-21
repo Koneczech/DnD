@@ -3,9 +3,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { HUB_DIR } from '../server/cesty.js';
 
 const BALIK = path.join(HUB_DIR, 'panel', 'vendor', 'codemirror.js');
+/** import() chce na Windows adresu file://, ne cestu s písmenem disku. */
+const nacistBalik = () => import(pathToFileURL(BALIK).href);
 
 test('panel/vendor/codemirror.js: v repu, s verzemi z package.json a se vším, co editor používá', async () => {
   const text = await fs.readFile(BALIK, 'utf8');
@@ -13,14 +16,14 @@ test('panel/vendor/codemirror.js: v repu, s verzemi z package.json a se vším, 
   for (const jmeno of ['@codemirror/state', '@codemirror/view', '@codemirror/language', '@codemirror/commands', '@lezer/markdown']) {
     assert.ok(text.slice(0, 600).includes(`${jmeno}@${balicek.devDependencies[jmeno]}`), `${jmeno} v hlavičce odpovídá devDependencies (jinak npm run vendor:editor)`);
   }
-  const cm = await import(BALIK);
+  const cm = await nacistBalik();
   const editor = await fs.readFile(path.join(HUB_DIR, 'panel', 'kanon-zivy-nahled.js'), 'utf8');
   const pouzite = /const \{([^}]+)\} = cm;/.exec(editor)[1].split(',').map((x) => x.trim()).filter(Boolean);
   for (const jmeno of pouzite) assert.ok(jmeno in cm, `balík exportuje ${jmeno}`);
 });
 
 test('markdown parser z balíku pozná prvky, které živý náhled formátuje', async () => {
-  const { parserMarkdownu, GFM } = await import(BALIK);
+  const { parserMarkdownu, GFM } = await nacistBalik();
   const md = '# Název\n\n**tučně** a *kurzíva* a `kód`\n\n- odrážka %%zná%%\n1. číslo\n\n> citace\n\n---\n\n| a | b |\n| --- | --- |\n| 1 | 2 |\n\n[web](https://x.cz)\n';
   const strom = parserMarkdownu.configure([GFM]).parse(md);
   const uzly = new Set();

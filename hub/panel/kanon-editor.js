@@ -5,6 +5,7 @@ import { hledat } from '/sdilene/sit.js';
 import { naHtml } from '/sdilene/markdown.js';
 import { TYPY, STAVY, barvaTypu, el, nahradit, obrazekEntity } from '/panel/kanon-spolecne.js';
 import { POLE_TYPU, OSUDY, ODKAZOVA_POLE, NAPOVEDA, popisekPole, chybejiciOddily, vlozitOddil } from '/sdilene/typy-karet.js';
+import { prikazyKarty, najitLomitko, filtrovatPrikazy, provestPrikaz } from '/sdilene/prikazy-editoru.js';
 
 const PRODLEVA_MS = 1500;
 
@@ -127,9 +128,16 @@ export function vytvoritEditor(ctx) {
     const pred = t.value.slice(0, t.selectionStart);
     const m = /\[\[([^\]\n|#]{0,40})$/.exec(pred);
     if (!m) {
-      st.naseptavac.hidden = true;
+      // Příkazy „/“ (⚠ bod 149): nabídka prvků k vložení.
+      const l = t.selectionStart === t.selectionEnd ? najitLomitko(t.value, t.selectionStart) : null;
+      st.nalez = l ? filtrovatPrikazy(prikazyKarty(st.typ, t.value), l.dotaz).slice(0, 20) : [];
+      st.rezim = 'prikaz';
+      st.lomitko = l;
+      st.vybranyNalez = 0;
+      vykreslitNaseptavac();
       return;
     }
+    st.rezim = 'odkaz';
     const nalez = (m[1].trim() ? hledat(s.data?.entity ?? [], m[1], 8) : (s.data?.entity ?? []).filter((e) => e.aktualni).slice(0, 8));
     st.nalez = nalez;
     st.vybranyNalez = 0;
@@ -142,6 +150,17 @@ export function vytvoritEditor(ctx) {
       st.naseptavac.hidden = true;
       return;
     }
+    if (st.rezim === 'prikaz') {
+      nahradit(st.naseptavac, st.nalez.map((p, i) => {
+        const b = el('button', { type: 'button', className: 'polozka-hledani polozka-prikazu', 'aria-selected': String(i === st.vybranyNalez) }, p.nazev, el('small', {}, el('code', { textContent: p.ukazka })));
+        b.addEventListener('mousedown', (ev) => ev.preventDefault());
+        b.addEventListener('click', () => vlozitPrikaz(p));
+        return el('li', {}, b);
+      }));
+      st.naseptavac.hidden = false;
+      st.naseptavac.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' });
+      return;
+    }
     nahradit(st.naseptavac, st.nalez.map((e, i) => {
       const b = el('button', { type: 'button', className: 'polozka-hledani', 'aria-selected': String(i === st.vybranyNalez) }, el('span', { className: 'tecka' }), e.nazev, el('small', { textContent: ` ${TYPY[e.typ]?.j ?? e.typ}` }));
       b.style.setProperty('--c', barvaTypu(e.typ));
@@ -150,6 +169,18 @@ export function vytvoritEditor(ctx) {
       return el('li', {}, b);
     }));
     st.naseptavac.hidden = false;
+  }
+
+  function vlozitPrikaz(p) {
+    const t = st.textarea;
+    const l = st.lomitko ?? { od: t.selectionStart, dotaz: '' };
+    const r = provestPrikaz(t.value, l.od, l.od + 1 + l.dotaz.length, p, st.typ);
+    st.naseptavac.hidden = true;
+    t.value = r.text;
+    t.focus();
+    t.selectionStart = t.selectionEnd = r.kurzor;
+    t.dispatchEvent(new Event('input')); // uložení, náhled, oddíly; u odkazu i našeptávání karet
+    oddily();
   }
 
   function doplnitOdkaz(e) {
@@ -351,7 +382,7 @@ export function vytvoritEditor(ctx) {
           tlacitkoNahledu),
         el('div', { className: 'editor-oddily', 'aria-live': 'polite' }),
         el('div', { className: 'editor-plochy' }, el('div', { className: 'editor-obal' }, textarea, naseptavac), nahledEl),
-        el('p', { className: 'poznamka napoveda-editoru' }, 'Markdown jako v Obsidianu. ', el('kbd', { textContent: '[[' }), ' našeptá odkaz na kartu, ', el('kbd', { textContent: 'Ctrl+S' }), ' uloží hned. V oddílu ', el('strong', { textContent: 'Co ví družina' }), ' je každá odrážka zvlášť; odkrytá má na konci značku ', el('code', { textContent: '%%zná%%' }), ' (v kartě ji přepneš okem 👁). Stejnou značkou na konci prvního řádku odkryješ i kterýkoli odstavec nebo odrážku jinde v textu. Oddíly ', el('code', { textContent: '## DM…' }), ' družina nikdy neuvidí.')));
+        el('p', { className: 'poznamka napoveda-editoru' }, 'Markdown jako v Obsidianu. ', el('kbd', { textContent: '/' }), ' nabídne prvek k vložení (nadpis, odrážka, tabulka, oddíl…), ', el('kbd', { textContent: '[[' }), ' našeptá odkaz na kartu, ', el('kbd', { textContent: 'Ctrl+S' }), ' uloží hned. V oddílu ', el('strong', { textContent: 'Co ví družina' }), ' je každá odrážka zvlášť; odkrytá má na konci značku ', el('code', { textContent: '%%zná%%' }), ' (v kartě ji přepneš okem 👁). Stejnou značkou na konci prvního řádku odkryješ i kterýkoli odstavec nebo odrážku jinde v textu. Oddíly ', el('code', { textContent: '## DM…' }), ' družina nikdy neuvidí.')));
     kam.replaceChildren(formular);
     st = { id, nazev: z.pole.nazev ?? id, typ: z.typ, hash: z.hash, ulozeneTelo: z.telo, textarea, naseptavac, nahledEl, stavEl, formular, zmenenaPole: {}, casovac: null, bezi: null, znovu: false, konflikt: null, nalez: [], vybranyNalez: 0, dotazOdkazu: '' };
     nahradit(formular.querySelector('.editor-pole'), ...poleFormulare(z, z.typ), prezdivky(z), portret(z));
@@ -374,7 +405,8 @@ export function vytvoritEditor(ctx) {
         }
         if (ev.key === 'Enter' || ev.key === 'Tab') {
           ev.preventDefault();
-          doplnitOdkaz(st.nalez[st.vybranyNalez]);
+          if (st.rezim === 'prikaz') vlozitPrikaz(st.nalez[st.vybranyNalez]);
+          else doplnitOdkaz(st.nalez[st.vybranyNalez]);
           return;
         }
         if (ev.key === 'Escape') {
@@ -385,6 +417,8 @@ export function vytvoritEditor(ctx) {
         }
       }
     });
+    // Kurzor přesunutý myší: nabídka (odkaz, příkaz) se přepočítá podle nového místa.
+    textarea.addEventListener('click', () => naseptavani());
     textarea.addEventListener('blur', () => setTimeout(() => {
       if (st) st.naseptavac.hidden = true;
     }, 150));

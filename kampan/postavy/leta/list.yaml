@@ -1,0 +1,95 @@
+# List postavy (character sheet). Hub ho ukáže v záložce List postavy na stránce postavy.
+# Opravy, záchrany, všech 18 dovedností, pasivní hodnoty, zdatnostní bonus, iniciativu,
+# SO a útok kouzlem, kostky obnovy a pozice kouzel Hub dopočítá podle pravidel 2024.
+# Popis polí: sablony/list-postavy.yaml.
+schema: 1
+public: false
+source: "Z projektu v Claude, stav k 21. 8. 2026. Mechanika (jazyky, dovednosti) platí podle listu (R9)."
+classes:
+  - { name: Rogue, level: 3, subclass: Thief }
+species: Halfling
+background: Criminal
+xp: Milestone
+
+abilities: { str: 13, dex: 17, con: 18, int: 8, wis: 14, cha: 9 }
+
+saves:
+  proficient: [dex, int]
+  notes:
+    - "Halfling (Brave): Advantage to avoid or end the Frightened condition"
+
+skills:
+  proficient: [Acrobatics, Animal Handling, Arcana, Stealth]
+  expertise: [Insight, Sleight of Hand]
+  notes:
+    - "✅ Ověřeno: Criminal background v tomto D&D Beyond zdroji dává volný výběr 2 dovedností (zvoleno Animal Handling + Arcana), zbylé 4 (Acrobatics, Stealth, Insight, Sleight of Hand) pocházejí z Rogue classu (\"choose 4\"). Insight a Sleight of Hand mají navíc Expertise z Rogue level1 feature. Celkem 6 proficiency, vše sedí."
+
+senses: []
+
+combat:
+  ac: 14
+  ac_notes: [Leather Armor + DEX]
+  hp: 24
+  hp_note: "V rozsahu možného 22–36 pro Rogue 3 / k8 / CON +4 — OK."
+  initiative_bonus: pb  # Alert
+  speed: { walk: 30, climb: 30 }
+  speed_note: "Climb speed from Second-Story Work"
+
+proficiencies:
+  armor: [Light Armor]
+  weapons: [Crossbow Hand, Rapier, Scimitar, Shortsword, Simple Weapons, Whip]
+  tools: [Thieves' Tools, Vehicles (Land)]
+  languages: [Common, Deep Speech, Elvish, Halfling, Thieves' Cant]
+
+features:
+  - group: Rogue Features
+    items:
+      - Core Rogue Traits
+      - "Expertise: 2 skills (Insight, Sleight of Hand)"
+      - "Sneak Attack: 2d6"
+      - Thieves' Cant
+      - "Weapon Mastery: Dagger (Nick), Hand Crossbow (Vex)"
+      - "Cunning Action: Dash, Disengage or Hide as a Bonus Action"
+      - "Rogue Subclass: Thief"
+      - "Steady Aim: Bonus Action, Advantage on your next attack (Speed 0 until the end of the turn)"
+      - "Fast Hands (Thief): Bonus Action – Sleight of Hand, Utilize or Use Magic Item"
+      - "Second-Story Work (Thief): Climb Speed equals Speed, jump distance uses DEX"
+  - group: Halfling Species Traits
+    items:
+      - "Creature Type: Humanoid; Size: Small; Speed: 30 ft"
+      - "Brave: Advantage vs Frightened"
+      - "Halfling Nimbleness: move through the space of a larger creature"
+      - "Luck: reroll a 1 on a d20"
+      - "Naturally Stealthy: Hide even behind a creature one size larger"
+  - group: Feats
+    items:
+      - "Alert (Criminal background): +2 Initiative Proficiency, Initiative Swap"
+      - "Criminal Ability Score Improvements: increase two scores (+2/+1)"
+
+equipment:
+  items:
+    - Leather Armor
+    - Crossbow (Hand)
+    - Dagger x3
+    - Backpack
+    - Pouch x2
+    - Quiver
+    - Thieves' Tools x2
+    - Bolts x20
+    - Crowbar x2
+    - Traveler's Clothes
+    - Oil x7
+    - Ball Bearings x1000
+    - Rations x5
+    - Rope
+    - Bell
+    - Tinderbox
+    - Waterskin
+    - Hooded Lantern
+    - Candle x10
+  coins: { gp: 16 }
+
+attacks:
+  - { name: "Crossbow, Hand", hit: +5, damage: 1d6+3, type: Piercing, range: 30/120, notes: "Martial, Ammunition, Range, Loading, Vex" }
+  - { name: Dagger, count: 4, hit: +5, damage: 1d4+3, type: Piercing, range: 20/60, notes: "Simple, Finesse, Light, Thrown, Nick" }
+  - { name: Unarmed Strike, hit: +3, damage: "2", type: Bludgeoning }

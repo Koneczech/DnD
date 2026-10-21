@@ -5,6 +5,7 @@
 | Šablona | Kam patří soubor | Tvar |
 | --- | --- | --- |
 | `postava.md` | `kampan/postavy/<id>/<id>.md` | entita |
+| `list-postavy.yaml` | `kampan/postavy/<id>/list.yaml` (list postavy jako data, popis polí uvnitř) | data |
 | `npc.md` | `kampan/npc/<id>/<id>.md` | entita |
 | `padouch.md` | `kampan/padouchove/<id>/<id>.md` | entita |
 | `frakce.md` | `kampan/frakce/<id>/<id>.md` | entita |

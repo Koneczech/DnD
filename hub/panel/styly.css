@@ -1405,6 +1405,129 @@ span.oko { cursor: default; }
 .list-postavy .text-karty .blok-textu > .oko-textu { left: -1.9rem; width: 1.6rem; }
 .list-postavy .text-karty li.blok-textu > .oko-textu { left: -3.1rem; }
 
+/* List postavy z dat list.yaml (⚠ bod 151): rozvržení podle D&D Beyond. */
+.clanek-telo.na-listu { grid-template-columns: minmax(0, 1fr); }
+.clanek-telo.na-listu .clanek-hlavni { max-width: 96rem; }
+/* Sloupce listu se řídí šířkou listu (ne okna): panel má vlevo kategorie, web má jiné okraje. */
+.ls { display: grid; gap: var(--m-3); font-variant-numeric: tabular-nums; container-type: inline-size; }
+.ls-popisek { font-size: var(--t-stitek); text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tlumeny); line-height: 1.3; }
+.ls-hlava { display: flex; align-items: center; gap: var(--m-4); padding: var(--m-3) var(--m-4); border: 1px solid var(--linka); border-radius: var(--zaobleni-karta); background: linear-gradient(100deg, var(--povrch-2), var(--povrch-1) 60%); }
+.ls-portret { width: 4.5rem; height: 4.5rem; flex: none; border-radius: 50%; object-fit: cover; object-position: top; border: 2px solid var(--mosaz); box-shadow: 0 0 0 3px var(--povrch-0); }
+.ls-jmeno { flex: 1; min-width: 0; }
+.ls-tridy { margin: 0; font: 600 var(--t-sekce)/1.25 var(--pismo-svet); color: var(--mosaz); }
+.ls-radek { margin: var(--m-1) 0 0; color: var(--text-tlumeny); font-size: var(--t-popisek); }
+.ls-hrac { display: grid; justify-items: end; gap: 2px; text-align: right; }
+.ls-upozorneni { padding: var(--m-3) var(--m-4); border: 1px solid var(--varovani); border-radius: var(--zaobleni); background: rgb(226 166 75 / 0.09); font-size: var(--t-popisek); }
+.ls-upozorneni p { margin: 0 0 var(--m-1); }
+.ls-upozorneni p:last-child { margin: 0; }
+.ls-upozorneni .ls-jak { color: var(--text-tlumeny); }
+.ls-upozorneni a { color: var(--akcent); }
+.ls-rozpor { color: var(--varovani); }
+.ls-rozpor-znak { font-size: 0.65em; margin-left: 1px; }
+
+.ls-souhrn { display: grid; gap: var(--m-3); }
+@container (min-width: 72rem) { .ls-souhrn { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.ls-boj { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--m-2); }
+.ls-dlazdice { display: grid; justify-items: center; align-content: center; gap: 2px; min-height: 5.2rem; padding: var(--m-2) var(--m-1); border: 1px solid var(--linka); border-radius: var(--zaobleni); background: var(--povrch-1); text-align: center; }
+.ls-dlazdice.velka { border-color: var(--mosaz-tlumena); background: linear-gradient(180deg, rgb(198 161 91 / 0.10), var(--povrch-1)); }
+.ls-cislo { font-size: 1.45rem; font-weight: 600; line-height: 1.15; }
+.ls-dlazdice.velka .ls-cislo { font-size: 1.85rem; }
+.ls-pod { font-size: var(--t-stitek); color: var(--text-tlumeny); }
+
+.ls-vlastnosti { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--m-2); }
+.ls-vlastnost { display: grid; justify-items: center; gap: var(--m-1); padding: var(--m-2) var(--m-1) var(--m-2); border: 1px solid var(--linka); border-radius: var(--zaobleni-karta); background: var(--povrch-1); text-align: center; }
+.ls-oprava { font-size: 2rem; font-weight: 600; line-height: 1; color: var(--kost); }
+.ls-skore { min-width: 2.6rem; padding: 1px var(--m-2); border: 1px solid var(--linka); border-radius: 999px; background: var(--povrch-0); font-size: var(--t-popisek); }
+
+.ls-mrizka { display: grid; grid-template-columns: minmax(13rem, 15rem) minmax(15rem, 17rem) minmax(0, 1fr); gap: var(--m-3); align-items: start; }
+.ls-sloupec { display: grid; gap: var(--m-3); min-width: 0; }
+.ls-karta { padding: var(--m-3) var(--m-4); border: 1px solid var(--linka); border-radius: var(--zaobleni-karta); background: var(--povrch-1); min-width: 0; }
+.ls-nadpis { margin: 0 0 var(--m-2); font-size: var(--t-stitek); text-transform: uppercase; letter-spacing: 0.1em; color: var(--mosaz); }
+.ls-radky { list-style: none; margin: 0; padding: 0; display: grid; }
+.ls-radky li { display: flex; align-items: center; gap: var(--m-2); padding: 3px 0; border-bottom: 1px solid rgb(52 64 90 / 0.55); font-size: var(--t-popisek); }
+.ls-radky li:last-child { border-bottom: 0; }
+.ls-zkratka { width: 2.2rem; flex: none; font-size: var(--t-stitek); color: var(--text-tlumeny); }
+.ls-nazev { flex: 1; min-width: 0; }
+.ls-bonus { min-width: 2.2rem; padding: 0 var(--m-1); border: 1px solid var(--linka); border-radius: 4px; background: var(--povrch-0); text-align: center; font-weight: 600; }
+.ls-dovednosti li.zdatna .ls-nazev { color: var(--kost); font-weight: 500; }
+.ls-dovednosti li:not(.zdatna) { color: var(--text-tlumeny); }
+.ls-dovednosti li:not(.zdatna) .ls-bonus { color: var(--text); font-weight: 500; }
+.ls-tecka { width: 0.7rem; height: 0.7rem; flex: none; border-radius: 50%; border: 1.5px solid var(--text-tlumeny); box-sizing: border-box; }
+.ls-tecka.zdatnost { background: var(--mosaz); border-color: var(--mosaz); }
+.ls-tecka.expertiza { background: var(--mosaz); border-color: var(--mosaz); box-shadow: 0 0 0 2px var(--povrch-1), 0 0 0 3.5px var(--mosaz); }
+.ls-tecka.polovicni { background: linear-gradient(90deg, var(--mosaz) 50%, transparent 50%); border-color: var(--mosaz); }
+.ls-legenda { display: flex; flex-wrap: wrap; align-items: center; gap: var(--m-1) var(--m-3); margin: var(--m-2) 0 0; font-size: var(--t-stitek); color: var(--text-tlumeny); }
+.ls-legenda > span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.ls-poznamka { margin: var(--m-2) 0 0; font-size: var(--t-stitek); color: var(--text-tlumeny); line-height: 1.45; }
+.ls-vyhoda { margin: var(--m-2) 0 0; font-size: var(--t-stitek); color: var(--text); padding-left: var(--m-2); border-left: 2px solid var(--zelena); }
+.ls-seznam { margin: var(--m-2) 0 0; font-size: var(--t-popisek); }
+.ls-zdatnost { padding: var(--m-1) 0; border-bottom: 1px solid rgb(52 64 90 / 0.55); }
+.ls-zdatnost:last-child { border-bottom: 0; }
+.ls-zdatnost p { margin: 2px 0 0; font-size: var(--t-popisek); }
+.ls-varianty { margin: 2px 0 0; padding-left: 1rem; font-size: var(--t-popisek); line-height: 1.45; }
+.ls-varianty li + li { margin-top: 2px; }
+
+.ls-zalozky-karta { padding-top: var(--m-2); }
+.ls-zalozky { display: flex; flex-wrap: wrap; gap: var(--m-1); border-bottom: 1px solid var(--linka); margin-bottom: var(--m-3); }
+.ls-zalozka { padding: var(--m-2) var(--m-3); border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; color: var(--text-tlumeny); font: 600 var(--t-stitek)/1.4 var(--pismo); text-transform: uppercase; letter-spacing: 0.08em; cursor: pointer; }
+.ls-zalozka:hover { color: var(--text); }
+.ls-zalozka.aktivni { color: var(--mosaz); border-bottom-color: var(--mosaz); }
+.ls-obsah-zalozky { display: grid; gap: var(--m-3); }
+.ls-tabulka { overflow-x: auto; }
+.ls-tabulka table { width: 100%; border-collapse: collapse; font-size: var(--t-popisek); }
+.ls-tabulka th { text-align: left; font-size: var(--t-stitek); text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tlumeny); font-weight: 600; padding: var(--m-1) var(--m-2); border-bottom: 1px solid var(--linka); }
+.ls-tabulka td { padding: var(--m-2); border-bottom: 1px solid rgb(52 64 90 / 0.55); vertical-align: top; }
+.ls-tabulka td:nth-child(2), .ls-tabulka td:nth-child(3) { white-space: nowrap; }
+.ls-zasah, .ls-zraneni { display: inline-block; padding: 0 var(--m-2); border-radius: 4px; background: rgb(212 106 94 / 0.16); border: 1px solid rgb(212 106 94 / 0.45); font-weight: 600; white-space: nowrap; }
+.ls-druh { color: var(--text-tlumeny); }
+.ls-pocet { color: var(--text-tlumeny); font-size: 0.9em; }
+.ls-vlastnosti-zbrane { color: var(--text-tlumeny); font-size: var(--t-stitek); }
+.ls-sesilani { margin: 0; font-size: var(--t-popisek); color: var(--text-tlumeny); }
+.ls-sesilani b { color: var(--text); }
+.ls-podkarta h4, .ls-uroven-kouzel h4, .ls-skupina-rysu h4 { margin: 0 0 var(--m-1); font-size: var(--t-popisek); color: var(--mosaz); font-weight: 600; }
+.ls-podkarta ul { margin: 0; padding-left: 1.1rem; font-size: var(--t-popisek); }
+.ls-prazdne { margin: 0; color: var(--text-tlumeny); font-size: var(--t-popisek); }
+
+.ls-kouzla { display: grid; gap: var(--m-3); }
+.ls-sesilani-hlava { display: grid; grid-template-columns: repeat(3, minmax(5rem, 7rem)) 1fr; gap: var(--m-2); align-items: center; }
+.ls-sesilani-hlava .ls-dlazdice { min-height: 4.2rem; }
+.ls-trida-kouzel { margin: 0; font: 600 var(--t-karta)/1.3 var(--pismo-svet); color: var(--text-tlumeny); }
+.ls-uroven-kouzel h4 { display: flex; align-items: baseline; gap: var(--m-2); border-bottom: 1px solid var(--linka); padding-bottom: var(--m-1); }
+.ls-pozice { font-size: var(--t-stitek); color: var(--text-tlumeny); font-weight: 400; }
+.ls-krouzky { letter-spacing: 2px; color: var(--mosaz); }
+.ls-seznam-kouzel { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: 2px var(--m-3); }
+.ls-seznam-kouzel li { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--m-1) var(--m-2); padding: 3px 0; font-size: var(--t-popisek); }
+.ls-zdroj { font-size: var(--t-stitek); color: var(--text-tlumeny); }
+.ls-znacka { padding: 0 4px; border: 1px solid var(--mosaz-tlumena); border-radius: 3px; font-size: 0.7rem; color: var(--mosaz); }
+.ls-pozn-kouzla { flex-basis: 100%; font-size: var(--t-stitek); color: var(--text-tlumeny); }
+
+.ls-mince { display: flex; flex-wrap: wrap; gap: var(--m-2); }
+.ls-minca { padding: 2px var(--m-3); border: 1px solid var(--mosaz-tlumena); border-radius: 999px; font-size: var(--t-popisek); color: var(--text-tlumeny); }
+.ls-minca strong { color: var(--mosaz); }
+.ls-vybava { list-style: none; margin: 0; padding: 0; columns: 2 12rem; column-gap: var(--m-4); font-size: var(--t-popisek); }
+.ls-vybava li { display: flex; justify-content: space-between; gap: var(--m-2); padding: 3px 0; border-bottom: 1px solid rgb(52 64 90 / 0.55); break-inside: avoid; }
+
+.ls-skupina-rysu + .ls-skupina-rysu { margin-top: var(--m-1); }
+.ls-rysy { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--m-1); font-size: var(--t-popisek); line-height: 1.45; }
+.ls-rysy li { padding: var(--m-1) 0 var(--m-1) var(--m-3); border-left: 2px solid var(--linka); }
+.ls-rysy strong { color: var(--kost); }
+.ls-zapati { margin: 0; }
+
+@container (max-width: 62rem) {
+  .ls-mrizka { grid-template-columns: minmax(13rem, 1fr) minmax(15rem, 1fr); }
+  .ls-hlavni { grid-column: 1 / -1; }
+}
+.ls-kratky { display: none; }
+@container (max-width: 34rem) {
+  .ls-vlastnost .ls-dlouhy { display: none; }
+  .ls-vlastnost .ls-kratky { display: inline; }
+  .ls-boj, .ls-vlastnosti { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ls-mrizka { grid-template-columns: minmax(0, 1fr); }
+  .ls-sesilani-hlava { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ls-trida-kouzel { grid-column: 1 / -1; }
+  .ls-hlava { flex-wrap: wrap; }
+}
+
 /* Příkazy „/“ v editoru karty (⚠ bod 149). */
 .polozka-prikazu small code { font-size: 0.8em; color: var(--text-tlumeny); }
 

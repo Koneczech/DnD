@@ -91,13 +91,10 @@ test('List postavy: pododdíly jako karty, tabulka vlastností se pozná', () =>
   assert.ok(!jeTabulkaVlastnosti('Skills'));
 });
 
-test('List postavy: všechny postavy v kampani mají úplný souhrn', async () => {
+test('List postavy: postavy v kampani mají list jako data, ne oddíl v textu karty (⚠ bod 151)', async () => {
   for (const id of ['tusker', 'koudur', 'alba', 'leta']) {
     const r = rozebrat(await fs.readFile(path.join(KOREN_REPA, 'kampan', 'postavy', id, `${id}.md`), 'utf8'));
-    const { list } = oddelitList(r.telo);
-    assert.ok(list, `${id} nemá List postavy`);
-    const s = souhrnListu(list);
-    assert.equal(s.vlastnosti.length, 6, `${id}: vlastnosti`);
-    assert.deepEqual(s.boj.map((b) => b.zkratka), ['OČ', 'BV', 'Iniciativa', 'Rychlost', 'ZB', 'Kostky obnovy', 'Pas. vnímání'], `${id}: bojové hodnoty`);
+    assert.equal(oddelitList(r.telo).list, null, `${id}: oddíl List postavy má být v list.yaml`);
+    await fs.access(path.join(KOREN_REPA, 'kampan', 'postavy', id, 'list.yaml'));
   }
 });

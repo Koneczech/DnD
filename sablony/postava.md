@@ -30,10 +30,6 @@ Kapitoly životopisu, jak vznikly s hráčem. Odkazy na lidi a místa jako [[id|
 
 ## DM — co postava neví
 
-## List postavy
-
-Vlastnosti, záchrany, dovednosti, OT, BV, výbava a kouzla (z D&D Beyond).
-
 ## Dotazník
 
 Odpovědi hráče, celé a beze změn.

@@ -19,7 +19,7 @@ zdroj: https://app.notion.com/p/3c89ed226736817f8a77fc1a9dc59199
 
 > **V sezení 1 zemřela.** *(R2; zápis sezení 1: zabita druhým Thunderwave.)*
 
-Žena, která v [[tabor-kruhu|táboře kruhu]] v [[lurkwood|Lurkwoodu]] rozhoduje — ne proto, že by velela, ale protože je stromu nejblíž a ostatní neodejdou od něj.
+Žena, která v [[tabor-kruhu|táboře kruhu]] v [[lurkwood|Lurkwoodu]] rozhoduje — ne proto, že by velela, ale protože je stromu nejblíž a ostatní neodejdou od něj.fsfasfaf
 
 ## Kdo byla předtím
 

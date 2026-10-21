@@ -1187,6 +1187,8 @@ export class Hub {
 
   async apiMista(req, m, p, url) {
     if (p === '/api/mista' && m === 'GET') return this.mista.seznam();
+    const st = /^\/api\/mista\/([a-z0-9-]{1,60})\/strop$/.exec(p);
+    if (st && m === 'PUT') return this.mista.nastavitStrop(st[1], (await nacistJson(req)).motiv);
     const dz = /^\/api\/mista\/([a-z0-9-]{1,60})\/zvuk-dozvuk$/.exec(p);
     if (dz && m === 'PUT') return this.mista.nastavitDozvuk(dz[1], (await nacistJson(req)).dozvuk);
     const pz = /^\/api\/mista\/([a-z0-9-]{1,60})\/zvuk-pripnute$/.exec(p);

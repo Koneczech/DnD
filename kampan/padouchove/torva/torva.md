@@ -5,6 +5,9 @@ typ: padouch
 nazev: "Torva"
 verejne: true
 ikona: 🌿
+frakce: "[[kruh]]"
+osud: mrtvy
+kde: "[[lurkwood]]"
 aliases: []
 vazby: ["[[kruh]]", "[[tabor-kruhu]]", "[[novacek-kruhu]]", "[[lurkwood]]", "[[hlidac-kruhu]]", "[[tusker]]", "[[koudur]]", "[[alba]]", "[[leta]]"]
 vztahy:

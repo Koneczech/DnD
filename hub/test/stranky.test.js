@@ -67,7 +67,7 @@ test('sestavitStranky: družina otevřeně, DM jen zašifrovaně, obrázky jen p
     assert.equal((await cist('data/stranky.json')).dm, true);
     assert.match((await cist('data/stranky.json')).sestaveno, /^\d{4}-\d{2}-\d{2}T/);
     assert.equal((await cist('data/stranky.json')).upravy, 'https://github.com/Ukazka/Repo/edit/main/', 'Upravit na GitHubu (bod 144)');
-    assert.deepEqual((await cist('data/stranky.json')).zapis, { repo: 'Ukazka/Repo', vetev: 'main' }, 'úpravy na webu (bod 146)');
+    assert.deepEqual((await cist('data/stranky.json')).zapis, { repo: 'Ukazka/Repo', vetev: 'main' }, 'úpravy na webu (bod 148)');
     await fs.access(path.join(cil, 'vendor', 'yaml', 'index.js'));
     await fs.access(path.join(cil, 'sdilene', 'upravy-webu.js'));
     const druzina = await cist('data/kanon-druzina.json');

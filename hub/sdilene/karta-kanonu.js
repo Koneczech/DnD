@@ -1,9 +1,10 @@
 // Karta kánonu jako text: čtení hlavičky a těla, oddíl Co ví družina, pohled družiny a kontrola
 // polí z editoru. Bez Node.js, takže ho používá server (kanon-modul.js) i čtecí verze na GitHub
-// Pages, která karty upravuje přes GitHub (⚠ bod 146). Jedna pravidla pro obě místa.
+// Pages, která karty upravuje přes GitHub (⚠ bod 148). Jedna pravidla pro obě místa.
 import { rozebrat, odkazy } from './frontmatter.js';
 import { idZOdkazu, normalizujVztah, TEXTOVA_POLE, ODKAZOVA_KLICE } from './hlavicka.js';
 import { TYPY_SLOZEK, OSUDY, ODKAZOVA_POLE, POLE_TYPU, STAVY_ROZHODNUTI } from './typy-karet.js';
+import { textDruziny, blokyTextu } from './odkryvani.js';
 
 export const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const STITEK_VE_HRE = 'aktualni';
@@ -325,7 +326,9 @@ export function nacistEntitu(text, { slozka, soubor, slozkaEntity, upraveno = nu
   const bloky = blokyDruziny(r.telo).filter((b) => b.index >= 0);
   entita.odkryto = { zna: bloky.filter((b) => b.zna).length, celkem: bloky.length };
   entita.popis = kratkyPopis(teloBezDruziny(r.telo));
-  entita.popisDruziny = kratkyPopis(teloDruziny(r.telo, entita.typ));
+  // Popisek dlaždice pro družinu: z Co ví družina, jinak z odkrytého textu karty (rozhodnutí 75).
+  entita.popisDruziny = kratkyPopis(teloDruziny(r.telo, entita.typ)) || (entita.typ === 'kanon' ? '' : kratkyPopis(textDruziny(r.telo)));
+  entita.odkrytoTextu = entita.typ === 'kanon' ? 0 : blokyTextu(r.telo).filter((b) => b.zna).length;
   return entita;
 }
 
@@ -347,7 +350,7 @@ export function vPohledu(e, pohled, najit) {
     return {
       id: e.id, typ: e.typ, nazev: e.nazev, verejne: e.verejne, ikona: e.ikona, aliases: e.aliases, tags: e.tags,
       aktualni: e.aktualni, vazby: e.vazby, vztahy: e.vztahy, leziV: e.leziV, udaje: e.udaje, odkazyPole: e.odkazyPole ?? {}, soubor: e.soubor,
-      kdo: e.kdo ?? [], odkryto: e.odkryto ?? { zna: 0, celkem: 0 },
+      kdo: e.kdo ?? [], odkryto: e.odkryto ?? { zna: 0, celkem: 0 }, odkrytoTextu: e.odkrytoTextu ?? 0,
       obrazek: obrazekUzlu(obrazky)?.url ?? null, portret: obrazekUzlu(obrazky)?.ucel === 'portret', obrazky,
       popis: e.popis, upraveno: e.upraveno,
     };
@@ -491,6 +494,7 @@ export function textKarty(e, p) {
     });
   let telo;
   if (p === 'dm') telo = teloBezDruziny(e.telo);
-  else telo = e.typ === 'kanon' ? teloDruziny(e.telo, e.typ) : '';
+  // Družina vidí z textu karty jen odkryté odstavce a odrážky (rozhodnutí 75).
+  else telo = e.typ === 'kanon' ? teloDruziny(e.telo, e.typ) : textDruziny(e.telo);
   return { telo, druzina: druzinaCista, maOddilDruziny: Boolean(najitOddilDruziny(e.telo.split('\n'))) };
 }

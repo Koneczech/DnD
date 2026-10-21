@@ -144,7 +144,7 @@ export async function sestavitStranky({ cesty: c, cil, cas = new Date(), heslo =
     }
     // `sestaveno` pozná otevřená stránka, že vyšla nová verze, a načte se znovu.
     // `upravy`: adresa editoru GitHubu (tlačítko Na GitHubu, ⚠ bod 144). `zapis`: kam pohled DM
-    // ukládá úpravy přes GitHub API (⚠ bod 146). Obojí jen s pohledem DM.
+    // ukládá úpravy přes GitHub API (⚠ bod 148). Obojí jen s pohledem DM.
     await zapsatJson(path.join(cil, 'data', 'stranky.json'), {
       dm: Boolean(heslo),
       sestaveno: cas.toISOString(),

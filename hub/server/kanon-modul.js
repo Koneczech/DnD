@@ -11,6 +11,7 @@ import { EventEmitter } from 'node:events';
 import YAML from 'yaml';
 import { TYPY_SLOZEK } from './cesty.js';
 import { upravitKartu, teloKarty, nahraditTelo } from '../sdilene/hlavicka.js';
+import { prepnoutBlokTextu } from '../sdilene/odkryvani.js';
 import { PRIPONA_DOCASNA, zapsatAtomicky } from './zapis.js';
 import { Harptos } from '../sdilene/harptos.js';
 import { overitPole, zmenyKarty, textKarty, ODDIL_DRUZINY, SLUG, nacistEntitu, normalizujNastenku, odkazObsidian, prepnoutBlok, pridatBlok, slugNastenky, vPohledu } from '../sdilene/karta-kanonu.js';
@@ -435,6 +436,24 @@ export class Kanon extends EventEmitter {
     if (!Number.isInteger(index) || index < 0) throw chyba('Neplatná odrážka.');
     if (typeof zna !== 'boolean') throw chyba('zna musí být true nebo false.');
     const r = await this.upravitSoubor(id, (text) => nahraditTelo(text, prepnoutBlok(teloKarty(text), index, zna)));
+    return { vysledek: r.vysledek, karta: r.karta };
+  }
+
+  /**
+   * Odkryje nebo skryje odstavec, odrážku nebo citaci z textu karty (rozhodnutí 75). Blok se
+   * pozná podle prvního řádku a pořadí mezi bloky se stejným prvním řádkem.
+   */
+  async prepnoutText(id, { prvni, poradi = 0, zna } = {}) {
+    if (typeof prvni !== 'string' || !prvni.trim() || prvni.length > 2000) throw chyba('Chybí první řádek odstavce.');
+    if (!Number.isInteger(poradi) || poradi < 0) throw chyba('Neplatné pořadí odstavce.');
+    if (typeof zna !== 'boolean') throw chyba('zna musí být true nebo false.');
+    const e = this.get(id);
+    if (e.typ === 'kanon') throw chyba('Hráčský kánon vidí družina celý, odkrývat v něm není co.');
+    const r = await this.upravitSoubor(id, (text) => {
+      const nove = prepnoutBlokTextu(teloKarty(text), { prvni, poradi }, zna);
+      if (nove === null) throw chyba('Tenhle odstavec v kartě není (karta se mezitím změnila?). Načti ji znovu.', 409);
+      return nahraditTelo(text, nove);
+    });
     return { vysledek: r.vysledek, karta: r.karta };
   }
 

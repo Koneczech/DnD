@@ -1,4 +1,4 @@
-// Úpravy kánonu z čtecí verze (⚠ bod 146): GitHub API je tu falešné, v paměti.
+// Úpravy kánonu z čtecí verze (⚠ bod 148): GitHub API je tu falešné, v paměti.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { GitHubSoubory, vytvoritUpravyWebu, doBase64, zBase64 } from '../sdilene/upravy-webu.js';
@@ -113,6 +113,15 @@ test('rychlé úpravy: Družina zná, Ve hře, přezdívky a odrážky Co ví dr
   assert.match(gh.stav.get(SOUBOR).text, /- Má dceru\.\n/);
   assert.equal(gh.zapisy.length, 5);
   assert.deepEqual(gh.zapisy.map((z) => z.zprava.replace(/^Web: Dorn Žlutý /, '')), ['(družina zná)', '(ve hře)', '(přezdívky)', '(odkryto v Co ví družina)', '(nová odrážka Co ví družina)']);
+});
+
+test('oko u odstavce textu karty (rozhodnutí 75)', async () => {
+  const { gh, api } = priprava();
+  const r = await api('/api/kanon/entita/dorn/text', { metoda: 'PUT', telo: { prvni: 'Kovář z Mirabaru.', poradi: 0, zna: true } });
+  assert.equal(r.vysledek, 'ulozeno');
+  assert.match(gh.stav.get(SOUBOR).text, /Kovář z Mirabaru\. %%zná%%/);
+  assert.deepEqual(gh.zapisy.map((z) => z.zprava), ['Web: Dorn Žlutý (odkryt odstavec)']);
+  await assert.rejects(api('/api/kanon/entita/dorn/text', { metoda: 'PUT', telo: { prvni: 'Nic takového.', zna: true } }), /odstavec v kartě není/);
 });
 
 test('rychlá úprava se souběžnou změnou jinde: počítá se znovu z nové verze', async () => {

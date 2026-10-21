@@ -1,11 +1,13 @@
-// Úpravy kánonu z čtecí verze na GitHub Pages (⚠ bod 146). Server tu není, takže soubor karty
+// Úpravy kánonu z čtecí verze na GitHub Pages (⚠ bod 148). Server tu není, takže soubor karty
 // se načte z GitHubu, upraví se stejnými funkcemi jako v Hubu (karta-kanonu.js, hlavicka.js)
 // a uloží se zpátky jako commit do main přes GitHub API s osobním tokenem DM.
 //
 // Umí jen to, co se týká textu jedné karty: editor (text a pole hlavičky), přezdívky, Ve hře,
-// Družina zná a odrážky Co ví družina. Ostatní (nová karta, vazby, portrét …) zůstává Hubu.
+// Družina zná, odrážky Co ví družina a oko u odstavců textu (rozhodnutí 75). Ostatní (nová karta,
+// vazby, portrét …) zůstává Hubu.
 import { nacistEntitu, vPohledu, textKarty, zmenyKarty, overitPole, prepnoutBlok, pridatBlok } from './karta-kanonu.js';
 import { teloKarty, nahraditTelo, upravitKartu } from './hlavicka.js';
+import { prepnoutBlokTextu } from './odkryvani.js';
 
 const chyba = (zprava, status = 400, navic = {}) => Object.assign(new Error(zprava), { status, ...navic });
 
@@ -204,6 +206,21 @@ export function vytvoritUpravyWebu({ soubory, balik, poZmene = () => {} }) {
     if (m && metoda === 'PUT') {
       if (typeof telo.zna !== 'boolean') throw chyba('zna musí být true nebo false.');
       const r = await upravitSoubor(m[1], (text) => nahraditTelo(text, prepnoutBlok(teloKarty(text), Number(m[2]), telo.zna)), `Web: ${nazev(m[1])} (${telo.zna ? 'odkryto' : 'skryto'} v Co ví družina)`);
+      return { vysledek: r.vysledek, karta: r.karta };
+    }
+    m = /^\/api\/kanon\/entita\/([a-z0-9-]{1,80})\/text$/.exec(p);
+    if (m && metoda === 'PUT') {
+      // Oko u odstavce, odrážky nebo citace z textu karty (rozhodnutí 75), stejně jako Kanon.prepnoutText.
+      const { prvni, poradi = 0, zna } = telo;
+      if (typeof prvni !== 'string' || !prvni.trim() || prvni.length > 2000) throw chyba('Chybí první řádek odstavce.');
+      if (!Number.isInteger(poradi) || poradi < 0) throw chyba('Neplatné pořadí odstavce.');
+      if (typeof zna !== 'boolean') throw chyba('zna musí být true nebo false.');
+      if (entita(m[1]).typ === 'kanon') throw chyba('Hráčský kánon vidí družina celý, odkrývat v něm není co.');
+      const r = await upravitSoubor(m[1], (text) => {
+        const nove = prepnoutBlokTextu(teloKarty(text), { prvni, poradi }, zna);
+        if (nove === null) throw chyba('Tenhle odstavec v kartě není (karta se mezitím změnila?). Načti ji znovu.', 409);
+        return nahraditTelo(text, nove);
+      }, `Web: ${nazev(m[1])} (${zna ? 'odkryt' : 'skryt'} odstavec)`);
       return { vysledek: r.vysledek, karta: r.karta };
     }
     m = /^\/api\/kanon\/entita\/([a-z0-9-]{1,80})\/druzina$/.exec(p);

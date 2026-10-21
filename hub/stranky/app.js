@@ -2,7 +2,7 @@
 // Stejný modul Kánon jako v Hubu, jen místo serveru čte předgenerovaná data (skripty/stranky.js).
 // Ovládání poznámek, OBS a úprav celé sítě se nezobrazuje (jenCteni). Text karty, přepínače,
 // přezdívky a odrážky Co ví družina jde v pohledu DM upravit: ukládají se přes GitHub API
-// s osobním tokenem DM (webUpravy, ⚠ bod 146).
+// s osobním tokenem DM (webUpravy, ⚠ bod 148).
 // Pohled družiny je otevřený, pohled DM je zašifrovaný heslem (⚠ bod 124).
 import { vytvoritKanon } from '/panel/kanon.js';
 import { GitHubSoubory, vytvoritUpravyWebu } from '/sdilene/upravy-webu.js';
@@ -148,7 +148,7 @@ async function dataDm() {
   return odemykani;
 }
 
-/* ---------- Úpravy na webu: token GitHubu a zápis přes GitHub API (⚠ bod 146) ---------- */
+/* ---------- Úpravy na webu: token GitHubu a zápis přes GitHub API (⚠ bod 148) ---------- */
 
 let token = '';
 try {

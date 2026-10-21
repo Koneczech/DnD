@@ -1365,3 +1365,42 @@ span.oko { cursor: default; }
 .oddil-dm.zvyraznit { outline: 2px solid var(--rez); outline-offset: 2px; }
 .editor-oddily { display: flex; flex-wrap: wrap; align-items: center; gap: var(--m-1); }
 .editor-oddily .poznamka { margin: 0; }
+
+/* Odkrývání textu karty (rozhodnutí 75): oko u odstavce, odrážky a citace v pohledu DM. */
+.text-karty.s-oky { padding-left: 2.4rem; }
+.text-karty .blok-textu { position: relative; }
+.text-karty .blok-textu > .oko-textu { position: absolute; left: -2.4rem; top: 0; width: 1.8rem; height: 1.6rem; font-size: 0.85rem; opacity: 0; transition: opacity 0.15s; }
+.text-karty li.blok-textu > .oko-textu { left: -3.6rem; }
+.text-karty blockquote .blok-textu > .oko-textu { left: -3.4rem; }
+.text-karty .blok-textu:hover > .oko-textu, .text-karty .blok-textu > .oko-textu:focus-visible, .text-karty .blok-textu.zna > .oko-textu { opacity: 1; }
+.text-karty .blok-textu.zna { box-shadow: inset 3px 0 0 var(--ok); padding-left: var(--m-2); background: rgb(125 190 147 / 0.06); border-radius: 0 var(--zaobleni) var(--zaobleni) 0; }
+@media (hover: none) { .text-karty .blok-textu > .oko-textu { opacity: 0.6; } }
+
+/* List postavy jako záložka stránky postavy (rozhodnutí 76). */
+.zalozky-karty { display: flex; gap: var(--m-1); border-bottom: 1px solid var(--linka); margin-bottom: var(--m-2); }
+.zalozky-karty .zalozka { padding: var(--m-2) var(--m-4); text-decoration: none; color: var(--text-tlumeny); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.zalozky-karty .zalozka:hover { color: var(--text); }
+.zalozky-karty .zalozka.aktivni { color: var(--text); border-bottom-color: var(--akcent); font-weight: 500; }
+.list-postavy { display: grid; gap: var(--m-4); }
+.souhrn-listu { display: grid; gap: var(--m-3); }
+.vlastnosti-listu { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--m-2); }
+.boj-listu { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.8rem, 1fr)); gap: var(--m-2); }
+.dlazdice-listu { display: grid; justify-items: center; gap: 2px; padding: var(--m-2) var(--m-1); border: 1px solid var(--linka); border-radius: var(--zaobleni); background: var(--povrch-1); text-align: center; }
+.dlazdice-listu strong { font-size: 1.35rem; font-weight: 500; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.vlastnosti-listu .dlazdice-listu strong { font-size: 1.6rem; }
+.dlazdice-popisek { font-size: var(--t-stitek); text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tlumeny); }
+.dlazdice-mala { font-size: var(--t-popisek); color: var(--text-tlumeny); padding: 0 var(--m-2); border-radius: 999px; background: var(--povrch-0); }
+.kouzla-listu { margin: 0; font-size: var(--t-popisek); color: var(--text-tlumeny); }
+.uvod-listu { font-size: var(--t-popisek); color: var(--text-tlumeny); }
+.uvod-listu p { margin: 0 0 var(--m-1); }
+.oddily-listu { columns: 2 20rem; column-gap: var(--m-3); }
+.oddil-listu { break-inside: avoid; margin: 0 0 var(--m-3); padding: var(--m-3) var(--m-4); }
+.oddil-listu.siroky { column-span: all; }
+.oddil-listu > h3 { margin: 0 0 var(--m-2); font-size: var(--t-stitek); text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tlumeny); }
+.oddil-listu .text-karty { font-size: var(--t-popisek); overflow-x: auto; }
+.oddil-listu .text-karty > :first-child { margin-top: 0; }
+.oddil-listu .text-karty > :last-child { margin-bottom: 0; }
+@media (max-width: 900px) { .vlastnosti-listu { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.list-postavy .text-karty.s-oky { padding-left: 1.7rem; }
+.list-postavy .text-karty .blok-textu > .oko-textu { left: -1.9rem; width: 1.6rem; }
+.list-postavy .text-karty li.blok-textu > .oko-textu { left: -3.1rem; }

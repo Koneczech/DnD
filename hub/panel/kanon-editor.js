@@ -14,7 +14,7 @@ const PRODLEVA_MS = 1500;
 export function vytvoritEditor(ctx) {
   const { s, api, toast, kam } = ctx;
   let st = null; // stav otevřeného editoru
-  // Na webu (čtecí verze s úpravami, ⚠ bod 146) je každé uložení commit na GitHubu: ukládá se
+  // Na webu (čtecí verze s úpravami, ⚠ bod 148) je každé uložení commit na GitHubu: ukládá se
   // tlačítkem Uložit, Ctrl+S nebo při Hotovo, ne samo po každé pauze v psaní.
   const naWebu = () => Boolean(s.jenCteni);
 
@@ -351,7 +351,7 @@ export function vytvoritEditor(ctx) {
           tlacitkoNahledu),
         el('div', { className: 'editor-oddily', 'aria-live': 'polite' }),
         el('div', { className: 'editor-plochy' }, el('div', { className: 'editor-obal' }, textarea, naseptavac), nahledEl),
-        el('p', { className: 'poznamka napoveda-editoru' }, 'Markdown jako v Obsidianu. ', el('kbd', { textContent: '[[' }), ' našeptá odkaz na kartu, ', el('kbd', { textContent: 'Ctrl+S' }), ' uloží hned. V oddílu ', el('strong', { textContent: 'Co ví družina' }), ' je každá odrážka zvlášť; odkrytá má na konci značku ', el('code', { textContent: '%%zná%%' }), ' (v kartě ji přepneš okem 👁). Oddíly ', el('code', { textContent: '## DM…' }), ' družina nikdy neuvidí.')));
+        el('p', { className: 'poznamka napoveda-editoru' }, 'Markdown jako v Obsidianu. ', el('kbd', { textContent: '[[' }), ' našeptá odkaz na kartu, ', el('kbd', { textContent: 'Ctrl+S' }), ' uloží hned. V oddílu ', el('strong', { textContent: 'Co ví družina' }), ' je každá odrážka zvlášť; odkrytá má na konci značku ', el('code', { textContent: '%%zná%%' }), ' (v kartě ji přepneš okem 👁). Stejnou značkou na konci prvního řádku odkryješ i kterýkoli odstavec nebo odrážku jinde v textu. Oddíly ', el('code', { textContent: '## DM…' }), ' družina nikdy neuvidí.')));
     kam.replaceChildren(formular);
     st = { id, nazev: z.pole.nazev ?? id, typ: z.typ, hash: z.hash, ulozeneTelo: z.telo, textarea, naseptavac, nahledEl, stavEl, formular, zmenenaPole: {}, casovac: null, bezi: null, znovu: false, konflikt: null, nalez: [], vybranyNalez: 0, dotazOdkazu: '' };
     nahradit(formular.querySelector('.editor-pole'), ...poleFormulare(z, z.typ), prezdivky(z), portret(z));

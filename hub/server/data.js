@@ -9,6 +9,7 @@ import { WIZ_SCENY } from './zarizeni/wiz.js';
 import { PRIPONA_DOCASNA } from './zapis.js';
 import { Harptos } from '../sdilene/harptos.js';
 import { OSUDY, ODKAZOVA_POLE, POLE_TYPU, STAVY_ROZHODNUTI } from '../sdilene/typy-karet.js';
+import { SOUBOR_LISTU, spocitatList } from '../sdilene/list-postavy-data.js';
 
 export const SCHEMA = 1;
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -268,6 +269,28 @@ export async function kontrolaDat(c) {
         pridej(z.soubor, 'varovani', `Obrázek ${il.soubor} neexistuje`);
       }
     }
+  }
+
+  // List postavy jako data (⚠ bod 151): chyby v souboru a rozpory s původním listem.
+  for (const z of zaznamy) {
+    if (z.data.typ !== 'postava' || path.basename(z.slozka) !== String(z.data.id)) continue;
+    const soubor = path.join(z.slozka, SOUBOR_LISTU);
+    let text;
+    try {
+      text = await fs.readFile(soubor, 'utf8');
+    } catch {
+      continue; // postava bez listu
+    }
+    let d;
+    try {
+      d = YAML.parse(text);
+    } catch (e) {
+      pridej(soubor, 'chyba', `Chyba v YAML: ${e.message.split('\n')[0]}`);
+      continue;
+    }
+    const l = spocitatList(d);
+    for (const ch of l.chyby) pridej(soubor, 'chyba', ch);
+    for (const r of l.rozpory) pridej(soubor, 'varovani', `Rozpor s původním listem: ${r.nazev} — v listu ${r.uvedeno}, podle pravidel ${r.spocteno} (stated.${r.klic})`);
   }
 
   // Vazby událostí kalendáře na karty kánonu (Blok 3)

@@ -1,0 +1,73 @@
+# Šablona listu postavy: zkopíruj do kampan/postavy/<id>/list.yaml (vedle karty postavy).
+# Hub z něj vykreslí záložku List postavy. Klíče i hodnoty jsou anglicky jako v D&D Beyond.
+#
+# Zapisuj jen to, co je níže. Hub sám spočítá podle pravidel 2024: opravy vlastností,
+# záchrany, všech 18 dovedností, pasivní vnímání / vhled / pátrání, zdatnostní bonus (z úrovně),
+# iniciativu, SO a útok kouzlem, kostky obnovy (z povolání) a pozice kouzel (plní a poloviční
+# sesilatelé). Chybu v souboru ukáže Systém → Kontrola dat.
+schema: 1
+public: false            # true = list uvidí i Pohled družiny
+source: ""               # odkud list je a k jakému datu (vidí jen DM)
+classes:                 # víc povolání = víc řádků
+  - { name: Druid, level: 1, subclass: "" }
+species: ""
+background: ""
+xp: Milestone
+
+abilities: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 }
+
+saves:
+  proficient: []         # str, dex, con, int, wis, cha
+  bonus: {}              # navíc k záchraně, např. { wis: 1 }
+  notes: []              # výhody: "Advantage vs Poisoned"
+
+skills:
+  proficient: []         # názvy jako v listu: Animal Handling, Sleight of Hand…
+  expertise: []          # dvojnásobný zdatnostní bonus
+  jack_of_all_trades: false  # Bard: +½ ZB k dovednostem bez zdatnosti
+  bonus: {}              # navíc k dovednosti, např. { Nature: 2 }; „pb“ = zdatnostní bonus
+  notes: []              # poznámky k ověření (vidí jen DM)
+
+senses: []               # Darkvision 60 ft
+
+combat:
+  ac: 10
+  ac_notes: []           # jiná výzbroj, štít, podoby
+  hp: 1                  # maximum bodů výdrže
+  hp_note: ""            # jak vzniklo (vidí jen DM)
+  initiative_bonus: 0    # navíc k DEX; Alert = pb
+  speed: { walk: 30 }    # případně climb, swim, fly
+  speed_note: ""
+  resistances: []
+  immunities: []
+
+proficiencies:
+  armor: []
+  weapons: []
+  tools: []
+  languages: []
+
+features:                # skupiny rysů; položka „Název: popis“ nebo { name, text }
+  - group: Class Features
+    items: []
+
+equipment:
+  items: []              # „Rope“, „Arrows x20“ nebo { name: Arrows, qty: 20, note: "" }
+  coins: {}              # { gp: 10, sp: 5 }
+
+attacks:                 # count = víc stejných zbraní
+  - { name: Unarmed Strike, hit: +0, damage: "1", type: Bludgeoning, range: "", notes: "" }
+
+spellcasting: []         # - class: Druid
+                         #   ability: wis          (výchozí podle povolání)
+                         #   slots: { 1: 2 }       (jen u povolání, které Hub nepočítá, např. Warlock)
+                         #   spells:
+                         #     - { name: Guidance, level: 0, source: Druid cantrip, ritual: false, note: "" }
+                         #   notes: []             (vidí jen DM)
+
+notes: []                # další poznámky k listu (vidí jen DM)
+
+# Hodnoty z původního listu, které nesedí s výpočtem (Hub ukáže ⚠ rozpor):
+# save.cha, skill.persuasion, passive.perception, initiative, proficiency_bonus,
+# spell_dc, spell_attack, slots.1 … Po vyřešení řádek smaž.
+stated: {}

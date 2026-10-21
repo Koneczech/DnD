@@ -1,0 +1,110 @@
+# List postavy (character sheet). Hub ho ukáže v záložce List postavy na stránce postavy.
+# Opravy, záchrany, všech 18 dovedností, pasivní hodnoty, zdatnostní bonus, iniciativu,
+# SO a útok kouzlem, kostky obnovy a pozice kouzel Hub dopočítá podle pravidel 2024.
+# Popis polí: sablony/list-postavy.yaml.
+schema: 1
+public: false
+source: "Z projektu v Claude, stav k 21. 8. 2026. Mechanika (jazyky, dovednosti) platí podle listu (R9)."
+classes:
+  - { name: Druid, level: 3, subclass: Circle of the Moon }
+species: Aasimar
+background: Guide
+xp: Milestone
+
+abilities: { str: 9, dex: 12, con: 15, int: 11, wis: 15, cha: 12 }
+
+saves:
+  proficient: [int, wis]
+
+skills:
+  proficient: [Animal Handling, Nature, Stealth, Survival]
+  bonus: { Arcana: 2, Nature: 2 }
+  notes:
+    - "Arcana a Nature +2 z Primal Order: Magician; Arcana bez zdatnosti."
+
+senses: [Darkvision 60 ft]
+
+combat:
+  ac: 11
+  ac_notes:
+    - "Unarmored: 11 (confirmed as the base)"
+    - "Leather Armor (no shield): 12"
+    - "Leather Armor + Shield: 14"
+    - "Wild Shape (Circle Forms): AC 15 if higher than the form's AC, +9 Temp HP on transforming"
+  hp: 18
+  hp_note: "V rozsahu možného 16–30 pro Druid 3 / k8 / CON +2 — OK."
+  speed: { walk: 30 }
+  resistances: [Radiant, Necrotic]
+
+proficiencies:
+  armor: [Light Armor, Shields]
+  weapons: [Simple Weapons]
+  tools: [Cartographer's Tools, Herbalism Kit]
+  languages: [Common, Druidic, Elvish, Halfling]
+
+features:
+  - group: Druid Features
+    items:
+      - Core Druid Traits
+      - "Druidic: Speak with Animals always prepared"
+      - "Primal Order: Magician — extra cantrip from the Druid list, +2 to Intelligence (Arcana, Nature) checks"
+      - "Wild Shape: 2/Long Rest, Bonus Action"
+      - Wild Companion
+      - "Druid Subclass: Circle of the Moon"
+      - "Circle Forms: max CR 1 in Wild Shape, AC 15 if higher than the form's, +9 Temp HP"
+      - "Circle of the Moon Spells: at level 3 always prepared Starry Wisp (cantrip), Cure Wounds, Moonbeam"
+  - group: Aasimar Species Traits
+    items:
+      - "Creature Type: Humanoid; Size: Medium or Small (chosen)"
+      - "Celestial Resistance: Resistance to Necrotic and Radiant damage"
+      - "Darkvision: 60 ft"
+      - "Healing Hands: 1/Long Rest, heal 2d4 HP (Magic action)"
+      - "Light Bearer: knows the Light cantrip (CHA as spellcasting ability)"
+      - "Celestial Revelation: 1/Long Rest, Bonus Action, transformation for 1 minute"
+  - group: Feats
+    items:
+      - "Magic Initiate (Druid): Guide background; 2 cantrips (Mending, Message), 1 level 1 spell always prepared, WIS as spellcasting ability"
+      - "Guide Ability Score Improvements: increase two scores (+2/+1)"
+
+equipment:
+  items:
+    - Shield
+    - Leather Armor
+    - Sickle
+    - Shortbow
+    - Backpack
+    - Cartographer's Tools
+    - Bedroll
+    - Tent
+    - Herbalism Kit
+    - Arrows x20
+    - Staff
+    - Traveler's Clothes
+    - Oil x2
+    - Rations x10
+    - Rope
+    - Tinderbox
+    - Torch x10
+    - Waterskin
+
+attacks:
+  - { name: Starry Wisp, hit: +4, damage: 1d8, type: Radiant, notes: V/S }
+  - { name: Thorn Whip, hit: +4, damage: 1d6, type: Piercing, notes: V/S/M }
+  - { name: Unarmed Strike, hit: +1, damage: "0", type: Bludgeoning }
+
+spellcasting:
+  - class: Druid
+    ability: wis
+    spells:
+      - { name: Starry Wisp, level: 0, source: Always prepared }
+      - { name: Thorn Whip, level: 0, source: Always prepared }
+      - { name: Light, level: 0, source: Always prepared, note: "Aasimar, CHA as spellcasting ability" }
+      - { name: Mending, level: 0, source: Magic Initiate }
+      - { name: Message, level: 0, source: Magic Initiate }
+      - { name: Druidcraft, level: 0, source: Druid cantrip }
+      - { name: Guidance, level: 0, source: Druid cantrip }
+      - { name: Cure Wounds, level: 1, source: Always prepared }
+      - { name: Speak with Animals, level: 1, source: Always prepared }
+      - { name: Moonbeam, level: 2, source: Always prepared }
+    notes:
+      - "📌 Normální připravená kouzla z celého Druid listu (nárok: úroveň 3 + WIS mod 2 = 5 kouzel) zatím nejsou vybraná — na sheetu je zobrazený celý dostupný seznam. To je v pořádku: podle pravidel (Changing Your Prepared Spells) si Druid volí/mění připravená kouzla vždy po Long Restu, takže výběr proběhne přirozeně před/na hraní, není to chyba buildu."

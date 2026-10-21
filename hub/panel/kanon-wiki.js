@@ -7,6 +7,7 @@ import { blokyTextu, oznacitBloky } from '/sdilene/odkryvani.js';
 import { oddelitList, souhrnListu, oddilyListu, jeTabulkaVlastnosti, NAZEV_LISTU } from '/sdilene/list-postavy.js';
 import { $, TYPY, STAVY, barvaTypu, el, nahradit, obrazekEntity, stitekTypu } from '/panel/kanon-spolecne.js';
 import { vytvoritEditor } from '/panel/kanon-editor.js';
+import { vykreslitList } from '/panel/kanon-list.js';
 
 const UDAJE_DLAZDICE = (e) => e.udaje?.hrac ? `hraje ${e.udaje.hrac}` : e.typ === 'rozhodnuti' ? STAVY[e.udaje?.stav] ?? '' : e.aliases?.[0] ?? '';
 
@@ -457,7 +458,9 @@ export function vytvoritWiki(ctx, karta) {
     // Pohled DM: u odstavců a odrážek mimo Co ví družina a DM oddíly oko na odkrytí (rozhodnutí 75).
     const blokyKarty = dm() && e.typ !== 'kanon' ? blokyTextu(k.telo) : [];
     let teloStranky = blokyKarty.length ? oznacitBloky(k.telo, blokyKarty) : k.telo;
-    // Postava: List postavy je vlastní záložka (rozhodnutí 76), z textu karty se vyjme.
+    // Postava: List postavy je vlastní záložka (rozhodnutí 76). Data z list.yaml (⚠ bod 151);
+    // karta, která ještě má oddíl List postavy v textu, ho ukáže postaru.
+    const listData = e.typ === 'postava' ? k.list ?? null : null;
     let list = null;
     if (e.typ === 'postava') {
       const d = oddelitList(teloStranky);
@@ -466,12 +469,12 @@ export function vytvoritWiki(ctx, karta) {
         teloStranky = d.zbytek;
       }
     }
-    const naListu = Boolean(list) && w.zalozka === 'list';
+    const naListu = Boolean(listData || list) && w.zalozka === 'list';
     if (teloStranky.trim() && !naListu) {
       text.innerHTML = naHtml(teloStranky, { existuje: (id) => s.podleId.has(id), vynechatNadpis: e.nazev, oznacitDm: dm(), dmDolu: dm() });
       if (blokyKarty.length) okaVTextu(e, text, blokyKarty);
     }
-    const zalozky = list
+    const zalozky = listData || list
       ? el('nav', { className: 'zalozky-karty', 'aria-label': 'Části stránky postavy' },
         el('a', { href: `#kanon/${encodeURIComponent(e.id)}`, className: `zalozka${naListu ? '' : ' aktivni'}`, 'aria-current': naListu ? null : 'page', textContent: 'Karta' }),
         el('a', { href: `#kanon/${encodeURIComponent(e.id)}/list`, className: `zalozka${naListu ? ' aktivni' : ''}`, 'aria-current': naListu ? 'page' : null, textContent: NAZEV_LISTU }))
@@ -496,7 +499,17 @@ export function vytvoritWiki(ctx, karta) {
         const obr = karta.obrazkyKarty(k, { bezPrvniho: true });
         return obr ? [el('h3', { textContent: 'Ilustrace' }), obr] : null;
       })());
-    const hlavni = naListu ? el('div', { className: 'clanek-hlavni' }, zalozky, listPostavy(e, list, blokyKarty)) : el('div', { className: 'clanek-hlavni' },
+    const souborListu = e.soubor ? e.soubor.replace(/[^/]+$/, 'list.yaml') : 'list.yaml';
+    const listVykresleny = naListu && listData
+      ? vykreslitList(listData, {
+        e,
+        portret: portret?.url ?? null,
+        dm: dm(),
+        souborListu,
+        odkazUpravit: s.jenCteni && dm() && s.upravitNaGitHubu && e.soubor ? s.upravitNaGitHubu(souborListu) : null,
+      })
+      : null;
+    const hlavni = naListu ? el('div', { className: 'clanek-hlavni' }, zalozky, listVykresleny ?? listPostavy(e, list, blokyKarty)) : el('div', { className: 'clanek-hlavni' },
       zalozky,
       e.typ === 'kanon' ? casKanonu(k) : null,
       // Hráčský kánon je celý pro družinu, oddíl Co ví družina má jen karta, která ho opravdu obsahuje.
@@ -504,7 +517,10 @@ export function vytvoritWiki(ctx, karta) {
       teloStranky.trim() ? text : upravKartu() ? el('p', { className: 'poznamka', textContent: 'Karta zatím nemá další text. Napiš ho přes Upravit.' }) : null,
       e.typ === 'misto' ? coSeTuStalo(e, k) : null,
       udalostiEntity(e, k));
-    nahradit(obsah, el('article', { className: 'clanek' }, hlava, el('div', { className: 'clanek-telo' }, hlavni, infobox)));
+    // List z dat potřebuje celou šířku; portrét má v hlavičce listu, infobox zůstává na Kartě.
+    nahradit(obsah, el('article', { className: 'clanek' }, hlava, listVykresleny
+      ? el('div', { className: 'clanek-telo na-listu' }, hlavni)
+      : el('div', { className: 'clanek-telo' }, hlavni, infobox)));
   }
 
   obsah.addEventListener('click', (ev) => {

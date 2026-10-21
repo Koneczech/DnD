@@ -14,6 +14,7 @@ import { upravitKartu, teloKarty, nahraditTelo } from '../sdilene/hlavicka.js';
 import { prepnoutBlokTextu } from '../sdilene/odkryvani.js';
 import { PRIPONA_DOCASNA, zapsatAtomicky } from './zapis.js';
 import { Harptos } from '../sdilene/harptos.js';
+import { SOUBOR_LISTU, spocitatList, listProDruzinu } from '../sdilene/list-postavy-data.js';
 import { overitPole, zmenyKarty, textKarty, ODDIL_DRUZINY, SLUG, nacistEntitu, normalizujNastenku, odkazObsidian, prepnoutBlok, pridatBlok, slugNastenky, vPohledu } from '../sdilene/karta-kanonu.js';
 
 // Text karty (nacistEntitu, Co ví družina, pohled družiny …) je ve sdíleném modulu; odsud se dál
@@ -34,6 +35,35 @@ const chyba = (zprava, status = 400) => Object.assign(new Error(zprava), { statu
 /**
  * Události: 'zmena' { verze } — panel si podle ní načte seznam a otevřenou kartu znovu.
  */
+/**
+ * List postavy z list.yaml (⚠ bod 151). Bez souboru null; rozbitý YAML vrátí chybu,
+ * kterou ukáže list i Kontrola dat.
+ * @returns {Promise<{soubor: string, data: object|null, chyba: string|null}|null>}
+ */
+export async function nacistListPostavy(cesta) {
+  let text;
+  try {
+    text = await fs.readFile(cesta, 'utf8');
+  } catch {
+    return null;
+  }
+  try {
+    return { data: YAML.parse(text) ?? {}, chyba: null };
+  } catch (err) {
+    return { data: null, chyba: `Chyba v YAML: ${err.message.split('\n')[0]}` };
+  }
+}
+
+/** List pro pohled: DM celý i s rozpory, družina jen s `public: true` a bez poznámek DM. */
+export function listVPohledu(list, pohled) {
+  if (!list) return null;
+  if (list.chyba) return pohled === 'dm' ? { chybaSouboru: list.chyba } : null;
+  const l = spocitatList(list.data);
+  if (l.prazdny) return pohled === 'dm' ? { chybaSouboru: l.chyby[0] } : null;
+  if (pohled === 'dm') return l;
+  return l.verejne ? listProDruzinu(l) : null;
+}
+
 export class Kanon extends EventEmitter {
   constructor({ cesty, zapisovac, nastaveni = () => ({}), kalendar = null }) {
     super();
@@ -89,6 +119,8 @@ export class Kanon extends EventEmitter {
         }
         try {
           const e = nacistEntitu(text, { slozka, soubor, slozkaEntity, upraveno });
+          // List postavy jako data vedle karty (⚠ bod 151).
+          if (e.typ === 'postava' && slozkaEntity) e.list = await nacistListPostavy(path.join(this.c.kampan, slozka, p.name, SOUBOR_LISTU));
           if (entity.has(e.id)) chyby.push({ soubor, chyba: `Duplicitní id „${e.id}“` });
           else entity.set(e.id, e);
         } catch (err) {
@@ -341,6 +373,7 @@ export class Kanon extends EventEmitter {
       odkazujici,
       odkazyVTextu: p === 'dm' ? e.odkazyVTextu.filter((x) => this.entity.has(x)) : [],
       obsidian: p === 'dm' ? odkazObsidian(this.trezor(), e.soubor) : null,
+      list: listVPohledu(e.list, p),
     };
   }
 
@@ -369,6 +402,7 @@ export class Kanon extends EventEmitter {
       return zmeny ? upravitKartu(text, zmeny) : text;
     });
     const nova = nacistEntitu(obsah, { slozka: e.slozka, soubor: e.soubor, slozkaEntity: e.slozkaEntity, upraveno: new Date().toISOString() });
+    nova.list = e.list;
     this.entity.set(id, nova);
     this.oznam();
     return { vysledek, karta: this.karta(id) };
@@ -379,7 +413,9 @@ export class Kanon extends EventEmitter {
     const e = this.get(id);
     const soubor = path.join(this.c.koren, ...e.soubor.split('/'));
     const { vysledek, obsah } = await this.zapisovac.upravit(soubor, (text) => uprava(text, nacistEntitu(text, { slozka: e.slozka, soubor: e.soubor, slozkaEntity: e.slozkaEntity })));
-    this.entity.set(id, nacistEntitu(obsah, { slozka: e.slozka, soubor: e.soubor, slozkaEntity: e.slozkaEntity, upraveno: new Date().toISOString() }));
+    const nova = nacistEntitu(obsah, { slozka: e.slozka, soubor: e.soubor, slozkaEntity: e.slozkaEntity, upraveno: new Date().toISOString() });
+    nova.list = e.list;
+    this.entity.set(id, nova);
     this.oznam();
     return { vysledek, obsah, karta: this.karta(id) };
   }

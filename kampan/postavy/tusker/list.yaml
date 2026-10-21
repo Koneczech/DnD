@@ -1,0 +1,87 @@
+# List postavy (character sheet). Hub ho ukáže v záložce List postavy na stránce postavy.
+# Opravy, záchrany, všech 18 dovedností, pasivní hodnoty, zdatnostní bonus, iniciativu,
+# SO a útok kouzlem, kostky obnovy a pozice kouzel Hub dopočítá podle pravidel 2024.
+# Popis polí: sablony/list-postavy.yaml.
+schema: 1
+public: false
+source: "Z projektu v Claude, stav k 21. 8. 2026. Mechanika (jazyky, dovednosti) platí podle listu (R9)."
+classes:
+  - { name: Barbarian, level: 3, subclass: Path of the World Tree }
+species: Orc
+background: Guard
+xp: Milestone
+
+abilities: { str: 17, dex: 13, con: 15, int: 9, wis: 14, cha: 14 }
+
+saves:
+  proficient: [str, con]
+  notes:
+    - "Danger Sense: Advantage on DEX saves unless Incapacitated"
+
+skills:
+  proficient: [Acrobatics, Athletics, Intimidation, Investigation, Perception]
+  notes:
+    - "✅ Ověřeno: Guard background v tomto D&D Beyond zdroji dává volný výběr 2 dovedností (zvoleno Investigation + Acrobatics), zbylé 3 (Athletics, Intimidation, Perception) pocházejí z Barbarian classu (2 na 1. úrovni + Primal Knowledge na 3. úrovni). Vše sedí."
+
+senses: [Darkvision 120 ft]
+
+combat:
+  ac: 15
+  ac_notes: [Scale Mail + DEX]
+  hp: 34
+  hp_note: "✅ Opraveno (naházené kostky: level 1 12+2=14, level 2 10+2=12, level 3 6+2=8 → 14+12+8=34; D&D Beyond export měl chybně jen výchozí hodnotu 18)."
+  initiative_bonus: pb  # Alert
+  speed: { walk: 30 }
+
+proficiencies:
+  armor: [Light Armor, Medium Armor, Shields]
+  weapons: [Martial Weapons, Simple Weapons]
+  tools: [Darts (gaming set)]
+  languages: [Common, Common Sign Language, Dwarvish]
+
+features:
+  - group: Barbarian Features
+    items:
+      - Core Barbarian Traits
+      - "Rage: 3/Long Rest, Bonus Action to enter or extend (max 10 min)"
+      - "Unarmored Defense: 13 + Shield (10 + DEX +1 + CON +2)"
+      - "Weapon Mastery: 2 kinds of Simple or Martial Melee weapons, changeable after a Long Rest"
+      - "Danger Sense: Advantage on DEX saves unless Incapacitated"
+      - Reckless Attack
+      - "Barbarian Subclass: Path of the World Tree"
+      - "Primal Knowledge: +1 skill proficiency; while raging, STR instead of another ability for Acrobatics, Intimidation, Perception, Stealth, Survival"
+      - "Vitality of the Tree (Path of the World Tree, level 3): +3 Temp HP on entering Rage; at the start of each turn while raging, another creature within 10 ft gains 2d6 Temp HP"
+  - group: Orc Species Traits
+    items:
+      - "Creature Type: Humanoid; Size: Medium; Speed: 30 ft"
+      - "Adrenaline Rush: Dash as a Bonus Action, + Temp HP equal to Proficiency Bonus, 2/Short or Long Rest"
+      - "Darkvision: 120 ft"
+      - "Relentless Endurance: 1/Long Rest, drop to 1 HP instead of 0"
+  - group: Feats
+    items:
+      - "Alert (Guard background): +2 Initiative Proficiency, Initiative Swap"
+      - "Weapon Mastery (Guard Ability Score Improvements): increase two scores (+2/+1)"
+      - "Push (Greatclub): 1 Action"
+
+equipment:
+  items:
+    - Scale Mail
+    - Greatclub
+    - Handaxe x3
+    - Halberd
+    - Backpack
+    - Hooded Lantern
+    - Traveler's Clothes
+    - Oil x2
+    - Rations x10
+    - Rope
+    - Bedroll
+    - Tinderbox
+    - Torch x10
+    - Waterskin
+
+attacks:
+  - { name: Greatclub, hit: +5, damage: 1d8+3, type: Bludgeoning, notes: "Simple, Two-Handed, Push" }
+  - { name: Halberd, hit: +5, damage: 1d10+3, type: Slashing, notes: "Martial, Heavy, Reach, Two-Handed, Cleave" }
+  - { name: Handaxe, hit: +5, damage: 1d6+3, type: Slashing, range: 20/60, notes: "Simple, Light, Thrown, Vex" }
+  - { name: Unarmed Strike, hit: +5, damage: "4", type: Bludgeoning }

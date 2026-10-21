@@ -26,7 +26,7 @@ export const ITERACE_HESLA = 600000;
 const SUL_HESLA = 'dm-hub:stranky:dm:v1';
 const OBRAZEK = /^\/[^/].*\.(png|jpe?g|webp)$/i;
 /** Soubory panelu, které wiki a mapa potřebují. */
-const SOUBORY_PANELU = ['kanon.js', 'kanon-spolecne.js', 'kanon-wiki.js', 'kanon-editor.js', 'kanon-zivy-nahled.js', 'styly.css', 'ikona.svg'];
+const SOUBORY_PANELU = ['kanon.js', 'kanon-spolecne.js', 'kanon-wiki.js', 'kanon-editor.js', 'kanon-zivy-nahled.js', 'kanon-list.js', 'styly.css', 'ikona.svg'];
 
 /** Vyřízne z HTML prvek od `<tag id="…"` po jeho konec (stejně odsazený uzavírací tag). */
 export function vyriznout(html, tag, id) {

@@ -84,7 +84,7 @@ export const popisekPole = (pole, typ) => POPISKY_TYPU[typ]?.[pole] ?? POPISKY[p
  * DM oddíly wiki vždy ukáže dole (rozhodnutí 74), v souboru můžou být kdekoli.
  */
 export const ODDILY_TYPU = Object.freeze({
-  postava: ['Co ví družina', 'Příběh', 'Výchozí stav (před sezením 1)', 'DM — co postava neví', 'List postavy', 'Dotazník'],
+  postava: ['Co ví družina', 'Příběh', 'Výchozí stav (před sezením 1)', 'DM — co postava neví', 'Dotazník'],
   npc: ['Co ví družina', 'Jak ho hrát', 'Příběh', 'DM'],
   padouch: ['Co ví družina', 'Co chce a jeho plán', 'Jak bojuje', 'Když prohraje', 'DM'],
   frakce: ['Co ví družina', 'Jak jednají', 'DM'],

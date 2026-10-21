@@ -1,0 +1,108 @@
+# List postavy (character sheet). Hub ho ukáže v záložce List postavy na stránce postavy.
+# Opravy, záchrany, všech 18 dovedností, pasivní hodnoty, zdatnostní bonus, iniciativu,
+# SO a útok kouzlem, kostky obnovy a pozice kouzel Hub dopočítá podle pravidel 2024.
+# Popis polí: sablony/list-postavy.yaml.
+schema: 1
+public: false
+source: "Z projektu v Claude, stav k 21. 8. 2026. Mechanika (jazyky, dovednosti) platí podle listu (R9)."
+classes:
+  - { name: Bard, level: 3, subclass: College of Lore }
+species: Dwarf
+background: Noble
+xp: Milestone
+
+abilities: { str: 7, dex: 14, con: 12, int: 15, wis: 15, cha: 16 }
+
+saves:
+  proficient: [dex, cha]
+  notes:
+    - "Dwarf: Advantage to avoid or end the Poisoned condition"
+
+skills:
+  proficient: [Animal Handling, Perception, Performance, History, Religion]
+  expertise: [Persuasion, Sleight of Hand]
+  jack_of_all_trades: true
+  notes:
+    - "✅ Ověřeno: počet nástrojů (Bagpipes, Bowls, Cartographer's Tools, Darts, Flute, Lute, Woodcarver's Tools) potvrzen jako v pořádku. Darts = hra vrhání šipek (Gaming Set), ne zbraň."
+
+senses: [Darkvision 120 ft]
+
+combat:
+  ac: 13
+  ac_notes: [Leather Armor + DEX]
+  hp: 20
+  hp_note: "V rozsahu možného 16–30 pro Bard 3 / k8 / CON +1 / Dwarven Toughness +3 — OK."
+  speed: { walk: 30 }
+  resistances: [Poison]
+
+proficiencies:
+  armor: [Light Armor]
+  weapons: [Simple Weapons]
+  tools: [Bagpipes, Bowls, Cartographer's Tools, Darts (gaming set), Flute, Lute, Woodcarver's Tools]
+  languages: [Common, Dwarvish, Elvish]
+
+features:
+  - group: Bard Features
+    items:
+      - Core Bard Traits
+      - "Bardic Inspiration: 3/Long Rest, d6, Bonus Action"
+      - "Spellcasting: CHA, Spell DC 13, Spell Attack +5, musical instrument as focus"
+      - "Expertise: 2 skills (Persuasion, Sleight of Hand)"
+      - "Jack of All Trades: +½ proficiency bonus to other skills"
+      - "Bard Subclass: College of Lore"
+      - "Bonus Proficiencies (College of Lore): +3 skills of your choice"
+      - "Cutting Words (College of Lore): Reaction, subtract a Bardic Inspiration die from an enemy's roll"
+      - "Stonecunning (Tremorsense): 2/Long Rest, Bonus Action"
+  - group: Dwarf Species Traits
+    items:
+      - "Creature Type: Humanoid; Size: Medium; Speed: 30 ft"
+      - "Darkvision: 120 ft"
+      - "Dwarven Resilience: Resistance to Poison, Advantage vs Poisoned"
+      - "Dwarven Toughness: +3 Max HP (at level 3)"
+      - "Stonecunning: Tremorsense 60 ft for 10 min, Bonus Action, 2/Long Rest"
+  - group: Feats
+    items:
+      - "Skilled (Noble background): proficiency in 3 skills or tools of your choice (repeatable)"
+      - "Noble Ability Score Improvements: increase two scores (+2/+1)"
+
+equipment:
+  items:
+    - Leather Armor
+    - Dagger x2
+    - Perfume
+    - Backpack
+    - Bagpipes
+    - Fine Clothes
+    - Darts
+    - Oil x8
+    - Rations x9
+    - Bedroll
+    - Bell
+    - Tinderbox
+    - Waterskin
+    - Mirror
+    - Bullseye Lantern
+    - Costume x3
+  coins: { gp: 48 }
+
+attacks:
+  - { name: Dagger, count: 2, hit: +4, damage: 1d4+2, type: Piercing, range: 20/60, notes: "Simple, Finesse, Light, Thrown, Nick" }
+  - { name: Unarmed Strike, hit: +0, damage: "0", type: Bludgeoning }
+
+spellcasting:
+  - class: Bard
+    ability: cha
+    spells:
+      - { name: Minor Illusion, level: 0 }
+      - { name: Mage Hand, level: 0 }
+      - { name: Healing Word, level: 1 }
+      - { name: Charm Person, level: 1 }
+      - { name: Speak with Animals, level: 1, ritual: true }
+      - { name: Faerie Fire, level: 1 }
+      - { name: Detect Thoughts, level: 2 }
+      - { name: Shatter, level: 2 }
+
+# Hodnoty z původního listu, které nesedí s výpočtem. Hub je ukazuje jako ⚠ rozpor.
+# Až rozhodneš, který údaj platí, řádek smaž (případně oprav data výše).
+stated:
+  save.cha: +3

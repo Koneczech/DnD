@@ -50,7 +50,7 @@ Nosí ho od té doby pořád a bere ho jako amulet pro štěstí.
 
 ### 3. Srnka (7 let)
 
-Našla mladou srnku zraněnou tak, že to pozná i sedmileté dítě. [[bifron-nox|Bifron]] stál kousek za ní a nezasahoval — jedna z těch chvil, kdy učil mlčením.
+Našla mladou srnku zraněnou tak, že to pozná i sedmileté dítě. [[bifron-nox|Bifron]] stál kousek za ní a nezasahoval — jedna z těch chvil, kdy učil mlčením. %%zná%%
 
 Alba natáhla ruce. **Ne ze strachu o sebe — ze soucitu.**
 

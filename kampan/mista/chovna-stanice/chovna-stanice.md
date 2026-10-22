@@ -2,7 +2,7 @@
 schema: 1
 id: chovna-stanice
 typ: misto
-nazev: "Chovná stanice pro hutě"
+nazev: "Hutnický sirotčinec"
 verejne: false
 ikona: 🛠️
 aliases: ["sirotčinec"]

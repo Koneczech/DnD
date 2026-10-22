@@ -30,7 +30,7 @@ Hostinská [[u-deraveho-grose|U Děravého groše]] v [[longsaddle|Longsaddle]].
 
 - **[[gerd|Gerd]]** — stájník, sedmnáct, mluví rád a moc. Ví, že před třemi dny tu přenocovali tři chlapi, koně nekrmili jako svoje a ráno odjeli na severovýchod do kopců, ne po silnici. Jeden kůň kulhal — proto jsou pořád blízko. Chce minci, nebo posluchače (Persuasion DC 10, o koních zdarma).
 - **[[marwen-fellova|Marwen Fellová]]** — předačka formanů. Za poslední měsíc zmizely tři zásilky na stejném úseku severně od města, nikdo to nehlásil. Odhadne, že jich musí být aspoň pět. Zdarma, ale nepřesné.
-- **Ondrik Vale** — výběrčí u brodu, unavený úředník s knihou. Ví, kdo v posledních dnech prošel. Chce úplatek (5 zl), nebo klid. Riziko: zapisuje i je.
+- **Ondrik Vale** — výběrčí u brodu, unavený úředník s knihou. Ví, kdo v posledních dnech prošel. Chce úplatek (5 zl), nebo klid. Riziko: zapisuje i je. %%zná%%
 - **Roswyn** — bylinkářka na okraji města. Ví, kde se v poslední době nedá sbírat, protože „tam někdo je“. Popíše místo krajinou, ne směrem. S druidkou mluví jinak než s ozbrojenci.
 
 > Nerozhodnuto: jestli jsou lupiči místní (jeden z nich Ilmin synovec).

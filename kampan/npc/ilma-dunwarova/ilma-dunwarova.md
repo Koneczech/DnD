@@ -7,7 +7,7 @@ verejne: true
 ikona: 🍺
 aliases: ["Ilma"]
 vazby: ["[[u-deraveho-grose]]", "[[longsaddle]]", "[[koudur]]", "[[gerd]]", "[[marwen-fellova]]", "[[s02]]"]
-tags: []
+tags: [aktualni]
 ilustrace: []
 zdroj: "chat „Komplikovaná cesta k dopisu v Longsaddle“ (11. 9. 2026, příprava sezení 2)"
 ---

@@ -8,7 +8,7 @@ ikona: 🚧
 aliases: ["brod"]
 lezi_v: "[[long-road-mirabar-longsaddle]]"
 vazby: ["[[long-road-mirabar-longsaddle]]", "[[artur]]", "[[longsaddle]]", "[[mirabar]]", "[[s02]]"]
-tags: []
+tags: [aktualni]
 popis_obrazu: ""
 ilustrace: []
 zdroj: "sezení 2 (11. 9. 2026), přepis nahrávky"

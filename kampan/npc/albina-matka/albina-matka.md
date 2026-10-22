@@ -3,7 +3,7 @@ schema: 1
 id: albina-matka
 typ: npc
 nazev: "Albina matka"
-verejne: false
+verejne: true
 ikona: 🕊️
 aliases: []
 vazby: ["[[alba]]", "[[bifron-nox]]", "[[corvain-thornroot]]", "[[albin-privesek]]", "[[praotec]]", "[[tichy-hvozd]]"]

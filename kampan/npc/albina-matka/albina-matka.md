@@ -16,7 +16,7 @@ zdroj: https://app.notion.com/p/3c79ed22673681119e03c98f1656f071
 ---
 # Albina matka
 
-**Jméno záměrně neurčeno — otevřené.**
+**Jméno záměrně neurčeno - otevřené.**
 
 Obyčejná žena. Nebeská laskavost, kterou si vysloužila ve vlastním životě (nesouvisí s [[praotec|Kruhem pod Praotcem]]), utracená za nenarozenou [[alba|Albu]]. Cena: nesmí ji vychovat — blízkost jí škodí, dvě půlky rozdělené jiskry se odpuzují a matka při přiblížení předčasně stárne.
 

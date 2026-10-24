@@ -44,7 +44,7 @@ export function idSetkani(odkaz) {
 
 /**
  * Události: 'zmena' ({jmeno, hp, max} nebo null) pro málo HP, 'tah' ({id, jmeno, hrac, tagy}) při změně
- * postavy na tahu (zvuky na tahu, bod 76).
+ * postavy na tahu (zvuky na tahu, bod 76), 'chyba' (text nebo null) pro záznam událostí.
  */
 export class SledovaniHp extends EventEmitter {
   constructor({ odkaz, aktivni, hlidatHp = () => true, intervalMs = 1000, nacist }) {
@@ -58,6 +58,7 @@ export class SledovaniHp extends EventEmitter {
     this.stav = null;
     this.casovac = null;
     this.bezi = false;
+    this.chyba = null;
   }
 
   spustit() {
@@ -67,6 +68,23 @@ export class SledovaniHp extends EventEmitter {
 
   zastavit() {
     clearInterval(this.casovac);
+  }
+
+  /**
+   * Konec souboje: zapomene, kdo byl na tahu, a ohlásí konec málo HP hned, bez čekání na další krok.
+   * Pojistka pro případ, že by krok mimo souboj konec neohlásil (24. 10. 2026 zůstala lampa pulzovat).
+   */
+  vynulovat() {
+    this.naTahu = null;
+    if (!this.stav) return;
+    this.stav = null;
+    this.emit('zmena', null);
+  }
+
+  nastavitChybu(text) {
+    if (text === this.chyba) return;
+    this.chyba = text;
+    this.emit('chyba', text);
   }
 
   /**
@@ -94,6 +112,10 @@ export class SledovaniHp extends EventEmitter {
         this.stav = novy;
         this.emit('zmena', novy);
       }
+      this.nastavitChybu(null);
+    } catch (e) {
+      // Chyba v kroku (třeba u posluchače) se dřív ztratila beze stopy; teď ji uvidí záznam událostí.
+      this.nastavitChybu(`Sledování tahu: ${e?.message ?? e}`);
     } finally {
       this.bezi = false;
     }

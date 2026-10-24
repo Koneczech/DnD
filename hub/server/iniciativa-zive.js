@@ -12,6 +12,11 @@ import { EventEmitter } from 'node:events';
 export const ADRESA_ZIVE = 'wss://improvedinitiative.app/socket.io/?EIO=4&transport=websocket';
 /** Po výpadku se spojení obnoví za 2 s, pak za 4, 8 … nejvýš 30 s. */
 const OBNOVA_MS = Object.freeze({ prvni: 2000, max: 30000 });
+/**
+ * Spojení, které se do 10 s nepřipojí, se zavře a zkusí znovu. Bez limitu mohl pokus viset navždy
+ * (sezení 24. 10. 2026: po výpadku ve 14:18 se Hub k Improved Initiative už nepřipojil).
+ */
+export const LIMIT_PRIPOJENI_MS = 10000;
 
 /** Rozebere zprávu socket.io: { typ: 'udalost', nazev, data } | { typ: 'otevreno' | 'pripojeno' | 'ping' | 'odpojeno' } | null. */
 export function rozebratZpravu(text) {
@@ -39,11 +44,12 @@ export function rozebratZpravu(text) {
  * `WebSocketTrida` jde podstrčit v testech; v Node 22+ je WebSocket vestavěný.
  */
 export class ZivyPlayerView extends EventEmitter {
-  constructor({ WebSocketTrida = globalThis.WebSocket, adresa = ADRESA_ZIVE, obnovaMs = OBNOVA_MS } = {}) {
+  constructor({ WebSocketTrida = globalThis.WebSocket, adresa = ADRESA_ZIVE, obnovaMs = OBNOVA_MS, limitPripojeniMs = LIMIT_PRIPOJENI_MS } = {}) {
     super();
     this.WebSocketTrida = WebSocketTrida;
     this.adresa = adresa;
     this.obnovaMs = obnovaMs;
+    this.limitPripojeniMs = limitPripojeniMs;
     this.id = null; // setkání, které má Hub sledovat (null = nic)
     this.ws = null;
     this.pripojeno = false;
@@ -71,6 +77,24 @@ export class ZivyPlayerView extends EventEmitter {
     }
     this.ws = ws;
     const id = this.id;
+    let pripojeni = setTimeout(() => {
+      // Pokus visí (žádné otevření ani chyba): zahodit a zkusit znovu.
+      pripojeni = null;
+      if (this.ws !== ws) return;
+      this.ws = null;
+      try {
+        ws.close();
+      } catch {
+        /* už zavřené */
+      }
+      this.nastavitSpojeni(false);
+      this.naplanovatObnovu();
+    }, this.limitPripojeniMs);
+    pripojeni.unref?.();
+    const hotovo = () => {
+      clearTimeout(pripojeni);
+      pripojeni = null;
+    };
     const poslat = (x) => {
       try {
         ws.send(x);
@@ -85,6 +109,7 @@ export class ZivyPlayerView extends EventEmitter {
       if (z.typ === 'ping') poslat('3');
       else if (z.typ === 'otevreno') poslat('40');
       else if (z.typ === 'pripojeno') {
+        hotovo();
         poslat(`42${JSON.stringify(['join encounter', id])}`);
         this.pokusy = 0;
         this.nastavitSpojeni(true);
@@ -94,6 +119,7 @@ export class ZivyPlayerView extends EventEmitter {
       }
     });
     const konec = () => {
+      hotovo();
       if (this.ws !== ws) return;
       this.ws = null;
       this.nastavitSpojeni(false);

@@ -16,7 +16,7 @@ ilustrace:
   - soubor: celek-noc.png
     ucel: scena
     varianta: noc
-    skryta: false
+    skryta: true
     puvod: Moonlit Medieval Forest Camp.png
   - soubor: poplach.png
     ucel: scena
@@ -40,7 +40,7 @@ ilustrace:
     puvod: Autumn Woodland Camp with Horses and Treehouse.png
   - soubor: spalene-dopisy.png
     ucel: scena
-    skryta: true
+    skryta: false
     puvod: Scorched Letters by the Campfire.png
   - soubor: prsten-kapitana.png
     ucel: scena
@@ -76,8 +76,8 @@ zvuk:
       - { zvuk: nahodne/boj/rinceni, kazdych_s: 6, nahodilost: 0.8, hlasitost: 0.7, vzdalenost: 0.4 }
       - { zvuk: nahodne/boj/sip, kazdych_s: 12, nahodilost: 0.9, hlasitost: 0.7, vzdalenost: 0.3 }
       - { zvuk: nahodne/boj/pokrik, kazdych_s: 15, nahodilost: 0.9, hlasitost: 0.6, vzdalenost: 0.6 }
-vazby: ["[[longsaddle]]", "[[malk-orren]]", "[[malkova-zasilka]]", "[[kapitan-lupicu]]", "[[jeskyne-u-taboru]]", "[[s02]]"]
-tags: [aktualni]
+vazby: [ "[[longsaddle]]", "[[malk-orren]]", "[[malkova-zasilka]]", "[[kapitan-lupicu]]", "[[jeskyne-u-taboru]]", "[[s02]]" ]
+tags: [ aktualni ]
 strop: tabor
 ---
 # Tábor lupičů

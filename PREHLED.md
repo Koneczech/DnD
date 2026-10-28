@@ -18,6 +18,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | Konec | **Ukončit sezení** → kontrolní seznam → uložení na GitHub | Sezení |
 | Nová verze | Slouč PR na GitHubu → **Systém → Aktualizovat** → Hub se restartuje sám | Systém (vpravo nahoře) |
 | Kdo je kdo | **Hledat v kánonu** nahoře (Ctrl+K) nebo **Kánon**: wiki, karta, mapa, Pohled družiny | Kánon |
+| Je kánon v pořádku? | **Kánon → Přehled → Kvalita kánonu**: procento a Co opravit; na kartě rámeček Co opravit | Kánon |
 | Družina se něco dozví | Karta v Kánonu → **Co ví družina** → oko 👁 u odrážky, nebo napiš novou a Enter. Hotový odstavec z textu karty odkryješ okem 👁 vedle něj | Kánon |
 | Po sezení | Přepisový nástroj → **Do kánonu…** připraví podklad, Claude napíše návrh, v Hubu **Kánon → Návrh po sezení** ho po operacích schválíš a zapíšeš | Kánon |
 | Něco nejde | **Systém → Záznam událostí → Stáhnout** a pošli Claudovi | Systém |
@@ -70,6 +71,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Wiki kánonu: přehled, kategorie, stránka karty, Pohled družiny, hledání v liště | ◐ |
 | | Co ví družina po odrážkách (oko 👁 u každé), rychlé přidání u stolu | ◐ |
 | | Odkrývání odstavců a odrážek z celého textu karty (oko 👁 u bloku, i z příběhu postavy) | ◐ |
+| | Kvalita kánonu: procento karet bez chyby, stránka Co opravit, rámeček na kartě, `npm run kvalita` (⚠ bod 154) | ◐ |
 | | List postavy jako character sheet z dat (`list.yaml` u každé postavy): vlastnosti, bojové hodnoty, záchrany, dovednosti, smysly, obrana, zdatnosti a záložky Actions, Spells, Inventory, Features & Traits; odvozené hodnoty počítá Hub podle pravidel 2024, rozpory s původním listem ukáže jen DM s ⚠ (u Koudura záchrana na Charismu); list vidí i družina, poznámky DM v něm nejsou; v Hubu, na webu i na telefonu | ◐ |
 | | Plný editor karty (text, pole, portrét, našeptávání odkazů), nová karta ze šablony | ◐ |
 | | Živý náhled v editoru karty (jako Obsidian): nadpisy, tučné, odkazy, odrážky a oko 👁 rovnou v textu, značky jen na řádku s kurzorem; text se ukládá beze změny formátu; Enter pokračuje v seznamu | ◐ |
@@ -127,6 +129,7 @@ Vlastní combat tracker, sledování zdrojů postav (BV, kouzla, Zuřivost), mix
 | List postavy (character sheet) | data `kampan/postavy/<id>/list.yaml`, popis polí `sablony/list-postavy.yaml`; výpočty `hub/sdilene/list-postavy-data.js`, vzhled `hub/panel/kanon-list.js` |
 | Šablony pro nové soubory (Obsidian) | `sablony/` |
 | Nástěnky mapy kánonu (uložená rozložení) | `kampan/nastenky/` |
+| Kvalita kánonu (pravidla) | `hub/sdilene/kvalita-kanonu.js`, `hub/skripty/kvalita.js` |
 | Kánon: audit, mapa a návod na převod | `reference/kanon-audit.md`, `reference/kanon-mapa.yaml`, `reference/kanon-prevod.md` |
 | Kód Hubu a testy | `hub/` |
 | Zvuky (mimo repo) | `Dokumenty\DnD\audio` |

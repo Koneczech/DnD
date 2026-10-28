@@ -123,6 +123,7 @@ export function vytvoritWiki(ctx, karta) {
           : dm()
           ? `${vse.length} karet a ${ud.length} událostí. Karty upravíš tady i v Obsidianu; co z nich zná družina, odkrýváš po odrážkách v oddílu Co ví družina.`
           : `${vse.length} karet, které družina zná, a jen to, co o nich ví. Slouží k rekapitulaci.` })),
+      dm() && s.data?.kvalita ? souhrnKvality(s.data.kvalita) : null,
       postavy.length ? el('section', { className: 'wiki-sekce' }, el('h3', { textContent: 'Postavy hráčů' }), el('div', { className: 'mrizka-dlazdic' }, postavy.map(dlazdice))) : null,
       veHre.length ? el('section', { className: 'wiki-sekce' }, el('h3', { textContent: `Ve hře (${veHre.length})` }), el('div', { className: 'mrizka-dlazdic' }, veHre.map(dlazdice))) : null,
       ud.length ? el('section', { className: 'wiki-sekce' }, el('div', { className: 'sekce-hlava' }, el('h3', { textContent: 'Poslední události' }), el('a', { href: '#kanon/udalosti', className: 'tlacitko tiche', textContent: 'Všechny události' })), el('ul', { className: 'udalosti-seznam' }, ud.slice(-5).reverse().map((u) => radekUdalosti(u)))) : null,
@@ -133,6 +134,77 @@ export function vytvoritWiki(ctx, karta) {
       }))) : null,
       dm() && s.data?.chyby?.length ? el('section', { className: 'wiki-sekce' }, el('h3', { textContent: 'Karty, které se nenačetly' }), el('ul', { className: 'chyby-kanonu' }, s.data.chyby.map((c) => el('li', {}, el('code', { textContent: c.soubor }), ` ${c.chyba}`)))) : null,
     );
+  }
+
+  /* ---------- Kvalita kánonu (⚠ bod 154) ---------- */
+
+  const ikonaUrovne = (uroven) => (uroven === 'chyba' ? '✗' : '·');
+  /** Pravidla posílá server se seznamem (název, rada); panel nenačítá modul kontroly sám. */
+  const pravidloKvality = (id) => s.data?.kvalita?.pravidla.find((p) => p.id === id) ?? null;
+
+  /** Pruh na přehledu: procento a kolik karet porušuje které pravidlo. */
+  function souhrnKvality(kv) {
+    const hotovo = kv.procento === 100;
+    return el('section', { className: `wiki-sekce kvalita-souhrn karta${hotovo ? ' hotovo' : ''}` },
+      el('div', { className: 'sekce-hlava' },
+        el('h3', { textContent: 'Kvalita kánonu' }),
+        el('a', { href: '#kanon/kvalita', className: 'tlacitko tiche', textContent: hotovo ? 'Doporučení' : 'Co opravit' })),
+      el('p', { className: 'kvalita-cislo' }, el('strong', { textContent: `${kv.procento} %` }), ` · ${kv.bezChyb} z ${kv.karet} karet bez chyby`),
+      el('div', { className: 'kvalita-pravidla' }, kv.pravidla.filter((p) => p.karet).map((p) => el('a', {
+        href: `#kanon/kvalita/${p.id}`,
+        className: `cip kvalita-cip ${p.uroven}`,
+        title: p.rada,
+      }, `${ikonaUrovne(p.uroven)} ${p.nazev}`, el('span', { className: 'pocet-cipu', textContent: p.karet })))));
+  }
+
+  /** Stránka Co opravit: karty podle pravidla, nejdřív ty s chybou. */
+  function stranaKvality() {
+    const kv = s.data?.kvalita;
+    const hlava = el('div', { className: 'wiki-hlava' },
+      el('nav', { className: 'drobecky' }, el('a', { href: '#kanon', textContent: 'Kánon' }), ' › '),
+      el('h2', { className: 'wiki-nadpis', textContent: pravidloKvality(w.pravidlo)?.nazev ?? 'Kvalita kánonu' }));
+    if (!dm() || !kv) {
+      nahradit(obsah, hlava, el('p', { className: 'poznamka', textContent: 'Kvalitu kánonu počítá Hub doma, v pohledu DM.' }));
+      return;
+    }
+    const pravidlo = pravidloKvality(w.pravidlo)?.id ?? null;
+    const karty = kv.karty
+      .map((k) => ({ ...k, problemy: k.problemy.filter((p) => (pravidlo ? p.pravidlo === pravidlo : p.uroven === 'chyba')) }))
+      .filter((k) => k.problemy.length);
+    hlava.append(
+      el('p', { className: 'uvod', textContent: pravidlo
+        ? pravidloKvality(pravidlo).rada
+        : `${kv.procento} %: ${kv.bezChyb} z ${kv.karet} karet nemá žádnou chybu. Kánon je na 100 %, když tu nic není. Doporučení (·) se do procenta nepočítají.` }),
+      el('div', { className: 'kvalita-pravidla' },
+        el('a', { href: '#kanon/kvalita', className: `cip${pravidlo ? '' : ' aktivni'}`, 'aria-current': pravidlo ? null : 'page' }, 'Všechny chyby'),
+        kv.pravidla.filter((p) => p.karet).map((p) => el('a', {
+          href: `#kanon/kvalita/${p.id}`,
+          className: `cip kvalita-cip ${p.uroven}${p.id === pravidlo ? ' aktivni' : ''}`,
+          'aria-current': p.id === pravidlo ? 'page' : null,
+          title: p.rada,
+        }, `${ikonaUrovne(p.uroven)} ${p.nazev}`, el('span', { className: 'pocet-cipu', textContent: p.karet })))));
+    nahradit(obsah, hlava, karty.length
+      ? el('ul', { className: 'kvalita-seznam' }, karty.map((k) => {
+        const a = el('a', { href: `#kanon/${encodeURIComponent(k.id)}`, className: 'kvalita-karta' }, el('span', { className: 'tecka' }), el('strong', { textContent: k.nazev }), el('small', { textContent: TYPY[k.typ]?.j ?? k.typ }));
+        a.style.setProperty('--c', barvaTypu(k.typ));
+        return el('li', {}, a, seznamProblemu(k.problemy, { sPravidlem: !pravidlo }));
+      }))
+      : el('p', { className: 'poznamka', textContent: 'Nic k opravě.' }));
+  }
+
+  function seznamProblemu(problemy, { sPravidlem = true } = {}) {
+    return el('ul', { className: 'kvalita-problemy' }, problemy.map((p) => el('li', { className: p.uroven, title: pravidloKvality(p.pravidlo)?.rada ?? '' },
+      el('span', { className: 'kvalita-ikona', 'aria-hidden': 'true', textContent: ikonaUrovne(p.uroven) }),
+      el('span', {}, sPravidlem ? el('strong', { textContent: `${pravidloKvality(p.pravidlo)?.nazev ?? p.pravidlo}: ` }) : null, p.zprava))));
+  }
+
+  /** Rámeček Co opravit na kartě (pohled DM). */
+  function coOpravit(k) {
+    if (!dm() || !k.kvalita?.length) return null;
+    const chyb = k.kvalita.filter((p) => p.uroven === 'chyba').length;
+    return el('details', { className: `kvalita-karty karta${chyb ? ' s-chybou' : ''}`, open: chyb > 0 },
+      el('summary', { textContent: chyb ? `Co opravit (${chyb} ${chyb === 1 ? 'chyba' : chyb < 5 ? 'chyby' : 'chyb'})` : `Doporučení (${k.kvalita.length})` }),
+      seznamProblemu(k.kvalita));
   }
 
   function kategorie() {
@@ -511,6 +583,7 @@ export function vytvoritWiki(ctx, karta) {
       : null;
     const hlavni = naListu ? el('div', { className: 'clanek-hlavni' }, zalozky, listVykresleny ?? listPostavy(e, list, blokyKarty)) : el('div', { className: 'clanek-hlavni' },
       zalozky,
+      coOpravit(k),
       e.typ === 'kanon' ? casKanonu(k) : null,
       // Hráčský kánon je celý pro družinu, oddíl Co ví družina má jen karta, která ho opravdu obsahuje.
       e.typ !== 'kanon' || (k.druzina ?? []).length ? coViDruzina(e, k) : null,
@@ -582,6 +655,7 @@ export function vytvoritWiki(ctx, karta) {
     else if (w.stranka === 'udalosti') stranaUdalosti();
     else if (w.stranka === 'udalost') stranaUdalost();
     else if (w.stranka === 'entita') stranaEntity();
+    else if (w.stranka === 'kvalita') stranaKvality();
     else prehled();
   }
 
@@ -608,6 +682,10 @@ export function vytvoritWiki(ctx, karta) {
       } else if (a === 'udalost' && b) {
         w.stranka = 'udalost';
         w.udalost = b;
+        s.vybrane = null;
+      } else if (a === 'kvalita') {
+        w.stranka = 'kvalita';
+        w.pravidlo = b ?? null;
         s.vybrane = null;
       } else {
         w.stranka = 'entita';

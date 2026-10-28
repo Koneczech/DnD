@@ -297,6 +297,8 @@ export function nacistEntitu(text, { slozka, soubor, slozkaEntity, upraveno = nu
     pole: {},
     telo: r.telo,
     upraveno,
+    // Celá hlavička pro Kvalitu kánonu (datum sezení, zdroj); pohledy ji nepředávají dál.
+    hlavicka: d,
   };
   entita.aktualni = entita.tags.includes(STITEK_VE_HRE);
   entita.obrazky = obrazky(d, entita);

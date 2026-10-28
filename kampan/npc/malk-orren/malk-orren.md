@@ -33,7 +33,7 @@ zdroj: https://app.notion.com/p/3c49ed226736818ca0a3f971cd6e6994
 
 ## Jak ho Leta najde
 
-[[thiril-ambersedge|Thiril]] jí řekl, ať se v hospodě zeptá na **„úplně poslední zakázku z Mirabaru"**. To je heslík — kdo na něj zareaguje, je ten kontakt. *(Heslo platí; [[leta|Leta]] ho Malkovi neřekla, R1.)*
+[[thiril-ambersedge|Thiril]] jí řekl, ať se v hospodě zeptá na **„úplně poslední zakázku z Mirabaru"**. To je heslík — kdo na něj zareaguje, je ten kontakt. V [[s02|sezení 2]] se [[leta|Leta]] Malka u [[u-deraveho-grose|Děravého groše]] zeptala na „poslední nějakou zakázku právě z Mirabaru“ a Malk zareagoval.
 
 Tím pádem **tempo odhalení řídí DM, ne geografie.** [[longsaddle|Longsaddle]] nemusí vydat celou pravdu naráz.
 

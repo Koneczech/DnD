@@ -1332,6 +1332,8 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false, u
   }
 
   if (jenCteni) $('#kanon-ulozit').hidden = true;
+  // Návrh po sezení je jen v Hubu doma (čte hub/.stav/navrhy), čtecí verze na webu ho nemá.
+  if (jenCteni) $('#kanon-navrh')?.remove();
   $('#kanon-ulozit').addEventListener('click', () => otevritNastenku(null));
   /** Dialog Uložit rozložení; jen = Set id (Nástěnka z výběru) nebo null (vše na mapě). */
   function otevritNastenku(jen) {

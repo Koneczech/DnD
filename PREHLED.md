@@ -19,6 +19,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | Nová verze | Slouč PR na GitHubu → **Systém → Aktualizovat** → Hub se restartuje sám | Systém (vpravo nahoře) |
 | Kdo je kdo | **Hledat v kánonu** nahoře (Ctrl+K) nebo **Kánon**: wiki, karta, mapa, Pohled družiny | Kánon |
 | Družina se něco dozví | Karta v Kánonu → **Co ví družina** → oko 👁 u odrážky, nebo napiš novou a Enter. Hotový odstavec z textu karty odkryješ okem 👁 vedle něj | Kánon |
+| Po sezení | Přepisový nástroj → **Do kánonu…** připraví podklad, Claude napíše návrh, v Hubu **Kánon → Návrh po sezení** ho po operacích schválíš a zapíšeš | Kánon |
 | Něco nejde | **Systém → Záznam událostí → Stáhnout** a pošli Claudovi | Systém |
 | Projektor | Edge s adresou Stropu na displeji projektoru, F11; K kalibrace, Z zkouška | Nastavení → Výstupy pro OBS, `reference/strop.md` |
 | Mimo domov | Codespace na GitHubu → panel se štítkem **Zkouška**, nic se neukládá | `reference/zkouska-v-cloudu.md` |
@@ -88,6 +89,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Soubor na GitHubu: odkaz na soubor karty v editoru GitHubu (záloha) | ◐ |
 | | Heslo na pohled DM ve čtecí verzi (pohled družiny otevřený, Zamknout DM) | ◐ |
 | | Hráčská stránka na GitHub Pages (pohled družiny) | ✗ |
+| | Návrh po sezení: změny kánonu z přepisu nahrávky (nová karta, doplnit oddíl, pole, vazba, hráčský kánon, událost, zápis sezení, rozpor) s důkazem v nahrávce; DM po operacích schválí, upraví, nebo zamítne, Hub zapíše schválené najednou | ◐ |
 | **Verze 2** | Příprava Lazy DM, generátor obchodů, dílna portrétů, export do IIO | ✗ |
 
 ## Co je rozdělané (v tomto pořadí)

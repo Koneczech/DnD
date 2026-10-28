@@ -22,6 +22,7 @@ import { Obchody } from './obchody.js';
 import { HUB_DIR } from './cesty.js';
 import { Mista } from './mista.js';
 import { Kanon } from './kanon-modul.js';
+import { NavrhSezeni } from './navrh-sezeni.js';
 import { Scena } from './scena.js';
 import { Svetla, ROLE as ROLE_SVETEL } from './svetla.js';
 import { Hue } from './zarizeni/hue.js';
@@ -155,6 +156,8 @@ export class Hub {
     this.mista = new Mista({ cesty: this.c, zapisovac: this.zapisovac });
     // Modul Kánon (Blok 3): mapa entit, karty, pohled družiny, nástěnky.
     this.kanon = new Kanon({ cesty: this.c, zapisovac: this.zapisovac, nastaveni: () => this.nastaveni.hodnoty, kalendar: this.kalendar });
+    // Návrh po sezení (⚠ bod 153): změny kánonu navržené z přepisu nahrávky, schvaluje DM.
+    this.navrhSezeni = new NavrhSezeni({ cesty: this.c, kanon: this.kanon, kalendar: this.kalendar, zapisovac: this.zapisovac });
     this.scena = new Scena({ soubor: path.join(this.c.lokalniStav, 'scena.json'), mista: this.mista });
     this.svetla = new Svetla({
       cesty: this.c,
@@ -904,6 +907,10 @@ export class Hub {
       const v = await this.apiKanon(req, m, p, url);
       if (v !== undefined) return poslatJson(res, 200, v);
     }
+    if (p.startsWith('/api/navrh-sezeni')) {
+      const v = await this.apiNavrhSezeni(req, m, p);
+      if (v !== undefined) return poslatJson(res, 200, v);
+    }
     if (p === '/api/restart' && m === 'POST') {
       await nacistJson(req);
       if (!this.restartovat) {
@@ -1308,6 +1315,22 @@ export class Hub {
     if (nast && m === 'GET') return k.nastenka(nast[1]);
     if (nast && m === 'PUT') return k.ulozitNastenku(nast[1], await nacistJson(req, 512 * 1024));
     if (nast && m === 'DELETE') return k.smazatNastenku(nast[1]);
+    return undefined;
+  }
+
+  /** Návrh po sezení (⚠ bod 153): seznam návrhů, detail, rozhodnutí DM u operace a zápis schválených. */
+  async apiNavrhSezeni(req, m, p) {
+    const n = this.navrhSezeni;
+    if (p === '/api/navrh-sezeni' && m === 'GET') return n.seznam();
+    const detail = /^\/api\/navrh-sezeni\/(s\d{2,3})$/.exec(p);
+    if (detail && m === 'GET') return n.nacist(detail[1]);
+    const op = /^\/api\/navrh-sezeni\/(s\d{2,3})\/operace\/([A-Za-z0-9_-]{1,40})$/.exec(p);
+    if (op && m === 'PUT') return n.rozhodnout(op[1], op[2], await nacistJson(req, 256 * 1024));
+    const zapis = /^\/api\/navrh-sezeni\/(s\d{2,3})\/zapsat$/.exec(p);
+    if (zapis && m === 'POST') {
+      await nacistJson(req);
+      return this.poUpraveKanonu(await n.zapsat(zapis[1]));
+    }
     return undefined;
   }
 

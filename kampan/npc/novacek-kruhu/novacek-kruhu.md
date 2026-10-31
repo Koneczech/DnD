@@ -24,3 +24,8 @@ Skupina nováčků kruhu. *(Popis sedmnáctiletého nováčka, který mluví ví
 - **Podražení** (nahradí útok): táž záchrana, DC 12 → *Prone*
 - **Klacek:** +4, 1d6+2 drtivé
 - **Plachta z vozu** (jednou za souboj, jen jeden z nich): záchrana na Obratnost DC 12 → *Restrained*; ven akcí, Athletika DC 10
+
+## Co ví družina
+
+- Mladí lidé z [[kruh|kruhu]]. Unesli [[koudur|Koudura]], [[leta|Letu]] a [[tusker|Tuskera]] z [[mirabar|Mirabaru]] do [[tabor-kruhu|tábora v Lurkwoodu]]. Až na jednoho jsou mrtví. %%zná%%
+- Jeden utekl a viděl, jak medvěd ubil [[torva|Torvu]]. %%zná%%

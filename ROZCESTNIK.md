@@ -40,7 +40,7 @@ Příprava → hra u stolu → přepis a scénář → návrh a schválení → 
 | Větev | Co v ní je | Další krok |
 | --- | --- | --- |
 | `karta-sezeni` | Karta sezení ve wiki podle návrhu, který DM potvrdil 31. 10. (⚠ bod 158): údaje sezení, hráčský kánon, události, U stolu, Kdo a kde, stav zápisu; Kvalita kánonu u nezapsaných sezení; družina vidí sezení podle kánonu | DM: projít PR #107 a sloučit, pak vyzkoušet na kartách Sezení 2 a 3 |
-| `co-patri-do-kanonu` | Rozhodnutí 82: co patří do kánonu (vrstvy, čtyři otázky pro Co ví družina, co nepatří); odkaz v `CLAUDE.md` a `reference/prepis-kanon.md` § 1 | DM: projít PR #109 a sloučit |
+| `co-vi-druzina-1` | Co ví družina, skupina 1 podle rozhodnutí 82: odrážky u Alby, Koudura, Lety, Nováčka kruhu, Tavise, Torvy, Tábora kruhu a Mirabaru; Družina zná vypnuto u Albiny matky a Cesty, zapnuto u Tavise; rozpory R17 (Torva a druidština) a R18 (tábor je skalní průrva); semenáček v oddílu DM Tábora kruhu | DM: projít PR #110 a sloučit |
 
 ## Předávky (fronta)
 
@@ -50,7 +50,7 @@ Co jedna část potřebuje od jiné. Hotové položky se mažou, záznam zůstan
 | --- | --- | --- | --- |
 | DM | Hub | Po schválení scénáře s03: finální `s03.yaml` podle `prepis-kanon.md` § 3a ve schématu 2 (`schema: 2`, `stav: finalni`, `scenar_verze`). Zkušební průchod předběžného návrhu: 73 ze 74 operací Hub přijme, `o62` mění pole `harptos_konec`, které karta sezení nemá. Při schválení všeho by zápis přidal 4 chyby Kvality kánonu (rozhodnutí 79): Ordwinův dopis, Thirilův prsten a Kapitán lupičů jsou skryté, i když je zmiňuje hráčský kánon (přidat `pole verejne` a odkrytou odrážku), Mrtvá dívka z tábora lupičů má popis jen 73 znaků (nejméně 200). Pole `rozhodnuti_r` v hlavičce Hub nečte, číslo R patří do `r` u rozporu. Odrážky Co ví družina a hráčský kánon podle rozhodnutí 82 (bez hodů a převyprávěných událostí) | čeká |
 | DM | – | Dokončit kontrolu scénáře sezení 3 (poslech), pak ho schválit | čeká |
-| DM | Hub | Schválit návrh odrážek Co ví družina, skupina 1 (dokument „Co ví družina — návrh odrážek (skupina 1)“, 25 odrážek u 7 karet a Tavis, 6 otázek). Pak je relace Hub zapíše ve větvi `co-vi-druzina-1` podle rozhodnutí 82 | čeká |
+| DM | Hub | Mirabar: návrh kontextu města (městská rada a další), aby bylo s čím hrát; DM potvrdí. Karta má teď jen jednu odrážku a žádný popis | čeká |
 | Kánon | Příběh | 8× dořešit (`kampan/kanon/*` s `doresit: true`), 10 otevřených rozhodnutí; po zápisu sezení 3 i jeho otevřené nitky | čeká |
 | Hub | Hub | Úklid kánonu po skupinách podle Kvality kánonu (rozhodnutí 79), souběžně s ostatní prací | čeká |
 
@@ -81,3 +81,4 @@ Jeden řádek na relaci: datum, relace, co se udělalo, kde to je.
 - 31. 10. 2026 · Hub (Claude) · karta sezení podle potvrzeného návrhu (plátno „Karta sezení — návrh“), ⚠ bod 158 · větev `karta-sezeni`, PR #107
 - 31. 10. 2026 · Uspořádání (Claude) · návrh `sNN.yaml` píše relace Hub, postup pro DM v `prepis-kanon.md` § 3a · větev `navrh-pise-hub`
 - 31. 10. 2026 · Hub (Claude) · přehled typů karet kánonu (artefakt Karty kánonu), rozhodnutí 82 co patří do kánonu, návrh Co ví družina pro skupinu 1 ke schválení · větev `co-patri-do-kanonu`, PR #109
+- 31. 10. 2026 · Hub (Claude) · Co ví družina, skupina 1 zapsaná podle schváleného návrhu (24 odrážek u 8 karet, z toho 1 skrytá, 3 přepínače Družina zná, R17 a R18); chyba „Družina to zná, ale nic nevidí“ klesla ze 17 na 10 karet, žádná nová chyba · větev `co-vi-druzina-1`, PR #110

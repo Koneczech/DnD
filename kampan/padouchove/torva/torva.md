@@ -22,13 +22,13 @@ zdroj: https://app.notion.com/p/3c89ed226736817f8a77fc1a9dc59199
 
 > **V sezení 1 zemřela.** *(R2; zápis sezení 1: zabita druhým Thunderwave.)*
 
-Žena, která v [[tabor-kruhu|táboře kruhu]] v [[lurkwood|Lurkwoodu]] rozhoduje — ne proto, že by velela, ale protože je stromu nejblíž a ostatní neodejdou od něj.fsfasfaf
+Žena, která v [[tabor-kruhu|táboře kruhu]] v [[lurkwood|Lurkwoodu]] rozhoduje — ne proto, že by velela, ale protože je stromu nejblíž a ostatní neodejdou od něj.
 
 ## Kdo byla předtím
 
 **Bylinkářka a porodní bába.** Uměla těla ještě před tím, než přišla ke [[kruh|kruhu]] — ví, kam sáhnout, aby to bolelo, a kam sáhnout, aby to přestalo. Strom to jen zesílil.
 
-Není vycvičená druidka. Druidsky ani sylvansky neumí.
+Není vycvičená druidka. Druidsky plynně nemluví, naučila se jen pár kouzel. Sylvansky neumí.
 
 ## Proč drží zajatce
 
@@ -105,5 +105,16 @@ Rozpočet čtyř postav na 3. úrovni: **600 / 900 / 1600**
 
 Doporučeno prostřední — pět těl a mezi nimi sedmnáctiletý kluk, který se pere nejhůř ze všech a hráči to na něm uvidí.
 
+## Co ví družina
+
+- Žena, která v [[tabor-kruhu|táboře kruhu]] rozhodovala. Byla nejsilnější a jasně nejzkušenější z tábora. %%zná%%
+- V boji sesílala kouzla, kterými rostliny ze země spoutávaly protivníky. %%zná%%
+- Je mrtvá, zabila ji družina v táboře kruhu. %%zná%%
+- Měla u sebe [[vacek-se-semeny|váček s podivnými semeny]]. %%zná%%
+
 ## Když prohraje
 Nepadne mrtvá. Posadí se a přestane rozumět — pro ni je útěk návrat do světa, který ji sem dohnal.
+
+## Neplatné
+
+- **R17** (31. 10. 2026, z oddílu Kdo byla předtím): „Druidsky ani sylvansky neumí.“ — rozhodnutí DM: naučila se pár kouzel v druidštině, plynně nemluví.

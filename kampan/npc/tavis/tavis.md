@@ -3,7 +3,7 @@ schema: 1
 id: tavis
 typ: npc
 nazev: "Tavis"
-verejne: false
+verejne: true
 ikona: 🪕
 aliases: []
 vazby: ["[[kruh]]", "[[tabor-kruhu]]", "[[leta]]", "[[novacek-kruhu]]", "[[stopa-do-yartaru]]", "[[koudur]]", "[[bifron-nox]]"]
@@ -36,3 +36,7 @@ Neřekne ji jako informaci, ale jako stížnost — protože je to pro něj kři
 > „Mě sem poslali kopat. Přitom kdo přišel po mně, ten jde do Yartaru. Tam prý se to teprv rozjede."
 
 Při doptávání uhne: *„Já vím jen, že se tam někdo má hlásit."*
+
+## Co ví družina
+
+- [[novacek-kruhu|Nováček kruhu]], který mluvil víc, než měl. Od něj družina zjistila většinu toho, co o táboře ví. V boji ho zabila [[leta|Leta]]. %%zná%%

@@ -33,6 +33,7 @@ zdroj: https://app.notion.com/p/3c69ed22673681ae92c9f4ddb3ab85fe
 - Bard z [[mirabar|Mirabaru]], hraje na dudy a zpívá. Jede do [[triboar|Triboaru]] koncertovat na Dožínky na pozvání [[norra-ambleforge|Norry Ambleforge]]. %%zná%%
 - Platí [[tusker|Tuskerovi]] jako ochrance. Chlubí se, že je celebrita se třemi bodyguardy. %%zná%%
 - Kouzlí přes dudy. %%zná%%
+- Před odjezdem zmínil snoubenku a otce, který „to zametl pod koberec“. %%zná%%
 
 ## Příběh
 

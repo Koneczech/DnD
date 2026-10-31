@@ -30,6 +30,7 @@ zdroj: https://app.notion.com/p/3c49ed2267368143bd9ff7848df10e1a
 - V boji v [[tabor-kruhu|táboře kruhu]] zabila [[tavis|Tavise]]. %%zná%%
 - Řekla družině, že jejího nevlastního otce zavřeli za něco, co prý ukradla ona. Potřebuje důkazy, aby ho dostala ven, a kvůli nim šla do [[longsaddle|Longsaddle]]. %%zná%%
 - V knize u [[brod-na-long-road|brodu]] je zapsaná jako „Tale“ bez příjmení.
+- [[novacek-kruhu|Nováčci kruhu]] šli v [[mirabar|Mirabaru]] hlavně po ní. Proč, zatím nikdo neví. %%zná%%
 
 ## Příběh
 

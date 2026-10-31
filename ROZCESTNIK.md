@@ -81,4 +81,4 @@ Jeden řádek na relaci: datum, relace, co se udělalo, kde to je.
 - 31. 10. 2026 · Hub (Claude) · karta sezení podle potvrzeného návrhu (plátno „Karta sezení — návrh“), ⚠ bod 158 · větev `karta-sezeni`, PR #107
 - 31. 10. 2026 · Uspořádání (Claude) · návrh `sNN.yaml` píše relace Hub, postup pro DM v `prepis-kanon.md` § 3a · větev `navrh-pise-hub`
 - 31. 10. 2026 · Hub (Claude) · přehled typů karet kánonu (artefakt Karty kánonu), rozhodnutí 82 co patří do kánonu, návrh Co ví družina pro skupinu 1 ke schválení · větev `co-patri-do-kanonu`, PR #109
-- 31. 10. 2026 · Hub (Claude) · Co ví družina, skupina 1 zapsaná podle schváleného návrhu (21 odrážek u 8 karet, z toho 1 skrytá, 3 přepínače Družina zná, R17 a R18); chyba „Družina to zná, ale nic nevidí“ klesla ze 17 na 10 karet, žádná nová chyba · větev `co-vi-druzina-1`, PR #110
+- 31. 10. 2026 · Hub (Claude) · Co ví družina, skupina 1 zapsaná podle schváleného návrhu (24 odrážek u 8 karet, z toho 1 skrytá, 3 přepínače Družina zná, R17 a R18); chyba „Družina to zná, ale nic nevidí“ klesla ze 17 na 10 karet, žádná nová chyba · větev `co-vi-druzina-1`, PR #110

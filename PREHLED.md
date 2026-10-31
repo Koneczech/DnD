@@ -1,6 +1,6 @@
 # DM Hub v kostce
 
-Stav k 21. 10. 2026. Tenhle soubor odpovídá na tři otázky: **co Hub umí, co je rozdělané a co jsme vědomě vynechali.** Podrobná pravidla a rozhodnutí jsou v `ZADANI.md`, návody v `reference/`.
+Stav k 24. 10. 2026. Tenhle soubor odpovídá na tři otázky: **co Hub umí, co je rozdělané a co jsme vědomě vynechali.** Podrobná pravidla a rozhodnutí jsou v `ZADANI.md`, návody v `reference/`.
 
 ## Hub jednou větou
 
@@ -39,7 +39,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Hierarchie míst (Leží v): strom v Místech, U stolu i dílně, popis nadřazeného místa v promptu | ◐ |
 | **OBS** | Přepínání scén podle rolí, výstupy jako zdroje Browser, živý náhled | ✓ |
 | **Světla** | Hue a WiZ po rolích (hlavní, pozadí, lampa), světla místa, blesky při bouřce | ✓ |
-| | Málo HP: lampa i hlavní světlo pulzují červeně | ◐ |
+| | Málo HP: lampa i hlavní světlo pulzují červeně; Konec souboje pulz i ucpané uši vždy ukončí | ◐ |
 | **Strop** | Obloha z projektoru na strop podle scény: den a noc, počasí, bouřka s blesky podle vzdálenosti, intenzita, souboj, málo HP | ◐ |
 | | Kalibrace (K): čtyři rohy, měkký okraj, jas, převrácení pro zrcadlo; zkouška bez zásahu do Hubu (Z) | ◐ |
 | | Volný tvar, který se pomalu přelévá (členitost), masky míst, kam nesvítit | ◐ |
@@ -94,7 +94,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 
 1. **Vyzkoušet u stolu** všechno označené ◐ (sezení 3, tábor lupičů). Návrhy v `ZADANI.md` DM potvrdil 19. 10.; co u stolu nefunguje, se opraví.
 2. **Zjednodušit Kontrolu dat:** chybějící zvuky v jednom řádku s tlačítkem Doplnit, chyby nahoře.
-3. **Zvuk u stolu po restartu:** ověřit, jestli prohlížeč chce kliknutí; když ano, otevírat ho v samostatném okně.
+3. **Zvuk u stolu po restartu:** ověřit, jestli prohlížeč chce kliknutí; když ano, otevírat ho v samostatném okně. Při zkoušce 24. 10. se stránka po Restartu z panelu nepřipojila vůbec (záznam: „Zvuk u stolu: neotevřená“), hrát začala až po ručním otevření.
 4. **Zvuk před sezením 3:** stáhnout sadu (Nastavení → Zvuk → Doplnit chybějící zvuky), vyměnit zvuky, které vyšly špatně, a poslechnout playlisty. **Spotify:** nainstalovat VB-CABLE, poslat Spotify do kabelu, založit aplikaci na developer.spotify.com a přihlásit Hub (`reference/zvuk.md`, Hudba ze Spotify).
 5. **Blok 3 Kánon:** rozpory R1–R16 jsou rozhodnuté (19. 10.). DM zazálohuje Notion, pak převod po skupinách podle `reference/kanon-prevod.md` (včetně návrhů vztahů). Kánon je wiki s editorem (◐): vyzkoušet, doplnit u karet Družina zná a odrážky Co ví družina, navázat události. Typové stránky: Claude navrhne hodnoty nových polí (role, osud, kde, patří k, druh, sídlo, u koho je) z textu karet, DM potvrdí. Zápis sezení 2 je z přepisu nahrávky hotový (◐): projít a doplnit, co přepis nezachytil.
 6. **Verze 2.**

@@ -162,4 +162,18 @@ Odpovědi zapiš do tohoto souboru přes PR (oddíl níže) nebo do Předávek v
 
 ## Odpovědi relace Přepis
 
-_(zatím žádné)_
+31. 10. 2026. Kontrola důkazů a schéma 2 jsou v nástroji hotové.
+
+1. **Opravy od Clauda u bloků:** nový panel přímo v editoru scénáře, ne sekce Návrhy oprav. Ta pracuje s číslovanými replikami jedné nahrávky a je schovaná v Pokročilých. Opravy mají id bloků, takže patří k bloku, s tlačítkem ▶ a volbami Schválit, Upravit, Zamítnout. Zatím není postavené.
+2. **Body 1–8 z § 7:** souhlasí, jsou hotové (`dukazy.py`, 19 testů). Upřesnění:
+   - Chyba je jen citace, která nezazněla, neplatný důkaz, číslo, které v sezení nezaznělo, a jméno, které kánon nezná a v sezení nezaznělo.
+   - Jméno z kánonu je vždy jen upozornění, i když operace kartu neuvádí.
+   - Číslo nebo jméno ze smíšeného důkazu (nahrávka i `dm`) je jen upozornění.
+   - `opravy-sNN.json` nemá stav schválení. Schválené opravy už jsou ve scénáři, takže se ze souboru berou skupiny J a K bez jistoty `poslechnout`.
+3. **Schéma 2:** hotové. Příští podklad vygeneruje `schema-navrhu.md` ve verzi 2 a `scenar-s-casy.txt` s id bloků (`[d2 0:11:39 #id]`). Kontrola přijme i soubor s hlavičkou `schema: 1`, takže prošel i dnešní `s03.yaml`, který má tuto hlavičku, ale nová pole už používá.
+4. **`sNN.zapsano.json`:** tvar sedí. Nástroj z něj čte jen `mtime`, víc zatím nepotřebuje.
+5. **URL pro ▶ Poslechnout:** `http://127.0.0.1:8765/?cislo=s03&blok=<id>&cas=d2 0:11:39`, hodnoty zakódované přes `encodeURIComponent`. Blok má přednost, čas je záloha, když blok zmizel. Nástroj otevře scénář, skočí na repliku a pustí ji.
+
+**`sNN.dukazy.json`:** `problemy` mají tvar z § 4. Navíc přibylo volitelné pole `dm` s důkazy typu `dm` (`[{ dm, citat }]`), aby je Hub mohl ukázat.
+
+**Výsledek na `s03.yaml`:** místo 33 hlášených operací ze 74 je 53 čistých, 20 s upozorněním a 1 s chybou. Ta jedna (`o63`) hlásí tři jména: dvě v přepisu opravdu nejsou, jedno je planý poplach u kouzla, které se v klíči nespárovalo. DM to posoudí při schvalování.

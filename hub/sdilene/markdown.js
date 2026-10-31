@@ -6,8 +6,10 @@
 const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 export const escapovat = (s) => String(s ?? '').replace(/[&<>"']/g, (z) => ESC[z]);
 
-/** Je nadpis oddílu jen pro DM? (`## DM`, `## DM — co postava neví`) */
-export const jeNadpisDm = (nadpis) => /^DM(\b|\s|—|-|:|$)/.test(String(nadpis ?? '').trim());
+/** Je nadpis oddílu jen pro DM? (`## DM`, `## DM — co postava neví`, `## Neplatné`) */
+import { jeNadpisDm } from './oddil-dm.js';
+
+export { jeNadpisDm };
 
 /**
  * Řádkové formátování. Odkazy [[id]] dostanou data-id, panel na ně reaguje klikem.

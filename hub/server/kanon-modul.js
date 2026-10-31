@@ -16,6 +16,7 @@ import { PRIPONA_DOCASNA, zapsatAtomicky } from './zapis.js';
 import { Harptos } from '../sdilene/harptos.js';
 import { SOUBOR_LISTU, spocitatList, listProDruzinu } from '../sdilene/list-postavy-data.js';
 import { zkontrolovatKvalitu, nacistTerminy } from '../sdilene/kvalita-kanonu.js';
+import { normalizujRegistr, SOUBOR_ROZPORU } from '../sdilene/rozpory.js';
 import { overitPole, zmenyKarty, textKarty, ODDIL_DRUZINY, SLUG, nacistEntitu, normalizujNastenku, odkazObsidian, prepnoutBlok, pridatBlok, slugNastenky, vPohledu } from '../sdilene/karta-kanonu.js';
 
 // Text karty (nacistEntitu, Co ví družina, pohled družiny …) je ve sdíleném modulu; odsud se dál
@@ -144,7 +145,17 @@ export class Kanon extends EventEmitter {
       }
     }
     await this.nacistNastenky();
+    await this.nacistRozpory();
     this.oznam();
+  }
+
+  /** Registr rozporů (rozhodnutí 77). Rozbitý registr hlásí Kontrola dat; tady se jen nepoužije. */
+  async nacistRozpory() {
+    try {
+      this.rozpory = normalizujRegistr(YAML.parse(await fs.readFile(path.join(this.c.kampan, SOUBOR_ROZPORU), 'utf8'))).zaznamy;
+    } catch {
+      this.rozpory = [];
+    }
   }
 
   async nacistNastenky() {
@@ -261,7 +272,7 @@ export class Kanon extends EventEmitter {
         verejna: u.verejna,
         vazby: (u.vazby ?? []).filter((id) => {
           const e = this.entity.get(id);
-          return e && (pohled === 'dm' || e.verejne);
+          return e && (pohled === 'dm' || (e.verejne && !e.vyrazeno));
         }),
         poradi: Harptos.absolutni(u.datum),
       }))
@@ -312,10 +323,15 @@ export class Kanon extends EventEmitter {
     return vysledek;
   }
 
+  /** Čísla R z registru rozporů (kampan/rozpory.yaml): značky *(R17)* v textu karet nejsou chyba. */
+  rozhodnutiR() {
+    return new Set((this.rozpory ?? []).map((z) => String(z?.id ?? '')).filter(Boolean));
+  }
+
   /** Kvalita kánonu (⚠ bod 154): co chybí do „kánonu na 100 %“. Jen pro pohled DM. */
   kvalita() {
     if (this.kvalitaVerze !== this.verze) {
-      this.kvalitaVysledek = zkontrolovatKvalitu(this.entity.values(), { terminy: this.terminy ?? [] });
+      this.kvalitaVysledek = zkontrolovatKvalitu(this.entity.values(), { terminy: this.terminy ?? [], rozhodnutiR: this.rozhodnutiR() });
       this.kvalitaVerze = this.verze;
     }
     return this.kvalitaVysledek;

@@ -1,5 +1,7 @@
 # Předávka: přepis sezení → kánon
 
+> **Dostavěno 31. 10. 2026 (relace Hub):** otevřené otázky 1, 2, 5 a 7 rozhodl DM (rozhodnutí 77–81). Návrh po sezení je v této větvi dostavěný podle `reference/prepis-kanon.md` (⚠ bod 157), pracovní kopie `repo-navrh` a `repo-kvalita` jdou smazat. Dál platí rozcestník; tenhle soubor je záznam stavu k 31. 10.
+
 Stav k 31. 10. 2026, větev `prepis-do-kanonu` (vychází z `main` 172ee84, do `main` nesloučeno, PR neotevřen). Relace běžela v Claude Code ve složce `Dokumenty\Claude\II` a její hlavní prací byl přepisový nástroj mimo toto repo.
 
 ## Cíl relace

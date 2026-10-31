@@ -35,6 +35,16 @@
     .op .akce { display: flex; flex-wrap: wrap; gap: var(--m-2); margin-top: var(--m-2); }
     .op textarea { margin-top: var(--m-2); font-family: var(--pismo); }
     .prazdno { color: var(--text-tlumeny); padding: var(--m-6) 0; text-align: center; }
+    .op.rozpor { border-left: 4px solid var(--varovani); }
+    .op.rozpor[data-stav="schvaleno"], .op.rozpor[data-stav="zapsano"] { border-left-color: var(--ok); }
+    .op .id-op { font-size: var(--t-stitek); color: var(--text-tlumeny); font-weight: normal; margin-right: 0.25rem; }
+    .op .tlumeny { color: var(--text-tlumeny); font-size: var(--t-popisek); margin: var(--m-1) 0; }
+    .op .rozhodnuti { margin: var(--m-2) 0; }
+    .op button[aria-pressed="true"] { outline: 2px solid var(--ok); }
+    .ukazka .neplatne { border-color: var(--varovani); }
+    a.stitek-n { text-decoration: none; }
+    .brana { border: 1px solid var(--varovani); border-radius: var(--zaobleni-karta); padding: var(--m-2) var(--m-3); margin-bottom: var(--m-2); color: var(--varovani); }
+    #hlaseni .varovani { margin-bottom: var(--m-2); }
     @media (max-width: 720px) { .ukazka { grid-template-columns: 1fr; } main.navrh { padding: var(--m-3); } }
   </style>
 </head>
@@ -47,8 +57,10 @@
       <a class="tlacitko tiche" href="/#kanon">← Zpět do Hubu</a>
     </div>
     <p class="uvod">Změny kánonu, které z přepisu nahrávky navrhl Claude. Každou zkontroluj, případně si ji poslechni,
-      a schval, uprav, nebo zamítni. Hub zapíše jen schválené, a to najednou: když jediná nejde použít, nezapíše se nic.
-      Existující text karet se nepřepisuje, jen doplňuje. Všechno jde vrátit přes Git.</p>
+      a schval, uprav, nebo zamítni. U rozporů vyber, co platí: Hub sám nic nerozhodne. Neplatný text se nemaže,
+      přesune se do oddílu Neplatné na konci karty a rozhodnutí dostane číslo R. Hub zapíše jen schválené, a to najednou:
+      když jediná operace nejde použít nebo by zápis přidal chybu Kvality kánonu, nezapíše se nic. Všechno jde vrátit přes Git.</p>
+    <div id="hlaseni"></div>
     <div class="navrh-souhrn" id="souhrn"></div>
     <div id="operace"><p class="prazdno">Načítám…</p></div>
   </main>

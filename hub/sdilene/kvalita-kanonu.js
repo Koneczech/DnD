@@ -4,6 +4,7 @@
 // Úroveň „chyba“ se počítá do procenta (karta bez chyby = hotová), „doporučení“ jen radí.
 import { oddily, jeOddilDm, bezKomentaru } from './karta-kanonu.js';
 import { chybejiciOddily } from './typy-karet.js';
+import { jeNadpisNeplatne } from './oddil-dm.js';
 
 export const PRAVIDLA = Object.freeze({
   poznamky: {
@@ -127,17 +128,32 @@ function popisKarty(telo) {
   return bezKomentaru(casti.join('\n')).replace(ODKAZ, (_, id, jmeno) => jmeno ?? id).replace(/[*_>#|`-]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-/** Řádky těla bez komentářů %%…%% a bez bloků kódu, s číslem řádku. */
+/**
+ * Řádky těla bez komentářů %%…%%, bez bloků kódu a bez oddílu Neplatné. Neplatné je záznam
+ * vyřazeného textu (rozhodnutí 77): starý text v něm smí mít cokoli, karta ho už netvrdí.
+ */
 function radkyTextu(telo) {
   const vysledek = [];
   let vKodu = false;
+  let neplatne = 0;
   const radky = bezKomentaru(telo).split('\n');
   for (let i = 0; i < radky.length; i++) {
-    if (/^\s*(```|~~~)/.test(radky[i])) vKodu = !vKodu;
-    else if (!vKodu && radky[i].trim()) vysledek.push(radky[i]);
+    if (/^\s*(```|~~~)/.test(radky[i])) {
+      vKodu = !vKodu;
+      continue;
+    }
+    const nadpis = !vKodu && /^(#{1,6})\s+(.*?)\s*#*\s*$/.exec(radky[i]);
+    if (nadpis) {
+      if (neplatne && nadpis[1].length <= neplatne) neplatne = 0;
+      if (!neplatne && jeNadpisNeplatne(nadpis[2])) neplatne = nadpis[1].length;
+    }
+    if (!vKodu && !neplatne && radky[i].trim()) vysledek.push(radky[i]);
   }
   return vysledek;
 }
+
+/** Značka rozhodnutí *(R17)* z registru rozporů není poznámka z převodu: text ji nese záměrně. */
+const ZNACKA_R = /\*?\(\s*(R\d{1,4})\s*\)\*?/g;
 
 const jeDatum = (x) => typeof x === 'string' ? /^\d{4}-\d{2}-\d{2}/.test(x) : x instanceof Date;
 const datum = (x) => (x instanceof Date ? x : typeof x === 'string' ? new Date(x) : null);
@@ -145,10 +161,12 @@ const datum = (x) => (x instanceof Date ? x : typeof x === 'string' ? new Date(x
 /**
  * Zkontroluje kánon.
  * @param {Iterable<object>} entity karty z nacistEntitu (s polem hlavicka)
- * @param {{terminy?: Array<{en: string, cs: string, vzor: RegExp}>}} [volby]
+ * @param {{terminy?: Array<{en: string, cs: string, vzor: RegExp}>, rozhodnutiR?: Set<string>}} [volby]
+ *   rozhodnutiR = čísla R z kampan/rozpory.yaml (jejich značky v textu nejsou chyba)
  */
-export function zkontrolovatKvalitu(entity, { terminy = [] } = {}) {
-  const karty = [...entity];
+export function zkontrolovatKvalitu(entity, { terminy = [], rozhodnutiR = new Set() } = {}) {
+  // Vyřazená karta (platnost: vyrazeno) už nic netvrdí, takže se neopravuje ani nepočítá.
+  const karty = [...entity].filter((e) => !e.vyrazeno);
   const podleId = new Map(karty.map((e) => [e.id, e]));
   const problemy = new Map(karty.map((e) => [e.id, []]));
   const pridej = (id, pravidlo, zprava) => problemy.get(id).push({ pravidlo, uroven: PRAVIDLA[pravidlo].uroven, zprava });
@@ -183,7 +201,7 @@ export function zkontrolovatKvalitu(entity, { terminy = [] } = {}) {
     if (e.typ !== 'rozhodnuti') {
       for (const r of radky) {
         // Ve výřezu jméno místo [[id|Jméno]], ať se dá číst.
-        const cisty = r.replace(ODKAZ, (_, id, jmeno) => jmeno ?? id);
+        const cisty = r.replace(ODKAZ, (_, id, jmeno) => jmeno ?? id).replace(ZNACKA_R, (m, id) => (rozhodnutiR.has(id) ? '' : m));
         for (const [vzor, popis] of POZNAMKY) {
           const m = vzor.exec(cisty);
           if (m) {

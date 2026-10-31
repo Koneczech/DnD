@@ -37,7 +37,7 @@ Relace Přepis nepíše kód do `hub/` a relace Hub nepíše do nástroje. Potř
 | 4 | Schválení scénáře | DM | zmrazená verze | Schváleno |
 | 5 | Podklad a návrh změn | nástroj, Claude | `podklad.md`, `hub/.stav/navrhy/sNN.yaml` (`stav: finalni`) | V kánonu (rozepsáno) |
 | 6 | Návrh po sezení v Hubu: operace a rozpory | DM | rozhodnutí R | V kánonu (rozepsáno) |
-| 7 | Zapsat schválené, Kontrola dat, uložit | Hub | commit, `sNN.zapsano.json` | Ověřeno |
+| 7 | Zapsat schválené, Kontrola dat, uložit | Hub (uloží `kampan/` na GitHub sám) | commit, `sNN.zapsano.json` | Ověřeno |
 
 **Brána mezi kroky 4 a 5:** finální návrh vzniká jen ze schváleného scénáře. Návrh z neschváleného scénáře má `stav: predbezny` a Hub ho zobrazí, ale nedovolí ho zapsat.
 
@@ -48,9 +48,9 @@ Všechny leží mimo Git v `hub/.stav/navrhy/`, kromě `opravy-sNN.json`, které
 | Soubor | Píše | Čte | Tvar |
 | --- | --- | --- | --- |
 | `sNN.yaml` | Claude | nástroj (kontrola), Hub | schéma 2, § 5 |
-| `sNN.dukazy.json` | nástroj | Hub | `{ sezeni, cas, operace: { <id>: { ok, problemy: [ { text, zavaznost: chyba / upozorneni } ] } } }` |
+| `sNN.dukazy.json` | nástroj | Hub | `{ sezeni, cas, operace: { <id>: { ok, problemy: [ { text, zavaznost: chyba / upozorneni } ] } } }`; Hub přijme i problémy jako prosté texty (dnešní tvar, berou se jako upozornění) |
 | `sNN.rozhodnuti.json` | Hub | Hub | rozpracované schválení (co DM schválil, upravil, zamítl) |
-| `sNN.zapsano.json` | Hub | nástroj (podle `mtime` pozná „v kánonu“) | `{ sezeni, cas, navrh_hash, zapsane: [id], zamitnute: [id], upravene: [id], commit }` |
+| `sNN.zapsano.json` | Hub | nástroj (podle `mtime` pozná „v kánonu“) | `{ sezeni, cas, navrh_hash, zapsane: [id], zamitnute: [id], upravene: [id], rozpory: [R…], commit }`; `zapsane` je souhrn všech zápisů, `commit` je `null`, když se uložení na GitHub nepovedlo |
 | `revize-<datum>.yaml` | Claude | Hub | stejné schéma, revize kánonu mimo sezení (jen `vyradit`, `doplnit`, `pole`, `smazat`) |
 | `vystup/_kanon/sNN/opravy-sNN.json` | Claude | nástroj | `{ blok, id, cas, mluvci, najdi, oprava, skupina, duvod, jistota }`; skupina K (kánon), J (jména), M (mluvčí, `oprava` začíná `[Mluvčí]`), P (k poslechu), X (mimo hru); jistota `vysoka` / `stredni` / `poslechnout` |
 
@@ -81,16 +81,20 @@ dukaz:
 | --- | --- | --- |
 | `nova_karta` | Nová entita ze šablony Hubu | id se nesmí shodovat s existujícím |
 | `doplnit` | Přidá odrážku nebo odstavec do oddílu karty | existující text se nemění |
-| `pole` | Změní pole hlavičky | nese `puvodni`; když se mezitím změnila, operace se zastaví |
+| `pole` | Změní pole hlavičky, i `verejne` (karta pro družinu) | nese `puvodni`; když se mezitím změnila, operace se zastaví; odkazové pole se porovná podle id (`[[x]]` = `x`) |
 | `vazba` | Přidá vazbu nebo vztah | cíl musí existovat nebo vzniknout v tomtéž návrhu |
 | `kanon` | Nový záznam hráčského kánonu `sNN-…` | číslování a id podle Hubu |
 | `udalost` | Událost v kalendáři | datum Harptosu musí sedět |
 | `sezeni` | Doplní `sNN.md` (Shrnutí, Tajemství a stopy, Poklady, Otevřené nitky) | slévá se s existujícím souborem, Poznámky ze stolu zůstanou |
 | `rozpor` | Přepis říká X, karta Y | nikdy se nevyřeší sám, § 6 |
-| `vyradit` | Vyjme text z karty: `karta_id`, `oddil`, `najdi` (přesný text, v kartě právě jednou), volitelně `nahradit`, `duvod`, `r` | starý text jde do oddílu Neplatné |
-| `smazat` | Smaže chybu zápisu | Hub se zeptá ještě jednou |
+| `vyradit` | Vyjme text z karty: `karta_id`, `oddil`, `najdi` (přesný text, v oddílu právě jednou), volitelně `nahradit`, `duvod`, `r`. Celou kartu vyřadí `cela_karta: true` bez `najdi` | starý text jde do oddílu Neplatné |
+| `smazat` | Smaže chybu zápisu: `karta_id`, `oddil`, `najdi` (jen text v kartě, celou kartu ne) | Hub se zeptá ještě jednou |
 
-Operace, které vznikly rozhodnutím rozporu, nesou `z_rozporu: oN`.
+Operace, které vznikly rozhodnutím rozporu, nesou `z_rozporu: oN`. Hub je pustí jen u Platí stůl a Jinak; u Platí karta a Odložit je zamítne sám.
+
+Rozpor nese `karta_id`, `karta_tvrzeni`, `prepis_tvrzeni`, `otazka`, `druh` (§ 6) a volitelně `r` (číslo, když ho DM přidělil už mimo Hub) a `rozhodnuti` (co DM řekl mimo Hub nebo co navrhuje Claude; Hub ho jen ukáže). Bez `r` přidělí Hub další volné číslo při zápisu. V textu navazujících operací (`text`, `nahradit`, `obsah` …) může stát zástupce `R?`, Hub ho nahradí přiděleným číslem: `*(R?)*` → `*(R21)*`. ⚠ bod 157
+
+Citace v poli `dukaz` mají nejvýš 12 slov; delší Hub do karty a registru zkrátí.
 
 **Pravidlo pro Clauda:** vývoj děje není rozpor. Když NPC v jednom sezení slíbí a v dalším nesplní, platí obojí v jiném čase, takže je to `doplnit` s předponou „Sezení N:“.
 

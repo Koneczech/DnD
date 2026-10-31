@@ -1,17 +1,26 @@
-// Návrh změn kánonu po sezení (⚠ bod 153): čisté funkce bez disku a bez Node.js.
+// Návrh změn kánonu po sezení (⚠ body 153 a 157, rozhodnutí 77 a 80): čisté funkce bez disku a bez
+// Node.js. Smlouva s přepisovým nástrojem je reference/prepis-kanon.md.
 //
-// Přepisový nástroj a Claude z nahrávky sezení navrhnou soubor `hub/.stav/navrhy/sNN.yaml`: seznam
-// operací (nová karta, doplnit kartu, změnit pole, vazba, hráčský kánon, událost, zápis sezení,
-// rozpor). Každá nese důkaz (čas v přepisu). DM operace v Hubu schválí, upraví, nebo zamítne a Hub
-// zapíše jen schválené. Tenhle modul říká, jak vypadá platná operace a co přesně s textem karty udělá;
-// používá ho server (kontrola a zápis) i testy.
+// Přepisový nástroj a Claude z nahrávky sezení navrhnou soubor `hub/.stav/navrhy/sNN.yaml` (schéma 2):
+// seznam operací (nová karta, doplnit kartu, změnit pole, vazba, hráčský kánon, událost, zápis sezení,
+// rozpor, vyřadit, smazat). Každá nese důkaz (místo v nahrávce nebo rozhodnutí DM). DM operace v Hubu
+// schválí, upraví, nebo zamítne a Hub zapíše jen schválené. Neplatný text se nemaže: `vyradit` ho
+// přesune do oddílu Neplatné na konci karty. Tenhle modul říká, jak vypadá platná operace a co přesně
+// s textem karty udělá; používá ho server (kontrola a zápis) i testy.
 import { idZOdkazu, nastavitSurove, nahraditTelo, teloKarty, upravitKartu } from './hlavicka.js';
 import {
   SLUG, ODDIL_DRUZINY, ZNACKA_ZNA, jeOddilDm, pridatBlok, nacistEntitu, zmenyKarty,
 } from './karta-kanonu.js';
 import { ODKAZOVA_POLE, POLE_TYPU, TYPY_SLOZEK, vlozitOddil } from './typy-karet.js';
+import { ODDIL_NEPLATNE, jeNadpisNeplatne } from './oddil-dm.js';
+import { DRUHY_ROZPORU, MAX_SLOV_CITATU, cisloR, datumCesky, sezeniSlovy, POSLEDNI_R_PREVODU } from './rozpory.js';
 
-export const OPERACE = Object.freeze(['nova_karta', 'doplnit', 'pole', 'vazba', 'kanon', 'udalost', 'sezeni', 'rozpor']);
+export const OPERACE = Object.freeze(['nova_karta', 'doplnit', 'pole', 'vazba', 'kanon', 'udalost', 'sezeni', 'rozpor', 'vyradit', 'smazat']);
+/** Operace, které smí revize kánonu mimo sezení (revize-<datum>.yaml, prepis-kanon.md § 4). */
+export const OPERACE_REVIZE = Object.freeze(['doplnit', 'pole', 'vyradit', 'smazat']);
+export const STAVY_NAVRHU = Object.freeze(['predbezny', 'finalni']);
+/** Platná jména návrhů: sNN (sezení) a revize-RRRR-MM-DD (revize kánonu mimo sezení). */
+export const JMENO_NAVRHU = /^(s\d{2,3}|revize-\d{4}-\d{2}-\d{2})$/;
 export const TYPY_BLOKU = Object.freeze(['odrazka', 'odstavec', 'cast']);
 export const TYPY_NOVE_KARTY = Object.freeze(['postava', 'npc', 'padouch', 'frakce', 'misto', 'predmet', 'bytost']);
 export const JISTOTY = Object.freeze(['jista', 'nutno_potvrdit']);
@@ -28,6 +37,8 @@ const PORADI_SEKCI = ['Poznámky ze stolu', ...Object.values(SEKCE_SEZENI)];
 const ZAZNAMY = new Set(['rozhodnuti', 'kanon', 'sezeni']);
 const SLOZKA_TYPU = Object.freeze(Object.fromEntries(Object.entries(TYPY_SLOZEK).map(([slozka, typ]) => [typ, slozka])));
 const CAS_DUKAZU = /^d\d{1,2} \d{1,2}:\d{2}:\d{2}$/;
+const DATUM = /^\d{4}-\d{2}-\d{2}$/;
+const BLOK = /^[A-Za-z0-9_-]{4,64}$/;
 const MESICE = ['Hammer', 'Alturiak', 'Ches', 'Tarsakh', 'Mirtul', 'Kythorn', 'Flamerule', 'Eleasis', 'Eleint', 'Marpenoth', 'Uktar', 'Nightal'];
 
 const chyba = (zprava, status = 400) => Object.assign(new Error(zprava), { status });
@@ -161,6 +172,146 @@ export function zapsatSezeni(telo, sekce, obsah) {
 }
 
 // ---------------------------------------------------------------------------
+// Vyřazení a smazání textu (rozhodnutí 77)
+// ---------------------------------------------------------------------------
+
+const escRegex = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** Rozsah znaků oddílu v těle (bez nadpisu) a rozsah oddílu Neplatné, který se nikdy neprohledává. */
+function rozsahy(telo, nadpis) {
+  const radky = telo.split('\n');
+  const zacatky = [];
+  let pozice = 0;
+  for (const r of radky) {
+    zacatky.push(pozice);
+    pozice += r.length + 1;
+  }
+  const naZnaky = (o) => ({ od: zacatky[o.od + 1] ?? telo.length, do: o.do < radky.length ? zacatky[o.do] : telo.length });
+  const neplatne = najitOddil(radky, ODDIL_NEPLATNE);
+  const vyjmout = neplatne ? { od: zacatky[neplatne.od], do: neplatne.do < radky.length ? zacatky[neplatne.do] : telo.length } : null;
+  if (!nadpis) return { oblast: { od: 0, do: telo.length }, vyjmout };
+  if (jeNadpisNeplatne(nadpis)) throw chyba('Z oddílu Neplatné se nevyřazuje ani nemaže.');
+  const oddil = najitOddil(radky, nadpis);
+  if (!oddil) throw chyba(`Karta nemá oddíl „${nadpis}“.`);
+  return { oblast: naZnaky(oddil), vyjmout };
+}
+
+/**
+ * Najde text `najdi` v oddílu karty (bez oddílu Neplatné). Musí tam být právě jednou. Když přesná
+ * shoda není, zkusí ji s libovolnými mezerami a zalomeními (návrh píše text na jeden řádek).
+ * @returns {{od: number, do: number}} rozsah znaků v těle
+ */
+export function najitText(telo, oddil, najdi) {
+  const t = String(telo ?? '').replace(/\r\n?/g, '\n');
+  const hledany = String(najdi ?? '').replace(/\r\n?/g, '\n').trim();
+  if (!hledany) throw chyba('Chybí text najdi (přesný text z karty).');
+  if (hledany.length > 4000) throw chyba('Text najdi je příliš dlouhý (nejvýš 4000 znaků).');
+  const nadpis = String(oddil ?? '').replace(/\s+/g, ' ').trim();
+  const { oblast, vyjmout } = rozsahy(t, nadpis);
+  const nalezy = (vzor) => {
+    const vysledek = [];
+    for (const m of t.matchAll(vzor)) {
+      const od = m.index;
+      const konec = od + m[0].length;
+      if (od < oblast.od || konec > oblast.do) continue;
+      if (vyjmout && od < vyjmout.do && konec > vyjmout.od) continue;
+      vysledek.push({ od, do: konec });
+    }
+    return vysledek;
+  };
+  let n = nalezy(new RegExp(escRegex(hledany), 'g'));
+  if (!n.length) n = nalezy(new RegExp(hledany.split(/\s+/).map(escRegex).join('\\s+'), 'g'));
+  const kde = nadpis ? `v oddílu „${nadpis}“` : 'v kartě';
+  if (!n.length) throw chyba(`Text „${zkratit(hledany)}“ ${kde} není. Karta se mezitím změnila, nebo se text liší.`, 409);
+  if (n.length > 1) throw chyba(`Text „${zkratit(hledany)}“ je ${kde} ${n.length}×. Návrh musí vybrat jedno místo (delší najdi).`, 409);
+  return n[0];
+}
+
+const zkratit = (t, max = 60) => {
+  const r = String(t).replace(/\s+/g, ' ').trim();
+  return r.length > max ? `${r.slice(0, max - 1)}…` : r;
+};
+
+/** Řádek je po vyjmutí prázdný: nic, jen značka odrážky, %%zná%% nebo komentář. */
+const prazdnyRadek = (r) => !bezKomentaruRadku(r).replace(/^\s*([-*+]|\d+[.)])?\s*(\[[ xX]\]\s*)?/, '').trim();
+const bezKomentaruRadku = (r) => String(r).replace(/%%[^%]*%%/g, '');
+
+/** Vymění text v rozsahu a uklidí, co zbylo: prázdnou odrážku, zdvojený prázdný řádek. */
+function vymenit(telo, rozsah, nahradit) {
+  const pred = telo.slice(0, rozsah.od);
+  const za = telo.slice(rozsah.do);
+  const novy = `${pred}${nahradit}${za}`;
+  const radky = novy.split('\n');
+  // Řádky, kterých se změna týká.
+  const prvni = pred.split('\n').length - 1;
+  const posledni = prvni + nahradit.split('\n').length - 1;
+  for (let i = posledni; i >= prvni; i--) {
+    if (radky[i] !== undefined && radky[i].trim() && prazdnyRadek(radky[i])) radky.splice(i, 1);
+    else if (radky[i] !== undefined && !radky[i].trim() && nahradit === '' && i === prvni) {
+      // Vyjmutý celý odstavec: zbyl prázdný řádek navíc.
+      if ((radky[i - 1] === undefined || !radky[i - 1].trim()) || (radky[i + 1] !== undefined && !radky[i + 1].trim())) radky.splice(i, 1);
+    }
+  }
+  // Mezery na konci upraveného řádku pryč, dva prázdné řádky po sobě v místě změny sloučit.
+  for (let i = Math.min(posledni, radky.length - 1); i >= Math.max(0, prvni - 1); i--) {
+    if (radky[i] !== undefined && radky[i].trim()) radky[i] = radky[i].replace(/[ \t]+$/, '');
+    if (i > 0 && radky[i] !== undefined && !radky[i].trim() && !radky[i - 1].trim()) radky.splice(i, 1);
+  }
+  return radky.join('\n');
+}
+
+/**
+ * Řádek oddílu Neplatné: „- **R17** (28. 10. 2026, sezení 3, z oddílu Poslední rozhovor): „starý text“ — důvod.“
+ * @param {{r?: string|null, datum: string, sezeni?: string|null, oddil?: string, stary?: string, duvod?: string, celaKarta?: boolean}} z
+ */
+export function radekNeplatne(z) {
+  const okolnosti = [datumCesky(z.datum), sezeniSlovy(z.sezeni), z.oddil ? `z oddílu ${String(z.oddil).replace(/\s+/g, ' ').trim()}` : null].filter(Boolean).join(', ');
+  const stary = z.celaKarta ? 'celá karta' : `„${bezKomentaruRadku(String(z.stary ?? '')).replace(/\s+/g, ' ').trim()}“`;
+  const duvod = String(z.duvod ?? '').replace(/\s+/g, ' ').trim().replace(/[.!?…]*$/, '');
+  return `- ${z.r ? `**${z.r}** ` : ''}(${okolnosti}): ${stary}${duvod ? ` — ${duvod}.` : ''}`;
+}
+
+/** Přidá řádek do oddílu Neplatné na konci karty (oddíl založí). */
+export function pridatNeplatne(telo, radek) {
+  let radky = String(telo ?? '').replace(/\r\n?/g, '\n').replace(/\s+$/, '').split('\n');
+  let oddil = najitOddil(radky, ODDIL_NEPLATNE);
+  if (!oddil) {
+    radky = [...radky, '', `## ${ODDIL_NEPLATNE}`];
+    oddil = najitOddil(radky, ODDIL_NEPLATNE);
+  }
+  vlozitDoOddilu(radky, oddil, [radek]);
+  return sKoncem(radky);
+}
+
+/**
+ * Operace `vyradit` nad tělem karty: vyjme text `najdi` z oddílu (na jeho místo dá `nahradit`) a starý
+ * text zapíše do oddílu Neplatné s datem, číslem R a důvodem. Nic se neztratí.
+ * @param {{datum: string, sezeni?: string|null}} ctx
+ */
+export function vyraditTelo(telo, op, ctx) {
+  const { telo: novy, radek } = vyjmoutTelo(telo, op, ctx);
+  return pridatNeplatne(novy, radek);
+}
+
+/** První polovina `vyradit`: tělo s vyjmutým (nahrazeným) textem a řádek pro oddíl Neplatné. */
+export function vyjmoutTelo(telo, op, ctx) {
+  const t = String(telo ?? '').replace(/\r\n?/g, '\n');
+  const rozsah = najitText(t, op.oddil, op.najdi);
+  const nahradit = op.nahradit === undefined || op.nahradit === null ? '' : ocistitText(op.nahradit, 4000).replace(/\s*\n\s*/g, ' ');
+  const stary = t.slice(rozsah.od, rozsah.do);
+  return {
+    telo: vymenit(t, rozsah, nahradit),
+    radek: radekNeplatne({ r: op.r ?? null, datum: op.kdy ?? ctx.datum, sezeni: ctx.sezeni, oddil: op.oddil, stary, duvod: op.duvod }),
+  };
+}
+
+/** Operace `smazat`: smaže chybu zápisu (věc, která u stolu nikdy nezazněla). Bez stopy v kartě, jen v Gitu. */
+export function smazatTelo(telo, op) {
+  const t = String(telo ?? '').replace(/\r\n?/g, '\n');
+  return vymenit(t, najitText(t, op.oddil, op.najdi), '');
+}
+
+// ---------------------------------------------------------------------------
 // Nová karta
 // ---------------------------------------------------------------------------
 
@@ -220,7 +371,7 @@ export function textNoveKarty(op, ctx) {
   if (vazby.length) zmeny.vazby = vazby;
   text = upravitKartu(text, zmeny);
   if (ctx.zdroj) text = nastavitSurove(text, 'zdroj', JSON.stringify(ctx.zdroj));
-  const dukaz = (Array.isArray(op.dukaz) ? op.dukaz : []).map((d) => String(d?.cas ?? '')).filter(Boolean);
+  const dukaz = (Array.isArray(op.dukaz) ? op.dukaz : []).map((d) => (d?.cas ? String(d.cas) : d?.dm ? `DM ${d.dm}` : '')).filter(Boolean);
   if (dukaz.length) text = nastavitSurove(text, 'dukaz', JSON.stringify(dukaz));
   let telo = op.op === 'kanon' ? teloKanonu(op) : (op.telo === undefined ? null : ocistitText(op.telo, 20000, { znacky: true }));
   // Karty začínají nadpisem s názvem (jako šablony); návrh ho psát nemusí.
@@ -235,6 +386,17 @@ export function textNoveKarty(op, ctx) {
 // ---------------------------------------------------------------------------
 
 const norm = (x) => String(x ?? '').replace(/\s+/g, ' ').trim();
+/** Hodnota operace `pole` pro zmenyKarty: kdo je seznam, doresit a verejne (karta viditelná družině) ano/ne. */
+const hodnotaZmeny = (op) => {
+  if (op.pole === 'kdo') return Array.isArray(op.nove) ? op.nove : String(op.nove).split(',');
+  if (op.pole === 'doresit' || op.pole === 'verejne') return op.nove === true || op.nove === 'true';
+  return op.nove;
+};
+/** Hodnota pole k porovnání s `puvodni`: seznam jako text, odkazové pole jako id ([[x]] = x). */
+const hodnotaPole = (pole, x) => {
+  const t = norm(Array.isArray(x) ? x.join(',') : x);
+  return pole in ODKAZOVA_POLE ? idZOdkazu(t) : t;
+};
 
 /**
  * Použije operace `doplnit`, `pole` a `vazba` na text jedné existující karty. Každá se počítá nad
@@ -243,8 +405,10 @@ const norm = (x) => String(x ?? '').replace(/\s+/g, ' ').trim();
  * @param {object[]} operace
  * @param {{slozka: string, soubor: string, slozkaEntity: boolean}} um
  * @param {(id: string) => object|undefined} najit entita podle id (kvůli kontrole cílů)
+ * @param {{datum?: string, sezeni?: string|null}} [ctx] datum zápisu a sezení (řádek oddílu Neplatné)
  */
-export function upravitExistujici(text, operace, um, najit) {
+export function upravitExistujici(text, operace, um, najit, ctx = {}) {
+  const kontext = { datum: ctx.datum ?? new Date().toISOString().slice(0, 10), sezeni: ctx.sezeni ?? null };
   let aktualni = text;
   for (const op of operace) {
     const e = nacistEntitu(aktualni, um);
@@ -252,12 +416,11 @@ export function upravitExistujici(text, operace, um, najit) {
       aktualni = nahraditTelo(aktualni, doplnitTelo(teloKarty(aktualni), op, e.typ));
     } else if (op.op === 'pole') {
       const nove = norm(Array.isArray(op.nove) ? op.nove.join(',') : op.nove);
-      const ted = norm(Array.isArray(e.pole[op.pole]) ? e.pole[op.pole].join(',') : e.pole[op.pole]);
-      if (op.puvodni !== undefined && norm(Array.isArray(op.puvodni) ? op.puvodni.join(',') : op.puvodni) !== ted) {
+      const ted = hodnotaPole(op.pole, op.pole === 'verejne' ? e.verejne : e.pole[op.pole]);
+      if (op.puvodni !== undefined && hodnotaPole(op.pole, op.puvodni) !== ted) {
         throw chyba(`Pole ${op.pole} karty ${e.id} má teď „${ted}“, návrh počítal s „${norm(op.puvodni)}“. Karta se mezitím změnila.`, 409);
       }
-      const hodnota = op.pole === 'kdo' ? (Array.isArray(op.nove) ? op.nove : String(op.nove).split(',')) : (op.pole === 'doresit' ? op.nove === true : op.nove);
-      const zmeny = zmenyKarty(e, { [op.pole]: hodnota }, najit);
+      const zmeny = zmenyKarty(e, { [op.pole]: hodnotaZmeny(op) }, najit);
       if (zmeny) aktualni = upravitKartu(aktualni, zmeny);
     } else if (op.op === 'vazba') {
       const cil = idZOdkazu(op.cil);
@@ -273,6 +436,16 @@ export function upravitExistujici(text, operace, um, najit) {
         z.vztahy = vztahy;
       }
       if (Object.keys(z).length) aktualni = upravitKartu(aktualni, z);
+    } else if (op.op === 'vyradit' && op.cela_karta === true) {
+      if (e.hlavicka?.platnost === 'vyrazeno') throw chyba(`Karta ${e.id} už je vyřazená.`, 409);
+      aktualni = nastavitSurove(aktualni, 'platnost', 'vyrazeno');
+      if (op.r) aktualni = nastavitSurove(aktualni, 'vyrazeno', String(op.r));
+      const radek = radekNeplatne({ r: op.r ?? null, datum: op.kdy ?? kontext.datum, sezeni: kontext.sezeni, celaKarta: true, duvod: op.duvod });
+      aktualni = nahraditTelo(aktualni, pridatNeplatne(teloKarty(aktualni), radek));
+    } else if (op.op === 'vyradit') {
+      aktualni = nahraditTelo(aktualni, vyraditTelo(teloKarty(aktualni), op, kontext));
+    } else if (op.op === 'smazat') {
+      aktualni = nahraditTelo(aktualni, smazatTelo(teloKarty(aktualni), op));
     } else {
       throw chyba(`Operace ${op.op} se na existující kartu nepoužije.`);
     }
@@ -284,13 +457,55 @@ export function upravitExistujici(text, operace, um, najit) {
 // Kontrola návrhu
 // ---------------------------------------------------------------------------
 
-/** Návrh z YAML: zkontroluje tvar na nejvyšší úrovni a vrátí `{ sezeni, zdroj, operace }`. */
+/**
+ * Návrh z YAML: zkontroluje tvar na nejvyšší úrovni a vrátí
+ * `{ schema, sezeni, stav, scenar_verze, zdroj, operace, varovani }`.
+ *
+ * Brána (prepis-kanon.md § 3): zapsat jde jen schéma 2 se `stav: finalni`, které vzniklo ze
+ * schváleného scénáře. Předběžný návrh (a starší schéma 1) Hub ukáže a DM ho může procházet, ale
+ * nezapíše ho.
+ */
 export function normalizujNavrh(data) {
   if (!data || typeof data !== 'object' || Array.isArray(data)) throw chyba('Návrh musí být YAML mapa.');
-  if (data.schema !== 1) throw chyba('Návrh má neznámou verzi schématu (čekám schema: 1).');
+  if (data.schema !== 1 && data.schema !== 2) throw chyba('Návrh má neznámou verzi schématu (čekám schema: 2).');
   if (!Array.isArray(data.operace)) throw chyba('Návrh nemá seznam operace.');
   if (data.operace.length > 400) throw chyba('Návrh má víc než 400 operací.');
-  return { sezeni: String(data.sezeni ?? ''), zdroj: String(data.zdroj ?? ''), operace: data.operace.map((o) => (o && typeof o === 'object' ? o : {})) };
+  const varovani = [];
+  let stav = 'predbezny';
+  if (data.schema === 1) {
+    varovani.push('Návrh má starý tvar (schema: 1). Dá se procházet, zapsat jde až návrh ve schématu 2 se stav: finalni.');
+  } else if (data.stav === undefined) {
+    varovani.push('Návrh nemá stav, bere se jako předběžný.');
+  } else if (!STAVY_NAVRHU.includes(data.stav)) {
+    throw chyba(`stav návrhu je ${STAVY_NAVRHU.join(' nebo ')}.`);
+  } else stav = data.stav;
+  const verze = data.scenar_verze;
+  if (data.schema === 2 && verze !== undefined && !(Number.isInteger(verze) && verze >= 0)) varovani.push('scenar_verze má být celé číslo (verze scénáře v přepisovém nástroji).');
+  return {
+    schema: data.schema,
+    sezeni: String(data.sezeni ?? ''),
+    stav,
+    scenar_verze: Number.isInteger(verze) ? verze : null,
+    zdroj: String(data.zdroj ?? ''),
+    operace: data.operace.map((o) => (o && typeof o === 'object' ? o : {})),
+    varovani,
+  };
+}
+
+/** Platný důkaz: { cas, blok?, citat? } z nahrávky, nebo { dm: RRRR-MM-DD, citat? } (rozhodnutí DM mimo nahrávku). */
+export function overitDukaz(d) {
+  const problemy = [];
+  const varovani = [];
+  if (!d || typeof d !== 'object' || Array.isArray(d)) return { problemy: ['důkaz je { cas, blok, citat } nebo { dm, citat }'], varovani };
+  if (d.dm !== undefined) {
+    if (!DATUM.test(String(d.dm))) problemy.push(`důkaz dm „${d.dm}“ je datum RRRR-MM-DD`);
+  } else if (!CAS_DUKAZU.test(String(d.cas ?? ''))) {
+    problemy.push(`neplatný čas důkazu „${d.cas ?? ''}“ (čekám tvar d1 0:42:02)`);
+  }
+  if (d.blok !== undefined && !BLOK.test(String(d.blok))) problemy.push(`blok důkazu „${d.blok}“ není id bloku scénáře`);
+  const slov = String(d.citat ?? '').split(/\s+/).filter(Boolean).length;
+  if (slov > MAX_SLOV_CITATU) varovani.push(`citace má ${slov} slov; repo je veřejné, do karty a registru jde zkrácená na ${MAX_SLOV_CITATU}`);
+  return { problemy, varovani };
 }
 
 /** Člověku čitelný popis operace. */
@@ -304,7 +519,9 @@ export function popisOperace(op, najit = () => undefined) {
     case 'kanon': return `Hráčský kánon: ${op.nazev}`;
     case 'udalost': return `Událost v kalendáři: ${op.text}`;
     case 'sezeni': return `Zápis sezení — ${SEKCE_SEZENI[op.sekce] ?? op.sekce}`;
-    case 'rozpor': return `Rozpor: ${op.otazka ?? ''}`;
+    case 'rozpor': return `Rozpor${op.karta_id ? ` u ${nazev(op.karta_id)}` : ''}: ${op.otazka ?? DRUHY_ROZPORU[op.druh]?.nazev ?? ''}`;
+    case 'vyradit': return op.cela_karta === true ? `Vyřadit celou kartu ${nazev(op.karta_id)}` : `Vyřadit z karty ${nazev(op.karta_id)}${op.oddil ? ` — oddíl „${op.oddil}“` : ''}${op.nahradit ? ' (s náhradou)' : ''}`;
+    case 'smazat': return `Smazat chybu zápisu v kartě ${nazev(op.karta_id)}${op.oddil ? ` — oddíl „${op.oddil}“` : ''}`;
     default: return String(op.op ?? '?');
   }
 }
@@ -312,7 +529,9 @@ export function popisOperace(op, najit = () => undefined) {
 /**
  * Strojová kontrola operací proti stavu repa. Nic nezapisuje.
  * @param {ReturnType<typeof normalizujNavrh>} navrh
- * @param {{najit: (id: string) => object|undefined, cislo: string, overDatum?: (d: object) => boolean, existujeId?: (id: string) => boolean}} ctx
+ * @param {{najit: (id: string) => object|undefined, cislo: string, overDatum?: (d: object) => boolean, existujeId?: (id: string) => boolean,
+ *   revize?: boolean, rozpory?: Map<string, object>}} ctx
+ *   revize = revize kánonu mimo sezení (jen OPERACE_REVIZE), rozpory = registr kampan/rozpory.yaml podle id
  * @returns {Array<{id: string, op: string, popis: string, problemy: string[], varovani: string[]}>}
  */
 export function overitNavrh(navrh, ctx) {
@@ -320,6 +539,12 @@ export function overitNavrh(navrh, ctx) {
   const najit = (id) => ctx.najit(id) ?? (nove.has(id) ? { id, typ: nove.get(id), pole: {}, nazev: id } : undefined);
   const videno = new Set();
   const vysledek = [];
+  const registr = ctx.rozpory ?? new Map();
+  // Rozpory v návrhu (kvůli z_rozporu) a čísla R, která si návrh zabral.
+  const rozporyNavrhu = new Map(navrh.operace.filter((o) => o.op === 'rozpor' && o.id).map((o) => [String(o.id), o]));
+  const zabranaR = new Map();
+  for (const o of rozporyNavrhu.values()) if (o.r) zabranaR.set(String(o.r), [...(zabranaR.get(String(o.r)) ?? []), String(o.id)]);
+  const povolene = ctx.revize ? OPERACE_REVIZE : OPERACE;
 
   for (const op of navrh.operace) {
     const problemy = [];
@@ -329,12 +554,28 @@ export function overitNavrh(navrh, ctx) {
     else if (videno.has(id)) problemy.push(`id operace „${id}“ je v souboru dvakrát`);
     videno.add(id);
     if (!OPERACE.includes(op.op)) problemy.push(`neznámá operace „${op.op}“ (platné: ${OPERACE.join(', ')})`);
+    else if (!povolene.includes(op.op)) problemy.push(`revize kánonu mimo sezení umí jen ${OPERACE_REVIZE.join(', ')}`);
 
     const dukaz = Array.isArray(op.dukaz) ? op.dukaz : [];
-    if (!dukaz.length) problemy.push('chybí důkaz (čas v přepisu)');
-    for (const d of dukaz) if (!CAS_DUKAZU.test(String(d?.cas ?? ''))) problemy.push(`neplatný čas důkazu „${d?.cas}“ (čekám tvar d1 0:42:02)`);
+    if (!dukaz.length) problemy.push('chybí důkaz (místo v nahrávce nebo rozhodnutí DM)');
+    for (const d of dukaz) {
+      const v = overitDukaz(d);
+      problemy.push(...v.problemy);
+      varovani.push(...v.varovani);
+    }
     if (op.jistota !== undefined && !JISTOTY.includes(op.jistota)) problemy.push(`jistota je ${JISTOTY.join(' nebo ')}`);
-    if (op.jistota === undefined) varovani.push('chybí jistota (bere se nutno_potvrdit)');
+    if (op.jistota === undefined && op.op !== 'rozpor') varovani.push('chybí jistota (bere se nutno_potvrdit)');
+    if (op.z_rozporu !== undefined) {
+      const r = rozporyNavrhu.get(String(op.z_rozporu));
+      if (!r) problemy.push(`z_rozporu: v návrhu není rozpor „${op.z_rozporu}“`);
+      else if (op.r && r.r && String(op.r) !== String(r.r)) problemy.push(`r ${op.r} nesedí s rozporem ${r.id} (${r.r})`);
+    }
+    const overitR = (r) => {
+      if (r === undefined || r === null || r === '') return;
+      const n = cisloR(r);
+      if (!n) problemy.push(`r „${r}“ má tvar R17`);
+      else if (n <= POSLEDNI_R_PREVODU) problemy.push(`R1–R${POSLEDNI_R_PREVODU} patří převodu Notionu, nová rozhodnutí začínají R${POSLEDNI_R_PREVODU + 1}`);
+    };
 
     const kartaExistuje = (x) => {
       const cil = idZOdkazu(x);
@@ -395,20 +636,20 @@ export function overitNavrh(navrh, ctx) {
         }
         case 'pole': {
           const e = kartaExistuje(op.karta_id);
-          const povolena = new Set([...(e ? POLE_TYPU[e.typ] ?? [] : []), 'kdo', 'doresit']);
+          const povolena = new Set([...(e ? POLE_TYPU[e.typ] ?? [] : []), 'kdo', 'doresit', 'verejne']);
+          if (op.pole === 'verejne' && ![true, false, 'true', 'false'].includes(op.nove)) problemy.push('verejne je true nebo false');
           if (e && !povolena.has(op.pole)) problemy.push(`pole „${op.pole}“ karta typu ${e.typ} nemá`);
           if (op.nove === undefined) problemy.push('chybí nove');
           if (op.puvodni === undefined) varovani.push('chybí puvodni, změna se nedá zkontrolovat proti stavu karty');
           if (e && povolena.has(op.pole) && op.puvodni !== undefined) {
-            const ted = norm(Array.isArray(e.pole?.[op.pole]) ? e.pole[op.pole].join(',') : e.pole?.[op.pole]);
-            if (norm(Array.isArray(op.puvodni) ? op.puvodni.join(',') : op.puvodni) !== ted && !nove.has(e.id)) {
+            const ted = hodnotaPole(op.pole, op.pole === 'verejne' ? e.verejne : e.pole?.[op.pole]);
+            if (hodnotaPole(op.pole, op.puvodni) !== ted && !nove.has(e.id)) {
               problemy.push(`karta má teď „${ted}“, návrh počítal s „${norm(op.puvodni)}“`);
             }
           }
           if (e && povolena.has(op.pole) && op.nove !== undefined && e.pole && !nove.has(e.id)) {
             try {
-              const hodnota = op.pole === 'kdo' ? (Array.isArray(op.nove) ? op.nove : String(op.nove).split(',')) : (op.pole === 'doresit' ? op.nove === true : op.nove);
-              zmenyKarty(e, { [op.pole]: hodnota }, najit);
+              zmenyKarty(e, { [op.pole]: hodnotaZmeny(op) }, najit);
             } catch (err) {
               if (!/Není co změnit/.test(err.message)) problemy.push(err.message);
             }
@@ -461,6 +702,42 @@ export function overitNavrh(navrh, ctx) {
         case 'rozpor': {
           if (!norm(op.karta_tvrzeni) || !norm(op.prepis_tvrzeni)) problemy.push('rozpor potřebuje karta_tvrzeni a prepis_tvrzeni');
           if (op.karta_id) kartaExistuje(op.karta_id);
+          if (op.druh === undefined) varovani.push('chybí druh rozporu (bere se stul_vs_karta)');
+          else if (!DRUHY_ROZPORU[op.druh]) problemy.push(`druh rozporu je ${Object.keys(DRUHY_ROZPORU).join(', ')}`);
+          overitR(op.r);
+          if (op.r) {
+            if ((zabranaR.get(String(op.r)) ?? []).length > 1) problemy.push(`${op.r} má v návrhu víc rozporů (${zabranaR.get(String(op.r)).join(', ')})`);
+            const v = registr.get(String(op.r));
+            if (v && (String(v.sezeni ?? '') !== String(ctx.cislo ?? '') || String(v.karta ?? '') !== String(op.karta_id ?? ''))) {
+              problemy.push(`${op.r} už je v registru rozporů pro jiný rozpor (${v.karta ?? '?'}, ${v.sezeni ?? '?'})`);
+            }
+          }
+          break;
+        }
+        case 'vyradit':
+        case 'smazat': {
+          const e = kartaExistuje(op.karta_id);
+          if (op.op === 'vyradit') overitR(op.r);
+          if (op.op === 'vyradit' && op.cela_karta === true) {
+            if (op.najdi !== undefined || op.nahradit !== undefined) problemy.push('vyřazení celé karty nemá najdi ani nahradit');
+            if (e?.hlavicka?.platnost === 'vyrazeno') problemy.push('karta už je vyřazená');
+          } else {
+            if (op.cela_karta !== undefined && op.cela_karta !== false) problemy.push('cela_karta musí být true nebo false');
+            if (!norm(op.najdi)) problemy.push('chybí najdi (přesný text z karty)');
+            else if (e && !nove.has(e.id) && typeof e.telo === 'string') {
+              try {
+                najitText(e.telo, op.oddil, op.najdi);
+              } catch (err) {
+                problemy.push(err.message);
+              }
+            }
+            if (!norm(op.oddil)) varovani.push('chybí oddíl, text se hledá v celé kartě');
+            if (op.op === 'smazat' && op.nahradit !== undefined) problemy.push('smazat nemá nahradit (náhrada je vyradit)');
+            if (op.nahradit !== undefined) ocistitText(op.nahradit, 4000);
+          }
+          if (op.op === 'vyradit' && !norm(op.duvod)) varovani.push('chybí důvod (v oddílu Neplatné bude jen starý text)');
+          if (op.op === 'vyradit' && !op.r && op.z_rozporu === undefined) varovani.push('vyřazení bez čísla rozhodnutí R');
+          if (op.op === 'smazat') varovani.push('smazat je jen pro chybu zápisu: text zmizí bez stopy v kartě (zůstane jen v Gitu)');
           break;
         }
         default:

@@ -16,7 +16,7 @@ Podrobnosti mají svá místa a tady se neopakují: funkce Hubu jsou v `PREHLED.
 | Součást | Co to je | Kde žije | Kdo ji staví | Stav |
 | --- | --- | --- | --- | --- |
 | **DM Hub** | Panel u stolu: OBS, světla, zvuk, souboj, kalendář, modul Kánon (wiki, mapa, editor, web) | toto repo, `hub/` | relace **Hub** (Claude Code ve `Dokumenty\DnD\repo`) | viz `PREHLED.md`; mnoho funkcí ◐ čeká na vyzkoušení u stolu |
-| **Návrh po sezení** | Schválení operací z přepisu, rozpory, vyřazení do oddílu Neplatné, zápis do kánonu | toto repo, `hub/`, rozpracováno ve větvi `prepis-do-kanonu` | relace **Hub** | ◐ kód a testy hotové, chybí `vyradit`, Neplatné a `kampan/rozpory.yaml` (rozhodnutí 77, bod 155) |
+| **Návrh po sezení** | Schválení operací z přepisu, rozpory, vyřazení do oddílu Neplatné, zápis do kánonu | toto repo, `hub/`, větev `prepis-do-kanonu` (PR čeká na DM) | relace **Hub** | ◐ dostavěno podle smlouvy (schéma 2, brána, `vyradit`, `smazat`, Neplatné, rozpory, `kampan/rozpory.yaml`, ⚠ bod 157), ostrý návrh tudy ještě neprošel |
 | **Kvalita kánonu** | Měření chyb v kartách, stránka Co opravit | větev `prepis-do-kanonu` | relace **Hub** | ◐ 60 % karet bez chyby (88 ze 145) |
 | **Přepisový nástroj** | Nahrávka → přepis → scénář → podklad a kontrola důkazů | `Dokumenty\DnD\OBS\prepis\prepis-tool`, přesune se do soukromého repa `Koneczech/DnD-prepis` (rozhodnutí 81) | relace **Přepis** (Claude Code) | ✓ přepis a scénář, ◐ kontrola důkazů podle `prepis-kanon.md` § 7 |
 | **Obsah kánonu** | Co ve světě platí: karty, hráčský kánon, zápisy sezení, rozhodnutí | toto repo, `kampan/` | **DM** schvaluje; zapisuje Hub (Návrh po sezení) nebo relace Hub na pokyn DM | ◐ sezení 3 chybí, 8× dořešit, 10 otevřených rozhodnutí |
@@ -39,9 +39,7 @@ Příprava → hra u stolu → přepis a scénář → návrh a schválení → 
 
 | Větev | Co v ní je | Další krok |
 | --- | --- | --- |
-| `prepis-do-kanonu` | Návrh po sezení, Kvalita kánonu, oprava karty Malka; předávka `reference/predavka-prepis-do-kanonu.md` | relace Hub doplní vyřazování a otevře PR |
-| `oprava-malo-hp-po-souboji` | Oprava málo HP po konci souboje (24. 10.), PR #102 otevřené | DM: sloučit, nebo zavřít |
-| `usporadani` | Tento rozcestník, smlouva přepisu, pravidla relací, PR #103 | DM sloučí |
+| `prepis-do-kanonu` | Návrh po sezení (dostavěný), Kvalita kánonu, oprava karty Malka, registr `kampan/rozpory.yaml`; předávka `reference/predavka-prepis-do-kanonu.md` | DM: projít PR a sloučit |
 
 ## Předávky (fronta)
 
@@ -49,8 +47,9 @@ Co jedna část potřebuje od jiné. Hotové položky se mažou, záznam zůstan
 
 | Od | Pro | Co | Stav |
 | --- | --- | --- | --- |
-| DM | Hub | Dostavět Návrh po sezení z větve `prepis-do-kanonu`: `vyradit`, `smazat`, oddíl Neplatné, `kampan/rozpory.yaml` (R17+), tlačítka rozporů, schéma 2 | čeká |
-| Hub | Přepis | Odpovědět na otázky v `reference/prepis-kanon.md` § 8 | čeká |
+| Hub | DM | Projít a sloučit PR Návrhu po sezení (větev `prepis-do-kanonu`), potvrdit ⚠ body 153, 154 a 157 | čeká |
+| Hub | Claude (návrh s03) | Finální `s03.yaml` ve schématu 2 (`schema: 2`, `stav: finalni`, `scenar_verze`). Zkušební průchod předběžného návrhu: 73 ze 74 operací Hub přijme, `o62` mění pole `harptos_konec`, které karta sezení nemá. Při schválení všeho by zápis přidal 4 chyby Kvality kánonu (rozhodnutí 79): Ordwinův dopis, Thirilův prsten a Kapitán lupičů jsou skryté, i když je zmiňuje hráčský kánon (přidat `pole verejne` a odkrytou odrážku), Mrtvá dívka z tábora lupičů má popis jen 73 znaků (nejméně 200). Pole `rozhodnuti_r` v hlavičce Hub nečte, číslo R patří do `r` u rozporu | čeká |
+| Hub | Přepis | Odpovědět na otázky v `reference/prepis-kanon.md` § 8. Hub zatím otevírá poslech jako `http://127.0.0.1:8765/?cislo=s03&cas=d2+0:11:39&blok=<id>` (otázka 5) | čeká |
 | Přepis | Hub | Kontrola důkazů podle § 7 (body 1–8) | čeká |
 | DM | Přepis | Přesunout nástroj do soukromého repa `Koneczech/DnD-prepis`, `vystup/` v `.gitignore` | čeká |
 | DM | – | Dokončit kontrolu scénáře sezení 3 (poslech), pak ho schválit | čeká |
@@ -59,17 +58,17 @@ Co jedna část potřebuje od jiné. Hotové položky se mažou, záznam zůstan
 
 ## Doporučené pořadí
 
-1. Sloučit `usporadani`.
-2. Relace Hub: dostavět Návrh po sezení (větev `prepis-do-kanonu`), otevřít PR, DM sloučí.
-3. DM: dokončit poslech scénáře sezení 3. Relace Přepis mezitím upraví kontrolu důkazů.
-4. Sezení 3 do kánonu přes Návrh po sezení. Je to první ostrá zkouška celé cesty.
-5. Projekt Příběh: příprava sezení 4 do repa, s dořešit body a nitkami ze sezení 3.
+1. DM: sloučit PR Návrhu po sezení (větev `prepis-do-kanonu`).
+2. DM: dokončit poslech scénáře sezení 3. Relace Přepis mezitím upraví kontrolu důkazů.
+3. Sezení 3 do kánonu přes Návrh po sezení. Je to první ostrá zkouška celé cesty.
+4. Projekt Příběh: příprava sezení 4 do repa, s dořešit body a nitkami ze sezení 3.
 
 ## Otevřené
 
 - Mikrofony na sezení 4 (3 stopy: hráči, DM, zvuk z OBS). Varianty jsou v předávce `prepis-do-kanonu`, nic není vybrané.
 - Cloudový přepis (Soniox, ElevenLabs) jen se souhlasem hráčů.
-- Úklid GitHubu: asi 90 sloučených větví a lokální pracovní kopie `repo-navrh` a `repo-kvalita` (nahrazené větví `prepis-do-kanonu`).
+- Úklid GitHubu: asi 90 sloučených větví. Lokální pracovní kopie `repo-navrh` a `repo-kvalita` a jejich větve viz Deník 31. 10.
+- Odložené rozpory jsou v `kampan/rozpory.yaml` se `stav: otevrene`; Kontrola dat je hlásí jako varování.
 
 ## Deník
 
@@ -77,3 +76,4 @@ Jeden řádek na relaci: datum, relace, co se udělalo, kde to je.
 
 - 31. 10. 2026 · Uspořádání (Claude) · audit D&D projektů, rozcestník, smlouva `reference/prepis-kanon.md`, pravidla souběžných relací v `CLAUDE.md`, rozhodnutí DM 77–81, oprava konce sezení 3 · větev `usporadani`
 - 31. 10. 2026 · Přepis (Claude Code) · Návrh po sezení a Kvalita kánonu přesunuté z lokálních kopií do větve, předávka · větev `prepis-do-kanonu`
+- 31. 10. 2026 · Hub (Claude) · Návrh po sezení dostavěný podle smlouvy: schéma 2 a brána předběžný/finální, `vyradit` (i celé karty), `smazat`, oddíl Neplatné, tlačítka rozporů, registr `kampan/rozpory.yaml` od R17, pojistka Kvality kánonu, filtr Vyřazené; ⚠ bod 157; zkušební průchod předběžného `s03.yaml` · větev `prepis-do-kanonu`, PR

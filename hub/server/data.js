@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { EventEmitter } from 'node:events';
 import YAML from 'yaml';
+import { normalizujRegistr, SOUBOR_ROZPORU } from '../sdilene/rozpory.js';
 import { rozebrat, upravitHlavicku, odkazy } from '../sdilene/frontmatter.js';
 import { TYPY_SLOZEK, TYPY } from './cesty.js';
 import { WIZ_SCENY } from './zarizeni/wiz.js';
@@ -304,6 +305,27 @@ export async function kontrolaDat(c) {
     }
   } catch {
     /* chybějící nebo rozbitý kalendář hlásí modul Kalendář */
+  }
+
+  // Registr rozporů (rozhodnutí 77): tvar záznamů, odkazy na karty a odložené rozpory.
+  const souborRozporu = path.join(c.kampan, SOUBOR_ROZPORU);
+  let textRozporu = null;
+  try {
+    textRozporu = await fs.readFile(souborRozporu, 'utf8');
+  } catch {
+    /* registr zatím není */
+  }
+  if (textRozporu !== null) {
+    try {
+      const r = normalizujRegistr(YAML.parse(textRozporu));
+      for (const p of r.problemy) pridej(souborRozporu, 'chyba', p);
+      for (const z of r.zaznamy) {
+        if (z.karta && !podleId.has(String(z.karta))) pridej(souborRozporu, 'varovani', `${z.id}: karta [[${z.karta}]] neexistuje`);
+        if (z.stav === 'otevrene') pridej(souborRozporu, 'varovani', `${z.id} je odložený rozpor${z.karta ? ` u [[${z.karta}]]` : ''}: ${z.otazka ?? z.prepis_tvrzeni ?? 'čeká na rozhodnutí DM'}`);
+      }
+    } catch (e) {
+      pridej(souborRozporu, 'chyba', `Chyba v YAML: ${e.message.split('\n')[0]}`);
+    }
   }
 
   return { problemy, pocetSouboru: soubory.length, entity: zaznamy.length };

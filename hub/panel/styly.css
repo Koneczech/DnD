@@ -975,6 +975,7 @@ main:has(> #obrazovka-kanon:not([hidden])) { display: flex; flex-direction: colu
 .cip[aria-pressed="false"] { opacity: 0.5; }
 .cip[aria-pressed="false"] .tecka { background: transparent; box-shadow: inset 0 0 0 1.5px var(--c); }
 .cip-ve-hre { --c: var(--akcent); }
+.cip-vyrazene { --c: var(--varovani); }
 .kanon-nastenky { display: flex; gap: var(--m-2); align-items: center; }
 .kanon-prepinace { display: flex; gap: var(--m-1); align-items: center; }
 .kanon-prepinace label { font-size: var(--t-popisek); color: var(--text-tlumeny); }
@@ -1228,6 +1229,7 @@ button.mala { padding: 0.1rem var(--m-2); font-size: var(--t-popisek); }
 .kvalita-problemy strong { color: var(--text); font-weight: 600; }
 .kvalita-problemy .kvalita-ikona { flex: none; width: 0.8rem; color: var(--text-tlumeny); }
 .kvalita-problemy li.chyba .kvalita-ikona { color: var(--chyba); }
+.vyrazena-karta { margin: 0 0 var(--m-4); padding: var(--m-2) var(--m-3); border-left: 3px solid var(--varovani); color: var(--varovani); font-size: var(--t-popisek); }
 .kvalita-karty { margin: 0 0 var(--m-4); padding: var(--m-2) var(--m-3); border-left: 3px solid var(--linka); }
 .kvalita-karty.s-chybou { border-left-color: var(--chyba); }
 .kvalita-karty summary { cursor: pointer; font-size: var(--t-popisek); font-weight: 600; }

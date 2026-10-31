@@ -205,8 +205,10 @@ test('Návrh po sezení: rozhodnutí DM, zápis jen schválených, opakování n
     await zapsatSoubor(repo.koren, 'kampan/mista/longsaddle/longsaddle.md', LONGSADDLE);
     await zapsatSoubor(repo.koren, 'kampan/postavy/tusker/tusker.md', TUSKER);
     await zapsatSoubor(repo.koren, 'kampan/sezeni/s03/s03.md', S03);
-    await zapsatSoubor(repo.koren, 'hub/.stav/navrhy/s03.yaml', `schema: 1
+    await zapsatSoubor(repo.koren, 'hub/.stav/navrhy/s03.yaml', `schema: 2
 sezeni: s03
+stav: finalni
+scenar_verze: 47
 zdroj: "sezení 3 (24. 10. 2026), přepis nahrávky"
 operace:
   - id: o1
@@ -281,7 +283,10 @@ operace:
     assert.ok(sezeni.includes('- 12:20 (19. Eleint) — Začátek sezení'));
     assert.deepEqual(pridane.map((u) => u.vazby), [['s03-boj-v-tabore']]);
     const zapsano = JSON.parse(await fs.readFile(path.join(repo.koren, 'hub/.stav/navrhy/s03.zapsano.json'), 'utf8'));
-    assert.equal(zapsano.operace.length, 4);
+    assert.deepEqual(zapsano.zapsane.sort(), ['o1', 'o2', 'o3', 'o4']);
+    assert.deepEqual(zapsano.zamitnute, ['o5']);
+    assert.deepEqual(zapsano.upravene, ['o1']);
+    assert.match(zapsano.navrh_hash, /^[0-9a-f]{16}$/);
     assert.ok(kanon.entity.has('s03-boj-v-tabore'));
 
     // Podruhé už není co zapsat a zapsanou operaci nejde měnit.
@@ -299,8 +304,9 @@ test('Návrh po sezení: schválená operace s chybou zastaví celý zápis dř�
   try {
     await zapsatSoubor(repo.koren, 'kampan/npc/jorun/jorun.md', JORUN);
     await zapsatSoubor(repo.koren, 'kampan/mista/longsaddle/longsaddle.md', LONGSADDLE);
-    await zapsatSoubor(repo.koren, 'hub/.stav/navrhy/s03.yaml', `schema: 1
+    await zapsatSoubor(repo.koren, 'hub/.stav/navrhy/s03.yaml', `schema: 2
 sezeni: s03
+stav: finalni
 operace:
   - { id: o1, op: doplnit, karta_id: jorun, oddil: Příběh, typ_bloku: odstavec, text: Nový odstavec., dukaz: [{ cas: "d1 0:00:01" }], jistota: jista }
   - { id: o2, op: doplnit, karta_id: neexistuje, oddil: Příběh, typ_bloku: odstavec, text: x, dukaz: [{ cas: "d1 0:00:01" }], jistota: jista }

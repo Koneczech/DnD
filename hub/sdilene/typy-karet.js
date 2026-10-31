@@ -1,6 +1,7 @@
 // Typové stránky wiki (rozhodnutí 74, DM 20. 10. 2026): která pole hlavičky má který typ karty,
 // jak se jmenují v bočním panelu a jaké oddíly šablona doporučuje. Jedno místo pro server
 // (kontrola a zápis), panel (boční panel, editor) i šablony v sablony/.
+import { jeNadpisJenDm, jeNadpisNeplatne } from './oddil-dm.js';
 
 /** Osud postavy z příběhu (NPC, padouch). Živý je výchozí a v bočním panelu se neukazuje. */
 /** Složky entit v kampan/ a typ, který k nim patří (Datový model v ZADANI.md). */
@@ -96,7 +97,7 @@ export const ODDILY_TYPU = Object.freeze({
 });
 
 const bezDiakritiky = (t) => String(t ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
-const jeDm = (t) => /^DM(\b|\s|—|-|:|$)/.test(String(t ?? '').trim());
+const jeDm = jeNadpisJenDm;
 
 /** Nadpisy ## a ### v textu karty (mimo bloky kódu). */
 export function nadpisyTextu(telo) {
@@ -134,6 +135,11 @@ export function vlozitOddil(typ, telo, nadpis) {
     if (/^\s*(```|~~~)/.test(radky[i])) vKodu = !vKodu;
     const m = !vKodu && /^##\s+(.*?)\s*#*\s*$/.exec(radky[i]);
     if (!m) continue;
+    // Oddíl Neplatné zůstává vždy na konci karty (rozhodnutí 77).
+    if (jeNadpisNeplatne(m[1])) {
+      kam = i;
+      break;
+    }
     const jeho = jeDm(m[1]) ? poradi.findIndex((p) => jeDm(p)) : poradi.indexOf(bezDiakritiky(m[1]));
     if ((moje !== -1 && jeho > moje) || (!jeDm(nadpis) && jeDm(m[1]))) {
       kam = i;

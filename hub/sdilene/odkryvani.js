@@ -4,6 +4,8 @@
 // prvního řádku bloku. DM oddíly, oddíl Co ví družina (má vlastní bloky), nadpisy, tabulky
 // a bloky kódu se odkrýt nedají. Jedno místo pro server (zápis, pohled družiny) i panel (oko).
 
+import { jeNadpisDm } from './oddil-dm.js';
+
 const NADPIS = /^(#{1,6})\s+(.*?)\s*#*\s*$/;
 const ODRAZKA = /^ ?([-*+]|\d+[.)])\s+/;
 const CITACE = /^\s*>/;
@@ -14,7 +16,7 @@ const ZNACKA_ZNA = '%%zná%%';
 /** Značka bloku pro vykreslení: \u0005N\u0005 na začátku prvního řádku (naHtml ji převede na data-blok). */
 export const ZNACKA_BLOKU = '\u0005';
 
-const jeDm = (t) => /^DM(\b|\s|—|-|:|$)/.test(String(t ?? '').trim());
+const jeDm = jeNadpisDm;
 const bezDiakritiky = (t) => String(t ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 const jeDruzina = (t) => bezDiakritiky(t) === 'co vi druzina';
 const ma = (text) => /%%\s*zn[aá]\s*%%/i.test(text);

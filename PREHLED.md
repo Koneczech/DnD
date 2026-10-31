@@ -1,6 +1,6 @@
 # DM Hub v kostce
 
-Stav k 24. 10. 2026. Tenhle soubor odpovídá na tři otázky: **co Hub umí, co je rozdělané a co jsme vědomě vynechali.** Podrobná pravidla a rozhodnutí jsou v `ZADANI.md`, návody v `reference/`.
+Stav k 31. 10. 2026. Tenhle soubor odpovídá na tři otázky: **co Hub umí, co je rozdělané a co jsme vědomě vynechali.** Podrobná pravidla a rozhodnutí jsou v `ZADANI.md`, návody v `reference/`.
 
 ## Hub jednou větou
 
@@ -20,7 +20,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | Kdo je kdo | **Hledat v kánonu** nahoře (Ctrl+K) nebo **Kánon**: wiki, karta, mapa, Pohled družiny | Kánon |
 | Je kánon v pořádku? | **Kánon → Přehled → Kvalita kánonu**: procento a Co opravit; na kartě rámeček Co opravit | Kánon |
 | Družina se něco dozví | Karta v Kánonu → **Co ví družina** → oko 👁 u odrážky, nebo napiš novou a Enter. Hotový odstavec z textu karty odkryješ okem 👁 vedle něj | Kánon |
-| Po sezení | Přepisový nástroj → **Do kánonu…** připraví podklad, Claude napíše návrh, v Hubu **Kánon → Návrh po sezení** ho po operacích schválíš a zapíšeš | Kánon |
+| Po sezení | Přepisový nástroj po schválení scénáře připraví podklad, Claude napíše návrh, v Hubu **Kánon → Návrh po sezení** ho po operacích schválíš, rozhodneš rozpory (Platí stůl, Platí karta, Jinak, Odložit) a **Zapsat schválené** ho zapíše a uloží na GitHub | Kánon |
 | Něco nejde | **Systém → Záznam událostí → Stáhnout** a pošli Claudovi | Systém |
 | Projektor | Edge s adresou Stropu na displeji projektoru, F11; K kalibrace, Z zkouška | Nastavení → Výstupy pro OBS, `reference/strop.md` |
 | Mimo domov | Codespace na GitHubu → panel se štítkem **Zkouška**, nic se neukládá | `reference/zkouska-v-cloudu.md` |
@@ -91,7 +91,10 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Soubor na GitHubu: odkaz na soubor karty v editoru GitHubu (záloha) | ◐ |
 | | Heslo na pohled DM ve čtecí verzi (pohled družiny otevřený, Zamknout DM) | ◐ |
 | | Hráčská stránka na GitHub Pages (pohled družiny) | ✗ |
-| | Návrh po sezení: změny kánonu z přepisu nahrávky (nová karta, doplnit oddíl, pole, vazba, hráčský kánon, událost, zápis sezení, rozpor) s důkazem v nahrávce; DM po operacích schválí, upraví, nebo zamítne, Hub zapíše schválené najednou | ◐ |
+| | Návrh po sezení: změny kánonu z přepisu nahrávky (nová karta, doplnit oddíl, pole včetně viditelnosti pro družinu, vazba, hráčský kánon, událost, zápis sezení, rozpor, vyřadit, smazat) s důkazem v nahrávce nebo rozhodnutím DM; DM po operacích schválí, upraví, nebo zamítne, Hub zapíše schválené najednou a uloží na GitHub (⚠ body 153 a 157) | ◐ ostrý návrh tudy ještě neprošel |
+| | Vyřazování (rozhodnutí 77): neplatný text se přesune do oddílu **Neplatné** na konci karty s datem, sezením, číslem R a důvodem, na jeho místo může přijít nový text se značkou *(R…)*; celá karta dostane `platnost: vyrazeno` a zmizí z pohledu družiny, mapy a hledání (filtr **Vyřazené** ji v pohledu DM vrátí); oddíl Neplatné družina nikdy nevidí; `smazat` jen pro chybu zápisu, Hub se ptá dvakrát | ◐ |
+| | Rozpory: karta rozporu s tlačítky Platí stůl, Platí karta, Jinak (vlastní znění) a Odložit, výchozí řešení podle druhu je jen předvolba; navazující operace Hub pustí jen u Platí stůl a Jinak; rozhodnutí dostane číslo R (od R17) a záznam v `kampan/rozpory.yaml`; přeřeknutí a paměť hráčů s Platí karta jen řádek do zápisu sezení; odložené rozpory hlásí Kontrola dat | ◐ |
+| | Brána a pojistky: zapsat jde jen schéma 2 se `stav: finalni` (předběžný návrh jde procházet a rozhodovat); rozhodnutí k operaci, která se v novém návrhu změnila, neplatí; zápis, který by přidal chybu Kvality kánonu, se zastaví celý (rozhodnutí 79); revize kánonu mimo sezení `revize-RRRR-MM-DD.yaml` | ◐ |
 | **Verze 2** | Příprava Lazy DM, generátor obchodů, dílna portrétů, export do IIO | ✗ |
 
 ## Co je rozdělané (v tomto pořadí)
@@ -135,6 +138,8 @@ Vlastní combat tracker, sledování zdrojů postav (BV, kouzla, Zuřivost), mix
 | Šablony pro nové soubory (Obsidian) | `sablony/` |
 | Nástěnky mapy kánonu (uložená rozložení) | `kampan/nastenky/` |
 | Kvalita kánonu (pravidla) | `hub/sdilene/kvalita-kanonu.js`, `hub/skripty/kvalita.js` |
+| Návrh po sezení | `hub/sdilene/navrh-sezeni.js` (operace a text karet), `hub/sdilene/rozpory.js` (rozpory a registr R), `hub/sdilene/oddil-dm.js` (oddíly DM a Neplatné), `hub/server/navrh-sezeni.js`, `hub/panel/navrh-sezeni.html` a `.js`; návrhy lokálně v `hub/.stav/navrhy/` |
+| Registr rozhodnutí o rozporech (R17 a dál) | `kampan/rozpory.yaml` |
 | Kánon: audit, mapa a návod na převod | `reference/kanon-audit.md`, `reference/kanon-mapa.yaml`, `reference/kanon-prevod.md` |
 | Kód Hubu a testy | `hub/` |
 | Zvuky (mimo repo) | `Dokumenty\DnD\audio` |

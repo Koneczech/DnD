@@ -1351,18 +1351,35 @@ export class Hub {
     return undefined;
   }
 
-  /** Návrh po sezení (⚠ bod 153): seznam návrhů, detail, rozhodnutí DM u operace a zápis schválených. */
+  /** Návrh po sezení (⚠ body 153 a 157): seznam návrhů, detail, rozhodnutí DM, kontrola před zápisem a zápis. */
   async apiNavrhSezeni(req, m, p) {
     const n = this.navrhSezeni;
+    const JMENO = '(s\\d{2,3}|revize-\\d{4}-\\d{2}-\\d{2})';
     if (p === '/api/navrh-sezeni' && m === 'GET') return n.seznam();
-    const detail = /^\/api\/navrh-sezeni\/(s\d{2,3})$/.exec(p);
+    const detail = new RegExp(`^/api/navrh-sezeni/${JMENO}$`).exec(p);
     if (detail && m === 'GET') return n.nacist(detail[1]);
-    const op = /^\/api\/navrh-sezeni\/(s\d{2,3})\/operace\/([A-Za-z0-9_-]{1,40})$/.exec(p);
+    const op = new RegExp(`^/api/navrh-sezeni/${JMENO}/operace/([A-Za-z0-9_-]{1,40})$`).exec(p);
     if (op && m === 'PUT') return n.rozhodnout(op[1], op[2], await nacistJson(req, 256 * 1024));
-    const zapis = /^\/api\/navrh-sezeni\/(s\d{2,3})\/zapsat$/.exec(p);
+    const kontrola = new RegExp(`^/api/navrh-sezeni/${JMENO}/kontrola$`).exec(p);
+    if (kontrola && m === 'GET') return n.kontrolaZapisu(kontrola[1]);
+    const zapis = new RegExp(`^/api/navrh-sezeni/${JMENO}/zapsat$`).exec(p);
     if (zapis && m === 'POST') {
       await nacistJson(req);
-      return this.poUpraveKanonu(await n.zapsat(zapis[1]));
+      const v = this.poUpraveKanonu(await n.zapsat(zapis[1]));
+      // Zápis rovnou uložit na GitHub (krok 7 smlouvy). Když to nejde (zkušební režim, bez sítě,
+      // zamčený soubor), zápis platí a DM uloží přes Systém → Aktualizovat.
+      if (v.odlozeno) return { ...v, ulozeno: false, chybaUlozeni: 'Některé soubory jsou zamčené, Hub je zapíše později. Pak ulož přes Systém → Aktualizovat.' };
+      try {
+        const cislo = zapis[1];
+        const nazev = cislo.startsWith('revize-') ? `Revize kánonu ${cislo.slice(7)}` : `Sezení ${Number(cislo.slice(1))}`;
+        const u = await this.git.ulozit(`${nazev}: zápis do kánonu (Návrh po sezení)`);
+        const commit = u.commit ? await this.git.hlava().catch(() => null) : null;
+        if (commit) await n.oznacitCommit(cislo, commit);
+        this.obnovitGit(false);
+        return { ...v, ulozeno: u.commit, odeslano: u.push, commit, chybaUlozeni: u.chybaPush ?? null };
+      } catch (err) {
+        return { ...v, ulozeno: false, chybaUlozeni: `${err.message} Zápis v kánonu platí, ulož ho přes Systém → Aktualizovat.` };
+      }
     }
     return undefined;
   }

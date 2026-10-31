@@ -583,6 +583,7 @@ export function vytvoritWiki(ctx, karta) {
       : null;
     const hlavni = naListu ? el('div', { className: 'clanek-hlavni' }, zalozky, listVykresleny ?? listPostavy(e, list, blokyKarty)) : el('div', { className: 'clanek-hlavni' },
       zalozky,
+      dm() && k.vyrazeno ? el('p', { className: 'vyrazena-karta karta', textContent: `Vyřazená karta${typeof k.vyrazeno === 'string' ? ` (${k.vyrazeno}, registr kampan/rozpory.yaml)` : ''}: už neplatí. Družina ji nevidí, mapa a hledání ji ukážou jen s filtrem Vyřazené. Proč, je v oddílu Neplatné.` }) : null,
       coOpravit(k),
       e.typ === 'kanon' ? casKanonu(k) : null,
       // Hráčský kánon je celý pro družinu, oddíl Co ví družina má jen karta, která ho opravdu obsahuje.

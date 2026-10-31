@@ -21,7 +21,7 @@ Rozhodnutí DM: 77–81 v `ZADANI.md` (31. 10. 2026). Nepotvrzená podoba Návrh
 | Přepis, scénář, verze, učení ze slovníku, schválení scénáře | relace **Přepis** | přepisový nástroj (`127.0.0.1:8765`) |
 | Podklad a kontrola důkazů | relace **Přepis** | nástroj |
 | Opravy scénáře od Clauda (`opravy-sNN.json`) | Claude píše, nástroj je ukáže u bloků | nástroj |
-| Návrh změn `sNN.yaml` | Claude (v relaci Hub nebo v samostatném chatu podle zadání DM) | `hub/.stav/navrhy/` |
+| Návrh změn `sNN.yaml` | relace **Hub** (s přístupem k oběma složkám na PC DM, § 3a) | `hub/.stav/navrhy/` |
 | **Návrh po sezení**: schválení, rozpory, `vyradit`, Neplatné, registr R, zápis | relace **Hub** | `hub/` |
 | Rozhodnutí | **DM** | – |
 
@@ -35,9 +35,28 @@ Relace Přepis nepíše kód do `hub/` a relace Hub nepíše do nástroje. Potř
 | 2 | Kontrola proti kánonu, jen nezkontrolované bloky | Claude | `opravy-sNN.json`, nálezy rozporů | Ke kontrole |
 | 3 | Poslech a opravy scénáře | DM v nástroji | opravený scénář, pravidla slovníku | Kontrola |
 | 4 | Schválení scénáře | DM | zmrazená verze | Schváleno |
-| 5 | Podklad a návrh změn | nástroj, Claude | `podklad.md`, `hub/.stav/navrhy/sNN.yaml` (`stav: finalni`) | V kánonu (rozepsáno) |
+| 5 | Podklad a návrh změn | nástroj (podklad), relace Hub (návrh) | `podklad.md`, `hub/.stav/navrhy/sNN.yaml` (`stav: finalni`) | V kánonu (rozepsáno) |
 | 6 | Návrh po sezení v Hubu: operace a rozpory | DM | rozhodnutí R | V kánonu (rozepsáno) |
 | 7 | Zapsat schválené, Kontrola dat, uložit | Hub (uloží `kampan/` na GitHub sám) | commit, `sNN.zapsano.json` | Ověřeno |
+
+### 3a. Postup pro DM
+
+Přepis se nikam nevkládá ani nekopíruje. Zůstává v nástroji a do kánonu jde jen návrh změn.
+
+1. **Nástroj:** poslech a opravy scénáře, pak **Schválit scénář**. Nástroj vytvoří podklad do `C:\Users\Matej\Documents\DnD\OBS\prepis\prepis-tool\vystup\_kanon\sNN\` (`podklad.md`, `schema-navrhu.md`, `scenar-s-casy.txt`).
+2. **Relace Hub:** napíše návrh podle pokynu níže. Musí vidět složku nástroje i repo na PC: Claude Code spuštěný na PC, nebo relace propojená s počítačem s připojenou složkou `C:\Users\Matej\Documents\DnD`.
+3. **Nástroj:** kontrola důkazů nad návrhem (`sNN.dukazy.json`).
+4. **Hub:** Kánon → **Návrh po sezení** → projít operace, rozhodnout rozpory → **Zapsat schválené**.
+
+Pokyn pro relaci Hub (krok 2):
+
+```
+Napiš finální návrh sezení N podle reference/prepis-kanon.md (schéma 2, stav: finalni).
+Podklad: C:\Users\Matej\Documents\DnD\OBS\prepis\prepis-tool\vystup\_kanon\sNN\
+Výstup: C:\Users\Matej\Documents\DnD\repo\hub\.stav\navrhy\sNN.yaml (mimo Git).
+Zohledni předávky v ROZCESTNIK.md. Pak pusť kontrolu důkazů v nástroji a řekni mi,
+až můžu otevřít Návrh po sezení.
+```
 
 **Brána mezi kroky 4 a 5:** finální návrh vzniká jen ze schváleného scénáře. Návrh z neschváleného scénáře má `stav: predbezny` a Hub ho zobrazí, ale nedovolí ho zapsat.
 

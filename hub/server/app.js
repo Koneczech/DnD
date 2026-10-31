@@ -211,10 +211,19 @@ export class Hub {
     this.sledovaniHp.on('zmena', (k) => this.svetla.nastavitKritickeHp(k));
     this.sledovaniHp.on('tah', (kdo) => this.zvuk.tah(kdo));
     this.svetla.on('kriticke-hp', (k) => {
-      // Obraz tepe v rytmu lampy: délka cyklu = fáze A + B z Nastavení → Světla.
-      const hp = this.svetla.mistni.hp;
-      this.vysilac.vyslat('kriticke-hp', k ? { ...k, cyklus_s: hp.a.s + hp.b.s } : null);
-      this.zvuk.nastavitKritickeHp(Boolean(k));
+      // Zvuk první a zvlášť: chyba při odeslání obrazu nesmí nechat ucpané uši.
+      try {
+        this.zvuk.nastavitKritickeHp(Boolean(k));
+      } catch (e) {
+        this.zaznam.chyba('zvuk', `Málo HP ve zvuku: ${e?.message ?? e}`);
+      }
+      try {
+        // Obraz tepe v rytmu lampy: délka cyklu = fáze A + B z Nastavení → Světla.
+        const hp = this.svetla.mistni.hp;
+        this.vysilac.vyslat('kriticke-hp', k ? { ...k, cyklus_s: hp.a.s + hp.b.s } : null);
+      } catch (e) {
+        this.zaznam.chyba('svetla', `Málo HP v obrazu: ${e?.message ?? e}`);
+      }
     });
     this.sparovatHue = sparovatHue ?? ((v) => Hue.sparovat(v));
     this.casovacOdpoctu = null;
@@ -337,6 +346,13 @@ export class Hub {
     this.svetla.on('kriticke-hp', (k) => z.zmena('kriticke-hp', 'svetla', 'info', k ? `Málo HP: ${k.jmeno} ${k.hp}/${k.max}` : 'Málo HP: konec'));
     this.svetla.on('blesk', (b) => z.info('svetla', `Blesk (${b.vzdalenost})`));
     this.cteniPlayerView.on('chyba', (t) => z.zmena('pv-chyba', 'iniciativa', t ? 'varovani' : 'info', t ?? 'Player View se čte bez chyby'));
+    this.sledovaniHp.on('chyba', (t) => {
+      if (t) z.zmena('hp-chyba', 'iniciativa', 'chyba', t);
+      else if (z.posledni.has('hp-chyba')) {
+        z.posledni.delete('hp-chyba');
+        z.info('iniciativa', 'Sledování tahu: chyba pominula');
+      }
+    });
     this.udery.on('uder', (u) => z.info('iniciativa', `Zásah: ${u.utocnik?.jmeno ?? '?'} → ${u.cile.map((c) => `${c.jmeno} ${c.druh === 'leceni' ? '+' : '−'}${c.o ?? (Number.isFinite(c.podil) ? `${Math.round(c.podil * 100)} %` : '?')}${c.padl ? ' (k zemi)' : ''}`).join(', ')}`));
     this.sledovaniHp.on('tah', (k) => z.info('iniciativa', `Na tahu: ${k.jmeno}${k.tagy.length ? ` [${k.tagy.join(', ')}]` : ''}${this.cteniPlayerView.zdroj === 'zive' ? ' (živě)' : ''}`));
     this.cteniPlayerView.zive?.on('spojeni', (ano) => z.zmena('iniciativa-zive', 'iniciativa', 'info', ano ? 'Živé spojení s Improved Initiative: připojeno' : 'Živé spojení s Improved Initiative: odpojeno (tahy se čtou každou sekundu)'));
@@ -412,6 +428,7 @@ export class Hub {
     });
     this.scena.on('stav', (s) => {
       this.vysilac.vyslat('scena', s);
+      if (s.rezim !== 'souboj') this.ukoncitMaloHp();
       this.svetla.zmenaSceny();
       this.zvuk.zmenaSceny();
     });
@@ -979,6 +996,22 @@ export class Hub {
       return poslatJson(res, 200, { ...vysledek, git: this.git.stav });
     }
     throw Object.assign(new Error('Neznámá adresa'), { status: 404 });
+  }
+
+  /**
+   * Pojistka mimo souboj: málo HP (pulzující lampa, ucpané uši) nesmí přežít konec souboje, i kdyby
+   * sledování tahu konec samo neohlásilo (sezení 24. 10. 2026: lampa pulzovala až do restartu Hubu).
+   * Zkouška z Nastavení → Světla běží i mimo souboj, tu nechá doběhnout.
+   */
+  ukoncitMaloHp() {
+    if (this.svetla.zkouskaHp) return;
+    try {
+      this.sledovaniHp.vynulovat();
+    } catch (e) {
+      this.zaznam.chyba('svetla', `Konec málo HP: ${e?.message ?? e}`);
+    }
+    if (this.svetla.kritickeHp) this.svetla.nastavitKritickeHp(null);
+    if (this.zvuk.kritickeHp) this.zvuk.nastavitKritickeHp(false);
   }
 
   /**

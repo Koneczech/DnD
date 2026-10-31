@@ -668,8 +668,6 @@ export class Svetla extends EventEmitter {
    */
   nastavitKritickeHp(kriticke, { vynutit = false } = {}) {
     this.kritickeHp = kriticke ?? null;
-    // Obraz v OBS a zvuk (ucpané uši) se řídí stejným stavem, i při zkoušce a bez Řídit světla.
-    this.emit('kriticke-hp', this.kritickeHp);
     const pulzovat = Boolean(this.kritickeHp) && (vynutit || (this.mistni.ridit && this.hpSvetlaZapnute));
     const zarizeniRole = (role) => [...this.zarizeni.values()].filter((z) => z.role === role && z.ovladac);
     const n = this.mistni.hp;
@@ -710,6 +708,9 @@ export class Svetla extends EventEmitter {
       else this.normal().catch(() => {}); // po zkoušce bez Řídit světla zpět na výchozí stav
     }
     this.oznam();
+    // Obraz v OBS a zvuk (ucpané uši) se řídí stejným stavem, i při zkoušce a bez Řídit světla.
+    // Až po pulzu: chyba u posluchače nesmí nechat lampu pulzovat dál.
+    this.emit('kriticke-hp', this.kritickeHp);
   }
 
   /**

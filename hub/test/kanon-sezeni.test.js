@@ -176,6 +176,10 @@ test('části textu sezení: shrnutí, ostatní, DM a Poznámky ze stolu zvláš
   assert.doesNotMatch(c.ostatni, /Shrnutí|DM|Poznámky/);
   assert.match(c.dm, /^## DM — Co fungovalo/);
   assert.match(c.poznamky, /### Vnořené\n\nDál poznámky\./);
+  const f = castiSezeni('## Shrnutí\n\nŠli.\n\n## Co fungovalo a co opravit\n\n- Pomalé.\n\n## Otevřené nitky\n\n- Kdo leží v táboře.\n');
+  assert.match(f.dm, /Co fungovalo/, 'poznámka DM k vedení hry jde dolů k oddílům DM');
+  assert.match(f.ostatni, /Otevřené nitky/);
+  assert.doesNotMatch(f.ostatni, /fungovalo/);
   assert.equal(pocetPoznamek(SEZENI_3), 2);
   assert.doesNotMatch(bezPoznamekZeStolu(SEZENI_3), /doplněno/);
 });

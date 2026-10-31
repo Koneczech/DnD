@@ -9,13 +9,15 @@ const bezDiakritiky = (t) => String(t ?? '').normalize('NFD').replace(/[̀-ͯ]/g
 export const ODDIL_POZNAMEK = 'Poznámky ze stolu';
 export const jeOddilPoznamek = (nadpis) => bezDiakritiky(nadpis) === bezDiakritiky(ODDIL_POZNAMEK);
 export const jeOddilShrnuti = (nadpis) => bezDiakritiky(nadpis) === 'shrnuti';
+/** Poznámka DM k vedení hry (šablona sezení, Návrh po sezení sekce `fungovalo`): stránka ji dává dolů k oddílům DM. */
+export const jeOddilFungovalo = (nadpis) => bezDiakritiky(nadpis).startsWith('co fungovalo');
 
 /**
  * Text karty sezení po částech stránky. Oddíl = nadpis ## i s vnořenými ### pod ním.
  * - uvod: text před prvním ## (i s nadpisem # karty)
  * - shrnuti: oddíl Shrnutí
  * - ostatni: ostatní oddíly v pořadí souboru (Tajemství a stopy, Poklady, Otevřené nitky, Scény…)
- * - dm: oddíly DM a Neplatné (stránka je ukáže dole)
+ * - dm: oddíly DM, Neplatné a Co fungovalo a co opravit (stránka je ukáže dole)
  * - poznamky: oddíl Poznámky ze stolu (deník ze hry)
  * @returns {{uvod: string, shrnuti: string, ostatni: string, dm: string, poznamky: string}}
  */
@@ -35,7 +37,7 @@ export function castiSezeni(telo) {
     const text = s.text.join('\n');
     if (!text.trim()) continue;
     if (s.nadpis === null) casti.uvod.push(text);
-    else if (jeOddilDm(s.nadpis)) casti.dm.push(text);
+    else if (jeOddilDm(s.nadpis) || jeOddilFungovalo(s.nadpis)) casti.dm.push(text);
     else if (jeOddilPoznamek(s.nadpis)) casti.poznamky.push(text);
     else if (jeOddilShrnuti(s.nadpis)) casti.shrnuti.push(text);
     else casti.ostatni.push(text);

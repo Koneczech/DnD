@@ -40,7 +40,7 @@ Příprava → hra u stolu → přepis a scénář → návrh a schválení → 
 | Větev | Co v ní je | Další krok |
 | --- | --- | --- |
 | `karta-sezeni` | Karta sezení ve wiki podle návrhu, který DM potvrdil 31. 10. (⚠ bod 158): údaje sezení, hráčský kánon, události, U stolu, Kdo a kde, stav zápisu; Kvalita kánonu u nezapsaných sezení; družina vidí sezení podle kánonu | DM: projít PR #107 a sloučit, pak vyzkoušet na kartách Sezení 2 a 3 |
-| `co-patri-do-kanonu` | Rozhodnutí 82: co patří do kánonu (vrstvy, čtyři otázky pro Co ví družina, co nepatří); odkaz v `CLAUDE.md` a `reference/prepis-kanon.md` § 1 | DM: projít PR a sloučit |
+| `co-patri-do-kanonu` | Rozhodnutí 82: co patří do kánonu (vrstvy, čtyři otázky pro Co ví družina, co nepatří); odkaz v `CLAUDE.md` a `reference/prepis-kanon.md` § 1 | DM: projít PR #109 a sloučit |
 
 ## Předávky (fronta)
 
@@ -80,4 +80,4 @@ Jeden řádek na relaci: datum, relace, co se udělalo, kde to je.
 - 31. 10. 2026 · Uspořádání (Claude) · `main` (#105) sloučený do `prepis-do-kanonu`, konflikt v rozcestníku vyřešený; předávka Přepis → Hub (tvar `problemy`, `dm`, `blok` v ▶) je v PR #106 hotová · větev `prepis-do-kanonu`
 - 31. 10. 2026 · Hub (Claude) · karta sezení podle potvrzeného návrhu (plátno „Karta sezení — návrh“), ⚠ bod 158 · větev `karta-sezeni`, PR #107
 - 31. 10. 2026 · Uspořádání (Claude) · návrh `sNN.yaml` píše relace Hub, postup pro DM v `prepis-kanon.md` § 3a · větev `navrh-pise-hub`
-- 31. 10. 2026 · Hub (Claude) · přehled typů karet kánonu (artefakt Karty kánonu), rozhodnutí 82 co patří do kánonu, návrh Co ví družina pro skupinu 1 ke schválení · větev `co-patri-do-kanonu`
+- 31. 10. 2026 · Hub (Claude) · přehled typů karet kánonu (artefakt Karty kánonu), rozhodnutí 82 co patří do kánonu, návrh Co ví družina pro skupinu 1 ke schválení · větev `co-patri-do-kanonu`, PR #109

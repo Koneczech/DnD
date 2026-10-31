@@ -1,6 +1,16 @@
 # CLAUDE.md — pravidla pro práci v tomto repu
 
-Repo `Koneczech/DnD` drží data kampaně D&D a aplikaci DM Hub. Zadání je v `ZADANI.md` a je to jediný master. Stav funkcí (co umí, co je rozdělané, co vynecháno) je v `PREHLED.md`: po každé změně funkcí ho aktualizuj. Tento soubor říká, jak se v repu pracuje.
+Repo `Koneczech/DnD` drží data kampaně D&D a aplikaci DM Hub. Zadání je v `ZADANI.md` a je to jediný master. Stav funkcí (co umí, co je rozdělané, co vynecháno) je v `PREHLED.md`: po každé změně funkcí ho aktualizuj. Stav všech částí kampaně a kdo na čem dělá je v `ROZCESTNIK.md`. Tento soubor říká, jak se v repu pracuje.
+
+## Souběžné relace a rozcestník
+
+Nad repem pracuje víc relací Clauda najednou (Hub, Přepis, projekt Příběh) a navzájem se nevidí. Proto:
+
+- Na začátku relace si přečti `ROZCESTNIK.md`. Na konci uprav tabulky, kterých se práce týká, a připiš řádek do Deníku.
+- Dělej jen na součásti, kterou tvoje relace vlastní (tabulka Součásti v rozcestníku). Potřebu změny v cizí součásti zapiš do Předávek a nedělej ji sám.
+- Rozdělanou práci vždy pushni do větve na GitHubu. Nezakládej lokální pracovní kopie (`git worktree`) ani větve, které na GitHub nepůjdou.
+- Rozhraní mezi přepisovým nástrojem a Hubem je `reference/prepis-kanon.md`. Mění se jen přes PR se souhlasem DM.
+- Přepisy, scénáře a podklady ze sezení do repa nepatří. V kartách jsou jen krátké citace v poli `dukaz`.
 
 ## Jazyk
 
@@ -16,6 +26,7 @@ Repo `Koneczech/DnD` drží data kampaně D&D a aplikaci DM Hub. Zadání je v `
 - Interní detaily kódu (názvy funkcí, struktura testů, pomocné moduly) rozhoduj sám.
 - Nedoplňuj herní obsah (jména, události, vazby, statistiky), který DM nepotvrdil.
 - Kánon převáděj podle `reference/kanon-prevod.md` a `reference/kanon-mapa.yaml`: text karet nepřepisuj, opravuj jen rozpory, které DM potvrdil, a po každé skupině pusť `npm run kanon -- <skupina>`.
+- Sezení se do kánonu zapisuje podle `reference/prepis-kanon.md`: jen operacemi, které DM schválil. Neplatný text se nemaže, ale přesune do oddílu Neplatné s číslem rozhodnutí R (rozhodnutí 77). Zápis nesmí přidat novou chybu Kvality kánonu (rozhodnutí 79).
 
 ## Repo je veřejné
 

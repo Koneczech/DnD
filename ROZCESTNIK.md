@@ -30,7 +30,7 @@ Příprava → hra u stolu → přepis a scénář → návrh a schválení → 
 
 | Sezení | Hráno | Příprava v repu | Přepis a scénář | Kánon | Dořešit |
 | --- | --- | --- | --- | --- | --- |
-| s01 | ? nejspíš 29. 8. podle nahrávek, doplní DM | ✗ (Notion) | ✓ | ✓ zápis a hráčský kánon | 3 |
+| s01 | 29. 8. 2026 (podle nahrávek) | ✗ (Notion) | ✓ | ✓ zápis a hráčský kánon | 3 |
 | s02 | 11. 9. 2026 | ✗ (Notion) | ✓ | ✓ PR #101 | 5 |
 | s03 | 24. 10. 2026 | ✗ | ◐ scénář zkontrolovaný z 22 % (317 z 1 466 replik), předběžný `s03.yaml` (74 operací) | ✗ jen poznámky ze stolu | – |
 | s04 | – | ◐ koncept mimo repo | – | – | – |
@@ -40,8 +40,6 @@ Příprava → hra u stolu → přepis a scénář → návrh a schválení → 
 | Větev | Co v ní je | Další krok |
 | --- | --- | --- |
 | `prepis-do-kanonu` | Návrh po sezení, Kvalita kánonu, oprava karty Malka; předávka `reference/predavka-prepis-do-kanonu.md` | relace Hub doplní vyřazování a otevře PR |
-| `oprava-malo-hp-po-souboji` | Oprava málo HP po konci souboje (24. 10.), PR #102 otevřené | DM: sloučit, nebo zavřít |
-| `usporadani` | Tento rozcestník, smlouva přepisu, pravidla relací, PR #103 | DM sloučí |
 
 ## Předávky (fronta)
 
@@ -59,17 +57,16 @@ Co jedna část potřebuje od jiné. Hotové položky se mažou, záznam zůstan
 
 ## Doporučené pořadí
 
-1. Sloučit `usporadani`.
-2. Relace Hub: dostavět Návrh po sezení (větev `prepis-do-kanonu`), otevřít PR, DM sloučí.
-3. DM: dokončit poslech scénáře sezení 3. Relace Přepis mezitím upraví kontrolu důkazů.
-4. Sezení 3 do kánonu přes Návrh po sezení. Je to první ostrá zkouška celé cesty.
-5. Projekt Příběh: příprava sezení 4 do repa, s dořešit body a nitkami ze sezení 3.
+1. Relace Hub: dostavět Návrh po sezení (větev `prepis-do-kanonu`), otevřít PR, DM sloučí.
+2. DM: dokončit poslech scénáře sezení 3. Relace Přepis mezitím upraví kontrolu důkazů.
+3. Sezení 3 do kánonu přes Návrh po sezení. Je to první ostrá zkouška celé cesty.
+4. Projekt Příběh: příprava sezení 4 do repa, s dořešit body a nitkami ze sezení 3.
 
 ## Otevřené
 
 - Mikrofony na sezení 4 (3 stopy: hráči, DM, zvuk z OBS). Varianty jsou v předávce `prepis-do-kanonu`, nic není vybrané.
 - Cloudový přepis (Soniox, ElevenLabs) jen se souhlasem hráčů.
-- Úklid GitHubu: asi 90 sloučených větví a lokální pracovní kopie `repo-navrh` a `repo-kvalita` (nahrazené větví `prepis-do-kanonu`).
+- Úklid GitHubu: 100 sloučených větví (všechny kromě `main` a `prepis-do-kanonu`, ověřeno 31. 10.) smaže DM, a lokální pracovní kopie `repo-navrh` a `repo-kvalita` (nahrazené větví `prepis-do-kanonu`) smaže relace Hub.
 
 ## Deník
 
@@ -77,3 +74,4 @@ Jeden řádek na relaci: datum, relace, co se udělalo, kde to je.
 
 - 31. 10. 2026 · Uspořádání (Claude) · audit D&D projektů, rozcestník, smlouva `reference/prepis-kanon.md`, pravidla souběžných relací v `CLAUDE.md`, rozhodnutí DM 77–81, oprava konce sezení 3 · větev `usporadani`
 - 31. 10. 2026 · Přepis (Claude Code) · Návrh po sezení a Kvalita kánonu přesunuté z lokálních kopií do větve, předávka · větev `prepis-do-kanonu`
+- 31. 10. 2026 · Uspořádání (Claude) · PR #102 a #103 sloučené; datum sezení 1; seznam větví k smazání ověřený · větev `s01-datum`

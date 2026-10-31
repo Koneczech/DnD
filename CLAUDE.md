@@ -26,6 +26,7 @@ Nad repem pracuje víc relací Clauda najednou (Hub, Přepis, projekt Příběh)
 - Interní detaily kódu (názvy funkcí, struktura testů, pomocné moduly) rozhoduj sám.
 - Nedoplňuj herní obsah (jména, události, vazby, statistiky), který DM nepotvrdil.
 - Kánon převáděj podle `reference/kanon-prevod.md` a `reference/kanon-mapa.yaml`: text karet nepřepisuj, opravuj jen rozpory, které DM potvrdil, a po každé skupině pusť `npm run kanon -- <skupina>`.
+- Co do kánonu patří a co ne, říká rozhodnutí 82: Co ví družina drží jen to, co o věci platí teď a bude potřeba při další hře; události patří do hráčského kánonu, hody do zápisu sezení, mechanika do listu postavy. Do karet nepiš pracovní poznámky (své, z chatu ani z převodu); původ drží Git, `dukaz` a `zdroj`.
 - Sezení se do kánonu zapisuje podle `reference/prepis-kanon.md`: jen operacemi, které DM schválil. Neplatný text se nemaže, ale přesune do oddílu Neplatné s číslem rozhodnutí R (rozhodnutí 77). Zápis nesmí přidat novou chybu Kvality kánonu (rozhodnutí 79).
 
 ## Repo je veřejné

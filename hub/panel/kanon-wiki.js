@@ -8,6 +8,7 @@ import { oddelitList, souhrnListu, oddilyListu, jeTabulkaVlastnosti, NAZEV_LISTU
 import { $, TYPY, STAVY, barvaTypu, el, nahradit, obrazekEntity, stitekTypu } from '/panel/kanon-spolecne.js';
 import { vytvoritEditor } from '/panel/kanon-editor.js';
 import { vykreslitList } from '/panel/kanon-list.js';
+import { castiSezeni, maObsah, delkaText } from '/sdilene/sezeni-karta.js';
 
 const UDAJE_DLAZDICE = (e) => e.udaje?.hrac ? `hraje ${e.udaje.hrac}` : e.typ === 'rozhodnuti' ? STAVY[e.udaje?.stav] ?? '' : e.aliases?.[0] ?? '';
 
@@ -500,6 +501,7 @@ export function vytvoritWiki(ctx, karta) {
       return;
     }
     const k = s.karta?.id === e.id ? s.karta : null;
+    if (e.typ === 'sezeni') return stranaSezeni(e, k);
     const stitky = [stitekTypu(e.typ)];
     if (e.udaje?.stav) stitky.push(el('span', { className: `stitek-stavu ${e.udaje.stav}`, textContent: STAVY[e.udaje.stav] ?? e.udaje.stav }));
     if (e.aktualni) stitky.push(el('span', { className: 'stitek-ve-hre', textContent: 've hře' }));
@@ -595,6 +597,143 @@ export function vytvoritWiki(ctx, karta) {
     nahradit(obsah, el('article', { className: 'clanek' }, hlava, listVykresleny
       ? el('div', { className: 'clanek-telo na-listu' }, hlavni)
       : el('div', { className: 'clanek-telo' }, hlavni, infobox)));
+  }
+
+  /* ---------- Stránka sezení (⚠ bod 158) ---------- */
+
+  const STAV_ZAPISU = {
+    zapsano: { text: 'zapsané', trida: 'ok' },
+    ceka: { text: 'čeká na zápis', trida: 'ceka' },
+    bezi: { text: 'běží nebo se chystá', trida: 'ceka' },
+  };
+  const PORADI_KDO = ['npc', 'padouch', 'frakce', 'misto', 'predmet', 'bytost'];
+
+  /** Markdown části karty sezení jako HTML (DM oddíly označené, nadpis karty vynechaný). */
+  function textSezeni(md, e) {
+    const d = el('div', { className: 'text-karty' });
+    d.innerHTML = naHtml(md, { existuje: (id) => s.podleId.has(id), vynechatNadpis: e.nazev, oznacitDm: dm(), dmDolu: dm() });
+    // Tajemství a stopy: kolik je odkryto (zaškrtnuté úkoly pod nadpisem).
+    for (const h of d.querySelectorAll('h2')) {
+      if (!/^tajemstv/i.test(h.textContent.normalize('NFD').replace(/[̀-ͯ]/g, ''))) continue;
+      const ukoly = [];
+      for (let x = h.nextElementSibling; x && !/^H[12]$/.test(x.tagName); x = x.nextElementSibling) ukoly.push(...x.querySelectorAll('input[type=checkbox]'));
+      if (ukoly.length) h.append(el('span', { className: 'pocet-odkryto', textContent: ` · odkryto ${ukoly.filter((u) => u.checked).length} z ${ukoly.length}` }));
+    }
+    return d;
+  }
+
+  function zapisSezeni(z, id) {
+    const n = z.navrh;
+    const kroky = [
+      ['ok', 'Odehráno', z.poznamek ? `${z.poznamek} ${z.poznamek === 1 ? 'poznámka' : z.poznamek < 5 ? 'poznámky' : 'poznámek'} ze stolu` : 'bez poznámek ze stolu'],
+      [n ? 'ok' : 'ceka', 'Přepis a scénář', n ? 'hotovo, vznikl z něj návrh' : 'mimo Hub, nástroj přepisu'],
+      [n?.stav === 'finalni' ? 'ok' : n ? 'ceka' : 'ne', 'Návrh po sezení', n ? `${n.stav === 'finalni' ? 'finální' : n.stav === 'chyba' ? 'chyba v souboru' : 'předběžný'}, ${n.operaci} operací` : 'zatím není'],
+      ['ne', 'V kánonu', '0 záznamů'],
+    ];
+    return el('section', { className: 'zapis-sezeni karta' },
+      el('h3', { textContent: 'Zápis sezení' }),
+      el('div', { className: 'kroky-zapisu' }, kroky.map(([trida, nadpis, popis]) => el('div', { className: `krok-zapisu ${trida}` }, el('strong', { textContent: nadpis }), el('span', { textContent: popis })))),
+      el('p', { className: 'poznamka' },
+        n && !s.jenCteni ? el('a', { className: 'tlacitko', href: `/panel/navrh-sezeni.html?sezeni=${encodeURIComponent(id)}`, textContent: 'Otevřít návrh' }) : null,
+        ' Shrnutí, tajemství a hráčský kánon přijdou ze schváleného návrhu. Do té doby karta chyby nehlásí.'));
+  }
+  function stranaSezeni(e, k) {
+    const z = k?.sezeni ?? null;
+    const stitky = [stitekTypu(e.typ)];
+    if (dm()) {
+      const vidi = z ? z.druzinaVidi : e.druzinaKanonu ?? 0;
+      stitky.push(el('span', { className: vidi ? 'stitek-maly' : 'stitek-dm', textContent: vidi ? 'družina vidí kánon' : 'jen DM' }));
+    }
+    const podtitul = z ? [
+      z.hrano?.datum ? `Hráno ${z.hrano.datum}` : null,
+      z.veHre ? `ve hře ${z.veHre.text}` : null,
+      Number.isFinite(z.hrano?.minut) ? delkaText(z.hrano.minut) : null,
+    ].filter(Boolean).join(' · ') : '';
+    const sezeniOdkaz = (x, text) => el('a', { className: 'tlacitko', href: `#kanon/${encodeURIComponent(x.id)}`, textContent: text, title: x.nazev });
+    const akce = el('div', { className: 'akce-clanku' },
+      upravKartu() ? el('a', { className: 'tlacitko hlavni', href: `#kanon/${encodeURIComponent(e.id)}/upravit`, textContent: 'Upravit' }) : null,
+      uprav() && k?.obsidian ? el('a', { className: 'tlacitko', href: k.obsidian, textContent: 'Otevřít v Obsidianu', title: k.soubor }) : null,
+      s.jenCteni && dm() && s.upravitNaGitHubu && e.soubor
+        ? el('a', { className: s.webUpravy ? 'tlacitko' : 'tlacitko hlavni', href: s.upravitNaGitHubu(e.soubor), target: '_blank', rel: 'noopener', textContent: s.webUpravy ? 'Soubor na GitHubu' : 'Upravit na GitHubu', title: e.soubor })
+        : null,
+      el('a', { className: 'tlacitko', href: `#kanon/mapa/${encodeURIComponent(e.id)}`, textContent: 'Na mapě' }),
+      el('span', { className: 'mezera-akci' }),
+      z?.predchozi ? sezeniOdkaz(z.predchozi, `← Sezení ${z.predchozi.cislo}`) : null,
+      z?.dalsi ? sezeniOdkaz(z.dalsi, `Sezení ${z.dalsi.cislo} →`) : null);
+    const hlava = el('div', { className: 'wiki-hlava clanek-hlava' },
+      el('nav', { className: 'drobecky' }, el('a', { href: '#kanon', textContent: 'Kánon' }), ' › ', el('a', { href: `#kanon/typ/${e.typ}`, textContent: TYPY[e.typ]?.mn ?? e.typ }), ' › '),
+      el('div', { className: 'radek-hlavy' }, el('h2', { className: 'wiki-nadpis', textContent: e.nazev }), el('div', { className: 'stitky-karty' }, stitky)),
+      podtitul ? el('p', { className: 'aliasy', textContent: podtitul }) : null,
+      akce);
+    if (!k || !z) {
+      nahradit(obsah, el('article', { className: 'clanek' }, hlava, el('p', { className: 'uvod', textContent: 'Načítám kartu…' })));
+      return;
+    }
+    const casti = castiSezeni(k.telo);
+    const zapsano = !z.zapis || z.zapis.stav === 'zapsano';
+
+    const coSeStalo = el('section', { className: 'wiki-sekce' },
+      el('div', { className: 'sekce-hlava' },
+        el('h3', { textContent: `Co se stalo · hráčský kánon (${z.kanon.length})` }),
+        dm() && z.kanon.length ? el('span', { className: 'poznamka', textContent: z.druzinaVidi === z.kanon.length ? `Družina vidí všech ${z.kanon.length}` : `Družina vidí ${z.druzinaVidi} z ${z.kanon.length}` }) : null),
+      z.kanon.length
+        ? el('ul', { className: 'rozhodnuto' }, z.kanon.map((x) => el('li', {},
+          el('a', { href: `#kanon/${encodeURIComponent(x.id)}`, className: 'rozhodnuto-odkaz' },
+            el('strong', {}, x.nazev, dm() && x.doresit ? el('span', { className: 'stitek-doresit', textContent: 'dořešit' }) : null, dm() && !x.verejne ? el('span', { className: 'stitek-dm', textContent: 'jen DM' }) : null),
+            el('span', { textContent: x.udalost ? x.udalost.datumText : 'bez události v Kalendáři' })))))
+        : el('p', { className: 'poznamka', textContent: dm() ? 'Záznamy hráčského kánonu z tohoto sezení se ukážou tady, v pořadí, jak šly po sobě. Doplní je zápis.' : 'Zatím nic.' }));
+
+    const udalostiSekce = el('section', { className: 'wiki-sekce' },
+      el('div', { className: 'sekce-hlava' },
+        el('h3', { textContent: `Události v Kalendáři${z.veHre ? ` ${z.veHre.text.replace(/ \d+ DR$/, '')}` : ''} (${z.udalosti.length})` }),
+        el('span', { className: 'poznamka', textContent: 'podle dnů sezení' })),
+      z.udalosti.length
+        ? el('ul', { className: 'udalosti-seznam' }, z.udalosti.map((u) => radekUdalosti(u)))
+        : el('p', { className: 'poznamka', textContent: z.veHre ? 'V těchto dnech Kalendář nic nemá.' : 'Sezení nemá datum v Harptosu (harptos_zacatek).' }));
+
+    const prazdne = (nadpis) => el('div', { className: 'prazdny-oddil' }, el('h3', { textContent: nadpis }), el('span', { className: 'poznamka', textContent: 'doplní zápis' }));
+    const textOstatni = dm() && casti.ostatni ? textSezeni(casti.ostatni, e) : null;
+    const textUvodu = dm() && (maObsah(casti.uvod) || casti.shrnuti) ? textSezeni([casti.uvod, casti.shrnuti].filter(Boolean).join('\n\n'), e) : null;
+    const poznamky = dm() && casti.poznamky
+      ? el('details', { className: 'poznamky-sezeni karta', open: !zapsano }, el('summary', { textContent: `Poznámky ze stolu (${z.zapis?.poznamek ?? 0})` }), textSezeni(casti.poznamky.replace(/^##\s.*\n?/, ''), e))
+      : null;
+    const dmOddily = dm() && casti.dm ? textSezeni(casti.dm, e) : null;
+
+    const hlavni = el('div', { className: 'clanek-hlavni' },
+      z.zapis?.stav === 'ceka' ? zapisSezeni(z.zapis, e.id) : null,
+      coOpravit(k),
+      textUvodu,
+      zapsano ? null : el('div', { className: 'prazdne-oddily karta' }, maObsah(casti.shrnuti) ? null : prazdne('Shrnutí'), prazdne('Tajemství a stopy'), prazdne('Otevřené nitky')),
+      coSeStalo,
+      textOstatni,
+      udalostiSekce,
+      poznamky,
+      dmOddily);
+
+    const skupiny = new Map();
+    for (const x of z.kdoAKde) skupiny.set(x.typ, [...(skupiny.get(x.typ) ?? []), x]);
+    const kdoAKde = [...skupiny].sort(([a], [b]) => PORADI_KDO.indexOf(a) - PORADI_KDO.indexOf(b)).flatMap(([typ, polozky]) => [
+      el('p', { className: 'skupina-kdo' }, el('span', { className: 'tecka-typu', style: `--c: ${barvaTypu(typ)}` }), TYPY[typ]?.mn ?? typ),
+      el('p', { className: 'seznam-kdo' }, polozky.flatMap((x, i) => [i ? ', ' : null, karta.odkazNaEntitu(x.id)])),
+    ]);
+    const radek = (dt, ...dd) => el('div', {}, el('dt', { textContent: dt }), el('dd', {}, ...dd));
+    const stav = z.zapis ? STAV_ZAPISU[z.zapis.stav] : null;
+    const infobox = el('aside', { className: 'infobox karta' },
+      el('h3', { className: 'prvni', textContent: 'Sezení' }),
+      el('dl', { className: 'udaje-karty udaje-sezeni' },
+        z.cislo !== null ? radek('Číslo', String(z.cislo)) : null,
+        z.hrano?.datum ? radek('Hráno', z.hrano.datum, z.hrano.od ? el('span', { className: 'drobne', textContent: `${z.hrano.od}${z.hrano.do ? `–${z.hrano.do}` : ''}${Number.isFinite(z.hrano.minut) ? ` · ${delkaText(z.hrano.minut)}` : ''}` }) : null) : null,
+        z.veHre ? radek('Ve hře', z.veHre.text, el('span', { className: 'drobne', textContent: z.veHre.dni === 1 ? '1 den' : `${z.veHre.dni} ${z.veHre.dni < 5 ? 'dny' : 'dní'}` })) : null,
+        stav ? radek('Zápis', el('span', { className: `stav-zapisu ${stav.trida}`, textContent: stav.text })) : null,
+        dm() ? radek('Družina vidí', z.druzinaVidi ? `${z.druzinaVidi} ${z.druzinaVidi === 1 ? 'záznam' : z.druzinaVidi < 5 ? 'záznamy' : 'záznamů'} kánonu` : 'zatím nic') : null),
+      z.uStolu.length ? [
+        el('h3', { textContent: `U stolu (${z.uStolu.length})` }),
+        el('dl', { className: 'udaje-karty u-stolu' }, z.uStolu.map((x) => radek(x.hrac, x.postava ? karta.odkazNaEntitu(x.postava.id) : el('span', { className: 'drobne', textContent: 'bez postavy' })))),
+      ] : null,
+      el('div', { className: 'sekce-hlava' }, el('h3', { textContent: `Kdo a kde (${z.kdoAKde.length})` }), uprav() ? karta.pridatVazbuUI(k, { text: '+ Přidat kartu', bezVztahu: true }) : null),
+      z.kdoAKde.length ? kdoAKde : el('p', { className: 'poznamka', textContent: dm() ? 'Naplní se z vazeb sezení a jeho hráčského kánonu.' : 'Zatím nic.' }));
+
+    nahradit(obsah, el('article', { className: 'clanek clanek-sezeni' }, hlava, el('div', { className: 'clanek-telo' }, hlavni, infobox)));
   }
 
   obsah.addEventListener('click', (ev) => {

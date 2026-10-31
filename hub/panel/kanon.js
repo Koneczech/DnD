@@ -1530,7 +1530,8 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false, u
         sbalovat() && detiMist().has(e.id) ? el('button', { type: 'button', textContent: s.rozbalena.has(e.id) ? 'Sbalit místa uvnitř' : 'Rozbalit místa uvnitř', onclick: () => prepnoutPodmista(e.id) }) : null,
         karta.tlacitkoPoznamky(e),
         karta.tlacitkoObs(e)),
-      dm && (!s.jenCteni || s.webUpravy) ? karta.prepinace(e) : null,
+      // Sezení nemá Ve hře ani Družina zná: družina ho zná podle hráčského kánonu (⚠ bod 158).
+      dm && (!s.jenCteni || s.webUpravy) && e.typ !== 'sezeni' ? karta.prepinace(e) : null,
     ];
     if (!k) {
       casti.push(el('p', { className: 'uvod', textContent: 'Načítám kartu…' }));

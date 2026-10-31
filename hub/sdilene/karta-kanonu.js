@@ -359,9 +359,13 @@ export function vPohledu(e, pohled, najit) {
       kdo: e.kdo ?? [], odkryto: e.odkryto ?? { zna: 0, celkem: 0 }, odkrytoTextu: e.odkrytoTextu ?? 0,
       obrazek: obrazekUzlu(obrazky)?.url ?? null, portret: obrazekUzlu(obrazky)?.ucel === 'portret', obrazky,
       popis: e.popis, upraveno: e.upraveno, vyrazeno: e.vyrazeno ?? null,
+      ...(e.typ === 'sezeni' ? { druzinaKanonu: e.druzinaKanonu ?? 0 } : {}),
     };
   }
-  if (!e.verejne || e.vyrazeno) return null;
+  // Sezení zná družina podle svého hráčského kánonu (⚠ bod 158): karta sezení je poznámka DM,
+  // její `verejne` se nepoužívá. Družina z ní uvidí jen hlavičku a veřejné záznamy kánonu.
+  const vidi = e.typ === 'sezeni' ? (e.druzinaKanonu ?? 0) > 0 : e.verejne;
+  if (!vidi || e.vyrazeno) return null;
   const obrazky = e.obrazky.filter((o) => !o.skryta);
   const vztahy = e.vztahy.filter((v) => v.verejne && najit(v.s)?.verejne && !najit(v.s)?.vyrazeno);
   return {
@@ -372,7 +376,7 @@ export function vPohledu(e, pohled, najit) {
     // Kde místo leží, družina ví, když zná obě místa.
     leziV: e.leziV && najit(e.leziV)?.verejne && !najit(e.leziV)?.vyrazeno ? e.leziV : null,
     obrazek: obrazekUzlu(obrazky)?.url ?? null, portret: obrazekUzlu(obrazky)?.ucel === 'portret', obrazky,
-    popis: e.popisDruziny, upraveno: null, vyrazeno: null,
+    popis: e.typ === 'sezeni' ? '' : e.popisDruziny, upraveno: null, vyrazeno: null,
   };
 }
 
@@ -485,6 +489,8 @@ export function zmenyKarty(e, telo, najit) {
  */
 export function textKarty(e, p) {
   // Oddíl Co ví družina wiki ukazuje po odrážkách; DM vidí všechny, družina jen odkryté.
+  // Karta sezení je poznámka DM: družina z jejího textu nevidí nic (⚠ bod 158).
+  if (p !== 'dm' && e.typ === 'sezeni') return { telo: '', druzina: [], maOddilDruziny: false };
   const bloky = blokyDruziny(e.telo);
   const druzina = (p === 'dm' ? bloky : bloky.filter((b) => b.zna || (b.druh === 'nadpis' && !b.dm))).map((b) => ({
     index: b.index, druh: b.druh, text: b.druh === 'nadpis' || p === 'dm' ? b.text : bezKomentaru(b.text), zna: b.zna, dm: b.dm, uroven: b.uroven,

@@ -17,7 +17,7 @@ Podrobnosti mají svá místa a tady se neopakují: funkce Hubu jsou v `PREHLED.
 | --- | --- | --- | --- | --- |
 | **DM Hub** | Panel u stolu: OBS, světla, zvuk, souboj, kalendář, modul Kánon (wiki, mapa, editor, web) | toto repo, `hub/` | relace **Hub** (Claude Code ve `Dokumenty\DnD\repo`) | viz `PREHLED.md`; mnoho funkcí ◐ čeká na vyzkoušení u stolu |
 | **Návrh po sezení** | Schválení operací z přepisu, rozpory, vyřazení do oddílu Neplatné, zápis do kánonu | toto repo, `hub/`, větev `prepis-do-kanonu`, PR #106 | relace **Hub** | ◐ dostavěno podle smlouvy (schéma 2, brána, `vyradit`, `smazat`, Neplatné, rozpory, `kampan/rozpory.yaml`, ⚠ bod 157), ostrý návrh tudy ještě neprošel |
-| **Kvalita kánonu** | Měření chyb v kartách, stránka Co opravit | větev `prepis-do-kanonu` | relace **Hub** | ◐ 60 % karet bez chyby (88 ze 145) |
+| **Kvalita kánonu** | Měření chyb v kartách, stránka Co opravit | toto repo, `hub/` | relace **Hub** | ◐ 61 % karet bez chyby (89 ze 145); sezení čekající na zápis už chybu nehlásí (⚠ bod 158) |
 | **Přepisový nástroj** | Nahrávka → přepis → scénář → podklad a kontrola důkazů | soukromé repo `Koneczech/DnD-prepis` (rozhodnutí 81), lokálně `Dokumenty\DnD\OBS\prepis\prepis-tool` | relace **Přepis** (Claude Code) | ✓ přepis, scénář a kontrola důkazů podle `prepis-kanon.md` § 7; ◐ opravy od Clauda u bloků zatím nejsou |
 | **Obsah kánonu** | Co ve světě platí: karty, hráčský kánon, zápisy sezení, rozhodnutí | toto repo, `kampan/` | **DM** schvaluje; zapisuje Hub (Návrh po sezení) nebo relace Hub na pokyn DM | ◐ sezení 3 chybí, 8× dořešit, 10 otevřených rozhodnutí |
 | **Příprava příběhu** | Oblouky, příprava sezení podle Lazy DM | Claude projekt **Příběh**; výstup do `kampan/sezeni/sNN/priprava-sNN.md` | projekt **Příběh** | ◐ koncept sezení 4 (štola) jen mimo repo |
@@ -39,7 +39,7 @@ Příprava → hra u stolu → přepis a scénář → návrh a schválení → 
 
 | Větev | Co v ní je | Další krok |
 | --- | --- | --- |
-| `prepis-do-kanonu` | Návrh po sezení (dostavěný), Kvalita kánonu, oprava karty Malka, registr `kampan/rozpory.yaml`; předávka `reference/predavka-prepis-do-kanonu.md` | DM: projít PR #106 a sloučit |
+| `karta-sezeni` | Karta sezení ve wiki podle návrhu, který DM potvrdil 31. 10. (⚠ bod 158): údaje sezení, hráčský kánon, události, U stolu, Kdo a kde, stav zápisu; Kvalita kánonu u nezapsaných sezení; družina vidí sezení podle kánonu | DM: projít PR #107 a sloučit, pak vyzkoušet na kartách Sezení 2 a 3 |
 
 ## Předávky (fronta)
 
@@ -77,3 +77,4 @@ Jeden řádek na relaci: datum, relace, co se udělalo, kde to je.
 - 31. 10. 2026 · Uspořádání (Claude) · PR #102 a #103 sloučené; datum sezení 1; seznam větví k smazání ověřený · větev `s01-datum`
 - 31. 10. 2026 · Hub (Claude) · Návrh po sezení dostavěný podle smlouvy: schéma 2 a brána předběžný/finální, `vyradit` (i celé karty), `smazat`, oddíl Neplatné, tlačítka rozporů, registr `kampan/rozpory.yaml` od R17, pojistka Kvality kánonu, filtr Vyřazené; ⚠ bod 157; zkušební průchod předběžného `s03.yaml` · větev `prepis-do-kanonu`, PR #106
 - 31. 10. 2026 · Uspořádání (Claude) · `main` (#105) sloučený do `prepis-do-kanonu`, konflikt v rozcestníku vyřešený; předávka Přepis → Hub (tvar `problemy`, `dm`, `blok` v ▶) je v PR #106 hotová · větev `prepis-do-kanonu`
+- 31. 10. 2026 · Hub (Claude) · karta sezení podle potvrzeného návrhu (plátno „Karta sezení — návrh“), ⚠ bod 158 · větev `karta-sezeni`, PR #107

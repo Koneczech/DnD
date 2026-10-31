@@ -40,8 +40,8 @@ Příprava → hra u stolu → přepis a scénář → návrh a schválení → 
 | Větev | Co v ní je | Další krok |
 | --- | --- | --- |
 | `prepis-do-kanonu` | Návrh po sezení, Kvalita kánonu, oprava karty Malka; předávka `reference/predavka-prepis-do-kanonu.md` | relace Hub doplní vyřazování a otevře PR |
-| `oprava-malo-hp-po-souboji` | Oprava málo HP po konci souboje (24. 10.), nesloučená | relace Hub: ověřit a sloučit, nebo zahodit |
-| `usporadani` | Tento rozcestník, smlouva přepisu, pravidla relací | DM sloučí |
+| `oprava-malo-hp-po-souboji` | Oprava málo HP po konci souboje (24. 10.), PR #102 otevřené | DM: sloučit, nebo zavřít |
+| `usporadani` | Tento rozcestník, smlouva přepisu, pravidla relací, PR #103 | DM sloučí |
 
 ## Předávky (fronta)
 

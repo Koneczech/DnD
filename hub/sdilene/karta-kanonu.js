@@ -5,6 +5,7 @@ import { rozebrat, odkazy } from './frontmatter.js';
 import { idZOdkazu, normalizujVztah, TEXTOVA_POLE, ODKAZOVA_KLICE } from './hlavicka.js';
 import { TYPY_SLOZEK, OSUDY, ODKAZOVA_POLE, POLE_TYPU, STAVY_ROZHODNUTI } from './typy-karet.js';
 import { textDruziny, blokyTextu } from './odkryvani.js';
+import { jeNadpisDm } from './oddil-dm.js';
 
 export const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const STITEK_VE_HRE = 'aktualni';
@@ -42,8 +43,8 @@ export function oddily(telo) {
   return vysledek.map((o) => ({ nadpis: o.nadpis, uroven: o.uroven, text: o.radky.join('\n') })).filter((o) => o.nadpis !== null || o.text.trim());
 }
 
-/** Je nadpis oddílu jen pro DM? (`## DM`, `## DM — co postava neví`; ZADANI.md, Oddíly karty) */
-export const jeOddilDm = (nadpis) => /^DM(\b|\s|—|-|:|$)/.test(String(nadpis ?? '').trim());
+/** Je nadpis oddílu jen pro DM? (`## DM`, `## DM — co postava neví`, `## Neplatné`; ZADANI.md, Oddíly karty) */
+export const jeOddilDm = jeNadpisDm;
 
 const jeOddilDruziny = (nadpis) => bezDiakritiky(String(nadpis ?? '').trim()) === bezDiakritiky(ODDIL_DRUZINY);
 
@@ -297,8 +298,13 @@ export function nacistEntitu(text, { slozka, soubor, slozkaEntity, upraveno = nu
     pole: {},
     telo: r.telo,
     upraveno,
+    // Celá hlavička pro Kvalitu kánonu (datum sezení, zdroj); pohledy ji nepředávají dál.
+    hlavicka: d,
   };
   entita.aktualni = entita.tags.includes(STITEK_VE_HRE);
+  // Vyřazená karta (rozhodnutí 77): `platnost: vyrazeno`, `vyrazeno: R17`. Zmizí z pohledu družiny,
+  // mapy a hledání; v pohledu DM ji vrátí filtr Vyřazené.
+  entita.vyrazeno = d.platnost === 'vyrazeno' ? (/^R\d+$/.test(String(d.vyrazeno ?? '')) ? String(d.vyrazeno) : true) : null;
   entita.obrazky = obrazky(d, entita);
   // Hlavní údaje z hlavičky podle typu (karta je ukáže pod názvem).
   for (const pole of ['hrac', 'druh', 'povolani', 'role', 'osud', 'stav', 'oblast', 'zaznamenano', 'sezeni', 'cislo']) {
@@ -352,21 +358,21 @@ export function vPohledu(e, pohled, najit) {
       aktualni: e.aktualni, vazby: e.vazby, vztahy: e.vztahy, leziV: e.leziV, udaje: e.udaje, odkazyPole: e.odkazyPole ?? {}, soubor: e.soubor,
       kdo: e.kdo ?? [], odkryto: e.odkryto ?? { zna: 0, celkem: 0 }, odkrytoTextu: e.odkrytoTextu ?? 0,
       obrazek: obrazekUzlu(obrazky)?.url ?? null, portret: obrazekUzlu(obrazky)?.ucel === 'portret', obrazky,
-      popis: e.popis, upraveno: e.upraveno,
+      popis: e.popis, upraveno: e.upraveno, vyrazeno: e.vyrazeno ?? null,
     };
   }
-  if (!e.verejne) return null;
+  if (!e.verejne || e.vyrazeno) return null;
   const obrazky = e.obrazky.filter((o) => !o.skryta);
-  const vztahy = e.vztahy.filter((v) => v.verejne && najit(v.s)?.verejne);
+  const vztahy = e.vztahy.filter((v) => v.verejne && najit(v.s)?.verejne && !najit(v.s)?.vyrazeno);
   return {
     id: e.id, typ: e.typ, nazev: e.nazev, verejne: true, ikona: e.ikona, aliases: [], tags: [], aktualni: false,
     vazby: vztahy.map((v) => v.s), vztahy, udaje: {}, odkazyPole: {}, soubor: null,
     // Hráčský kánon je celý pro družinu, včetně toho, koho se týká.
     kdo: e.typ === 'kanon' ? e.kdo ?? [] : [], odkryto: null,
     // Kde místo leží, družina ví, když zná obě místa.
-    leziV: e.leziV && najit(e.leziV)?.verejne ? e.leziV : null,
+    leziV: e.leziV && najit(e.leziV)?.verejne && !najit(e.leziV)?.vyrazeno ? e.leziV : null,
     obrazek: obrazekUzlu(obrazky)?.url ?? null, portret: obrazekUzlu(obrazky)?.ucel === 'portret', obrazky,
-    popis: e.popisDruziny, upraveno: null,
+    popis: e.popisDruziny, upraveno: null, vyrazeno: null,
   };
 }
 

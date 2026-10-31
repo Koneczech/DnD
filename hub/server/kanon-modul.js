@@ -15,6 +15,8 @@ import { prepnoutBlokTextu } from '../sdilene/odkryvani.js';
 import { PRIPONA_DOCASNA, zapsatAtomicky } from './zapis.js';
 import { Harptos } from '../sdilene/harptos.js';
 import { SOUBOR_LISTU, spocitatList, listProDruzinu } from '../sdilene/list-postavy-data.js';
+import { zkontrolovatKvalitu, nacistTerminy } from '../sdilene/kvalita-kanonu.js';
+import { normalizujRegistr, SOUBOR_ROZPORU } from '../sdilene/rozpory.js';
 import { overitPole, zmenyKarty, textKarty, ODDIL_DRUZINY, SLUG, nacistEntitu, normalizujNastenku, odkazObsidian, prepnoutBlok, pridatBlok, slugNastenky, vPohledu } from '../sdilene/karta-kanonu.js';
 
 // Text karty (nacistEntitu, Co ví družina, pohled družiny …) je ve sdíleném modulu; odsud se dál
@@ -79,6 +81,11 @@ export class Kanon extends EventEmitter {
     this.chyby = [];
     this.verze = 0;
     this.casovac = null;
+    /** Kvalita kánonu pro verzi (počítá se až na požádání). */
+    this.kvalitaVerze = -1;
+    this.kvalitaVysledek = null;
+    /** Termíny z překladového klíče (načtou se jednou). */
+    this.terminy = null;
   }
 
   get slozkaNastenek() {
@@ -130,8 +137,25 @@ export class Kanon extends EventEmitter {
     }
     this.entity = entity;
     this.chyby = chyby;
+    if (!this.terminy) {
+      try {
+        this.terminy = nacistTerminy(await fs.readFile(path.join(this.c.koren, 'reference', 'prekladovy-klic-cz.md'), 'utf8'));
+      } catch {
+        this.terminy = []; // bez klíče se anglické termíny nekontrolují
+      }
+    }
     await this.nacistNastenky();
+    await this.nacistRozpory();
     this.oznam();
+  }
+
+  /** Registr rozporů (rozhodnutí 77). Rozbitý registr hlásí Kontrola dat; tady se jen nepoužije. */
+  async nacistRozpory() {
+    try {
+      this.rozpory = normalizujRegistr(YAML.parse(await fs.readFile(path.join(this.c.kampan, SOUBOR_ROZPORU), 'utf8'))).zaznamy;
+    } catch {
+      this.rozpory = [];
+    }
   }
 
   async nacistNastenky() {
@@ -248,7 +272,7 @@ export class Kanon extends EventEmitter {
         verejna: u.verejna,
         vazby: (u.vazby ?? []).filter((id) => {
           const e = this.entity.get(id);
-          return e && (pohled === 'dm' || e.verejne);
+          return e && (pohled === 'dm' || (e.verejne && !e.vyrazeno));
         }),
         poradi: Harptos.absolutni(u.datum),
       }))
@@ -299,6 +323,20 @@ export class Kanon extends EventEmitter {
     return vysledek;
   }
 
+  /** Čísla R z registru rozporů (kampan/rozpory.yaml): značky *(R17)* v textu karet nejsou chyba. */
+  rozhodnutiR() {
+    return new Set((this.rozpory ?? []).map((z) => String(z?.id ?? '')).filter(Boolean));
+  }
+
+  /** Kvalita kánonu (⚠ bod 154): co chybí do „kánonu na 100 %“. Jen pro pohled DM. */
+  kvalita() {
+    if (this.kvalitaVerze !== this.verze) {
+      this.kvalitaVysledek = zkontrolovatKvalitu(this.entity.values(), { terminy: this.terminy ?? [], rozhodnutiR: this.rozhodnutiR() });
+      this.kvalitaVerze = this.verze;
+    }
+    return this.kvalitaVysledek;
+  }
+
   /** Seznam pro wiki a mapu (bez textu karet). */
   seznam(pohled = 'dm') {
     const p = POHLEDY.includes(pohled) ? pohled : 'dm';
@@ -311,6 +349,7 @@ export class Kanon extends EventEmitter {
       typyNove: p === 'dm' ? TYPY_NOVE : [],
       nastenky: [...this.nastenky.values()].map((n) => ({ ...n, entity: undefined, pocet: n.entity.length })),
       chyby: p === 'dm' ? this.chyby : [],
+      kvalita: p === 'dm' ? this.kvalita() : null,
     };
   }
 
@@ -374,6 +413,7 @@ export class Kanon extends EventEmitter {
       odkazyVTextu: p === 'dm' ? e.odkazyVTextu.filter((x) => this.entity.has(x)) : [],
       obsidian: p === 'dm' ? odkazObsidian(this.trezor(), e.soubor) : null,
       list: listVPohledu(e.list, p),
+      kvalita: p === 'dm' ? this.kvalita().karty.find((x) => x.id === id)?.problemy ?? [] : null,
     };
   }
 

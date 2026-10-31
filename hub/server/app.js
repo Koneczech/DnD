@@ -22,6 +22,7 @@ import { Obchody } from './obchody.js';
 import { HUB_DIR } from './cesty.js';
 import { Mista } from './mista.js';
 import { Kanon } from './kanon-modul.js';
+import { NavrhSezeni } from './navrh-sezeni.js';
 import { Scena } from './scena.js';
 import { Svetla, ROLE as ROLE_SVETEL } from './svetla.js';
 import { Hue } from './zarizeni/hue.js';
@@ -155,6 +156,8 @@ export class Hub {
     this.mista = new Mista({ cesty: this.c, zapisovac: this.zapisovac });
     // Modul Kánon (Blok 3): mapa entit, karty, pohled družiny, nástěnky.
     this.kanon = new Kanon({ cesty: this.c, zapisovac: this.zapisovac, nastaveni: () => this.nastaveni.hodnoty, kalendar: this.kalendar });
+    // Návrh po sezení (⚠ bod 153): změny kánonu navržené z přepisu nahrávky, schvaluje DM.
+    this.navrhSezeni = new NavrhSezeni({ cesty: this.c, kanon: this.kanon, kalendar: this.kalendar, zapisovac: this.zapisovac });
     this.scena = new Scena({ soubor: path.join(this.c.lokalniStav, 'scena.json'), mista: this.mista });
     this.svetla = new Svetla({
       cesty: this.c,
@@ -921,6 +924,10 @@ export class Hub {
       const v = await this.apiKanon(req, m, p, url);
       if (v !== undefined) return poslatJson(res, 200, v);
     }
+    if (p.startsWith('/api/navrh-sezeni')) {
+      const v = await this.apiNavrhSezeni(req, m, p);
+      if (v !== undefined) return poslatJson(res, 200, v);
+    }
     if (p === '/api/restart' && m === 'POST') {
       await nacistJson(req);
       if (!this.restartovat) {
@@ -1341,6 +1348,39 @@ export class Hub {
     if (nast && m === 'GET') return k.nastenka(nast[1]);
     if (nast && m === 'PUT') return k.ulozitNastenku(nast[1], await nacistJson(req, 512 * 1024));
     if (nast && m === 'DELETE') return k.smazatNastenku(nast[1]);
+    return undefined;
+  }
+
+  /** Návrh po sezení (⚠ body 153 a 157): seznam návrhů, detail, rozhodnutí DM, kontrola před zápisem a zápis. */
+  async apiNavrhSezeni(req, m, p) {
+    const n = this.navrhSezeni;
+    const JMENO = '(s\\d{2,3}|revize-\\d{4}-\\d{2}-\\d{2})';
+    if (p === '/api/navrh-sezeni' && m === 'GET') return n.seznam();
+    const detail = new RegExp(`^/api/navrh-sezeni/${JMENO}$`).exec(p);
+    if (detail && m === 'GET') return n.nacist(detail[1]);
+    const op = new RegExp(`^/api/navrh-sezeni/${JMENO}/operace/([A-Za-z0-9_-]{1,40})$`).exec(p);
+    if (op && m === 'PUT') return n.rozhodnout(op[1], op[2], await nacistJson(req, 256 * 1024));
+    const kontrola = new RegExp(`^/api/navrh-sezeni/${JMENO}/kontrola$`).exec(p);
+    if (kontrola && m === 'GET') return n.kontrolaZapisu(kontrola[1]);
+    const zapis = new RegExp(`^/api/navrh-sezeni/${JMENO}/zapsat$`).exec(p);
+    if (zapis && m === 'POST') {
+      await nacistJson(req);
+      const v = this.poUpraveKanonu(await n.zapsat(zapis[1]));
+      // Zápis rovnou uložit na GitHub (krok 7 smlouvy). Když to nejde (zkušební režim, bez sítě,
+      // zamčený soubor), zápis platí a DM uloží přes Systém → Aktualizovat.
+      if (v.odlozeno) return { ...v, ulozeno: false, chybaUlozeni: 'Některé soubory jsou zamčené, Hub je zapíše později. Pak ulož přes Systém → Aktualizovat.' };
+      try {
+        const cislo = zapis[1];
+        const nazev = cislo.startsWith('revize-') ? `Revize kánonu ${cislo.slice(7)}` : `Sezení ${Number(cislo.slice(1))}`;
+        const u = await this.git.ulozit(`${nazev}: zápis do kánonu (Návrh po sezení)`);
+        const commit = u.commit ? await this.git.hlava().catch(() => null) : null;
+        if (commit) await n.oznacitCommit(cislo, commit);
+        this.obnovitGit(false);
+        return { ...v, ulozeno: u.commit, odeslano: u.push, commit, chybaUlozeni: u.chybaPush ?? null };
+      } catch (err) {
+        return { ...v, ulozeno: false, chybaUlozeni: `${err.message} Zápis v kánonu platí, ulož ho přes Systém → Aktualizovat.` };
+      }
+    }
     return undefined;
   }
 

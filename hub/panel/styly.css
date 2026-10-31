@@ -975,6 +975,7 @@ main:has(> #obrazovka-kanon:not([hidden])) { display: flex; flex-direction: colu
 .cip[aria-pressed="false"] { opacity: 0.5; }
 .cip[aria-pressed="false"] .tecka { background: transparent; box-shadow: inset 0 0 0 1.5px var(--c); }
 .cip-ve-hre { --c: var(--akcent); }
+.cip-vyrazene { --c: var(--varovani); }
 .kanon-nastenky { display: flex; gap: var(--m-2); align-items: center; }
 .kanon-prepinace { display: flex; gap: var(--m-1); align-items: center; }
 .kanon-prepinace label { font-size: var(--t-popisek); color: var(--text-tlumeny); }
@@ -1208,6 +1209,31 @@ button.mala { padding: 0.1rem var(--m-2); font-size: var(--t-popisek); }
 .naposledy a:hover { background: var(--povrch-2); }
 .naposledy .tecka { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--c); }
 .naposledy small { margin-left: auto; color: var(--text-tlumeny); font-size: var(--t-popisek); }
+/* Kvalita kánonu (⚠ bod 154): pruh na přehledu, stránka Co opravit, rámeček na kartě. */
+.kvalita-souhrn { padding: var(--m-3) var(--m-4); border-left: 3px solid var(--varovani); }
+.kvalita-souhrn.hotovo { border-left-color: var(--ok); }
+.kvalita-cislo { margin: 0 0 var(--m-2); color: var(--text-tlumeny); }
+.kvalita-cislo strong { font-size: 1.6rem; color: var(--text); margin-right: var(--m-1); font-variant-numeric: tabular-nums; }
+.kvalita-pravidla { display: flex; flex-wrap: wrap; gap: var(--m-2); margin: var(--m-2) 0 0; }
+.kvalita-pravidla .cip { color: var(--text); text-decoration: none; border: 1px solid var(--linka); }
+.kvalita-pravidla .cip:hover { background: var(--povrch-2); }
+.kvalita-pravidla .cip.aktivni { border-color: var(--akcent); background: color-mix(in srgb, var(--akcent) 12%, var(--povrch-1)); }
+.kvalita-cip.chyba { border-color: color-mix(in srgb, var(--chyba) 45%, var(--linka)); }
+.kvalita-seznam { list-style: none; margin: var(--m-4) 0 0; padding: 0; display: grid; gap: var(--m-3); }
+.kvalita-karta { display: inline-flex; align-items: center; gap: var(--m-2); color: var(--text); text-decoration: none; }
+.kvalita-karta:hover strong { text-decoration: underline; }
+.kvalita-karta .tecka { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--c); }
+.kvalita-karta small { color: var(--text-tlumeny); font-size: var(--t-popisek); }
+.kvalita-problemy { list-style: none; margin: var(--m-1) 0 0; padding: 0; display: grid; gap: 2px; font-size: var(--t-popisek); color: var(--text-tlumeny); }
+.kvalita-problemy li { display: flex; gap: var(--m-2); overflow-wrap: anywhere; }
+.kvalita-problemy strong { color: var(--text); font-weight: 600; }
+.kvalita-problemy .kvalita-ikona { flex: none; width: 0.8rem; color: var(--text-tlumeny); }
+.kvalita-problemy li.chyba .kvalita-ikona { color: var(--chyba); }
+.vyrazena-karta { margin: 0 0 var(--m-4); padding: var(--m-2) var(--m-3); border-left: 3px solid var(--varovani); color: var(--varovani); font-size: var(--t-popisek); }
+.kvalita-karty { margin: 0 0 var(--m-4); padding: var(--m-2) var(--m-3); border-left: 3px solid var(--linka); }
+.kvalita-karty.s-chybou { border-left-color: var(--chyba); }
+.kvalita-karty summary { cursor: pointer; font-size: var(--t-popisek); font-weight: 600; }
+.kvalita-karty .kvalita-problemy { margin-top: var(--m-2); }
 /* Události */
 .udalosti-seznam { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
 .udalost-radek { display: flex; flex-wrap: wrap; align-items: center; gap: var(--m-1) var(--m-3); padding: var(--m-2) var(--m-3); border-radius: var(--zaobleni); background: var(--povrch-1); border: 1px solid var(--linka); }

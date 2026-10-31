@@ -173,6 +173,11 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false, u
   }
 
   function prijmout(data) {
+    // Vyřazené karty (platnost: vyrazeno, rozhodnutí 77) jsou jen v pohledu DM a jen s filtrem
+    // Vyřazené; otevřená karta zůstane vidět vždy (odkaz z jiné karty nebo z Neplatné).
+    s.surovaData = data;
+    s.vyrazenych = data.entity.filter((e) => e.vyrazeno).length;
+    if (s.vyrazenych && !s.vyrazene) data = { ...data, entity: data.entity.filter((e) => !e.vyrazeno || e.id === s.vybrane) };
     s.data = data;
     s.podleId = new Map(data.entity.map((e) => [e.id, e]));
     s.stupen = new Map(data.entity.map((e) => [e.id, 0]));
@@ -1256,6 +1261,14 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false, u
         priblizitNa(null);
       });
       tlacitka.push(b);
+      if (s.vyrazenych) {
+        const v = el('button', { type: 'button', className: 'cip cip-vyrazene', 'aria-pressed': String(Boolean(s.vyrazene)), title: 'Ukázat i vyřazené karty (platnost: vyrazeno)' }, el('span', { className: 'tecka' }), 'Vyřazené', el('span', { className: 'pocet-cipu', textContent: s.vyrazenych }));
+        v.addEventListener('click', () => {
+          s.vyrazene = !s.vyrazene;
+          prijmout(s.surovaData);
+        });
+        tlacitka.push(v);
+      }
     }
     kam.replaceChildren(...tlacitka);
     for (const b of document.querySelectorAll('#kanon-pohled button')) b.setAttribute('aria-pressed', String(b.dataset.pohled === s.pohled));
@@ -1332,6 +1345,8 @@ export function vytvoritKanon({ api, toast, otevritPoznamku, jenCteni = false, u
   }
 
   if (jenCteni) $('#kanon-ulozit').hidden = true;
+  // Návrh po sezení je jen v Hubu doma (čte hub/.stav/navrhy), čtecí verze na webu ho nemá.
+  if (jenCteni) $('#kanon-navrh')?.remove();
   $('#kanon-ulozit').addEventListener('click', () => otevritNastenku(null));
   /** Dialog Uložit rozložení; jen = Set id (Nástěnka z výběru) nebo null (vše na mapě). */
   function otevritNastenku(jen) {

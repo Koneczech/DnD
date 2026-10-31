@@ -14,7 +14,7 @@ const OTEVRENI = /^(﻿)?---\r?\n/;
 /** Pořadí klíčů, podle kterého se chybějící klíč vloží na rozumné místo (jako v šablonách). */
 const PORADI = [
   'schema', 'id', 'typ', 'nazev', 'verejne', 'ikona', 'hrac', 'druh', 'povolani', 'role', 'frakce', 'osud', 'kde', 'sidlo',
-  'u_koho', 'stav', 'oblast', 'zaznamenano', 'sezeni', 'kdo', 'doresit', 'aliases', 'lezi_v', 'vazby', 'vztahy', 'tags', 'ilustrace', 'zdroj',
+  'u_koho', 'stav', 'oblast', 'zaznamenano', 'sezeni', 'kdo', 'doresit', 'aliases', 'lezi_v', 'vazby', 'vztahy', 'tags', 'ilustrace', 'dukaz', 'zdroj',
 ];
 
 const JEDNODUCHY_STITEK = /^[\p{L}\p{N}_-]+$/u;
@@ -233,6 +233,17 @@ function pridatIlustraci(yaml, dokument, zaznam) {
   const kde = konecRadku === -1 ? yaml.length : konecRadku;
   const zbytek = yaml.slice(dvojtecka + 1, kde).replace(/^\s*\[\s*\]/, '');
   return `${yaml.slice(0, dvojtecka + 1)}${zbytek}\n  - ${radek}${yaml.slice(kde)}`;
+}
+
+/**
+ * Nastaví jeden klíč hlavičky na hodnotu zapsanou jako YAML (třeba `zdroj`, `dukaz`), chybějící klíč
+ * vloží na rozumné místo. Zbytek souboru zůstane bajt po bajtu. Pro klíče, které Hub jinak nemění.
+ */
+export function nastavitSurove(text, klic, hodnotaYaml) {
+  const { pred, yaml, za } = rozdelit(text);
+  const novy = nahraditHodnotu(yaml, parovat(yaml), klic, hodnotaYaml);
+  parovat(novy);
+  return `${pred}${novy}${za}`;
 }
 
 /** Tělo karty (vše pod hlavičkou). */

@@ -13,6 +13,7 @@
     "test": "node --test --test-concurrency=1 \"test/**/*.test.js\"",
     "check:node": "node skripty/check-node.js",
     "kanon": "node skripty/kanon.js",
+    "kvalita": "node skripty/kvalita.js",
     "stranky": "node skripty/stranky.js",
     "vendor:editor": "node skripty/vendor-editor.js"
   },

@@ -7,13 +7,15 @@
 // keydown, blur, click), takže editor karty, příkazy „/“ a našeptávání [[ fungují beze změny.
 // Když se CodeMirror nenačte, editor použije obyčejné textové pole.
 
+import { jeNadpisDm } from '/sdilene/oddil-dm.js';
+
 /** Odkaz [[id]], [[id|text]], [[id#oddíl|text]]. */
 const ODKAZ = /\[\[([^\]|#\n]+)(?:#[^\]|\n]*)?(?:\|([^\]\n]+))?\]\]/g;
 /** Značka odkryté odrážky nebo odstavce (rozhodnutí 75). */
 const ZNA = /[ \t]*%%\s*zn[aá]\s*%%/gi;
 /** Komentář Obsidianu na jednom řádku (mimo %%zná%%). */
 const KOMENTAR = /%%(?!\s*zn[aá]\s*%%)[^\n%]*?%%/gi;
-const JE_DM = (text) => /^DM(\b|\s|—|-|:|$)/.test(String(text ?? '').trim());
+const JE_DM = jeNadpisDm;
 
 let knihovna = null;
 /** CodeMirror se načte jen jednou a jen při otevření editoru (309 kB). */

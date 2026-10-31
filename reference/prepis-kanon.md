@@ -4,13 +4,15 @@ Smlouva mezi přepisovým nástrojem a DM Hubem. Stav k 31. 10. 2026.
 
 Nahrazuje tři dokumenty, které vznikly mimo Git ve složce nástroje: `SPOLUPRACE-prepis-hub.md`, `NAVRH-kanon-po-sezeni.md` (relace Hub, 28. 10.) a § 7 z `NAVRH-zjednoduseni.md` (relace Přepis). Ty už neplatí. Platí tento soubor a mění se jen přes PR se souhlasem DM.
 
-Rozhodnutí DM: 77–81 v `ZADANI.md` (31. 10. 2026). Nepotvrzená podoba Návrhu po sezení je bod 155.
+Rozhodnutí DM: 77–82 v `ZADANI.md` (31. 10. 2026). Nepotvrzená podoba Návrhu po sezení je bod 155.
 
 ## 1. Tři pravidla
 
 1. **Kánon se po sezení mění jen operacemi.** Každá operace má důkaz (místo v nahrávce nebo rozhodnutí DM), schvaluje ji DM a zapisuje ji Hub přes `zapis.js` jedním zápisem. Všechno jde vrátit přes Git.
 2. **Nic se nemaže, neplatné se přesune.** Starý text se přesune do oddílu **Neplatné** na konci karty, s důvodem a číslem rozhodnutí R (rozhodnutí 77). Smazat jde jen chybu zápisu: věc, která u stolu nikdy nezazněla.
 3. **Každé rozhodnutí DM o rozporu má číslo R a jedno místo:** `kampan/rozpory.yaml`. Číslování navazuje na R1–R16 v `reference/kanon-mapa.yaml`.
+
+**Co do kánonu patří** (rozhodnutí 82). Hráčský kánon zapisuje události, Co ví družina na kartě jen to, co o věci platí teď a bude potřeba při další hře. Operace `doplnit` se `zna: true` musí projít čtyřmi otázkami: je to fakt o této kartě, ne převyprávěná událost; platí to i dnes; bude to potřeba při další hře; ví to družina jako celek. Hody a čísla z hodů nepatří do textu operace, jen do `dukaz`. Mechanika postav, drobnosti bez následku a stejný fakt na více kartách do návrhu nepatří. Text operace nenese pracovní poznámky Clauda ani z chatu (odkud věc je, patří do `dukaz`, rozhodnutí rozporu do `r`).
 
 **Soukromí:** přepis, scénář a podklad zůstávají mimo toto veřejné repo. Do repa jdou jen karty, zápisy a krátké citace v poli `dukaz` (pár slov, ne celé repliky).
 

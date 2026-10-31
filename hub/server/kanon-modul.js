@@ -17,7 +17,8 @@ import { Harptos } from '../sdilene/harptos.js';
 import { SOUBOR_LISTU, spocitatList, listProDruzinu } from '../sdilene/list-postavy-data.js';
 import { zkontrolovatKvalitu, nacistTerminy } from '../sdilene/kvalita-kanonu.js';
 import { normalizujRegistr, SOUBOR_ROZPORU } from '../sdilene/rozpory.js';
-import { overitPole, zmenyKarty, textKarty, ODDIL_DRUZINY, SLUG, nacistEntitu, normalizujNastenku, odkazObsidian, prepnoutBlok, pridatBlok, slugNastenky, vPohledu } from '../sdilene/karta-kanonu.js';
+import { castiSezeni, maObsah, pocetPoznamek, stavZapisu, delkaMinut, datumCesky, casText } from '../sdilene/sezeni-karta.js';
+import { overitPole, zmenyKarty, textKarty, kratkyPopis, ODDIL_DRUZINY, SLUG, nacistEntitu, normalizujNastenku, odkazObsidian, prepnoutBlok, pridatBlok, slugNastenky, vPohledu } from '../sdilene/karta-kanonu.js';
 
 // Text karty (nacistEntitu, Co ví družina, pohled družiny …) je ve sdíleném modulu; odsud se dál
 // exportuje, aby ho importy serveru a testů našly na starém místě.
@@ -137,6 +138,8 @@ export class Kanon extends EventEmitter {
     }
     this.entity = entity;
     this.chyby = chyby;
+    this.doplnitSezeni();
+    await this.obnovitNavrhy({ oznamit: false });
     if (!this.terminy) {
       try {
         this.terminy = nacistTerminy(await fs.readFile(path.join(this.c.koren, 'reference', 'prekladovy-klic-cz.md'), 'utf8'));
@@ -147,6 +150,57 @@ export class Kanon extends EventEmitter {
     await this.nacistNastenky();
     await this.nacistRozpory();
     this.oznam();
+  }
+
+  /**
+   * Karta sezení (⚠ bod 158): kolik záznamů hráčského kánonu sezení vidí družina. Sezení se
+   * družině ukáže podle nich, ne podle vlastního `verejne` (karta sezení je poznámka DM).
+   */
+  doplnitSezeni() {
+    const pocty = new Map();
+    for (const e of this.entity.values()) {
+      if (e.typ !== 'kanon' || e.vyrazeno || !e.verejne) continue;
+      const s = String(e.hlavicka?.sezeni ?? '');
+      if (s) pocty.set(s, (pocty.get(s) ?? 0) + 1);
+    }
+    for (const e of this.entity.values()) {
+      if (e.typ !== 'sezeni') continue;
+      e.druzinaKanonu = pocty.get(e.id) ?? 0;
+      // Popisek dlaždice: shrnutí (ne Poznámky ze stolu, ty jsou deník ze hry).
+      e.popis = kratkyPopis(castiSezeni(e.telo).shrnuti.replace(/^#{1,6}\s.*$/m, ''));
+    }
+  }
+
+  /**
+   * Návrhy po sezení, které leží v hub/.stav/navrhy/ (sNN.yaml): stav (předběžný, finální) a počet
+   * operací. Karta sezení z nich ukazuje stav zápisu, Kvalita kánonu podle finálního návrhu pozná
+   * sezení, které už mělo být zapsané. Volá se při načtení kánonu a po každé práci s návrhy.
+   */
+  async obnovitNavrhy({ oznamit = true } = {}) {
+    const slozka = path.join(this.c.lokalniStav ?? path.join(this.c.koren, 'hub', '.stav'), 'navrhy');
+    const navrhy = new Map();
+    let soubory = [];
+    try {
+      soubory = await fs.readdir(slozka);
+    } catch {
+      // bez složky návrhů nic nečeká
+    }
+    for (const s of soubory.sort()) {
+      const m = /^(s\d{2,3})\.yaml$/.exec(s);
+      if (!m) continue;
+      try {
+        const d = YAML.parse((await fs.readFile(path.join(slozka, s), 'utf8')).replace(/^\uFEFF/, ''));
+        navrhy.set(m[1], { stav: d?.stav === 'finalni' ? 'finalni' : 'predbezny', operaci: Array.isArray(d?.operace) ? d.operace.length : 0 });
+      } catch {
+        navrhy.set(m[1], { stav: 'chyba', operaci: 0 });
+      }
+    }
+    const zmena = JSON.stringify([...navrhy]) !== JSON.stringify([...(this.navrhy ?? new Map())]);
+    this.navrhy = navrhy;
+    if (zmena) {
+      this.kvalitaVerze = -1;
+      if (oznamit) this.oznam();
+    }
   }
 
   /** Registr rozporů (rozhodnutí 77). Rozbitý registr hlásí Kontrola dat; tady se jen nepoužije. */
@@ -331,7 +385,8 @@ export class Kanon extends EventEmitter {
   /** Kvalita kánonu (⚠ bod 154): co chybí do „kánonu na 100 %“. Jen pro pohled DM. */
   kvalita() {
     if (this.kvalitaVerze !== this.verze) {
-      this.kvalitaVysledek = zkontrolovatKvalitu(this.entity.values(), { terminy: this.terminy ?? [], rozhodnutiR: this.rozhodnutiR() });
+      const finalniNavrhy = new Set([...(this.navrhy ?? new Map())].filter(([, n]) => n.stav === 'finalni').map(([id]) => id));
+      this.kvalitaVysledek = zkontrolovatKvalitu(this.entity.values(), { terminy: this.terminy ?? [], rozhodnutiR: this.rozhodnutiR(), finalniNavrhy });
       this.kvalitaVerze = this.verze;
     }
     return this.kvalitaVysledek;
@@ -406,6 +461,7 @@ export class Kanon extends EventEmitter {
       ...textKarty(e, p),
       udalosti,
       chronologie: e.typ === 'kanon' ? this.chronologieKarty(id, p) : null,
+      sezeni: e.typ === 'sezeni' ? this.udajeSezeni(e, p) : null,
       zde,
       odkazujePolem,
       pole: p === 'dm' ? e.pole : {},
@@ -414,6 +470,82 @@ export class Kanon extends EventEmitter {
       obsidian: p === 'dm' ? odkazObsidian(this.trezor(), e.soubor) : null,
       list: listVPohledu(e.list, p),
       kvalita: p === 'dm' ? this.kvalita().karty.find((x) => x.id === id)?.problemy ?? [] : null,
+    };
+  }
+
+  /**
+   * Karta sezení (⚠ bod 158): co Hub o sezení ví a dopočítá. Hráčský kánon sezení (pole `sezeni`)
+   * v čase, kdo a kde (vazby sezení a jeho kánonu), události Kalendáře ve dnech sezení, předchozí
+   * a další sezení, kdo byl u stolu a jak daleko je zápis. Družina dostane jen to, co zná.
+   */
+  udajeSezeni(e, p) {
+    const h = e.hlavicka ?? {};
+    const vidi = (x) => Boolean(vPohledu(x, p, this.najit));
+    const cisloSezeni = (x) => Number(x.hlavicka?.cislo);
+    const sezeni = [...this.entity.values()]
+      .filter((x) => x.typ === 'sezeni' && !x.vyrazeno && Number.isFinite(cisloSezeni(x)))
+      .sort((a, b) => cisloSezeni(a) - cisloSezeni(b));
+    const viditelna = sezeni.filter(vidi);
+    const i = viditelna.findIndex((x) => x.id === e.id);
+    const kratce = (x) => (x ? { id: x.id, nazev: x.nazev, cislo: cisloSezeni(x) } : null);
+
+    const poradi = new Map(this.chronologie(p).map((x, j) => [x.id, { j, udalost: x.udalost }]));
+    const kanonEntity = [...this.entity.values()].filter((x) => x.typ === 'kanon' && !x.vyrazeno && String(x.hlavicka?.sezeni ?? '') === e.id && vidi(x));
+    const kanon = kanonEntity
+      .map((x) => ({ id: x.id, nazev: x.nazev, doresit: x.hlavicka?.doresit === true, verejne: x.verejne, udalost: poradi.get(x.id)?.udalost ?? null, j: poradi.get(x.id)?.j ?? 1e9 }))
+      .sort((a, b) => a.j - b.j)
+      .map(({ j, ...x }) => x);
+
+    const ids = new Set([...(p === 'dm' ? e.vazby : []), ...kanonEntity.flatMap((x) => [...x.vazby, ...(x.kdo ?? [])])]);
+    const kdoAKde = [...ids]
+      .map((id) => this.entity.get(id))
+      .filter((x) => x && x.id !== e.id && !['sezeni', 'kanon', 'rozhodnuti', 'postava'].includes(x.typ) && !x.vyrazeno && vidi(x))
+      .map((x) => ({ id: x.id, nazev: x.nazev, typ: x.typ }))
+      .sort((a, b) => a.nazev.localeCompare(b.nazev, 'cs'));
+
+    let veHre = null;
+    let udalosti = [];
+    const z = Harptos.normalizuj(h.harptos_zacatek);
+    if (z) {
+      const k = Harptos.normalizuj(h.harptos_konec) ?? z;
+      const od = Harptos.absolutni(z);
+      const doDne = Math.max(od, Harptos.absolutni(k));
+      veHre = { text: Harptos.formatRozsah(z, Harptos.stejne(z, k) ? null : k), dni: doDne - od + 1 };
+      udalosti = this.udalosti(p).filter((u) => {
+        let konec = u.poradi;
+        try {
+          if (u.konec) konec = Harptos.absolutni(u.konec);
+        } catch {
+          // rozbitý konec události: počítá se jen začátek
+        }
+        return u.poradi <= doDne && konec >= od;
+      });
+    }
+
+    const postavy = [...this.entity.values()].filter((x) => x.typ === 'postava' && !x.vyrazeno);
+    const uStolu = p === 'dm'
+      ? (Array.isArray(h.pritomni) ? h.pritomni : []).map(String).filter(Boolean).map((hrac) => {
+        const postava = postavy.find((x) => String(x.udaje?.hrac ?? '') === hrac);
+        return { hrac, postava: postava ? { id: postava.id, nazev: postava.nazev } : null };
+      })
+      : [];
+
+    const zapsano = kanonEntity.length > 0 || maObsah(castiSezeni(e.telo).shrnuti);
+    const posledni = sezeni.length > 0 && sezeni[sezeni.length - 1].id === e.id;
+    return {
+      cislo: Number.isFinite(cisloSezeni(e)) ? cisloSezeni(e) : null,
+      hrano: { datum: datumCesky(h.datum_realne) || null, od: casText(h.zacatek) || null, do: casText(h.konec) || null, minut: delkaMinut(h.zacatek, h.konec) },
+      veHre,
+      predchozi: i > 0 ? kratce(viditelna[i - 1]) : null,
+      dalsi: i >= 0 ? kratce(viditelna[i + 1]) : null,
+      kanon,
+      kdoAKde,
+      udalosti,
+      uStolu,
+      druzinaVidi: kanon.filter((x) => x.verejne).length,
+      zapis: p === 'dm'
+        ? { stav: stavZapisu({ zapsano, konec: Boolean(h.konec), posledni }), navrh: this.navrhy?.get(e.id) ?? null, poznamek: pocetPoznamek(e.telo) }
+        : null,
     };
   }
 
@@ -444,6 +576,7 @@ export class Kanon extends EventEmitter {
     const nova = nacistEntitu(obsah, { slozka: e.slozka, soubor: e.soubor, slozkaEntity: e.slozkaEntity, upraveno: new Date().toISOString() });
     nova.list = e.list;
     this.entity.set(id, nova);
+    this.doplnitSezeni();
     this.oznam();
     return { vysledek, karta: this.karta(id) };
   }
@@ -456,6 +589,7 @@ export class Kanon extends EventEmitter {
     const nova = nacistEntitu(obsah, { slozka: e.slozka, soubor: e.soubor, slozkaEntity: e.slozkaEntity, upraveno: new Date().toISOString() });
     nova.list = e.list;
     this.entity.set(id, nova);
+    this.doplnitSezeni();
     this.oznam();
     return { vysledek, obsah, karta: this.karta(id) };
   }
@@ -578,6 +712,7 @@ export class Kanon extends EventEmitter {
     await fs.mkdir(path.dirname(cesta), { recursive: true });
     const { vysledek } = await this.zapisovac.zapsat(cesta, text);
     this.entity.set(id, nacistEntitu(text, { slozka, soubor, slozkaEntity: !zaznam, upraveno: new Date().toISOString() }));
+    this.doplnitSezeni();
     this.oznam();
     return { vysledek, karta: this.karta(id) };
   }

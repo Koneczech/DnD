@@ -78,6 +78,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Příkazy „/“ v editoru: nabídka prvků (nadpis, odrážka, odrážka pro družinu, citace, odkaz, tučně, kurzíva, skrytá poznámka, tabulka, oddělovač, chybějící oddíly typu), v Hubu i na webu | ◐ |
 | | Typové stránky: boční panel podle typu (role, osud, kde ho najít, patří k, sídlo, u koho je), Kdo tu je, Členové a Má u sebe, vztahy po skupinách, DM oddíly dole s odkazem, editor nabídne chybějící oddíly | ◐ |
 | | Události z Kalendáře ve wiki: navázané karty, co se rozhodlo, události v kartě | ◐ |
+| | Karta sezení: kdy a co ve hře, hráčský kánon sezení, události ve dnech sezení, U stolu, Kdo a kde, stav zápisu z přepisu; družina vidí sezení podle svého kánonu | ◐ |
 | | Mapa (záložka): vazby a vztahy, malé úpravy, nástěnky; Otevřít v Obsidianu, F2 s odkazem | ◐ |
 | | Mapa: výběr víc uzlů (Shift), přesun skupiny, Ctrl+Z, kruh a mřížka, fokus, hromadně Ve hře a Družina zná, paměť rozložení | ◐ |
 | | Místa v místech: čára Leží v na mapě, cesta Mirabar › v kartě, Místa uvnitř, výběr Leží v | ◐ |

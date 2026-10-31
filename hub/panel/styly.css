@@ -1243,6 +1243,35 @@ button.mala { padding: 0.1rem var(--m-2); font-size: var(--t-popisek); }
 .udalost-text { font-weight: 600; }
 .udalost-pres { color: var(--text-tlumeny); font-size: var(--t-popisek); }
 .poradi-v-dni { color: var(--text-tlumeny); font-size: var(--t-popisek); white-space: nowrap; }
+/* Karta sezení (⚠ bod 158) */
+.zapis-sezeni { margin: 0 0 var(--m-4); padding: var(--m-3) var(--m-4); }
+.zapis-sezeni h3 { font-size: var(--t-stitek); text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tlumeny); margin: 0 0 var(--m-2); }
+.kroky-zapisu { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: var(--m-2); }
+.krok-zapisu { display: grid; gap: 2px; padding: var(--m-2) var(--m-3); background: var(--povrch-1); border-radius: var(--zaobleni); font-size: var(--t-popisek); }
+.krok-zapisu span { color: var(--text-tlumeny); }
+.krok-zapisu strong::before, .stav-zapisu::before { content: ''; display: inline-block; width: 0.6rem; height: 0.6rem; margin-right: var(--m-2); border-radius: 50%; border: 2px solid currentColor; box-sizing: border-box; }
+.krok-zapisu.ok strong, .stav-zapisu.ok { color: var(--ok); }
+.krok-zapisu.ceka strong, .stav-zapisu.ceka { color: var(--jantar); }
+.krok-zapisu.ok strong::before, .krok-zapisu.ceka strong::before, .stav-zapisu::before { background: currentColor; }
+.krok-zapisu.ne strong { color: var(--text-tlumeny); }
+.zapis-sezeni .poznamka { display: flex; flex-wrap: wrap; align-items: center; gap: var(--m-2); margin: var(--m-3) 0 0; max-width: none; }
+.prazdne-oddily { padding: var(--m-1) var(--m-4); margin: 0 0 var(--m-4); }
+.prazdny-oddil { display: flex; justify-content: space-between; align-items: baseline; gap: var(--m-3); padding: var(--m-2) 0; }
+.prazdny-oddil + .prazdny-oddil { border-top: 1px solid var(--linka); }
+.prazdny-oddil h3 { font-size: var(--t-stitek); text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tlumeny); margin: 0; }
+.mezera-akci { flex: 1 1 var(--m-4); }
+.stitek-doresit { font-size: var(--t-stitek); font-weight: 400; color: var(--jantar); margin-left: var(--m-2); white-space: nowrap; }
+.rozhodnuto-odkaz strong .stitek-dm { margin-left: var(--m-2); font-weight: 400; }
+.pocet-odkryto { font-size: var(--t-popisek); font-weight: 400; color: var(--text-tlumeny); }
+.poznamky-sezeni { margin-top: var(--m-5); padding: var(--m-2) var(--m-4); }
+.poznamky-sezeni summary { cursor: pointer; font-size: var(--t-stitek); text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tlumeny); font-weight: 600; }
+.udaje-sezeni, .u-stolu { grid-template-columns: minmax(0, 1fr); }
+.udaje-sezeni > div, .u-stolu > div { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); gap: var(--m-3); }
+.udaje-sezeni dd .drobne, .u-stolu dd .drobne { display: block; color: var(--text-tlumeny); }
+.infobox h3.prvni { margin-top: 0; }
+.skupina-kdo { margin: var(--m-2) 0 2px; font-size: var(--t-popisek); color: var(--text-tlumeny); }
+.seznam-kdo { margin: 0; font-size: var(--t-popisek); }
+.skupina-kdo .tecka-typu { display: inline-block; margin: 0 var(--m-2) 0 0; }
 .cas-kanonu { margin: 0 0 var(--m-4); padding: var(--m-2) var(--m-3); border: 1px solid var(--linka); border-radius: var(--zaobleni); background: var(--povrch-1); }
 .cas-kanonu > p { margin: 0; display: flex; flex-wrap: wrap; gap: var(--m-1) var(--m-3); align-items: baseline; }
 p.cas-kanonu { color: var(--text-tlumeny); }

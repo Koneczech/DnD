@@ -926,6 +926,8 @@ export class Hub {
     }
     if (p.startsWith('/api/navrh-sezeni')) {
       const v = await this.apiNavrhSezeni(req, m, p);
+      // Karta sezení a Kvalita kánonu znají stav návrhů (⚠ bod 158): po práci s návrhy ho obnovit.
+      await this.kanon.obnovitNavrhy().catch(() => {});
       if (v !== undefined) return poslatJson(res, 200, v);
     }
     if (p === '/api/restart' && m === 'POST') {

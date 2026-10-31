@@ -5,6 +5,7 @@
 import { oddily, jeOddilDm, bezKomentaru } from './karta-kanonu.js';
 import { chybejiciOddily } from './typy-karet.js';
 import { jeNadpisNeplatne } from './oddil-dm.js';
+import { castiSezeni, maObsah, bezPoznamekZeStolu } from './sezeni-karta.js';
 
 export const PRAVIDLA = Object.freeze({
   poznamky: {
@@ -30,7 +31,7 @@ export const PRAVIDLA = Object.freeze({
   sezeni: {
     nazev: 'Neúplné sezení',
     uroven: 'chyba',
-    rada: 'Odehrané sezení má datum, shrnutí a aspoň jeden záznam hráčského kánonu.',
+    rada: 'Odehrané sezení má datum, shrnutí a aspoň jeden záznam hráčského kánonu. Sezení, které se teprve zapíše z přepisu, je chyba až s finálním návrhem po sezení.',
   },
   oddily: {
     nazev: 'Chybí doporučené oddíly',
@@ -161,10 +162,11 @@ const datum = (x) => (x instanceof Date ? x : typeof x === 'string' ? new Date(x
 /**
  * Zkontroluje kánon.
  * @param {Iterable<object>} entity karty z nacistEntitu (s polem hlavicka)
- * @param {{terminy?: Array<{en: string, cs: string, vzor: RegExp}>, rozhodnutiR?: Set<string>}} [volby]
+ * @param {{terminy?: Array<{en: string, cs: string, vzor: RegExp}>, rozhodnutiR?: Set<string>, finalniNavrhy?: Set<string>}} [volby]
  *   rozhodnutiR = čísla R z kampan/rozpory.yaml (jejich značky v textu nejsou chyba)
+ *   finalniNavrhy = id sezení s finálním návrhem po sezení (hub/.stav/navrhy/sNN.yaml, stav: finalni)
  */
-export function zkontrolovatKvalitu(entity, { terminy = [], rozhodnutiR = new Set() } = {}) {
+export function zkontrolovatKvalitu(entity, { terminy = [], rozhodnutiR = new Set(), finalniNavrhy = new Set() } = {}) {
   // Vyřazená karta (platnost: vyrazeno) už nic netvrdí, takže se neopravuje ani nepočítá.
   const karty = [...entity].filter((e) => !e.vyrazeno);
   const podleId = new Map(karty.map((e) => [e.id, e]));
@@ -196,7 +198,8 @@ export function zkontrolovatKvalitu(entity, { terminy = [], rozhodnutiR = new Se
 
   for (const e of karty) {
     const h = e.hlavicka ?? {};
-    const radky = radkyTextu(e.telo);
+    // Poznámky ze stolu jsou deník ze hry (píše je Hub), ne text karty (⚠ bod 158).
+    const radky = radkyTextu(e.typ === 'sezeni' ? bezPoznamekZeStolu(e.telo) : e.telo);
 
     if (e.typ !== 'rozhodnuti') {
       for (const r of radky) {
@@ -242,9 +245,14 @@ export function zkontrolovatKvalitu(entity, { terminy = [], rozhodnutiR = new Se
       const odehrane = Boolean(h.konec) || cislo < nejvyssiSezeni;
       if (!jeDatum(h.datum_realne)) pridej(e.id, 'sezeni', 'Chybí datum sezení (datum_realne).');
       if (odehrane) {
-        const shrnuti = oddily(e.telo).find((o) => bezDiakritiky(o.nadpis) === 'shrnuti');
-        if (!shrnuti || !bezKomentaru(shrnuti.text.replace(/^#.*$/m, '')).trim()) pridej(e.id, 'sezeni', 'Chybí shrnutí (oddíl Shrnutí).');
-        if (!karty.some((k) => k.typ === 'kanon' && k.udaje?.sezeni === e.id)) pridej(e.id, 'sezeni', 'Sezení nemá žádný záznam hráčského kánonu.');
+        const maShrnuti = maObsah(castiSezeni(e.telo).shrnuti);
+        const maKanon = karty.some((k) => k.typ === 'kanon' && k.udaje?.sezeni === e.id);
+        // Nezapsané sezení (bez shrnutí i kánonu) čeká na zápis z přepisu: karta ukazuje stav
+        // zápisu a chyba přijde, až když je návrh po sezení finální (⚠ bod 158).
+        const ceka = !maShrnuti && !maKanon && !finalniNavrhy.has(e.id);
+        if (!ceka && !maShrnuti) pridej(e.id, 'sezeni', 'Chybí shrnutí (oddíl Shrnutí).');
+        if (!ceka && !maKanon) pridej(e.id, 'sezeni', 'Sezení nemá žádný záznam hráčského kánonu.');
+        if (!maShrnuti && !maKanon && finalniNavrhy.has(e.id)) pridej(e.id, 'sezeni', 'Návrh po sezení je finální, sezení ale ještě není zapsané.');
       }
       const zacatek = datum(h.zacatek);
       const konec = datum(h.konec);

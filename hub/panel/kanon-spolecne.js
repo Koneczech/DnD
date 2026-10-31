@@ -390,9 +390,10 @@ export function castiKarty(ctx) {
     return el('div', { className: 'pridat-vazbu' }, vstup, vysledky, el('button', { type: 'button', className: 'mala tiche', textContent: 'Zrušit', onclick: zrusit }));
   }
 
-  function pridatVazbuUI(k) {
+  /** + Přidat vazbu; `bezVztahu` (karta sezení): po přidání se neotevře popis vztahu. */
+  function pridatVazbuUI(k, { text = '+ Přidat vazbu', bezVztahu = false } = {}) {
     if (!s.pridavani) {
-      return el('button', { type: 'button', className: 'mala', textContent: '+ Přidat vazbu', onclick: () => { s.pridavani = true; ctx.prekreslit(); } });
+      return el('button', { type: 'button', className: 'mala', textContent: text, onclick: () => { s.pridavani = true; ctx.prekreslit(); } });
     }
     return vyber({
       placeholder: 'Hledat entitu…',
@@ -401,7 +402,7 @@ export function castiKarty(ctx) {
       priVyberu: async (e) => {
         s.pridavani = false;
         const r = await upravit(`/api/kanon/entita/${encodeURIComponent(k.id)}/vazby`, 'POST', { cil: e.id }, `Vazba na ${e.nazev} založena.`);
-        if (r) {
+        if (r && !bezVztahu) {
           s.uprava = { cil: e.id, nova: true };
           ctx.prekreslit();
         }

@@ -392,7 +392,7 @@ export function vytvoritEditor(ctx) {
         el('p', { className: 'poznamka napoveda-editoru' }, 'Markdown jako v Obsidianu. ', el('kbd', { textContent: '/' }), ' nabídne prvek k vložení (nadpis, odrážka, tabulka, oddíl…), ', el('kbd', { textContent: '[[' }), ' našeptá odkaz na kartu, ', el('kbd', { textContent: 'Ctrl+S' }), ' uloží hned. V oddílu ', el('strong', { textContent: 'Co ví družina' }), ' je každá odrážka zvlášť; odkrytá má na konci značku ', el('code', { textContent: '%%zná%%' }), ' (v kartě ji přepneš okem 👁). Stejnou značkou na konci prvního řádku odkryješ i kterýkoli odstavec nebo odrážku jinde v textu. Oddíly ', el('code', { textContent: '## DM…' }), ' družina nikdy neuvidí.')));
     kam.replaceChildren(formular);
     st = { id, nazev: z.pole.nazev ?? id, typ: z.typ, hash: z.hash, ulozeneTelo: z.telo, textarea, naseptavac, nahledEl, stavEl, formular, zmenenaPole: {}, casovac: null, bezi: null, znovu: false, konflikt: null, nalez: [], vybranyNalez: 0, dotazOdkazu: '' };
-    nahradit(formular.querySelector('.editor-pole'), ...poleFormulare(z, z.typ), prezdivky(z), portret(z));
+    nahradit(formular.querySelector('.editor-pole'), ...poleFormulare(z, z.typ), z.typ === 'sezeni' ? null : prezdivky(z), portret(z));
     oddily();
     textarea.addEventListener('input', () => {
       clearTimeout(st.casovacOddilu);

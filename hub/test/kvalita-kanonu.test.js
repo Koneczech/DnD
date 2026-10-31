@@ -73,7 +73,8 @@ test('sezení: datum, shrnutí, záznam a zapomenuté ukončení', () => {
   const s3 = karta('sezeni', { id: 's03', typ: 'sezeni', nazev: 'Sezení 3', cislo: 3, datum_realne: '2026-10-24' }, '# Sezení 3\n');
   const z2 = karta('kanon', { id: 's02-jih', typ: 'kanon', nazev: 'Jih', verejne: true, sezeni: 's02' }, '## Co se stalo\n\nX\n\n## Důsledek\n\nY\n');
   const k = zkontrolovatKvalitu([s1, s2, s3, z2]);
-  assert.deepEqual(problemy(k, 's01').map((p) => p.zprava), ['Chybí datum sezení (datum_realne).', 'Chybí shrnutí (oddíl Shrnutí).', 'Sezení nemá žádný záznam hráčského kánonu.']);
+  // s01 má scény, ale ani shrnutí, ani kánon: čeká na zápis z přepisu, chybí jen datum (⚠ bod 158).
+  assert.deepEqual(problemy(k, 's01').map((p) => p.zprava), ['Chybí datum sezení (datum_realne).']);
   assert.deepEqual(problemy(k, 's02').map((p) => p.zprava), ['Konec je 4 dní po začátku. Nezůstalo sezení omylem běžet?']);
   // Poslední sezení bez konce ještě běží nebo se chystá: shrnutí ani záznamy se nevyžadují.
   assert.deepEqual(problemy(k, 's03'), []);
@@ -99,4 +100,22 @@ test('doporučení se do procenta nepočítají, chyby ano', () => {
   assert.equal(k.procento, 50);
   assert.equal(k.karty[0].id, 'pole', 'karty s chybou jsou první');
   assert.equal(k.pravidla.find((p) => p.id === 'zdroj').karet, 1);
+});
+
+test('sezení: nezapsané čeká, s finálním návrhem je chyba, napůl zapsané chybu má hned (⚠ bod 158)', () => {
+  const s1 = karta('sezeni', { id: 's01', typ: 'sezeni', nazev: 'Sezení 1', cislo: 1, datum_realne: '2026-08-29' }, '# Sezení 1\n\n## Shrnutí\n\nŠli.\n');
+  const s2 = karta('sezeni', { id: 's02', typ: 'sezeni', nazev: 'Sezení 2', cislo: 2, datum_realne: '2026-09-11', konec: '2026-09-11T22:00' }, '# Sezení 2\n\n## Poznámky ze stolu\n\n- 20:00 (13. Eleint) — Konec sezení (doplněno podle záznamu Hubu)\n');
+  const s3 = karta('sezeni', { id: 's03', typ: 'sezeni', nazev: 'Sezení 3', cislo: 3, datum_realne: '2026-10-24', konec: '2026-10-24T16:45' }, '# Sezení 3\n');
+  const s4 = karta('sezeni', { id: 's04', typ: 'sezeni', nazev: 'Sezení 4', cislo: 4, datum_realne: '2026-11-07' }, '# Sezení 4\n');
+  const bez = zkontrolovatKvalitu([s1, s2, s3, s4]);
+  assert.deepEqual(problemy(bez, 's01').map((p) => p.zprava), ['Sezení nemá žádný záznam hráčského kánonu.'], 'shrnutí bez kánonu je napůl zapsané');
+  assert.deepEqual(problemy(bez, 's02'), [], 'čeká na zápis; „doplněno“ v Poznámkách ze stolu nevadí');
+  assert.deepEqual(problemy(bez, 's03'), []);
+  const sFinalnim = zkontrolovatKvalitu([s1, s2, s3, s4], { finalniNavrhy: new Set(['s03']) });
+  assert.deepEqual(problemy(sFinalnim, 's03').map((p) => p.zprava), ['Chybí shrnutí (oddíl Shrnutí).', 'Sezení nemá žádný záznam hráčského kánonu.', 'Návrh po sezení je finální, sezení ale ještě není zapsané.']);
+});
+
+test('sezení: „doplněno“ mimo Poznámky ze stolu je dál poznámka z přípravy', () => {
+  const s1 = karta('sezeni', { id: 's01', typ: 'sezeni', nazev: 'Sezení 1', cislo: 1, datum_realne: '2026-08-29' }, '# Sezení 1\n\n## Shrnutí\n\nŠli (doplněno později).\n\n## Poznámky ze stolu\n\n- 12:00 — doplněno\n');
+  assert.equal(problemy(zkontrolovatKvalitu([s1]), 's01', 'poznamky').length, 1);
 });

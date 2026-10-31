@@ -92,6 +92,8 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 
 ## Co je rozdělané (v tomto pořadí)
 
+Aktuální pořadí práce napříč Hubem, přepisem a přípravou je v `ROZCESTNIK.md` (od 31. 10. 2026). Seznam níže se týká jen Hubu.
+
 1. **Vyzkoušet u stolu** všechno označené ◐ (sezení 3, tábor lupičů). Návrhy v `ZADANI.md` DM potvrdil 19. 10.; co u stolu nefunguje, se opraví.
 2. **Zjednodušit Kontrolu dat:** chybějící zvuky v jednom řádku s tlačítkem Doplnit, chyby nahoře.
 3. **Zvuk u stolu po restartu:** ověřit, jestli prohlížeč chce kliknutí; když ano, otevírat ho v samostatném okně.
@@ -115,6 +117,9 @@ Vlastní combat tracker, sledování zdrojů postav (BV, kouzla, Zuřivost), mix
 | Co | Kde |
 | --- | --- |
 | Pravidla práce pro Clauda | `CLAUDE.md` |
+| Stav všech částí, vlastníci, předávky | `ROZCESTNIK.md` |
+| Cesta ze sezení do kánonu (smlouva s přepisovým nástrojem) | `reference/prepis-kanon.md` |
+| Pracoviště Clauda a startovací pokyny | `reference/claude-projekt.md` |
 | Zadání, rozhodnutí, otevřené body | `ZADANI.md` |
 | Návody (zvuk, OBS, ilustrace, strop, zkouška v cloudu) | `reference/` |
 | Prostředí pro zkoušku v cloudu (Codespaces) | `.devcontainer/` |

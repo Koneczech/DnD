@@ -10,7 +10,7 @@ Uspořádání od 31. 10. 2026 (nahrazuje verzi z 18. 10.). Stav všech částí
 
 | Pracoviště | Kde | Na co | Nesahá na |
 | --- | --- | --- | --- |
-| **Hub** | Claude Code ve `Dokumenty\DnD\repo` | vývoj Hubu včetně modulu Kánon, Návrhu po sezení a Kvality kánonu; zápis sezení do kánonu; úklid kánonu | přepisový nástroj |
+| **Hub** | Claude Code ve `Dokumenty\DnD\repo` | vývoj Hubu včetně modulu Kánon, Návrhu po sezení a Kvality kánonu; návrh změn `sNN.yaml` z podkladu sezení; úklid kánonu | přepisový nástroj |
 | **Přepis** | Claude Code ve složce přepisového nástroje (po přesunu repo `Koneczech/DnD-prepis`) | přepis, scénář, podklad, kontrola důkazů, opravy scénáře | `hub/` a `kampan/` v tomto repu |
 | **Příběh** | Claude projekt „Příběh“ (dřív „D&D“) | oblouky, příprava sezení podle Lazy DM, svět, pravidla, postavy | kód, zápis do kánonu |
 | **Uspořádání** | jednorázové chaty | audit, změna pravidel, nové pracoviště | – |
@@ -30,6 +30,8 @@ Přečti ROZCESTNIK.md a PREHLED.md. Dnes: <úkol>.
 ```
 
 Když dojde limit uprostřed práce, rozdělaná práce je ve větvi. Nová relace: „Přečti ROZCESTNIK.md a pokračuj na větvi X.“
+
+**Návrh změn ze sezení** píše tahle relace. Potřebuje přístup k PC DM (podklad v nástroji, výstup do `hub/.stav/navrhy/`, obojí mimo Git). Postup a pokyn ke zkopírování jsou v `reference/prepis-kanon.md` § 3a.
 
 ### Přepis (Claude Code)
 
@@ -97,7 +99,7 @@ Jak pracujeme
 | Chci… | Kde |
 | --- | --- |
 | novou funkci nebo opravu v Hubu | Hub |
-| dostat sezení do kánonu | po přepisu v nástroji: Hub (Návrh po sezení) |
+| dostat sezení do kánonu | schválit scénář v nástroji → relace Hub napíše návrh → Hub, Návrh po sezení (`reference/prepis-kanon.md` § 3a) |
 | opravit kartu nebo uklidit kánon | Hub, nebo sám v Hubu či na webu |
 | vylepšit přepis | Přepis |
 | připravit sezení, vymyslet oblouk | Příběh |

@@ -47,17 +47,16 @@ Co jedna část potřebuje od jiné. Hotové položky se mažou, záznam zůstan
 
 | Od | Pro | Co | Stav |
 | --- | --- | --- | --- |
-| Hub | DM | Projít a sloučit PR #106 Návrhu po sezení (větev `prepis-do-kanonu`), potvrdit ⚠ body 153, 154 a 157 | čeká |
-| Hub | Claude (návrh s03) | Finální `s03.yaml` ve schématu 2 (`schema: 2`, `stav: finalni`, `scenar_verze`). Zkušební průchod předběžného návrhu: 73 ze 74 operací Hub přijme, `o62` mění pole `harptos_konec`, které karta sezení nemá. Při schválení všeho by zápis přidal 4 chyby Kvality kánonu (rozhodnutí 79): Ordwinův dopis, Thirilův prsten a Kapitán lupičů jsou skryté, i když je zmiňuje hráčský kánon (přidat `pole verejne` a odkrytou odrážku), Mrtvá dívka z tábora lupičů má popis jen 73 znaků (nejméně 200). Pole `rozhodnuti_r` v hlavičce Hub nečte, číslo R patří do `r` u rozporu | čeká |
+| DM | Hub | Po schválení scénáře s03: finální `s03.yaml` podle `prepis-kanon.md` § 3a ve schématu 2 (`schema: 2`, `stav: finalni`, `scenar_verze`). Zkušební průchod předběžného návrhu: 73 ze 74 operací Hub přijme, `o62` mění pole `harptos_konec`, které karta sezení nemá. Při schválení všeho by zápis přidal 4 chyby Kvality kánonu (rozhodnutí 79): Ordwinův dopis, Thirilův prsten a Kapitán lupičů jsou skryté, i když je zmiňuje hráčský kánon (přidat `pole verejne` a odkrytou odrážku), Mrtvá dívka z tábora lupičů má popis jen 73 znaků (nejméně 200). Pole `rozhodnuti_r` v hlavičce Hub nečte, číslo R patří do `r` u rozporu | čeká |
 | DM | – | Dokončit kontrolu scénáře sezení 3 (poslech), pak ho schválit | čeká |
 | Kánon | Příběh | 8× dořešit (`kampan/kanon/*` s `doresit: true`), 10 otevřených rozhodnutí; po zápisu sezení 3 i jeho otevřené nitky | čeká |
 | Hub | Hub | Úklid kánonu po skupinách podle Kvality kánonu (rozhodnutí 79), souběžně s ostatní prací | čeká |
 
 ## Doporučené pořadí
 
-1. DM: sloučit PR #106 Návrhu po sezení (větev `prepis-do-kanonu`).
-2. DM: dokončit poslech scénáře sezení 3 a schválit ho. Pak Claude napíše finální `s03.yaml` (předávka výše).
-3. Sezení 3 do kánonu přes Návrh po sezení. Je to první ostrá zkouška celé cesty.
+1. DM: dokončit poslech scénáře sezení 3 a schválit ho.
+2. Relace Hub: finální `s03.yaml` podle `reference/prepis-kanon.md` § 3a (předávka výše).
+3. DM: sezení 3 do kánonu přes Návrh po sezení. Je to první ostrá zkouška celé cesty.
 4. Projekt Příběh: příprava sezení 4 do repa, s dořešit body a nitkami ze sezení 3.
 
 ## Otevřené
@@ -78,3 +77,4 @@ Jeden řádek na relaci: datum, relace, co se udělalo, kde to je.
 - 31. 10. 2026 · Hub (Claude) · Návrh po sezení dostavěný podle smlouvy: schéma 2 a brána předběžný/finální, `vyradit` (i celé karty), `smazat`, oddíl Neplatné, tlačítka rozporů, registr `kampan/rozpory.yaml` od R17, pojistka Kvality kánonu, filtr Vyřazené; ⚠ bod 157; zkušební průchod předběžného `s03.yaml` · větev `prepis-do-kanonu`, PR #106
 - 31. 10. 2026 · Uspořádání (Claude) · `main` (#105) sloučený do `prepis-do-kanonu`, konflikt v rozcestníku vyřešený; předávka Přepis → Hub (tvar `problemy`, `dm`, `blok` v ▶) je v PR #106 hotová · větev `prepis-do-kanonu`
 - 31. 10. 2026 · Hub (Claude) · karta sezení podle potvrzeného návrhu (plátno „Karta sezení — návrh“), ⚠ bod 158 · větev `karta-sezeni`, PR #107
+- 31. 10. 2026 · Uspořádání (Claude) · návrh `sNN.yaml` píše relace Hub, postup pro DM v `prepis-kanon.md` § 3a · větev `navrh-pise-hub`

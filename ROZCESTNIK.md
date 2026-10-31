@@ -76,3 +76,4 @@ Jeden řádek na relaci: datum, relace, co se udělalo, kde to je.
 - 31. 10. 2026 · Přepis (Claude Code) · Návrh po sezení a Kvalita kánonu přesunuté z lokálních kopií do větve, předávka · větev `prepis-do-kanonu`
 - 31. 10. 2026 · Uspořádání (Claude) · PR #102 a #103 sloučené; datum sezení 1; seznam větví k smazání ověřený · větev `s01-datum`
 - 31. 10. 2026 · Hub (Claude) · Návrh po sezení dostavěný podle smlouvy: schéma 2 a brána předběžný/finální, `vyradit` (i celé karty), `smazat`, oddíl Neplatné, tlačítka rozporů, registr `kampan/rozpory.yaml` od R17, pojistka Kvality kánonu, filtr Vyřazené; ⚠ bod 157; zkušební průchod předběžného `s03.yaml` · větev `prepis-do-kanonu`, PR #106
+- 31. 10. 2026 · Hub (Claude) · předávka Přepis → Hub zapracovaná: `problemy` jako `{ text, zavaznost }`, upozornění i u `ok: true`, důkazy `dm`, ▶ Poslechnout s blokem (`?cislo=&blok=&cas=`) · větev `prepis-do-kanonu`, PR #106

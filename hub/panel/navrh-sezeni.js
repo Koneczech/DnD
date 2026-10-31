@@ -25,20 +25,37 @@ const datumCesky = (iso) => {
   return m ? `${Number(m[3])}. ${Number(m[2])}. ${m[1]}` : String(iso ?? '');
 };
 
-function odkazPoslech(d) {
-  const q = new URLSearchParams({ cislo: stav.cislo, cas: d.cas });
-  if (d.blok) q.set('blok', d.blok);
-  return `${PREPIS}/?${q}`;
+/**
+ * ▶ Poslechnout v přepisovém nástroji (prepis-kanon.md, Odpovědi relace Přepis, otázka 5):
+ * `?cislo=s03&blok=<id>&cas=d2 0:11:39`. Blok má přednost, čas je záloha, když blok zmizel.
+ */
+function odkazPoslech(cislo, d) {
+  const casti = [['cislo', cislo], ['blok', d.blok], ['cas', d.cas]].filter(([, v]) => v);
+  return `${PREPIS}/?${casti.map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&')}`;
 }
 
 function htmlDukazu(o) {
-  if (!o.dukaz.length) return '';
-  const polozky = o.dukaz.map((d) => {
+  // Důkazy typu dm z návrhu a z kontroly nástroje (pole dm v sNN.dukazy.json), bez opakování.
+  const vsechny = [...o.dukaz];
+  for (const d of o.dukazy?.dm ?? []) {
+    if (!vsechny.some((x) => x.dm === d.dm && (x.citat ?? '') === (d.citat ?? ''))) vsechny.push(d);
+  }
+  if (!vsechny.length) return '';
+  const polozky = vsechny.map((d) => {
     const citat = d.citat ? ` „${esc(d.citat)}“` : '';
-    if (d.dm) return `<span title="Rozhodnutí DM mimo nahrávku">DM ${esc(datumCesky(d.dm))}</span>${citat}`;
-    return `<a href="${esc(odkazPoslech(d))}" target="prepis" title="Otevře místo v přepisovém nástroji">▶ ${esc(d.cas)}</a>${citat}`;
+    if (d.dm) return `<span title="Rozhodnutí DM mimo nahrávku, v přepisu se nehledá">rozhodnutí DM ${esc(datumCesky(d.dm))}</span>${citat}`;
+    return `<a href="${esc(odkazPoslech(stav.cislo, d))}" target="prepis" title="Otevře místo v přepisovém nástroji a pustí ho">▶ ${esc(d.cas)}</a>${citat}`;
   });
   return `<div class="dukazy">Důkaz: ${polozky.join(' · ')}</div>`;
+}
+
+/** Výsledek kontroly důkazů v přepisu: chyby vždy vidět, upozornění u ověřené operace sbalená. */
+function htmlKontrolyDukazu(o) {
+  const k = o.dukazy;
+  if (!k || !k.problemy.length || o.stav === 'zapsano') return '';
+  const radky = k.problemy.map((p) => `<div class="${p.zavaznost === 'chyba' ? 'problemy' : 'varovani'}">${p.zavaznost === 'chyba' ? '✖' : '⚠'} ${esc(p.text)}</div>`).join('');
+  if (!k.ok) return `<div class="kontrola-dukazu"><div class="popisek">Kontrola v přepisu</div>${radky}</div>`;
+  return `<details class="kontrola-dukazu"><summary>Kontrola v přepisu: ${k.upozorneni} upozornění</summary>${radky}</details>`;
 }
 
 function htmlUkazky(o) {
@@ -105,14 +122,13 @@ function htmlOperace(o) {
     o.automaticky ? '<span class="stitek-n">zamítl Hub podle rozporu</span>' : '',
     o.upraveno ? '<span class="stitek-n pozor">upraveno tebou</span>' : '',
     o.problemy.length ? `<span class="stitek-n chyba">${o.problemy.length} ${o.problemy.length === 1 ? 'chyba' : 'chyby'}</span>` : '',
-    o.dukazy && !o.dukazy.ok ? '<span class="stitek-n pozor">důkaz nesedí</span>' : '',
-    o.dukazy && o.dukazy.ok ? '<span class="stitek-n ok">důkaz ověřen v přepisu</span>' : '',
+    o.dukazy && !o.dukazy.ok ? `<span class="stitek-n chyba">důkaz nesedí${o.dukazy.chyb ? ` (${o.dukazy.chyb})` : ''}</span>` : '',
+    o.dukazy && o.dukazy.ok ? `<span class="stitek-n ok">důkaz ověřen v přepisu${o.dukazy.upozorneni ? ` · ${o.dukazy.upozorneni} upozornění` : ''}</span>` : '',
   ].join('');
   const problemy = o.problemy.map((p) => `<div class="problemy">✖ ${esc(p)}</div>`).join('');
   const varovani = [
     ...(o.blokuje && o.stav !== 'zapsano' ? [o.blokuje] : []),
     ...o.varovani,
-    ...(o.dukazy && !o.dukazy.ok ? o.dukazy.problemy.map((p) => `kontrola v přepisu: ${p.text}`) : []),
   ].map((p) => `<div class="varovani">⚠ ${esc(p)}</div>`).join('');
   const obsah = jeRozpor ? htmlRozporu(o) : htmlUkazky(o);
   const upravit = !jeRozpor && stav.upravuji === o.id ? o.upravitelne.map((pole) => `<label>${esc(POPISKY_POLI[pole] ?? pole)}
@@ -132,7 +148,7 @@ function htmlOperace(o) {
   return `<article class="op${jeRozpor ? ' rozpor' : ''}" data-stav="${esc(o.stav)}" data-op="${esc(o.op)}" id="op-${esc(o.id)}">
     <h3><span class="id-op">${esc(o.id)}</span> ${esc(o.popis)}</h3>
     <div class="stitky">${stitky}</div>
-    ${problemy}${varovani}${htmlDukazu(o)}${obsah}${upravit}
+    ${problemy}${varovani}${htmlDukazu(o)}${htmlKontrolyDukazu(o)}${obsah}${upravit}
     ${akce ? `<div class="akce">${akce}</div>` : ''}
   </article>`;
 }

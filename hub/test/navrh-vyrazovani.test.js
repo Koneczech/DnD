@@ -14,7 +14,7 @@ import { vlozitOddil, chybejiciOddily } from '../sdilene/typy-karet.js';
 import { zkontrolovatKvalitu } from '../sdilene/kvalita-kanonu.js';
 import { dalsiR, normalizujRegistr, potrebujeR, zaznamRegistru, zkratitCitat } from '../sdilene/rozpory.js';
 import { Kanon } from '../server/kanon-modul.js';
-import { NavrhSezeni, upravitRegistr } from '../server/navrh-sezeni.js';
+import { NavrhSezeni, normalizujDukazy, upravitRegistr } from '../server/navrh-sezeni.js';
 import { kontrolaDat } from '../server/data.js';
 import { Zapisovac } from '../server/zapis.js';
 import { docasneRepo } from './pomoc.js';
@@ -559,6 +559,43 @@ test('Kontrola dat: registr rozporů, odložený rozpor a neexistující karta',
     assert.ok(zpravy.some((z) => /^chyba: R2: R1–R16/.test(z)), zpravy.join('\n'));
     assert.ok(zpravy.some((z) => /^varovani: R17 je odložený rozpor u \[\[neni\]\]: Kolik jich bylo\?/.test(z)));
     assert.ok(zpravy.some((z) => /^varovani: R17: karta \[\[neni\]\] neexistuje/.test(z)));
+  } finally {
+    await repo.smazat();
+  }
+});
+
+test('kontrola důkazů z nástroje: objekty se závažností, upozornění i u ok: true, důkazy dm, starší tvar', () => {
+  const k = normalizujDukazy({
+    ok: true,
+    problemy: [{ text: 'jméno „Leta“ je z karty, u stolu doslova nezaznělo', zavaznost: 'upozorneni' }],
+    dm: [{ dm: '2026-10-28', citat: 'Platí stůl' }, { citat: 'bez data' }],
+  });
+  assert.equal(k.ok, true);
+  assert.equal(k.upozorneni, 1);
+  assert.equal(k.chyb, 0);
+  assert.deepEqual(k.dm, [{ dm: '2026-10-28', citat: 'Platí stůl' }]);
+  const spatne = normalizujDukazy({ ok: false, problemy: [{ text: 'citace nezazněla', zavaznost: 'chyba' }, 'starý tvar'] });
+  assert.deepEqual(spatne.problemy, [{ text: 'citace nezazněla', zavaznost: 'chyba' }, { text: 'starý tvar', zavaznost: 'upozorneni' }]);
+  assert.equal(spatne.chyb, 1);
+  assert.equal(normalizujDukazy(null), null);
+});
+
+test('Návrh po sezení: detail nese kontrolu důkazů z sNN.dukazy.json', async () => {
+  const { repo, n } = await pripravit();
+  try {
+    await zapsatSoubor(repo.koren, 'hub/.stav/navrhy/s03.dukazy.json', JSON.stringify({
+      sezeni: 's03', cas: 1793447360, operace: {
+        o2: { ok: true, problemy: [{ text: 'jméno „Thiril“ je v kánonu, ale v okolí důkazu nezaznělo', zavaznost: 'upozorneni' }] },
+        o4: { ok: true, problemy: [], dm: [{ dm: '2026-10-31', citat: 'krčmu škrtám' }] },
+      },
+    }));
+    const d = await n.nacist('s03');
+    const o2 = d.operace.find((o) => o.id === 'o2');
+    assert.equal(o2.dukazy.ok, true);
+    assert.equal(o2.dukazy.upozorneni, 1);
+    assert.match(o2.dukazy.problemy[0].text, /Thiril/);
+    assert.deepEqual(d.operace.find((o) => o.id === 'o4').dukazy.dm, [{ dm: '2026-10-31', citat: 'krčmu škrtám' }]);
+    assert.equal(d.operace.find((o) => o.id === 'o1').dukazy, null);
   } finally {
     await repo.smazat();
   }

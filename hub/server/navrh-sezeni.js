@@ -678,13 +678,26 @@ function radekRozporuDoSezeni(op, rozpor) {
   return `- ${rozpor.nazevDruhu}${karta ? ` (${karta})` : ''}: u stolu zaznělo „${zaznelo}“, platí karta.`;
 }
 
-/** Kontrola důkazů z nástroje: problémy jako texty i jako { text, zavaznost }. */
-function normalizujDukazy(x) {
+/**
+ * Kontrola důkazů z přepisového nástroje (prepis-kanon.md § 4 a Odpovědi relace Přepis):
+ * `{ ok, problemy: [{ text, zavaznost: chyba|upozorneni }], dm?: [{ dm, citat }] }`. Upozornění
+ * mohou mít i operace s `ok: true`. Starší tvar s problémy jako prostými texty se bere jako upozornění.
+ */
+export function normalizujDukazy(x) {
   if (!x || typeof x !== 'object') return null;
   const problemy = (Array.isArray(x.problemy) ? x.problemy : []).map((p) => (typeof p === 'string'
     ? { text: p, zavaznost: 'upozorneni' }
     : { text: String(p?.text ?? ''), zavaznost: p?.zavaznost === 'chyba' ? 'chyba' : 'upozorneni' })).filter((p) => p.text);
-  return { ok: x.ok === true, problemy };
+  const dm = (Array.isArray(x.dm) ? x.dm : [])
+    .filter((d) => d && typeof d === 'object' && d.dm)
+    .map((d) => ({ dm: String(d.dm), ...(d.citat ? { citat: String(d.citat) } : {}) }));
+  return {
+    ok: x.ok === true,
+    problemy,
+    chyb: problemy.filter((p) => p.zavaznost === 'chyba').length,
+    upozorneni: problemy.filter((p) => p.zavaznost === 'upozorneni').length,
+    dm,
+  };
 }
 
 /** Vstup pro Kalendar.pridat z operace udalost. */

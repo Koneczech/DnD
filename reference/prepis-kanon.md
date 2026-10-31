@@ -48,7 +48,7 @@ Všechny leží mimo Git v `hub/.stav/navrhy/`, kromě `opravy-sNN.json`, které
 | Soubor | Píše | Čte | Tvar |
 | --- | --- | --- | --- |
 | `sNN.yaml` | Claude | nástroj (kontrola), Hub | schéma 2, § 5 |
-| `sNN.dukazy.json` | nástroj | Hub | `{ sezeni, cas, operace: { <id>: { ok, problemy: [ { text, zavaznost: chyba / upozorneni } ] } } }`; Hub přijme i problémy jako prosté texty (dnešní tvar, berou se jako upozornění) |
+| `sNN.dukazy.json` | nástroj | Hub | `{ sezeni, cas, operace: { <id>: { ok, problemy: [ { text, zavaznost: chyba / upozorneni } ], dm: [ { dm, citat } ] } } }`. Hub ukáže chyby i upozornění (upozornění u `ok: true` sbalená) a důkazy `dm`; starší tvar s problémy jako prostými texty bere jako upozornění |
 | `sNN.rozhodnuti.json` | Hub | Hub | rozpracované schválení (co DM schválil, upravil, zamítl) |
 | `sNN.zapsano.json` | Hub | nástroj (podle `mtime` pozná „v kánonu“) | `{ sezeni, cas, navrh_hash, zapsane: [id], zamitnute: [id], upravene: [id], rozpory: [R…], commit }`; `zapsane` je souhrn všech zápisů, `commit` je `null`, když se uložení na GitHub nepovedlo |
 | `revize-<datum>.yaml` | Claude | Hub | stejné schéma, revize kánonu mimo sezení (jen `vyradit`, `doplnit`, `pole`, `smazat`) |

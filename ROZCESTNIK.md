@@ -67,7 +67,7 @@ Co jedna část potřebuje od jiné. Hotové položky se mažou, záznam zůstan
 
 - Mikrofony na sezení 4 (3 stopy: hráči, DM, zvuk z OBS). Varianty jsou v předávce `prepis-do-kanonu`, nic není vybrané.
 - Cloudový přepis (Soniox, ElevenLabs) jen se souhlasem hráčů.
-- Úklid GitHubu: asi 90 sloučených větví. Lokální pracovní kopie `repo-navrh` a `repo-kvalita` a jejich větve viz Deník 31. 10.
+- Úklid GitHubu: asi 90 sloučených větví. Lokální pracovní kopie `repo-navrh` a `repo-kvalita` a jejich větve (`blok-navrh-po-sezeni`, `blok-kvalita-kanonu`, lokální `prepis-do-kanonu`) smaže dvojklik na `uklid-pracovnich-kopii.cmd` v `Dokumenty\DnD\repo` (obsah je na GitHubu, skript se po sobě smaže); pak tenhle bod smazat.
 - Odložené rozpory jsou v `kampan/rozpory.yaml` se `stav: otevrene`; Kontrola dat je hlásí jako varování.
 
 ## Deník

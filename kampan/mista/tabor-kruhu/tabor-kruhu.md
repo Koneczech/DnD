@@ -16,7 +16,7 @@ strop: tabor
 ---
 # Tábor kruhu v Lurkwoodu
 
-Mýtina v [[lurkwood|Lurkwoodu]], kam [[novacek-kruhu|nováčci]] odvezou spoutanou trojici z Mirabaru a kde se k nim přidá [[alba|Alba]]. **První místo v kampani, kde parta vidí symptom, aniž by znala příčinu.**
+Skalní průrva v [[lurkwood|Lurkwoodu]], kam [[novacek-kruhu|nováčci]] odvezou spoutanou trojici z Mirabaru a kde se k nim přidá [[alba|Alba]]. **První místo v kampani, kde parta vidí symptom, aniž by znala příčinu.**
 
 ## Tři detaily — nikdo z nich je nekomentuje
 
@@ -45,3 +45,17 @@ Několik hlídačů, mezi nimi tři [[novacek-kruhu|nováčci]], kteří partu p
 Konflikt v táboře tedy existuje ještě předtím, než parta cokoliv udělá, a parta ho slyší.
 
 *(Ilustrace tábora — tabor-zoldaku, tabor-vuz, tabor-zajatci — jsou v místě [[lurkwood|Lurkwood]], R13.)*
+
+## Co ví družina
+
+- Skalní průrva v [[lurkwood|Lurkwoodu]] se třemi stany a vozem. %%zná%%
+- Lidé z [[kruh|kruhu]] tu mluvili o „semenáčku“, který chrání, a o druhé skupině, která míří do Yartaru. %%zná%%
+- Les kolem kvete jako na jaře a zvěř se k mrtvým dostala nepřirozeně rychle. %%zná%%
+
+## DM
+
+Družina v táboře nechala růst semenáček a neví o tom. Co s ním bude, je otevřené: bez péče může uschnout, nebo dál růst bez povšimnutí.
+
+## Neplatné
+
+- **R18** (31. 10. 2026): „Mýtina v [[lurkwood|Lurkwoodu]]“ — platí stůl: v sezení 1 to byla skalní průrva se třemi stany a vozem.

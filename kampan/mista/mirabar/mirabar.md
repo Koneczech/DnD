@@ -42,3 +42,7 @@ svetla:
 # Mirabar
 
 Popis místa doplní DM.
+
+## Co ví družina
+
+- Město, odkud družina vyrazila. [[koudur|Koudur]] tu má rodinu, [[sidlo-hardbeardu|dům Hardbeardů]]. %%zná%%

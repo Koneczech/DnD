@@ -24,6 +24,13 @@ zdroj: https://app.notion.com/p/3c49ed2267368143bd9ff7848df10e1a
 
 > Půlčice, zlodějka (Rogue 3, Thief), 25 let. 24 HP.
 
+## Co ví družina
+
+- Zlodějka. Na trhu v [[mirabar|Mirabaru]] okradla [[koudur|Koudura]]. %%zná%%
+- V boji v [[tabor-kruhu|táboře kruhu]] zabila [[tavis|Tavise]]. %%zná%%
+- Řekla družině, že jejího nevlastního otce zavřeli za něco, co prý ukradla ona. Potřebuje důkazy, aby ho dostala ven, a kvůli nim šla do [[longsaddle|Longsaddle]]. %%zná%%
+- V knize u [[brod-na-long-road|brodu]] je zapsaná jako „Tale“ bez příjmení.
+
 ## Příběh
 
 ### 1. Před Thirilem (0–7 let)

@@ -28,6 +28,12 @@ zdroj: https://app.notion.com/p/3c69ed22673681ae92c9f4ddb3ab85fe
 
 > Trpaslík, bard (Bard 3, College of Lore), 22 let. 20 HP.
 
+## Co ví družina
+
+- Bard z [[mirabar|Mirabaru]], hraje na dudy a zpívá. Jede do [[triboar|Triboaru]] koncertovat na Dožínky na pozvání [[norra-ambleforge|Norry Ambleforge]]. %%zná%%
+- Platí [[tusker|Tuskerovi]] jako ochrance. Chlubí se, že je celebrita se třemi bodyguardy. %%zná%%
+- Kouzlí přes dudy. %%zná%%
+
 ## Příběh
 
 ### 1. Rodina

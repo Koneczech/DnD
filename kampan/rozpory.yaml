@@ -1,4 +1,27 @@
 # Registr rozhodnutí o rozporech (rozhodnutí 77, reference/prepis-kanon.md § 6).
 # Každé rozhodnutí DM o rozporu mezi stolem a kartou má číslo R a záznam tady. Čísla navazují
 # na R1–R16 z převodu Notionu (reference/kanon-mapa.yaml). Zapisuje Hub (Návrh po sezení).
-[]
+- id: R17
+  kdy: 2026-10-31
+  sezeni: s01
+  druh: stul_vs_karta
+  karta: torva
+  karta_tvrzeni: Druidsky ani sylvansky neumí.
+  prepis_tvrzeni: "Zápis sezení 1: Torva sesílala Zapletení v druidštině a Alba jí rozuměla."
+  dukaz:
+    - dm: 2026-10-31
+      citat: Naučila se nějaká kouzla, plynně ale mluvit nebude
+  stav: rozhodnuto
+  rozhodnuti: Torva se naučila pár kouzel v druidštině, plynně druidsky nemluví. Sylvansky neumí.
+- id: R18
+  kdy: 2026-10-31
+  sezeni: s01
+  druh: stul_vs_karta
+  karta: tabor-kruhu
+  karta_tvrzeni: Mýtina v Lurkwoodu.
+  prepis_tvrzeni: "Zápis sezení 1: skalní průrva, tři stany, vůz."
+  dukaz:
+    - dm: 2026-10-31
+      citat: Skalní průrva
+  stav: rozhodnuto
+  rozhodnuti: Platí stůl.

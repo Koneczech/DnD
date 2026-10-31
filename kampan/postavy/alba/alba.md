@@ -30,6 +30,13 @@ Velmi dlouhé bílé vlasy, výrazné zelené oči, zlaté pihy kolem nosu a pod
 
 Jazyky: Common, Halfling, Druidic
 
+## Co ví družina
+
+- Hledá druida. [[jorun|Joruna]] se ptala na druida jménem [[bifron-nox|Bifron]], nevěří mu a ostatním říká, že je divný. %%zná%%
+- Rozumí druidštině: poznala, že [[torva|Torva]] sesílá kouzla v druidštině. %%zná%%
+- Mluví se zvířaty. %%zná%%
+- Slíbila [[leta|Letě]] pomoc s jejím nevlastním otcem. %%zná%%
+
 ## Příběh
 
 ### 1. Hvozd

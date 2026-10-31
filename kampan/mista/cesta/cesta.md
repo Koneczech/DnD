@@ -3,7 +3,7 @@ schema: 1
 id: cesta
 typ: misto
 nazev: Cesta
-verejne: true
+verejne: false
 # Anglický popis vzhledu místa pro prompty dílny (doplní DM). Dílna ho vloží do promptu.
 popis_obrazu: ""
 ilustrace:

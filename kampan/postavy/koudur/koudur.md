@@ -131,6 +131,8 @@ Obě rodiny to schválily. Nedomluvilo se datum, nepodepsalo se nic. Ale otcové
 
 **7. Dnes.** Koudur a Tusker jsou na mirabarském tržišti, nakupují zásoby na cestu. Ještě nevyjeli.
 
+## Výchozí stav (před sezením 1)
+
 ## DM — co Koudur neví
 
 **Hardbeardovi vozí safíry přes [[halvar-grimsdal|Grimsdalovu]] pečeť.** [[balgur-hardbeard|Balgurův]] vztah ke Grimsdalovi není přátelství — je to nutnost. Koudur si Grimsdala pamatuje jenom jako nepříjemného opilého hosta z dětství.

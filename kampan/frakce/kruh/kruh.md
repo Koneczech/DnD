@@ -42,3 +42,9 @@ Ne „utečte, než vás zabijí", ale **„utečte, dokud ještě chcete"**.
 ## Proč zůstává Bifron obhajitelný
 
 Nikoho nezabíjí. Jen věří, že souhlas je maličkost proti lesu.
+
+## Co ví družina
+
+## Jak jednají
+
+## DM

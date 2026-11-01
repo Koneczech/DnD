@@ -21,3 +21,11 @@ Mrtvý. Mladší syn/bratranec yartarského rodu **[[rod-redgrave|Redgrave]]** �
 Velel žoldnéřskému **[[krkavci-prapor|Krkavčímu praporu]]** v kampani, která vyhladila **[[praotec|Kruh pod Praotcem]]** (~1468 DR) v odvetě za vypálení [[tarnwick|Tarnwicku]].
 
 Je dnes mrtvý — **Bifronova pomsta vůči němu osobně nemá adresáta**. Právě to je mechanismus, jímž se z mstitele stal fanatik s plánem ohrožujícím "velké množství lidí": hněv, který neměl kam jít, se zobecnil.
+
+## Co ví družina
+
+## Jak ho hrát
+
+## Příběh
+
+## DM

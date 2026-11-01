@@ -60,3 +60,7 @@ Cíl, který [[thiril-ambersedge|Thiril]] [[leta|Letě]] vymyslel jako past na �
 - Ze sídla se občas ozve rána nebo zableskne světlo. Místní si toho nevšímají. %%zná%%
 - Pocestní spí v hostinci [[u-deraveho-grose|U Děravého groše]]. %%zná%%
 - Čtvrt dne severně od vesnice, u remízku s potůčkem, v posledním měsíci mizí zásilky. %%zná%%
+
+## Co tu najdou
+
+## DM

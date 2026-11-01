@@ -24,3 +24,11 @@ Sleduje Bifrona roky zpovzdálí. Po jeho zmizení se vydal k [[tichy-hvozd|Tich
 **Corvain nejde Bifrona zachránit — jde ho zastavit.** Hledá ho po vlastní ose; jeho cíl se jednou střetne s Albiným.
 
 **Klíčové tajemství:** Corvain ví, že [[albina-matka|Albina matka]] žije poblíž Kheldellu — je **jediný žijící člověk, který zná obě poloviny pravdy** (že matka žije, i co se stalo kruhu). Na DM je rozhodnout, kdy a jestli to Albě řekne.
+
+## Co ví družina
+
+## Jak ho hrát
+
+## Příběh
+
+## DM

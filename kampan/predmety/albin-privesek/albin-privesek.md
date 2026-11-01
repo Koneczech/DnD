@@ -19,6 +19,10 @@ Dostala ho v **pěti letech** od [[bifron-nox|Bifrona]] se dvěma větami: matka
 
 Ptala se poté pořád dokola, jak se to dětem v pěti dělá. **Přestala, když pochopila, že to otci ubližuje.**
 
+## Co ví družina
+
+## Historie
+
 ## DM
 
 **Není to dědictví. Je to stopa.**

@@ -20,3 +20,11 @@ Trpaslík, šenkýř **[[na-zvonici|Na Zvonici]]**.
 Zná [[koudur|Koudura]] od jeho čtrnácti let — pouštěl ho dopoledne do zavřeného lokálu, aby si mohl cvičit na dudy, a věděl přitom, čí je syn. **Nikdy to nikomu neřekl.**
 
 Dneska je z Koudura štamgast.
+
+## Co ví družina
+
+## Jak ho hrát
+
+## Příběh
+
+## DM

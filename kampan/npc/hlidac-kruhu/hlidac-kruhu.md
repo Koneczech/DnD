@@ -29,3 +29,11 @@ zdroj: "chat „Custom CSS pro Improved Initiative“ (29. 8. 2026, statblok) a 
 **Smysly** pasivní Vnímání 11 · **Jazyky** Obecná řeč
 
 Akce zatím nejsou nastatované. V sešitu pro počítání obtížnosti jsou jen OT 13, BV 18 a ÚN 1/4.
+
+## Co ví družina
+
+## Jak ho hrát
+
+## Příběh
+
+## DM

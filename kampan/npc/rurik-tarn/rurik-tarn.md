@@ -36,3 +36,11 @@ Tusker mu sebral zbraň a mlátil ho **hruškou meče** — i když nad ním vzt
 Od té doby spolu **nemluví vůbec.** Ticho se nedá nahlásit. Míjejí se dva roky na dvoře, v kasárnách, na střídání hlídek. Ani slovo.
 
 **Je pořád u stráže v Mirabaru.**
+
+## Co ví družina
+
+## Jak ho hrát
+
+## Příběh
+
+## DM

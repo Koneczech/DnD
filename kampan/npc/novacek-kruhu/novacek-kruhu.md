@@ -29,3 +29,9 @@ Skupina nováčků kruhu. *(Popis sedmnáctiletého nováčka, který mluví ví
 
 - Mladí lidé z [[kruh|kruhu]]. Unesli [[koudur|Koudura]], [[leta|Letu]] a [[tusker|Tuskera]] z [[mirabar|Mirabaru]] do [[tabor-kruhu|tábora v Lurkwoodu]]. Až na jednoho jsou mrtví. %%zná%%
 - Jeden utekl a viděl, jak medvěd ubil [[torva|Torvu]]. %%zná%%
+
+## Jak ho hrát
+
+## Příběh
+
+## DM

@@ -46,3 +46,5 @@ zdroj: https://app.notion.com/p/3c89ed22673681bfb21dc8060edd2d5c
 Dvacet tři let od vyhlazení je zároveň dost dlouho na to, aby Bifronův smutek stihl vyhnít a zobecnět v ideologii.
 
 **Poznámka k oficiálním materiálům:** do let 1490–92 kladou vydané zdroje obří krizi na Severu (*Storm King's Thunder*, mimo jiné vypálení Triboaru). Zatím nerozhodnuto, zda to ignorovat, nebo použít jako kulisu — vedeno jako otevřená otázka v registru.
+
+## Dopad

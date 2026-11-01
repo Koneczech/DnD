@@ -24,3 +24,11 @@ Od té doby se párkrát viděli a prohodili pár zdvořilých slov. Nic víc.
 Tusker si z toho nic nedělá — pro něj to nebyl hrdinský čin, ale rozhodnutí, za které dostal vynadáno.
 
 > Nabízí se sám: tržiště je přesně to místo, kde Koudur s Tuskerem nakupují zásoby.
+
+## Co ví družina
+
+## Jak ho hrát
+
+## Příběh
+
+## DM

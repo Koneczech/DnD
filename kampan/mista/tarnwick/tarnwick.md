@@ -23,3 +23,9 @@ Bývalé předsunuté dřevařsko-prospektorské městečko [[rod-redgrave|rodu 
 [[alba|Alba]] tam byla v devíti letech s [[bifron-nox|Bifronem]]; viděla kostru dítěte svého věku. Bifron jí ho ukázal jako "důkaz toho, co dělá civilizace" a zamlčel, že oheň založili jeho vlastní lidé.
 
 **Stopa pro partu:** legenda zná jen jméno "Pohlcené město" a nikde k němu nejsou záznamy. Teprve Bifronovy zápisky, které používají staré jméno *Tarnwick*, otevřou cestu ke skutečným záznamům — mapám, obchodním listinám, možná zmínce o Osricu Redgraveovi.
+
+## Co ví družina
+
+## Co tu najdou
+
+## DM

@@ -23,6 +23,8 @@ Svazek zásilek, který [[malk-orren|Malk Orren]] vezl pro víc adresátů a o k
 - Malkova klientela je netrpělivá, potřebuje zásilku zpátky co nejdřív. %%zná%%
 - Záznamy o poslední zakázce z Mirabaru, které hledá Leta, jsou podle Malka nejspíš její součástí. %%zná%%
 
+## Historie
+
 ## DM
 
 Mezi zásilkami je [[ordwinuv-dopis|Ordwinův dopis]] pro Letu.

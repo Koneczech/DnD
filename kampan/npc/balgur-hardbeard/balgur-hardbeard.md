@@ -34,6 +34,10 @@ Od [[koudur|Koudurova]] odmítnutí sňatku (asi měsíc zpátky) drží v Mirab
 
 - [[koudur|Koudurův]] otec a člen [[rada-jiskrivych-kamenu|Rady jiskřivých kamenů]]. Chtěl z Koudura dědice rodinné štoly. %%zná%%
 
+## Jak ho hrát
+
+## Příběh
+
 ## DM
 
 **Hardbeardovi vozí safíry přes [[halvar-grimsdal|Grimsdalovu]] pečeť.** Balgurův vztah ke Grimsdalovi není přátelství, je to nutnost.

@@ -30,6 +30,14 @@ Cholerik napojený na podsvětí. Není racionální. Zesměšnění nemůže ne
 
 **Tuší, že Thiril někoho kryje. Neví koho. A pořád hledá.**
 
+## Co ví družina
+
+## Co chce a jeho plán
+
+## Jak bojuje
+
+## Když prohraje
+
 ## DM — vazba na Koudura
 
 **Hardbeardovi vozí safíry přes Grimsdalovu pečeť.** [[koudur|Koudurův]] otec s ním nemusí být kamarád, ale musí být zadobře — chodí spolu na zasedání rady. Koudur si Grimsdala pamatuje jako nepříjemného chlapa, co moc pil a smál se vlastním vtipům.

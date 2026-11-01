@@ -22,3 +22,9 @@ Prastarý dub v západním High Forestu, podle legend vzešlý ze semene Světov
 **Vazba na [[tusker|Tuskera]]:** Tuskerova podtřída Path of the World Tree a rodový znak šedého stromu dávají Praotci možnou druhou strukturální roli — fyzickou kotvu jeho linie Světového stromu. Obě role (srdce Bifronova mrtvého kruhu + uzel k Tuskerovi) jsou potvrzené a nevylučují se.
 
 **Bifronův plán:** bere semena Praotce a magicky je pozměňuje (on to vidí jako povznesení, ve skutečnosti je to znesvěcení) — základ zárodků, které zasazuje do velkých lesů Faerûnu. Poslední a největší zárodek má jít sem, do High Forestu, mnohem později — uzavření kruhu na místě, kde vše začalo.
+
+## Co ví družina
+
+## Co tu najdou
+
+## DM

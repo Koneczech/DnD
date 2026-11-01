@@ -62,3 +62,5 @@ Město řídí [[rada-jiskrivych-kamenu|Rada jiskřivých kamenů]], markýzem j
 - **Přístavní brána.** Čluny s kamenem a rudou pro Luskan, celníci s pečetěmi úřadu vah a [[ordwin-sohla|Ordwinovo]] vetešnictví se zadní místností. %%zná%%
 - **Síň všech ohňů.** Obrovský sál lemovaný pecemi, pojme přes dva tisíce lidí. %%zná%%
 - **Hutě a chudinská čtvrť.** Kouř, struska a děti u měchů. V [[komora-nad-kozeluznou|komoře nad koželužnou]] tu žila [[leta|Leta]] s [[thiril-ambersedge|Thirilem]]. %%zná%%
+
+## DM

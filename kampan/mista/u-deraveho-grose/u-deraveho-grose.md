@@ -24,3 +24,7 @@ Hostinec v [[longsaddle|Longsaddle]] přímo u Long Road. Hostinská je [[ilma-d
 - Nocleh stojí 1 zl na osobu a pivo je v ceně. K jídlu jsou kuřata. %%zná%%
 - U hostince jsou stáje, o koně hostů se stará mladý stájník. %%zná%%
 - [[koudur|Koudur]] tu v den příjezdu hrál a celý lokál tančil. %%zná%%
+
+## Co tu najdou
+
+## DM

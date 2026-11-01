@@ -25,3 +25,7 @@ zdroj: "DM 20. 10. 2026 (hierarchie míst)"
 - U cesty jsou mýtiny s ohništi, kde pocestní pravidelně táboří. %%zná%%
 - Třetí den cesty z převisu je [[brod-na-long-road|brod se závorou]]. %%zná%%
 - Čtvrt dne severně od Longsaddle je u cesty remízek s potůčkem, kde v posledním měsíci mizí zásilky. %%zná%%
+
+## Co tu najdou
+
+## DM

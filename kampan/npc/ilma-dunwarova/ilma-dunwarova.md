@@ -33,3 +33,9 @@ Hostinská [[u-deraveho-grose|U Děravého groše]] v [[longsaddle|Longsaddle]].
 - **Roswyn** — bylinkářka na okraji města. Ví, kde se v poslední době nedá sbírat, protože „tam někdo je“. Popíše místo krajinou, ne směrem. S druidkou mluví jinak než s ozbrojenci.
 
 > Nerozhodnuto: jestli jsou lupiči místní (jeden z nich Ilmin synovec).
+
+## Jak ho hrát
+
+## Příběh
+
+## DM

@@ -83,3 +83,9 @@ Rekvizita. **Vytištěno a připraveno.** Šifrovaný dopis od [[ordwin-sohla|Or
 - **[[ordwin-sohla|Ordwin]] si Thirilův dopis na rozloučenou nechává** a v listu se o něm nezmíní ani slovem. Sedí to na poslední větu a dá se to o pár sezení později otočit v odhalení.
 - **Že Grimsdal pátrá dál, v listu není.** Ta informace patří Ordwinovi do úst, až se Leta do Mirabaru vrátí — má tak co říct kromě předání dopisu na rozloučenou.
 - Zvažován, ale nepoužit: akrostich v prvních písmenech odstavců jako druhá vrstva čitelná i bez klíče.
+
+## Co ví družina
+
+## Historie
+
+## DM

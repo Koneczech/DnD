@@ -52,6 +52,8 @@ Konflikt v táboře tedy existuje ještě předtím, než parta cokoliv udělá,
 - Lidé z [[kruh|kruhu]] tu mluvili o „semenáčku“, který chrání, a o druhé skupině, která míří do Yartaru. %%zná%%
 - Les kolem kvete jako na jaře a zvěř se k mrtvým dostala nepřirozeně rychle. %%zná%%
 
+## Co tu najdou
+
 ## DM
 
 Družina v táboře nechala růst semenáček a neví o tom. Co s ním bude, je otevřené: bez péče může uschnout, nebo dál růst bez povšimnutí.

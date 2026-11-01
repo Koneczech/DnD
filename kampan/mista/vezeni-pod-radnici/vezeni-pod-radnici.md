@@ -30,3 +30,9 @@ Thiril **neměl prsten** — sebrali mu při zatčení všechno. A byl klidný. 
 **Byla to lež. A bylo to poslední místo, kde spolu mluvili.**
 
 Rozloučení bude v dopise, který drží [[ordwin-sohla|Ordwin]].
+
+## Co ví družina
+
+## Co tu najdou
+
+## DM

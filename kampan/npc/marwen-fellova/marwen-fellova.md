@@ -33,3 +33,9 @@ Trpaslice, která velí partě trpaslíků na cestě na jih. Ví o mizejících 
 ## Jak ji hrát
 
 Hlasitá, přímá, ráda si stěžuje — letos je podle ní všechno na nic. Zve na pivo a na pálenku, mízovou pálenku dřevorubců ale nepije. Své chlapy nechává mluvit, rozhoduje ona.
+
+## Jak ho hrát
+
+## Příběh
+
+## DM

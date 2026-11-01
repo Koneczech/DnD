@@ -20,3 +20,9 @@ Vyřezané „L", za kterým je vyobrazen šíp. Její jméno a to, co si vyslou
 **Není na něm nic z rodového znaku Ambersedge ani z prstenu.** Amulet je čistě její. To bylo výslovné rozhodnutí: prsten a amulet se spojí až ve chvíli, kdy je Leta uvidí vedle sebe.
 
 Nosí ho pořád. Při nervozitě si s ním pohrává (spolu s mincí, kuličkou a náušnicemi).
+
+## Co ví družina
+
+## Historie
+
+## DM

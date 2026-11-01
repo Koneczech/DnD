@@ -61,3 +61,13 @@ Lidi nezískává, ale přivádí; zbytek udělá strom. Růst semene je urychle
 > **V pilotu Bifronovo jméno nepadne ani náznakem.** Hlídači mluví jen o „něm", který je to naučil.
 
 Únosci netuší a nikdy nezjistí, že vezou Bifronovu dceru.
+
+## Co ví družina
+
+## Co chce a jeho plán
+
+## Jak bojuje
+
+## Když prohraje
+
+## DM

@@ -26,3 +26,9 @@ Opilecká sázka, které se [[leta|Leta]] účastnila spolu s [[ordwin-sohla|Ord
 **Sázku nevyhrála.** Ten chlap žádný kontakt neměl, vyhýbal se jejím otázkám a nakonec se jí snažil utéct.
 
 Ordwinovi se to nelíbilo od začátku. *(Neplatí: Ordwin u sázky nebyl, dozvěděl se o ní až potom, R7.)*
+
+## Co ví družina
+
+## Co tu najdou
+
+## DM

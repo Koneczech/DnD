@@ -29,3 +29,7 @@ Stařík, který hlídá [[brod-na-long-road|brod na Long Road]] mezi Lurkwoodem
 ## Jak ho hrát
 
 Pečlivý a nedůtklivý. Ptá se na jméno a hned na rodové jméno, a jestli se píše dohromady, nebo zvlášť — jednou se spletl a měl z toho problém. Když je zapsáno, chce mít klid: „Tak už běžte laskavě.“ Závoru spouští dřív, než projde poslední.
+
+## Příběh
+
+## DM

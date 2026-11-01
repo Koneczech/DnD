@@ -27,6 +27,8 @@ Nosí ho na řetízku, ale **nikdy na krku a nikdy na ruce — vždycky v kapse.
 - [[leta|Leta]] ten znak zná od dětství jako „useknutou kapku“. **Neví, co znamená**, a nikdy se nezeptala.
 - Ze znaku nejde vyčíst jméno Ambersedge. Spojit se dá teprve tehdy, když Leta zjistí, že rod obchodoval s jantarem, nebo když uslyší, že *ambersedge* znamená odřezek. Navazuje na větu v [[ordwin-sohla|Ordwinově]] dopise *„Za odřezky se neplatí.“*
 
+## Co ví družina
+
 ## Historie
 
 - Ukradl mu ho jiný zloděj (trpaslík, bezejmenný, ne špatný — když se mu podařilo okrást [[thiril-ambersedge|Thirila]]).
@@ -38,3 +40,5 @@ Nosí ho na řetízku, ale **nikdy na krku a nikdy na ruce — vždycky v kapse.
 ## Až se to spojí
 
 [[leta|Leta]] zjistí nejen to, že [[thiril-ambersedge|Thiril]] měl rodinu — ale že to, na co je celý život nejvíc hrdá, byla ve skutečnosti záchrana jediné věci, kterou jí nikdy nesvěřil.
+
+## DM

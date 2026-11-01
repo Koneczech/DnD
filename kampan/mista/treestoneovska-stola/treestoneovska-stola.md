@@ -23,3 +23,9 @@ Zbyly po ní dvě věci: **dluh** u [[bruna-ironvale|Bruny Ironvale]] a **znalos
 Právě pro tu znalost si za ním Ironvale po letech přišla — pod záminkou průzkumu ztraceného práva.
 
 > [[poloha-treestoneovske-stoly|Přesná poloha neurčena]]. Fyzické místo, na které se dá dojet, až bude potřeba.
+
+## Co ví družina
+
+## Co tu najdou
+
+## DM

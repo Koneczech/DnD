@@ -40,3 +40,9 @@ Při doptávání uhne: *„Já vím jen, že se tam někdo má hlásit."*
 ## Co ví družina
 
 - [[novacek-kruhu|Nováček kruhu]], který mluvil víc, než měl. Od něj družina zjistila většinu toho, co o táboře ví. V boji ho zabila [[leta|Leta]]. %%zná%%
+
+## Jak ho hrát
+
+## Příběh
+
+## DM

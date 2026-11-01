@@ -18,3 +18,9 @@ Safír z rodinné štoly v Undercity. [[koudur|Koudur]] ho nosí pořád.
 Jsou do něj vyryty **iniciály jeho nejbližších**: matky, otce, sestry [[hedwiga-hardbeard|Hedwigy]] a [[tusker|Tuskera]].
 
 Čistě citová vazba — a zároveň seznam lidí, kterými se dá Koudur vydírat.
+
+## Co ví družina
+
+## Historie
+
+## DM

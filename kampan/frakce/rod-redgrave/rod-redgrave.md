@@ -21,3 +21,9 @@ Bohatý yartarský rod. Jméno je záměrná ironie — "rudý hrob" jako varov�
 Financovali pronikání do High Forestu: dřevaři a uhlíři na okrajích, prospektorské výpravy do ruin a podhůří. Když se do cesty postavil **[[praotec|Kruh pod Praotcem]]**, najali **[[krkavci-prapor|Krkavčí prapor]]** pod velením **[[osric-redgrave|Osrika Redgrava]]**, aby konflikt ukončil silou.
 
 Dnes v ději zatím jen jako jméno v [[bifron-nox|Bifronových]] zápiscích a případně ve starých yartarských záznamech (viz **[[tarnwick|Tarnwick]]**). Historie rodu za tímto rámcem je záměrně neurčená — prostor pro pozdější rozvinutí, až/pokud se parta dostane k Yartaru.
+
+## Co ví družina
+
+## Jak jednají
+
+## DM

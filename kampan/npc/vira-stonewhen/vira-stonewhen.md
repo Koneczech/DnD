@@ -33,3 +33,11 @@ Poměrně hezká, ale **hloupá, přízemní a nudná**. [[koudur|Koudur]] ji zn
 **Ztropila scénu. Koudura to nepřekvapilo.**
 
 Tím se to v Mirabaru vědělo hned.
+
+## Co ví družina
+
+## Jak ho hrát
+
+## Příběh
+
+## DM

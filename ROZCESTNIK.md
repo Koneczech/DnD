@@ -39,7 +39,6 @@ Příprava → hra u stolu → přepis a scénář → návrh a schválení → 
 
 | Větev | Co v ní je | Další krok |
 | --- | --- | --- |
-| `pohled-druziny` | Rozhodnutí 83: v pohledu družiny Co se tu stalo a Odkazují sem z hráčského kánonu, odkazová pole (Kdo tu je, Členové, Sídlí tu…) mezi kartami, které družina zná; Odkazují sem neopakuje Co se tu stalo; 6 vztahů a doplněné vazby 5 událostí pro družinu | DM: projít PR #115 a sloučit |
 
 ## Předávky (fronta)
 
@@ -93,3 +92,4 @@ Jeden řádek na relaci: datum, relace, co se udělalo, kde to je.
 - 1. 11. 2026 · Uspořádání (Claude) · výsledky měření přepisových modelů do rozcestníku (oddíl Změřeno), mikrofony jako priorita před sezením 4 · větev `prepis-mereni`
 - 1. 11. 2026 · Hub (Claude) · Mirabar a Rada jiskřivých kamenů podle schváleného návrhu (dokument „Mirabar — návrh kontextu města“), sladěno s Forgotten Realms; R19; Kvalita kánonu 61 → 62 %, žádná nová chyba · větev `mirabar`, PR #114
 - 1. 11. 2026 · Hub (Claude) · pohled družiny: hráčský kánon a odkazová pole (rozhodnutí 83), vztahy a události pro družinu · větev `pohled-druziny`, PR #115
+- 1. 11. 2026 · Hub (Claude) · Balgur Hardbeard pro družinu (Členové Rady jiskřivých kamenů v pohledu družiny) · větev `balgur`

@@ -3,7 +3,7 @@ schema: 1
 id: balgur-hardbeard
 typ: npc
 nazev: "Balgur Hardbeard"
-verejne: false
+verejne: true
 ikona: 💠
 frakce: "[[rada-jiskrivych-kamenu]]"
 aliases: ["Balgur"]
@@ -29,6 +29,10 @@ Orientovaný na obchod a na jistotu své pozice. Chtěl z Koudura dědice štoly
 Nerozešli se ve zlém. Je smutný z toho, že syn nechce být jeho dědicem a nesdílí jeho nadšení pro podnik. Starost o něj má pořád.
 
 Od [[koudur|Koudurova]] odmítnutí sňatku (asi měsíc zpátky) drží v Mirabaru tvář za syna, který zrušil dohodu se Stonewheny — a řekl to nahlas.
+
+## Co ví družina
+
+- [[koudur|Koudurův]] otec a člen [[rada-jiskrivych-kamenu|Rady jiskřivých kamenů]]. Chtěl z Koudura dědice rodinné štoly. %%zná%%
 
 ## DM
 

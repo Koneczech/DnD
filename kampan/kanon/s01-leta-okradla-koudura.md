@@ -8,6 +8,7 @@ sezeni: s01
 kdo: [leta, koudur]
 doresit: false
 vazby: ["[[leta]]", "[[koudur]]", "[[mirabar]]", "[[s01]]"]
+tags: [aktualni]
 zdroj: https://app.notion.com/p/3cf9ed22673681568e9dd7d97578765a
 ---
 ## Co se stalo

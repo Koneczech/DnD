@@ -28,3 +28,9 @@ Nebylo to jednání — byla to rodinná událost, oslava nového křesla. Otec 
 [[koudur|Koudurovi]] bylo deset, dvanáct. Seděl u konce stolu, nudil se a nerozuměl skoro ničemu. **Nepamatuje si z toho večera nic konkrétního** — jen atmosféru a Grimsdala jako nepříjemného chlapa, co moc pil a smál se vlastním vtipům.
 
 [[hedwiga-hardbeard|Hedwiga]] u toho byla a dávala pozor.
+
+## Co ví družina
+
+## Co tu najdou
+
+## DM

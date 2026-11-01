@@ -28,3 +28,9 @@ Děti se **od šesti let** posílaly na třídění strusky a k měchům. **Kdo 
 - Naučená rovnice: **péče vždycky něco stojí.** Proto ji Thirilova bezpodmínečnost první měsíce děsila víc než ulice.
 
 Zatím bez názvu a bez konkrétního provozovatele.
+
+## Co ví družina
+
+## Co tu najdou
+
+## DM

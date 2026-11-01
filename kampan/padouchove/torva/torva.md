@@ -112,8 +112,14 @@ Doporučeno prostřední — pět těl a mezi nimi sedmnáctiletý kluk, který 
 - Je mrtvá, zabila ji družina v táboře kruhu. %%zná%%
 - Měla u sebe [[vacek-se-semeny|váček s podivnými semeny]]. %%zná%%
 
+## Co chce a jeho plán
+
+## Jak bojuje
+
 ## Když prohraje
 Nepadne mrtvá. Posadí se a přestane rozumět — pro ni je útěk návrat do světa, který ji sem dohnal.
+
+## DM
 
 ## Neplatné
 

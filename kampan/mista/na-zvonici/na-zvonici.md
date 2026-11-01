@@ -26,3 +26,9 @@ Hospoda v [[mirabar|Mirabaru]]. [[koudur|Koudurovo]] domovské místo — v jeho
 ## Lidé
 
 **[[ulfgar-tinbarrel|Ulfgar Tinbarrel]]** (šenkýř), **[[brann-kettleborn|Brann Kettleborn]]** (dudák u stolu).
+
+## Co ví družina
+
+## Co tu najdou
+
+## DM

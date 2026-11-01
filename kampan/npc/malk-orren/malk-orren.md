@@ -68,3 +68,9 @@ Vezl svazek zásilek pro víc adresátů, mezi nimi Ordwinův dopis pro Letu, a 
 **Ruční kuše.** Útok na dálku: +4, dostřel 30/120 stop. Zásah: 5 (1k6 + 2) bodného zranění.
 
 **Šikovný čin** (bonusová akce). Použije akci Dash, Disengage nebo Hide.
+
+## Jak ho hrát
+
+## Příběh
+
+## DM

@@ -27,3 +27,9 @@ Ale koberce jsou prošlapané, **půlka pokojů se netopí** a stříbro z jíde
 - Tusker sem před odjezdem přinesl všechny peníze, které dostal od Hardbeardů.
 
 **Ve znaku mají šedý strom.**
+
+## Co ví družina
+
+## Co tu najdou
+
+## DM

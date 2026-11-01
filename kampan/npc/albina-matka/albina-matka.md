@@ -31,3 +31,11 @@ Obyčejná žena. Nebeská laskavost, kterou si vysloužila ve vlastním život�
 **Strukturální role scény smrti** (potvrzeno v dřívějším chatu o Albě): žila dobrý, plný život; zemře zdánlivě přirozeně, když se jí Alba přiblíží; Alba nejdřív nepochopí mechanismus. Scéna má nést i plot-kritickou informaci o Bifronově plánu (viz výše — semena).
 
 **[[corvain-thornroot|Corvain]] ví, že žije** — jediný, kdo zná obě poloviny pravdy o Bifronovi i o ní.
+
+## Co ví družina
+
+## Jak ho hrát
+
+## Příběh
+
+## DM

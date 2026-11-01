@@ -37,6 +37,12 @@ Když [[tusker|Tuskera]] vyhodili z výcviku, Dorn přišel osobně, postavil se
 
 Podal mu ruku a popřál šťastnou cestu. Nic víc — ačkoli věděl, kam a proč syn jede.
 
+## Co ví družina
+
+## Jak ho hrát
+
+## Příběh
+
 ## DM — co Dorn ví
 
 Treestoneové kdysi drželi **[[treestoneovska-stola|štolu v Cragách]]**; ta skončila a rod z toho nikdy nevstal. **[[bruna-ironvale|Bruna Ironvale]]** jim tehdy půjčila, aby se dům udržel — Dorn od té chvíle nedluží městu ani bance, ale konkrétnímu člověku u konkrétního stolu.

@@ -31,3 +31,9 @@ Tři trpasličí dřevorubci z Mirabaru, se kterými družina šla poslední den
 ## Jak je hrát
 
 Mluvčí je upovídaný a o svém řemesle vypráví rád a dlouho: narodil se pod smrkem, a jakmile chytil sekeru, už ji nepustil. Hned nabízí čutoru. Ostatní dva se usmívají a pijí.
+
+## Jak ho hrát
+
+## Příběh
+
+## DM

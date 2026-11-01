@@ -26,3 +26,11 @@ U něj Koudur nechával nástroj, když se vracel domů.
 **Žije.** Koudur se s ním před odjezdem rozloučil — oznámil mu, že jede na turné.
 
 > [[ci-dudy|Otevřené]]: byly to Brannovy vlastní dudy, nebo náhradní nástroj?
+
+## Co ví družina
+
+## Jak ho hrát
+
+## Příběh
+
+## DM

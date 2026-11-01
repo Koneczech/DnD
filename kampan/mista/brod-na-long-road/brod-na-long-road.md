@@ -23,3 +23,7 @@ Brod na Long Road mezi Lurkwoodem a Longsaddle, třetí den cesty od převisu. H
 - Není to hranice ani strážnice, žádná posádka tu není. Jen stařík Artur, který zvedá a spouští závoru. %%zná%%
 - Prý ho platí Longsaddle i Mirabar. %%zná%%
 - Kdo projde, toho Artur zapíše do velké knihy jmen a dat. V knize je i družina, Leta pod jménem „Tale“. %%zná%%
+
+## Co tu najdou
+
+## DM

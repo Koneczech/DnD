@@ -34,3 +34,5 @@ Mluví ke [[koudur|Koudurovi]], protože ho zaujaly jeho dudy na hromadě zabave
 Yartar leží od Triboaru dál na východ. Vzniká tím **pořadí, ne dilema**: parta dojede do Triboaru, [[koudur|Koudur]] odehraje a teprve pak mají kam pokračovat.
 
 Stopa zároveň nemíří tam, kam [[bifron-nox|Bifron]] podle kánonu skutečně šel (Moonwood, na východ) *(Neplatí: Bifron jde do Neverwinterského hvozdu, na západ, R11.)*. Není to lež — v Yartaru se hlásí někdo z kruhu, ne Bifron sám.
+
+## Dopad

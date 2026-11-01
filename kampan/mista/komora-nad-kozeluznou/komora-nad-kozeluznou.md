@@ -31,3 +31,9 @@ Je tu **tajná schránka**.
 [[leta|Leta]] odsud odjíždí s tím, že se za pár týdnů vrátí. **Nevzala si nic [[thiril-ambersedge|Thirilova]].**
 
 Možné místo, kde najde Ordwinův dopis — studená kamna, dva slamníky, všechno tak, jak to nechala.
+
+## Co ví družina
+
+## Co tu najdou
+
+## DM

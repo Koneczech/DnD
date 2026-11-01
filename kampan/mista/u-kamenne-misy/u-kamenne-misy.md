@@ -20,6 +20,10 @@ Hospoda v **Triboaru**, majitelka **[[norra-ambleforge|Norra Ambleforge]]**.
 
 **První štace [[koudur|Koudurova]] turné.** Pozvánka dorazila do Mirabaru dva, tři dny před odjezdem; předala ji [[hedwiga-hardbeard|Hedwiga]]. *(Neplatí: pozvánku předala Hedwiga na scéně v den pilotu 12. Eleintu, R5.)*
 
+## Co ví družina
+
+## Co tu najdou
+
 ## DM
 
 [[koudur|Koudur]] si myslí, že koncert dostal proto, že je dobrý. Ve skutečnosti to zařídila **[[helga-hardbeard|Helga]]** přes kamarádku z dětství.

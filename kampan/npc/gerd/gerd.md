@@ -27,6 +27,8 @@ Sedmnáctiletý stájník u hostince U Děravého groše v Longsaddle.
 
 Mluví rád a moc. Chce minci, nebo posluchače (Persuasion DC 10, o koních zdarma).
 
+## Příběh
+
 ## DM
 
 Ví, že před třemi dny tu přenocovali tři chlapi, koně nekrmili jako svoje a ráno odjeli na severovýchod do kopců, ne po silnici. Jeden kůň kulhal — proto jsou pořád blízko.

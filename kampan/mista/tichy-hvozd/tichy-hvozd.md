@@ -31,3 +31,9 @@ Kontakt s civilizací minimální. **O Albině existenci skoro nikdo neví** —
 **Den cesty odsud, na kraji hvozdu**, leží [[tarnwick|Pohlcené město]] (Tarnwick).
 
 **Dva až tři dny cesty** jsou uhlíři a lovci, u kterých Bifron směňoval kůže a byliny za sůl a železo — a od kterých Alba pochytila Common a Halfling.
+
+## Co ví družina
+
+## Co tu najdou
+
+## DM

@@ -25,6 +25,12 @@ Jediný kontakt do podsvětí, se kterým [[thiril-ambersedge|Thiril]] [[leta|Le
 
 Nevěří mu. Počítá s tím, že ji hodí přes palubu, jakmile bude odměna za její hlavu vyšší než jejich kšefty.
 
+## Co ví družina
+
+## Jak ho hrát
+
+## Příběh
+
 ## DM — co Leta neví
 
 - Ordwin se dozvěděl o sázce s [[halvar-grimsdal|Grimsdalovým]] prstenem a **šel s tím za [[thiril-ambersedge|Thirilem]]** — protože věděl, že Thiril nechce, aby se [[leta|Leta]] zapletla do něčeho horšího.

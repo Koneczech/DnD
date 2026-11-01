@@ -27,6 +27,12 @@ Půlčík, lapka, **Letin adoptivní otec**. Ujal se jí, když jí bylo sedm �
 - Své druhé jméno nikdy neřekl.
 - Nikdy se neptá. Po Letině útěku v osmi ani po jejích třech dnech ve sklepě v šestnácti se nezeptal na nic.
 
+## Co ví družina
+
+## Jak ho hrát
+
+## Příběh
+
 ## DM — co Leta neví
 
 - Jmenuje se **Thiril Ambersedge**. Rod Ambersedge byla půlčická rodina, sedm generací obchodu s jantarem a polodrahokamy, dodávali brusiče do Mirabaru. *Ambersedge* je zároveň označení pro odřezek, který zbyde, když se z jantaru vybrousí použitelné.

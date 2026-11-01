@@ -21,3 +21,11 @@ Na malíčku nosí [[thiriluv-prsten|Thirilův prsten]], nasazený jen do půlky
 ## Statblok
 
 SRD 5.2.1 **Bandit Captain**. V táboře s ním jsou Tough a čtyři Bandité (650 XP; s Malkem po boku družiny 750 XP).
+
+## Co ví družina
+
+## Jak ho hrát
+
+## Příběh
+
+## DM

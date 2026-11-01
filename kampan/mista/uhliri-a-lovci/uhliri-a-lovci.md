@@ -23,3 +23,9 @@ Osada uhlířů a lovců **dva až tři dny cesty** od [[tichy-hvozd|Tichého hv
 > Odtud umí Alba **Common a Halfling** — naučila se je od lidí, které viděla pětkrát v životě. Vysvětluje to, proč mluví jazyky, ale nerozumí lidem.
 
 Jediní lidé, se kterými měla Alba před odchodem opakovaný kontakt. Nikdo z nich ji ale nezná jménem.
+
+## Co ví družina
+
+## Co tu najdou
+
+## DM

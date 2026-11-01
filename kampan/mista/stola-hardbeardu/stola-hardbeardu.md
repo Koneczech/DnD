@@ -21,6 +21,10 @@ Rodinný podnik Hardbeardů v mirabarské **Undercity**. Slušně vydělávajíc
 
 Rodová barva je zelená, ve znaku stylizovaný safír ve tvaru broušeného diamantu a za ním vous ve tvaru kamenného štítu.
 
+## Co ví družina
+
+## Co tu najdou
+
 ## DM
 
 **Každý náklad, který opustí [[mirabar|Mirabar]], projde [[halvar-grimsdal|Grimsdalovou]] pečetí.** To je celý vztah [[balgur-hardbeard|Balgura]] a Grimsdala.

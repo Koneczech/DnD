@@ -24,3 +24,11 @@ Na cesty je moc starý. **Zůstal v [[tichy-hvozd|Tichém hvozdu]].**
 [[bifron-nox|Bifronova]] poslední věta Albě se týkala právě jeho: *„…a postarej se o Patyka."*
 
 > Odchod z hvozdu Alba odkládala ze strachu. Nakonec ji zvedly dvě věci: ta věta — a slib, který dala **Patykovi**, že se vrátí. Ne otci. Losovi.
+
+## Co ví družina
+
+## Jak ho hrát
+
+## Příběh
+
+## DM

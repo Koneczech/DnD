@@ -29,3 +29,11 @@ Norrin dopis se **předává na scéně**, ne dva až tři dny předem. Hráč s
 **Datum doručení se tím rovná dni pilotu: 12. Eleintu 1491 DR.** Od něj se počítá osmnáct dní do dožínek.
 
 Dopis přináší [[hedwiga-hardbeard|Hedwiga]], která ho dostala od [[helga-hardbeard|Helgy]].
+
+## Co ví družina
+
+## Jak ho hrát
+
+## Příběh
+
+## DM

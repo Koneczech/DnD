@@ -27,3 +27,9 @@ zvuk:
 # Jeskyně u tábora lupičů
 
 Jeskyně kousek od [[tabor-lupicu|tábora lupičů]], kde se možná bude hrát (DM 19. 10. 2026). Popis a ilustrace doplní DM.
+
+## Co ví družina
+
+## Co tu najdou
+
+## DM

@@ -22,3 +22,11 @@ Virin otec. Trpaslík, člen **Rady jiskřivých kamenů**, hlava jednoho z nejs
 Seděl u té večeře v [[sidlo-hardbeardu|Hardbeardově sídle]], kterou [[balgur-hardbeard|Balgur]] uspořádal krátce po vstupu do rady.
 
 O mnoho let později s Balgurem plácli na sňatek svých dětí. [[koudur|Koudur]] ho zrušil.
+
+## Co ví družina
+
+## Jak ho hrát
+
+## Příběh
+
+## DM

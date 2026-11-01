@@ -35,6 +35,12 @@ A objala ho způsobem, po kterém se už nedalo pokračovat.
 
 Plakala, objímala ho a řekla mu, ať se vrátí.
 
+## Co ví družina
+
+## Jak ho hrát
+
+## Příběh
+
 ## DM
 
 **Její vlastní dítě zemřelo při porodu** — asi osm let předtím, než k nim [[tusker|Tusker]] přišel. Osm let se jim další nedařilo. Rod Treestone tím fakticky skončil.

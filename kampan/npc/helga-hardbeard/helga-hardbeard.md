@@ -27,6 +27,12 @@ Když [[koudur|Koudur]] oznámil, že jede koncertovat — do prázdna, bez pozv
 
 Dopis nechala předat Hedwize.
 
+## Co ví družina
+
+## Jak ho hrát
+
+## Příběh
+
 ## DM
 
 **[[koudur|Koudur]] neví, že jeho první štace je matčina laskavost.** Myslí si, že pozvánku dostal, protože je dobrý. Celé turné stojí na tom, že se o sebe dokáže postarat sám — tohle je jediná věc, kterou by nechtěl vědět.

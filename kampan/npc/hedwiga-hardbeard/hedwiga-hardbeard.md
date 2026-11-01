@@ -20,6 +20,12 @@ zdroj: https://app.notion.com/p/3c69ed22673681fba3dfc39036d64f8b
 
 Předala Koudurovi dopis s pozvánkou z Triboaru.
 
+## Co ví družina
+
+## Jak ho hrát
+
+## Příběh
+
 ## DM — proč je použitelná
 
 **Byla u té večeře.** Byla starší, dávala pozor a hlavu má po otci. Ten večer si nepamatuje [[koudur|Koudur]] — pamatuje si ho ona.

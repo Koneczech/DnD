@@ -15,6 +15,10 @@ zdroj: https://app.notion.com/p/3c79ed22673681f1900adc395d02ac8c
 
 Malý špičák nějakého zvířete na šňůřce. [[tusker|Tusker]] ho má **odjakživa** a nikdy nezjistil, odkud je.
 
+## Co ví družina
+
+## Historie
+
 ## DM
 
 **Přišel s dítětem.** Měl ho na krku už ve chvíli, kdy ho cizinec vytáhl z hořícího tábora v Cragách — stejně jako popáleniny na levé ruce.

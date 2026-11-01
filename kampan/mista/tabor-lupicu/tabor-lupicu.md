@@ -94,3 +94,7 @@ Ilustrace: celek ve dne a v noci, stavy poplach, hoří, po boji a mapa shora; s
 - Tábor stojí mezi nízkými mladými stromy: několik stanů a hromada zavazadel. Žádná cesta, po které by sem dojel vůz, nevede. %%zná%%
 - V táboře je osm lidí, jeden z nich celou dobu leží. Ostatní popíjejí, nudí se a pokřikují na sebe o tom, co komu ukradli. %%zná%%
 - Hlídka s krátkým mečem si družiny všimla asi sto metrů od tábora. %%zná%%
+
+## Co tu najdou
+
+## DM

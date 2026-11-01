@@ -25,3 +25,9 @@ zdroj: https://app.notion.com/p/3c79ed226736810cb919ea78e977e59a
 - **~1471–74 DR** — odvetná akce v **Cragách** proti [[tusker|Tuskerově]] rodině (objednala **[[bruna-ironvale|Bruna Ironvale]]**).
 
 Jedna rota, dva objednavatelé, dvě oběti, které se nikdy nepotkaly — dokud jejich děti nesedly k jednomu stolu ([[alba|Alba]] a Tusker). Tusker je vůči [[bifron-nox|Bifronově]] lince **svědek, ne příčina** (Tuskerova varianta B): Bifron mohl rozpoznat stejnou metodu/znak/praporec, když se o Cragách později dozvěděl.
+
+## Co ví družina
+
+## Jak jednají
+
+## DM

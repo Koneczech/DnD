@@ -1,0 +1,866 @@
+# Obsahuje materiál ze System Reference Document 5.2.1 („SRD 5.2.1“) od Wizards of the Coast LLC,
+# dostupného na https://www.dndbeyond.com/srd. SRD 5.2.1 je licencováno pod Creative Commons
+# Attribution 4.0 International (https://creativecommons.org/licenses/by/4.0/legalcode).
+# Český překlad (Claude pro DM Matěje, 31. 10.–1. 11. 2026) podle reference/prekladovy-klic-cz.md. Data z Open5e (srd-2024).
+# Kouzla druida do 2. úrovně a Světlo (ásimarské dědictví Alby). na_listu/vzdy/zdroj_listu podle kampan/postavy/alba/list.yaml.
+schema: 1
+kouzla:
+- id: druidcraft
+  nazev: Druidství
+  en: Druidcraft
+  uroven: 0
+  skola: Transmutační trik
+  seslani: akce
+  dosah: 30 stop
+  slozky: VP
+  surovina: ''
+  trvani: okamžité
+  popis: |-
+    Šeptáš duchům přírody a v dosahu vytvoříš jeden z těchto účinků.
+
+    - ***Předpověď počasí.*** Vytvoříš drobný neškodný smyslový úkaz, který předpoví počasí na tvém místě na příštích 24 hodin. Může se projevit jako zlatá koule pro jasnou oblohu, mráček pro déšť, padající vločky pro sníh a podobně. Úkaz trvá 1 kolo.
+    - ***Rozkvět.*** Okamžitě necháš rozkvést květ, otevřít lusk se semeny nebo rozvinout poupě listu.
+    - ***Smyslový úkaz.*** Vytvoříš neškodný smyslový úkaz, třeba padající listí, tančící přízračné víly, jemný vánek, zvuk zvířete nebo slabý pach skunka. Úkaz se musí vejít do krychle o hraně 5 stop.
+    - ***Hra s ohněm.*** Zapálíš nebo uhasíš svíčku, pochodeň nebo táborák.
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: true
+  vzdy: false
+  zdroj_listu: Druid cantrip
+- id: starry-wisp
+  nazev: Hvězdná bludička
+  en: Starry Wisp
+  uroven: 0
+  skola: Zaklínací trik
+  seslani: akce
+  dosah: 60 stop
+  slozky: VP
+  surovina: ''
+  trvani: okamžité
+  popis: Vystřelíš zrnko světla na jednu bytost nebo předmět v dosahu. Proveď útok kouzlem na dálku proti cíli. Při zásahu utrpí cíl 1k8 zářivého zranění a do konce tvého příštího tahu vydává tlumené světlo v okruhu 10 stop a nemůže těžit ze stavu neviditelný.
+  vyssi: Zranění se zvýší o 1k8, když dosáhneš 5. úrovně (2k8), 11. úrovně (3k8) a 17. úrovně (4k8).
+  vlastni_nazev: false
+  na_listu: true
+  vzdy: true
+  zdroj_listu: Always prepared
+- id: poison-spray
+  nazev: Jedovatá sprška
+  en: Poison Spray
+  uroven: 0
+  skola: Nekromantický trik
+  seslani: akce
+  dosah: 30 stop
+  slozky: VP
+  surovina: ''
+  trvani: okamžité
+  popis: Vystříkneš jedovatou mlhu na bytost v dosahu. Proveď útok kouzlem na dálku proti cíli. Při zásahu utrpí cíl 1k12 jedového zranění.
+  vyssi: Zranění se zvýší o 1k12, když dosáhneš 5. úrovně (2k12), 11. úrovně (3k12) a 17. úrovně (4k12).
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: mending
+  nazev: Oprava
+  en: Mending
+  uroven: 0
+  skola: Transmutační trik
+  seslani: 1 minuta
+  dosah: dotyk
+  slozky: VPS
+  surovina: dva magnetovce
+  trvani: okamžité
+  popis: Kouzlo opraví jedno prasklé nebo roztržené místo na předmětu, kterého se dotkneš, třeba prasklé očko řetězu, dvě poloviny zlomeného klíče, roztržený plášť nebo děravý měch na víno. Pokud poškození není v žádném rozměru větší než 1 stopa, opravíš ho beze stopy. Kouzlo umí fyzicky opravit kouzelný předmět, ale nevrátí mu magii.
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: true
+  vzdy: false
+  zdroj_listu: Magic Initiate
+- id: elementalism
+  nazev: Ovládání živlů
+  en: Elementalism
+  uroven: 0
+  skola: Transmutační trik
+  seslani: akce
+  dosah: 30 stop
+  slozky: VP
+  surovina: ''
+  trvani: okamžité
+  popis: |-
+    Ovládneš živly a v dosahu vytvoříš jeden z těchto účinků.
+
+    ***Přivolání vzduchu.*** Vytvoříš vánek tak silný, že rozvlní látku, zvíří prach, rozšustí listí a zavře otevřené dveře a okenice, to vše v krychli o hraně 5 stop. Dveře a okenice, které někdo nebo něco drží otevřené, ovlivněny nejsou.
+
+    ***Přivolání země.*** Vytvoříš tenký povlak prachu nebo písku na površích v ploše 5 × 5 stop, nebo necháš v hlíně či písku objevit jedno slovo psané tvým rukopisem.
+
+    ***Přivolání ohně.*** V krychli o hraně 5 stop vytvoříš řídký oblak neškodných jisker a barevného vonného kouře. Barvu i vůni si vybereš a jiskry mohou v té oblasti zapálit svíčky, pochodně nebo lampy. Vůně kouře vydrží 1 minutu.
+
+    ***Přivolání vody.*** V krychli o hraně 5 stop vytvoříš spršku chladné mlhy, která lehce zvlhčí bytosti a předměty. Nebo vytvoříš 1 hrnek čisté vody v otevřené nádobě nebo na povrchu; voda se do 1 minuty odpaří.
+
+    ***Tvarování živlu.*** Hlína, písek, oheň, kouř, mlha nebo voda, která se vejde do krychle o hraně 1 stopy, na 1 hodinu získá hrubý tvar (třeba tvar bytosti).
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: spare-the-dying
+  nazev: Ošetři umírajícího
+  en: Spare the Dying
+  uroven: 0
+  skola: Nekromantický trik
+  seslani: akce
+  dosah: 15 stop
+  slozky: VP
+  surovina: ''
+  trvani: okamžité
+  popis: Vyber bytost v dosahu, která má 0 bodů výdrže a není mrtvá. Bytost se stabilizuje.
+  vyssi: Dosah se zdvojnásobí, když dosáhneš 5. úrovně (30 stop), 11. úrovně (60 stop) a 17. úrovně (120 stop).
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: produce-flame
+  nazev: Stvoř plamen
+  en: Produce Flame
+  uroven: 0
+  skola: Vyvolávací trik
+  seslani: bonusová akce
+  dosah: na sebe
+  slozky: VP
+  surovina: ''
+  trvani: 10 minut
+  popis: V ruce se ti objeví mihotavý plamen a zůstane tam po dobu trvání. Plamen nehřeje a nic nezapálí, vydává jasné světlo v okruhu 20 stop a tlumené světlo dalších 20 stop. Kouzlo skončí, když ho sešleš znovu. Dokud kouzlo trvá, můžeš magickou akcí hodit oheň na bytost nebo předmět do 60 stop od sebe. Proveď útok kouzlem na dálku. Při zásahu utrpí cíl 1k8 ohnivého zranění.
+  vyssi: Zranění se zvýší o 1k8, když dosáhneš 5. úrovně (2k8), 11. úrovně (3k8) a 17. úrovně (4k8).
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: shillelagh
+  nazev: Sukovice
+  en: Shillelagh
+  uroven: 0
+  skola: Transmutační trik
+  seslani: bonusová akce
+  dosah: na sebe
+  slozky: VPS
+  surovina: jmelí
+  trvani: 1 minuta
+  popis: Kyj nebo dlouhá hůl, kterou držíš, se naplní silou přírody. Po dobu trvání můžeš pro hody na útok a na zranění útoky na blízko touto zbraní použít svou sesílací vlastnost místo Síly a kostka zranění zbraně se změní na k8. Když útok způsobí zranění, může být silové, nebo běžného druhu zbraně (podle tvé volby). Kouzlo předčasně skončí, když ho sešleš znovu nebo když zbraň pustíš.
+  vyssi: Kostka zranění se změní, když dosáhneš 5. úrovně (k10), 11. úrovně (k12) a 17. úrovně (2k6).
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: light
+  nazev: Světlo
+  en: Light
+  uroven: 0
+  skola: Zaklínací trik
+  seslani: akce
+  dosah: dotyk
+  slozky: VS
+  surovina: světluška nebo světélkující mech
+  trvani: 1 hodina
+  popis: Dotkneš se jednoho předmětu velikosti velké nebo menší, který nikdo jiný nemá na sobě ani u sebe. Dokud kouzlo trvá, předmět vydává jasné světlo v okruhu 20 stop a tlumené světlo dalších 20 stop. Světlo může mít libovolnou barvu. Když předmět zakryješ něčím neprůhledným, světlo zastíníš. Kouzlo skončí, když ho sešleš znovu.
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: true
+  vzdy: true
+  zdroj_listu: Always prepared
+- id: guidance
+  nazev: Vedení
+  en: Guidance
+  uroven: 0
+  skola: Věštecký trik
+  seslani: akce
+  dosah: dotyk
+  slozky: VP
+  surovina: ''
+  trvani: soustředění, až 1 minuta
+  popis: Dotkneš se ochotné bytosti a zvolíš dovednost. Dokud kouzlo trvá, přičte bytost 1k4 ke každému ověření vlastnosti, které využívá zvolenou dovednost.
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: true
+  vzdy: false
+  zdroj_listu: Druid cantrip
+- id: resistance
+  nazev: Zpevnění
+  en: Resistance
+  uroven: 0
+  skola: Vymítací trik
+  seslani: akce
+  dosah: dotyk
+  slozky: VP
+  surovina: ''
+  trvani: soustředění, až 1 minuta
+  popis: 'Dotkneš se ochotné bytosti a zvolíš druh zranění: kyselinové, drtivé, chladné, ohnivé, bleskové, nekrotické, bodné, jedové, zářivé, sečné nebo hromové. Když bytost před koncem kouzla utrpí zranění zvoleného druhu, sníží si celkové utržené zranění o 1k4. Bytost může tohoto kouzla využít jen jednou za tah.'
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: message
+  nazev: Zpráva
+  en: Message
+  uroven: 0
+  skola: Transmutační trik
+  seslani: akce
+  dosah: 120 stop
+  slozky: PS
+  surovina: měděný drátek
+  trvani: 1 kolo
+  popis: Ukážeš na bytost v dosahu a pošeptáš zprávu. Cíl (a jen cíl) zprávu slyší a může odpovědět šeptem, který uslyšíš jen ty. Kouzlo můžeš seslat i skrz pevné předměty, pokud cíl znáš a víš, že je za překážkou. Kouzlo zastaví magické ticho, 1 stopa kamene, kovu nebo dřeva nebo tenký plát olova.
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: true
+  vzdy: false
+  zdroj_listu: Magic Initiate
+- id: longstrider
+  nazev: Dlouhý krok
+  en: Longstrider
+  uroven: 1
+  skola: Transmutace, 1. úroveň
+  seslani: akce
+  dosah: dotyk
+  slozky: VPS
+  surovina: špetka hlíny
+  trvani: 1 hodina
+  popis: Dotkneš se bytosti. Rychlost cíle se do konce kouzla zvýší o 10 stop.
+  vyssi: Za každou úroveň pozice kouzla nad 1. můžeš zaměřit jednu další bytost.
+  vlastni_nazev: true
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: goodberry
+  nazev: Dobrůvky
+  en: Goodberry
+  uroven: 1
+  skola: Vyvolávání, 1. úroveň
+  seslani: akce
+  dosah: na sebe
+  slozky: VPS
+  surovina: snítka jmelí
+  trvani: 24 hodin
+  popis: V ruce se ti objeví deset bobulí, které jsou po dobu trvání prodchnuté magií. Bytost může bonusovou akcí sníst jednu bobuli. Snědená bobule obnoví 1 bod výdrže a nasytí bytost na celý den. Nesnědené bobule zmizí, když kouzlo skončí.
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: thunderwave
+  nazev: Hromová vlna
+  en: Thunderwave
+  uroven: 1
+  skola: Zaklínání, 1. úroveň
+  seslani: akce
+  dosah: na sebe
+  slozky: VP
+  surovina: ''
+  trvani: okamžité
+  popis: |-
+    Vypustíš vlnu hromové energie. Každá bytost v krychli o hraně 15 stop vycházející z tebe si hází záchranu na Odolnost. Při neúspěchu utrpí 2k8 hromového zranění a je odhozena o 10 stop od tebe. Při úspěchu utrpí jen poloviční zranění.
+
+    Navíc nepřipevněné předměty, které jsou celé v krychli, jsou odhozeny o 10 stop od tebe a hromový třesk je slyšet do 300 stop.
+  vyssi: Zranění se zvýší o 1k8 za každou úroveň pozice kouzla nad 1.
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: ice-knife
+  nazev: Ledový nůž
+  en: Ice Knife
+  uroven: 1
+  skola: Vyvolávání, 1. úroveň
+  seslani: akce
+  dosah: 60 stop
+  slozky: PS
+  surovina: kapka vody nebo kousek ledu
+  trvani: okamžité
+  popis: Vytvoříš ledový střep a vrhneš ho na jednu bytost v dosahu. Proveď útok kouzlem na dálku proti cíli. Při zásahu utrpí cíl 1k10 bodného zranění. Ať zasáhneš, nebo ne, střep pak vybuchne. Cíl a každá bytost do 5 stop od něj musí uspět v záchraně na Obratnost, jinak utrpí 2k6 chladného zranění.
+  vyssi: Chladné zranění se zvýší o 1k6 za každou úroveň pozice kouzla nad 1.
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: healing-word
+  nazev: Léčivé slovo
+  en: Healing Word
+  uroven: 1
+  skola: Vymítání, 1. úroveň
+  seslani: bonusová akce
+  dosah: 60 stop
+  slozky: V
+  surovina: ''
+  trvani: okamžité
+  popis: Bytost podle tvé volby, kterou vidíš v dosahu, si obnoví body výdrže ve výši 2k4 plus modifikátor tvé sesílací vlastnosti.
+  vyssi: Léčení se zvýší o 2k4 za každou úroveň pozice kouzla nad 1.
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: speak-with-animals
+  nazev: Mluv se zvířaty
+  en: Speak with Animals
+  uroven: 1
+  skola: Věštění, 1. úroveň
+  seslani: akce nebo rituál
+  dosah: na sebe
+  slozky: VP
+  surovina: ''
+  trvani: 10 minut
+  popis: Po dobu trvání rozumíš zvířatům a můžeš s nimi mluvit a můžeš na ně použít kteroukoli dovednost akce Ovlivnění. Většina zvířat nemá moc co říct k tématům, která se netýkají přežití nebo družnosti, ale přinejmenším ti zvíře může říct o okolních místech a nestvůrách, včetně všeho, co za poslední den zaznamenalo.
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: true
+  vzdy: true
+  zdroj_listu: Always prepared
+- id: detect-poison-and-disease
+  nazev: Najdi jed a nemoc
+  en: Detect Poison and Disease
+  uroven: 1
+  skola: Věštění, 1. úroveň
+  seslani: akce nebo rituál
+  dosah: na sebe
+  slozky: VPS
+  surovina: tisový list
+  trvani: soustředění, až 10 minut
+  popis: Po dobu trvání vnímáš polohu jedů, jedovatých bytostí a magických nákaz do 30 stop od sebe. U každého poznáš, o jaký jed, bytost nebo nákazu jde. Kouzlo zastaví 1 stopa kamene, hlíny nebo dřeva, 1 palec kovu nebo tenký plát olova.
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: detect-magic
+  nazev: Najdi magii
+  en: Detect Magic
+  uroven: 1
+  skola: Věštění, 1. úroveň
+  seslani: akce nebo rituál
+  dosah: na sebe
+  slozky: VP
+  surovina: ''
+  trvani: soustředění, až 10 minut
+  popis: Po dobu trvání vnímáš přítomnost magických účinků do 30 stop od sebe. Když takové účinky vnímáš, můžeš magickou akcí uvidět slabou auru kolem každé viditelné bytosti nebo předmětu v oblasti, které magii nesou, a pokud účinek vznikl kouzlem, zjistíš jeho školu magie. Kouzlo zastaví 1 stopa kamene, hlíny nebo dřeva, 1 palec kovu nebo tenký plát olova.
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: fog-cloud
+  nazev: Oblak mlhy
+  en: Fog Cloud
+  uroven: 1
+  skola: Vyvolávání, 1. úroveň
+  seslani: akce
+  dosah: 120 stop
+  slozky: VP
+  surovina: ''
+  trvani: soustředění, až 1 hodina
+  popis: Vytvoříš kouli mlhy o poloměru 20 stop se středem v bodě v dosahu. Uvnitř koule je silně omezená viditelnost. Vydrží po dobu trvání, nebo dokud ji nerozptýlí silný vítr (třeba z kouzla Poryv větru).
+  vyssi: Poloměr mlhy se zvětší o 20 stop za každou úroveň pozice kouzla nad 1.
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: protection-from-evil-and-good
+  nazev: Ochrana před zlem a dobrem
+  en: Protection from Evil and Good
+  uroven: 1
+  skola: Vymítání, 1. úroveň
+  seslani: akce
+  dosah: dotyk
+  slozky: VPS
+  surovina: lahvička svěcené vody v hodnotě aspoň 25 zl, kterou kouzlo spotřebuje
+  trvani: soustředění, až 10 minut
+  popis: Dokud kouzlo trvá, jedna ochotná bytost, které se dotkneš, je chráněná před bytostmi typu zrůda, nebešťan, elementál, víla, běs nebo nemrtvý. Ochrana přináší několik výhod. Bytosti těchto typů mají na hody na útok proti cíli nevýhodu. Cíl také nemůže být jimi posednut ani se od nich stát zmámeným nebo vystrašeným. Pokud už cíl takovou bytostí posednutý, zmámený nebo vystrašený je, má výhodu na každou novou záchranu proti příslušnému účinku.
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: purify-food-and-drink
+  nazev: Očisti jídlo a pití
+  en: Purify Food and Drink
+  uroven: 1
+  skola: Transmutace, 1. úroveň
+  seslani: akce nebo rituál
+  dosah: 10 stop
+  slozky: VP
+  surovina: ''
+  trvani: okamžité
+  popis: Odstraníš jed a hnilobu z nemagického jídla a pití v kouli o poloměru 5 stop se středem v bodě v dosahu.
+  vyssi: ''
+  vlastni_nazev: true
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: animal-friendship
+  nazev: Přátelství zvířat
+  en: Animal Friendship
+  uroven: 1
+  skola: Očarování, 1. úroveň
+  seslani: akce
+  dosah: 30 stop
+  slozky: VPS
+  surovina: sousto jídla
+  trvani: 24 hodin
+  popis: Zaměř zvíře, které vidíš v dosahu. Cíl musí uspět v záchranném hodu na Moudrost, jinak je po dobu trvání zmámený. Když ty nebo některý z tvých spojenců cíli způsobíte zranění, kouzlo skončí.
+  vyssi: Za každou úroveň pozice kouzla nad 1. můžeš zaměřit jedno další zvíře.
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: jump
+  nazev: Skok
+  en: Jump
+  uroven: 1
+  skola: Transmutace, 1. úroveň
+  seslani: bonusová akce
+  dosah: dotyk
+  slozky: VPS
+  surovina: zadní noha kobylky
+  trvani: 1 minuta
+  popis: Dotkneš se ochotné bytosti. Jednou v každém jejím tahu, dokud kouzlo trvá, může bytost skočit až 30 stop za cenu 10 stop pohybu.
+  vyssi: Za každou úroveň pozice kouzla nad 1. můžeš zaměřit jednu další bytost.
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: create-or-destroy-water
+  nazev: Stvoř, nebo znič vodu
+  en: Create or Destroy Water
+  uroven: 1
+  skola: Transmutace, 1. úroveň
+  seslani: akce
+  dosah: 30 stop
+  slozky: VPS
+  surovina: směs vody a písku
+  trvani: okamžité
+  popis: |-
+    Uděláš jedno z následujícího:
+
+    **Stvoř vodu.** V otevřené nádobě v dosahu stvoříš až 10 galonů čisté vody. Nebo voda spadne jako déšť v krychli o hraně 30 stop v dosahu a uhasí tam nechráněné plameny.
+
+    **Znič vodu.** Zničíš až 10 galonů vody v otevřené nádobě v dosahu. Nebo zničíš mlhu v krychli o hraně 30 stop v dosahu.
+  vyssi: Za každou úroveň pozice kouzla nad 1. stvoříš nebo zničíš o 10 galonů vody víc, nebo se hrana krychle zvětší o 5 stop.
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: faerie-fire
+  nazev: Vílí oheň
+  en: Faerie Fire
+  uroven: 1
+  skola: Zaklínání, 1. úroveň
+  seslani: akce
+  dosah: 60 stop
+  slozky: V
+  surovina: ''
+  trvani: soustředění, až 1 minuta
+  popis: Předměty v krychli o hraně 20 stop v dosahu obkreslí modré, zelené nebo fialové světlo (podle tvé volby). Každá bytost v krychli je obkreslena také, pokud neuspěje v záchraně na Obratnost. Po dobu trvání vydávají předměty a zasažené bytosti tlumené světlo v okruhu 10 stop a nemohou těžit ze stavu neviditelný. Hody na útok proti zasažené bytosti nebo předmětu mají výhodu, pokud je útočník vidí.
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: entangle
+  nazev: Zapletení
+  en: Entangle
+  uroven: 1
+  skola: Vyvolávání, 1. úroveň
+  seslani: akce
+  dosah: 90 stop
+  slozky: VP
+  surovina: ''
+  trvani: soustředění, až 1 minuta
+  popis: Ze země ve čtverci o straně 20 stop v dosahu vyraší chapavé rostliny. Po dobu trvání mění půdu v oblasti v obtížný terén. Zmizí, když kouzlo skončí. Každá bytost (kromě tebe), která je v oblasti, když kouzlo sesíláš, musí uspět v záchraně na Sílu, jinak je spoutaná, dokud kouzlo neskončí. Spoutaná bytost může akcí provést ověření Síly (Atletiky) proti SO záchrany tvých kouzel. Při úspěchu se z rostlin vyprostí a už jimi spoutaná není.
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: cure-wounds
+  nazev: Zhoj zranění
+  en: Cure Wounds
+  uroven: 1
+  skola: Vymítání, 1. úroveň
+  seslani: akce
+  dosah: dotyk
+  slozky: VP
+  surovina: ''
+  trvani: okamžité
+  popis: Bytost, které se dotkneš, si obnoví body výdrže ve výši 2k8 plus modifikátor tvé sesílací vlastnosti.
+  vyssi: Léčení se zvýší o 2k8 za každou úroveň pozice kouzla nad 1.
+  vlastni_nazev: false
+  na_listu: true
+  vzdy: true
+  zdroj_listu: Always prepared
+- id: charm-person
+  nazev: Zmam osobu
+  en: Charm Person
+  uroven: 1
+  skola: Očarování, 1. úroveň
+  seslani: akce
+  dosah: 30 stop
+  slozky: VP
+  surovina: ''
+  trvani: 1 hodina
+  popis: Jeden humanoid, kterého vidíš v dosahu, si hází záchranu na Moudrost. Hází s výhodou, pokud s ním ty nebo tví spojenci bojujete. Při neúspěchu je cíl zmámený, dokud kouzlo neskončí nebo dokud mu ty nebo tví spojenci nezpůsobíte zranění. Zmámená bytost je k tobě přátelská. Když kouzlo skončí, cíl ví, že ho zmámilo tvoje kouzlo.
+  vyssi: Za každou úroveň pozice kouzla nad 1. můžeš zaměřit jednu další bytost.
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: barkskin
+  nazev: Kůrokůže
+  en: Barkskin
+  uroven: 2
+  skola: Transmutace, 2. úroveň
+  seslani: bonusová akce
+  dosah: dotyk
+  slozky: VPS
+  surovina: hrst kůry
+  trvani: 1 hodina
+  popis: Dotkneš se ochotné bytosti. Dokud kouzlo trvá, kůže cíle vypadá jako kůra a cíl má obranné číslo 17, pokud je jeho OČ nižší.
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: moonbeam
+  nazev: Měsíční paprsek
+  en: Moonbeam
+  uroven: 2
+  skola: Zaklínání, 2. úroveň
+  seslani: akce
+  dosah: 120 stop
+  slozky: VPS
+  surovina: list měsíčníku
+  trvani: soustředění, až 1 minuta
+  popis: |-
+    Ve válci o poloměru 5 stop a výšce 40 stop se středem v bodě v dosahu sestoupí stříbřitý paprsek bledého světla. Dokud kouzlo trvá, válec vyplňuje tlumené světlo a v dalších tazích můžeš magickou akcí válec posunout až o 60 stop.
+
+    Když se válec objeví, každá bytost v něm si hází záchranu na Odolnost. Při neúspěchu utrpí 2k10 zářivého zranění, a pokud je proměněná (například kouzlem Proměň tvora), vrátí se do své skutečné podoby a nemůže měnit podobu, dokud válec neopustí. Při úspěchu utrpí jen poloviční zranění. Bytost si tuto záchranu hází také tehdy, když se oblast kouzla posune na její místo, když do oblasti vstoupí nebo v ní ukončí tah. Bytost si tuto záchranu hází jen jednou za tah.
+  vyssi: Zranění se zvýší o 1k10 za každou úroveň pozice kouzla nad 2.
+  vlastni_nazev: false
+  na_listu: true
+  vzdy: true
+  zdroj_listu: Always prepared
+- id: find-traps
+  nazev: Najdi pasti
+  en: Find Traps
+  uroven: 2
+  skola: Věštění, 2. úroveň
+  seslani: akce
+  dosah: 120 stop
+  slozky: VP
+  surovina: ''
+  trvani: okamžité
+  popis: Vnímáš každou past v dosahu, kterou máš na dohled. Pastí se pro toto kouzlo rozumí každý předmět nebo mechanismus vytvořený k tomu, aby způsobil zranění nebo jiné nebezpečí. Kouzlo tedy odhalí kouzlo Poplach nebo Strážný znak či mechanickou propadlou jámu, ale ne přirozenou slabinu podlahy, nestabilní strop nebo skrytou propadlinu. Kouzlo prozradí, že past existuje, ale ne kde je. Zjistíš ale, jakého druhu je nebezpečí, které past představuje.
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: locate-object
+  nazev: Najdi předmět
+  en: Locate Object
+  uroven: 2
+  skola: Věštění, 2. úroveň
+  seslani: akce
+  dosah: na sebe
+  slozky: VPS
+  surovina: rozvidlená větvička
+  trvani: soustředění, až 10 minut
+  popis: Popiš nebo pojmenuj předmět, který znáš. Vnímáš směr k místu, kde je, pokud je do 1 000 stop od tebe. Pokud se předmět pohybuje, znáš směr jeho pohybu. Kouzlo najde konkrétní předmět, který znáš, pokud jsi ho aspoň jednou viděl(a) zblízka, do 30 stop. Nebo najde nejbližší předmět určitého druhu, třeba určitý kus oblečení, šperk, nábytek, nástroj nebo zbraň. Kouzlo předmět nenajde, pokud přímou cestu mezi tebou a předmětem blokuje jakkoli silná vrstva olova.
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: locate-animals-or-plants
+  nazev: Najdi zvířata a rostliny
+  en: Locate Animals or Plants
+  uroven: 2
+  skola: Věštění, 2. úroveň
+  seslani: akce nebo rituál
+  dosah: na sebe
+  slozky: VPS
+  surovina: srst krvavého ohaře
+  trvani: okamžité
+  popis: Popiš nebo pojmenuj určitý druh zvířete, rostlinné bytosti nebo nemagické rostliny. Zjistíš směr a vzdálenost k nejbližší bytosti nebo rostlině toho druhu do 5 mil, pokud nějaká je.
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: lesser-restoration
+  nazev: Nižší navrácení
+  en: Lesser Restoration
+  uroven: 2
+  skola: Vymítání, 2. úroveň
+  seslani: bonusová akce
+  dosah: dotyk
+  slozky: VP
+  surovina: ''
+  trvani: okamžité
+  popis: 'Dotkneš se bytosti a ukončíš na ní jeden stav: oslepený, ohlušený, paralyzovaný nebo otrávený.'
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: protection-from-poison
+  nazev: Ochrana před jedem
+  en: Protection from Poison
+  uroven: 2
+  skola: Vymítání, 2. úroveň
+  seslani: akce
+  dosah: dotyk
+  slozky: VP
+  surovina: ''
+  trvani: 1 hodina
+  popis: Dotkneš se bytosti a ukončíš na ní stav otrávený. Po dobu trvání má cíl výhodu na záchrany proti tomu, aby se stal otráveným nebo aby stav otrávený ukončil, a má odolání vůči jedovému zranění.
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: flame-blade
+  nazev: Ohnivá čepel
+  en: Flame Blade
+  uroven: 2
+  skola: Zaklínání, 2. úroveň
+  seslani: bonusová akce
+  dosah: na sebe
+  slozky: VPS
+  surovina: list škumpy
+  trvani: soustředění, až 10 minut
+  popis: Ve volné ruce vyvoláš ohnivou čepel. Velikostí a tvarem připomíná šavli a vydrží po dobu trvání. Když čepel pustíš, zmizí, ale můžeš ji znovu vyvolat bonusovou akcí. Magickou akcí můžeš ohnivou čepelí provést útok kouzlem na blízko. Při zásahu utrpí cíl ohnivé zranění ve výši 3k6 plus modifikátor tvé sesílací vlastnosti. Planoucí čepel vydává jasné světlo v okruhu 10 stop a tlumené světlo dalších 10 stop.
+  vyssi: Zranění se zvýší o 1k6 za každou úroveň pozice kouzla nad 2.
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: flaming-sphere
+  nazev: Planoucí koule
+  en: Flaming Sphere
+  uroven: 2
+  skola: Vyvolávání, 2. úroveň
+  seslani: akce
+  dosah: 60 stop
+  slozky: VPS
+  surovina: kulička vosku
+  trvani: soustředění, až 1 minuta
+  popis: Na zemi na neobsazeném místě v dosahu vytvoříš ohnivou kouli o průměru 5 stop. Vydrží po dobu trvání. Každá bytost, která ukončí tah do 5 stop od koule, si hází záchranu na Obratnost. Při neúspěchu utrpí 2k6 ohnivého zranění, při úspěchu poloviční. Bonusovou akcí můžeš kouli posunout až o 30 stop, koulí se po zemi. Když kouli posuneš na místo bytosti, hází si tato bytost proti kouli záchranu a koule se v tomto tahu zastaví. Při posunu můžeš kouli převést přes překážky do výšky 5 stop a přeskočit s ní jámy do šířky 10 stop. Hořlavé předměty, které nikdo nemá na sobě ani u sebe, začnou po dotyku koule hořet. Koule vydává jasné světlo v okruhu 20 stop a tlumené světlo dalších 20 stop.
+  vyssi: Zranění se zvýší o 1k6 za každou úroveň pozice kouzla nad 2.
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: aid
+  nazev: Podpora
+  en: Aid
+  uroven: 2
+  skola: Vymítání, 2. úroveň
+  seslani: akce
+  dosah: 30 stop
+  slozky: VPS
+  surovina: proužek bílé látky
+  trvani: 8 hodin
+  popis: Vyber až tři bytosti v dosahu. Každému cíli se po dobu trvání zvýší maximum bodů výdrže i aktuální body výdrže o 5.
+  vyssi: Body výdrže každého cíle se zvýší o dalších 5 za každou úroveň pozice kouzla nad 2.
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: gust-of-wind
+  nazev: Poryv větru
+  en: Gust of Wind
+  uroven: 2
+  skola: Zaklínání, 2. úroveň
+  seslani: akce
+  dosah: na sebe
+  slozky: VPS
+  surovina: semínko luštěniny
+  trvani: soustředění, až 1 minuta
+  popis: Po dobu trvání z tebe ve zvoleném směru vane dráha silného větru dlouhá 60 stop a široká 10 stop. Každá bytost v dráze musí uspět v záchraně na Sílu, jinak je odhozena o 15 stop od tebe ve směru dráhy. Stejnou záchranu si hází bytost, která v dráze ukončí tah. Každá bytost v dráze musí při pohybu směrem k tobě utratit 2 stopy pohybu za každou 1 stopu. Poryv rozptýlí plyn nebo páru a uhasí v oblasti svíčky a podobné nechráněné plameny. Chráněné plameny, například v lucernách, divoce rozkmitá a s 50% šancí je uhasí. Bonusovou akcí v dalších tazích můžeš změnit směr, kterým dráha vane.
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: pass-without-trace
+  nazev: Projdi beze stop
+  en: Pass without Trace
+  uroven: 2
+  skola: Vymítání, 2. úroveň
+  seslani: akce
+  dosah: na sebe
+  slozky: VPS
+  surovina: popel ze spáleného jmelí
+  trvani: soustředění, až 1 hodina
+  popis: Po dobu trvání z tebe vychází skrývající aura ve vyzařování 30 stop. Dokud jsi v auře ty a každá bytost, kterou zvolíš, máte bonus +10 k ověření Obratnosti (Nenápadnosti) a nezanecháváte stopy.
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: augury
+  nazev: Předvídání
+  en: Augury
+  uroven: 2
+  skola: Věštění, 2. úroveň
+  seslani: 1 minuta nebo rituál
+  dosah: na sebe
+  slozky: VPS
+  surovina: zvlášť označené hůlky, kosti, karty nebo jiné věštecké předměty v hodnotě aspoň 25 zl
+  trvani: okamžité
+  popis: |-
+    Dostaneš od mimosvětské bytosti znamení o výsledku činu, který plánuješ udělat v příštích 30 minutách. PJ vybere znamení z tabulky Znamení.
+
+    | Znamení | Výsledek bude… |
+    | --- | --- |
+    | Zdar | dobrý |
+    | Běda | špatný |
+    | Zdar i běda | dobrý i špatný |
+    | Lhostejnost | ani dobrý, ani špatný |
+
+    Kouzlo nepočítá s okolnostmi, například s jinými kouzly, které mohou výsledek změnit. Pokud kouzlo sešleš víckrát před dokončením důkladného odpočinku, je u každého seslání po prvním kumulativní 25% šance, že odpověď nedostaneš.
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: heat-metal
+  nazev: Rozpal kov
+  en: Heat Metal
+  uroven: 2
+  skola: Transmutace, 2. úroveň
+  seslani: akce
+  dosah: 60 stop
+  slozky: VPS
+  surovina: kousek železa a plamen
+  trvani: soustředění, až 1 minuta
+  popis: Vyber vyrobený kovový předmět, například kovovou zbraň nebo těžkou či střední kovovou zbroj, který vidíš v dosahu. Rozžhavíš ho do ruda. Každá bytost, která se předmětu fyzicky dotýká, utrpí při seslání 2k8 ohnivého zranění. Dokud kouzlo trvá, můžeš v každém dalším tahu bonusovou akcí způsobit toto zranění znovu, pokud je předmět v dosahu. Pokud bytost předmět drží nebo má na sobě a utrpí od něj zranění, musí uspět v záchraně na Odolnost, jinak ho pustí, pokud může. Pokud ho nepustí, má do začátku tvého příštího tahu nevýhodu na hody na útok a ověření vlastností.
+  vyssi: Zranění se zvýší o 1k8 za každou úroveň pozice kouzla nad 2.
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: spike-growth
+  nazev: Trny
+  en: Spike Growth
+  uroven: 2
+  skola: Transmutace, 2. úroveň
+  seslani: akce
+  dosah: 150 stop
+  slozky: VPS
+  surovina: sedm trnů
+  trvani: soustředění, až 10 minut
+  popis: Z půdy v kouli o poloměru 20 stop se středem v bodě v dosahu vyrostou tvrdé ostny a trny. Po dobu trvání je oblast obtížný terén. Když se bytost pohne do oblasti nebo v ní, utrpí 2k4 bodného zranění za každých 5 stop, které urazí. Proměna půdy je zamaskovaná, aby vypadala přirozeně. Bytost, která oblast při seslání nevidí, musí provést akci Hledání a uspět v ověření Moudrosti (Vnímání nebo Přežití) proti SO záchrany tvých kouzel, aby poznala, že je terén nebezpečný, ještě než do něj vstoupí.
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: darkvision
+  nazev: Vidění ve tmě
+  en: Darkvision
+  uroven: 2
+  skola: Transmutace, 2. úroveň
+  seslani: akce
+  dosah: dotyk
+  slozky: VPS
+  surovina: sušená mrkev
+  trvani: 8 hodin
+  popis: Ochotná bytost, které se dotkneš, má po dobu trvání vidění ve tmě s dosahem 150 stop.
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: continual-flame
+  nazev: Věčný plamen
+  en: Continual Flame
+  uroven: 2
+  skola: Zaklínání, 2. úroveň
+  seslani: akce
+  dosah: dotyk
+  slozky: VPS
+  surovina: rubínový prach v hodnotě aspoň 50 zl, který kouzlo spotřebuje
+  trvani: dokud není rozptýleno
+  popis: Z předmětu, kterého se dotkneš, vyšlehne plamen. Vydává jasné světlo v okruhu 20 stop a tlumené světlo dalších 20 stop. Vypadá jako obyčejný plamen, ale nehřeje a nespotřebovává palivo. Plamen jde zakrýt nebo schovat, ale ne udusit ani uhasit.
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: enhance-ability
+  nazev: Zlepši vlastnost
+  en: Enhance Ability
+  uroven: 2
+  skola: Transmutace, 2. úroveň
+  seslani: akce
+  dosah: dotyk
+  slozky: VPS
+  surovina: srst nebo pírko
+  trvani: soustředění, až 1 hodina
+  popis: Dotkneš se bytosti a zvolíš Sílu, Obratnost, Inteligenci, Moudrost nebo Charisma. Po dobu trvání má cíl výhodu na ověření zvolené vlastnosti.
+  vyssi: Za každou úroveň pozice kouzla nad 2. můžeš zaměřit jednu další bytost. Každému cíli můžeš zvolit jinou vlastnost.
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: hold-person
+  nazev: Znehybni osobu
+  en: Hold Person
+  uroven: 2
+  skola: Očarování, 2. úroveň
+  seslani: akce
+  dosah: 60 stop
+  slozky: VPS
+  surovina: rovný kousek železa
+  trvani: soustředění, až 1 minuta
+  popis: Vyber humanoida, kterého vidíš v dosahu. Cíl musí uspět v záchraně na Moudrost, jinak je po dobu trvání paralyzovaný. Na konci každého svého tahu si cíl záchranu opakuje a při úspěchu pro něj kouzlo skončí.
+  vyssi: Za každou úroveň pozice kouzla nad 2. můžeš zaměřit jednoho dalšího humanoida.
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: animal-messenger
+  nazev: Zvířecí posel
+  en: Animal Messenger
+  uroven: 2
+  skola: Očarování, 2. úroveň
+  seslani: akce nebo rituál
+  dosah: 30 stop
+  slozky: VPS
+  surovina: sousto jídla
+  trvani: 24 hodin
+  popis: Drobné zvíře podle tvé volby, které vidíš v dosahu, musí uspět v záchraně na Charisma, jinak se pokusí doručit za tebe zprávu (pokud nebezpečnost cíle není 0, uspěje automaticky). Určíš místo, kde jsi byl(a), a příjemce, který odpovídá obecnému popisu, třeba „člověk v uniformě městské stráže“ nebo „zrzavý trpaslík ve špičatém klobouku“. Sdělíš mu také zprávu o nejvýš dvaceti pěti slovech. Zvíře po dobu trvání putuje k určenému místu a urazí asi 25 mil za 24 hodin, nebo 50 mil, pokud umí létat. Když zvíře dorazí, předá zprávu bytosti, kterou jsi popsal(a), a napodobí přitom tvůj způsob řeči. Pokud zvíře nedorazí do cíle před koncem kouzla, zpráva se ztratí a zvíře se vrátí tam, kde jsi kouzlo seslal(a).
+  vyssi: Doba trvání se prodlouží o 48 hodin za každou úroveň pozice kouzla nad 2.
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''
+- id: enlarge-reduce
+  nazev: Zvětšení, nebo zmenšení
+  en: Enlarge/Reduce
+  uroven: 2
+  skola: Transmutace, 2. úroveň
+  seslani: akce
+  dosah: 30 stop
+  slozky: VPS
+  surovina: špetka železného prášku
+  trvani: soustředění, až 1 minuta
+  popis: |-
+    Po dobu trvání kouzlo zvětší nebo zmenší bytost nebo předmět, které vidíš v dosahu (viz zvolený účinek níže). Zaměřený předmět nesmí mít nikdo na sobě ani u sebe. Pokud je cílem bytost, která nechce, může si hodit záchranu na Odolnost. Při úspěchu kouzlo nemá účinek. Vše, co zaměřená bytost má na sobě a nese, změní velikost s ní. Každá věc, kterou upustí, se okamžitě vrátí do normální velikosti. Vrhací zbraň nebo střelivo se vrátí do normální velikosti hned poté, co cíl zasáhne nebo mine.
+
+    ***Zvětšení.*** Velikost cíle se zvýší o jeden stupeň, například ze střední na velkou. Cíl má také výhodu na ověření Síly a záchrany na Sílu. Útoky cíle zvětšenými zbraněmi nebo útoky beze zbraně způsobí při zásahu o 1k4 zranění navíc.
+
+    ***Zmenšení.*** Velikost cíle se sníží o jeden stupeň, například ze střední na malou. Cíl má také nevýhodu na ověření Síly a záchrany na Sílu. Útoky cíle zmenšenými zbraněmi nebo útoky beze zbraně způsobí při zásahu o 1k4 zranění méně (zranění ale neklesne pod 1).
+  vyssi: ''
+  vlastni_nazev: false
+  na_listu: false
+  vzdy: false
+  zdroj_listu: ''

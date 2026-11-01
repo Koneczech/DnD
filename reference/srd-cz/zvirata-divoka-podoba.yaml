@@ -1,0 +1,1633 @@
+# Obsahuje materiál ze System Reference Document 5.2.1 („SRD 5.2.1“) od Wizards of the Coast LLC,
+# dostupného na https://www.dndbeyond.com/srd. SRD 5.2.1 je licencováno pod Creative Commons
+# Attribution 4.0 International (https://creativecommons.org/licenses/by/4.0/legalcode).
+# Český překlad (Claude pro DM Matěje, 31. 10.–1. 11. 2026) podle reference/prekladovy-klic-cz.md. Data z Open5e (srd-2024).
+# Zvířata s nebezpečností do 1 bez rychlosti letu: podoby, které Alba (Kruh Měsíce, 3. úroveň) může mít v Divoké podobě.
+schema: 1
+zvirata:
+- id: dire-wolf
+  nazev: Vlk lítý
+  en: Dire Wolf
+  vlastni_nazev: false
+  velikost: Velké zvíře
+  n: '1'
+  oc: 14
+  bv: 22 (3k10 + 6)
+  rychlost: 50 stop
+  plavani: false
+  splhani: false
+  vlastnosti:
+    SIL: 17 (+3)
+    OBR: 15 (+2)
+    ODL: 15 (+2)
+    INT: 3 (−4)
+    MDR: 12 (+1)
+    CHA: 7 (−2)
+  dovednosti: Vnímání +5, Nenápadnost +4
+  smysly: vidění ve tmě 60 stop, pasivní Vnímání 15
+  schopnosti:
+  - nazev: Smečková taktika
+    text: Má výhodu na hod na útok proti bytosti, pokud je do 5 stop od ní aspoň jeden jeho spojenec, který není zneschopněný.
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +5, dosah 5 stop. *Zásah:* 8 (1k10 + 3) bodného zranění. Pokud je cíl velká nebo menší bytost, je ležící.'
+  bonusove: []
+  reakce: []
+  albina: zlovlk
+- id: brown-bear
+  nazev: Medvěd hnědý
+  en: Brown Bear
+  vlastni_nazev: false
+  velikost: Velké zvíře
+  n: '1'
+  oc: 11
+  bv: 22 (3k10 + 6)
+  rychlost: 40 stop, šplhání 30 stop
+  plavani: false
+  splhani: true
+  vlastnosti:
+    SIL: 17 (+3)
+    OBR: 12 (+1)
+    ODL: 15 (+2)
+    INT: 2 (−4)
+    MDR: 13 (+1)
+    CHA: 7 (−2)
+  dovednosti: Vnímání +3
+  smysly: vidění ve tmě 60 stop, pasivní Vnímání 13
+  schopnosti: []
+  akce:
+  - nazev: Vícenásobný útok
+    text: Provede jeden útok Kousnutím a jeden Drápem.
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +5, dosah 5 stop. *Zásah:* 7 (1k8 + 3) bodného zranění.'
+  - nazev: Dráp
+    text: '*Hod na útok na blízko:* +5, dosah 5 stop. *Zásah:* 5 (1k4 + 3) sečného zranění. Pokud je cíl velká nebo menší bytost, je ležící.'
+  bonusove: []
+  reakce: []
+  albina: medved
+- id: octopus
+  nazev: Chobotnice
+  en: Octopus
+  vlastni_nazev: false
+  velikost: Malé zvíře
+  n: '0'
+  oc: 12
+  bv: 3 (1k6)
+  rychlost: 5 stop, plavání 30 stop
+  plavani: true
+  splhani: false
+  vlastnosti:
+    SIL: 4 (−3)
+    OBR: 15 (+2)
+    ODL: 0 (−5)
+    INT: 3 (−4)
+    MDR: 10 (+0)
+    CHA: -3 (−7)
+  dovednosti: Vnímání +2, Nenápadnost +6
+  smysly: vidění ve tmě 30 stop, pasivní Vnímání 12
+  schopnosti:
+  - nazev: Stlačení
+    text: Projde prostorem úzkým jen 1 palec, aniž by za to utratil pohyb navíc.
+  - nazev: Vodní dech
+    text: Dýchá jen pod vodou.
+  akce:
+  - nazev: Chapadla
+    text: '*Hod na útok na blízko:* +4, dosah 5 stop. *Zásah:* 1 drtivé zranění.'
+  bonusove: []
+  reakce:
+  - nazev: Inkoustový oblak
+    text: '*Spouštěč:* bytost ukončí tah do 5 stop od chobotnice pod vodou. *Odezva:* chobotnice vypustí inkoust, který vyplní krychli o hraně 5 stop se středem na ní, a pohne se až o svou rychlost plavání. V krychli je 1 minutu silně omezená viditelnost, nebo dokud inkoust nerozptýlí silný proud či podobný účinek.'
+  albina: ''
+- id: hyena
+  nazev: Hyena
+  en: Hyena
+  vlastni_nazev: true
+  velikost: Střední zvíře
+  n: '0'
+  oc: 11
+  bv: 5 (1k8 + 1)
+  rychlost: 50 stop
+  plavani: false
+  splhani: false
+  vlastnosti:
+    SIL: 11 (+0)
+    OBR: 13 (+1)
+    ODL: 12 (+1)
+    INT: 2 (−4)
+    MDR: 12 (+1)
+    CHA: 5 (−3)
+  dovednosti: Vnímání +3
+  smysly: vidění ve tmě 60 stop, pasivní Vnímání 13
+  schopnosti:
+  - nazev: Smečková taktika
+    text: Má výhodu na hod na útok proti bytosti, pokud je do 5 stop od ní aspoň jeden jeho spojenec, který není zneschopněný.
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +2, dosah 5 stop. *Zásah:* 3 (1k6) bodného zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: deer
+  nazev: Jelen
+  en: Deer
+  vlastni_nazev: true
+  velikost: Střední zvíře
+  n: '0'
+  oc: 13
+  bv: 4 (1k8)
+  rychlost: 50 stop
+  plavani: false
+  splhani: false
+  vlastnosti:
+    SIL: 11 (+0)
+    OBR: 16 (+3)
+    ODL: 11 (+0)
+    INT: 2 (−4)
+    MDR: 14 (+2)
+    CHA: 5 (−3)
+  dovednosti: Vnímání +4
+  smysly: vidění ve tmě 60 stop, pasivní Vnímání 14
+  schopnosti:
+  - nazev: Hbitost
+    text: Když se pohybem dostane z dosahu nepřítele, nevyvolá příležitostný útok.
+  akce:
+  - nazev: Beranění
+    text: '*Hod na útok na blízko:* +2, dosah 5 stop. *Zásah:* 2 (1k4) drtivého zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: badger
+  nazev: Jezevec
+  en: Badger
+  vlastni_nazev: false
+  velikost: Malé zvíře
+  n: '0'
+  oc: 11
+  bv: 5 (1k4 + 3)
+  rychlost: 20 stop, hrabání 5 stop
+  plavani: false
+  splhani: false
+  vlastnosti:
+    SIL: 10 (+0)
+    OBR: 11 (+0)
+    ODL: 16 (+3)
+    INT: 2 (−4)
+    MDR: 12 (+1)
+    CHA: 5 (−3)
+  dovednosti: Vnímání +3
+  smysly: vidění ve tmě 30 stop, pasivní Vnímání 13
+  schopnosti: []
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +2, dosah 5 stop. *Zásah:* 1 bodné zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: lizard
+  nazev: Ještěrka
+  en: Lizard
+  vlastni_nazev: false
+  velikost: Malé zvíře
+  n: '0'
+  oc: 10
+  bv: 2 (1k4)
+  rychlost: 20 stop, šplhání 20 stop
+  plavani: false
+  splhani: true
+  vlastnosti:
+    SIL: 2 (−4)
+    OBR: 11 (+0)
+    ODL: 10 (+0)
+    INT: 1 (−5)
+    MDR: 8 (−1)
+    CHA: 3 (−4)
+  dovednosti: ''
+  smysly: vidění ve tmě 30 stop, pasivní Vnímání 9
+  schopnosti:
+  - nazev: Pavoučí šplh
+    text: Šplhá po obtížných površích, i po stropě, bez ověření vlastnosti.
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +2, dosah 5 stop. *Zásah:* 1 bodné zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: goat
+  nazev: Koza
+  en: Goat
+  vlastni_nazev: false
+  velikost: Střední zvíře
+  n: '0'
+  oc: 10
+  bv: 4 (1k8)
+  rychlost: 40 stop, šplhání 30 stop
+  plavani: false
+  splhani: true
+  vlastnosti:
+    SIL: 11 (+0)
+    OBR: 10 (+0)
+    ODL: 11 (+0)
+    INT: 2 (−4)
+    MDR: 10 (+0)
+    CHA: 5 (−3)
+  dovednosti: Vnímání +2
+  smysly: vidění ve tmě 60 stop, pasivní Vnímání 12
+  schopnosti: []
+  akce:
+  - nazev: Beranění
+    text: '*Hod na útok na blízko:* +2, dosah 5 stop. *Zásah:* 1 drtivé zranění, nebo 2 (1k4) drtivého zranění, pokud se koza těsně před zásahem pohnula aspoň 20 stop přímo k cíli.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: cat
+  nazev: Kočka
+  en: Cat
+  vlastni_nazev: false
+  velikost: Malé zvíře
+  n: '0'
+  oc: 12
+  bv: 2 (1k4)
+  rychlost: 40 stop, šplhání 40 stop
+  plavani: false
+  splhani: true
+  vlastnosti:
+    SIL: 3 (−4)
+    OBR: 15 (+2)
+    ODL: 10 (+0)
+    INT: 3 (−4)
+    MDR: 12 (+1)
+    CHA: 7 (−2)
+  dovednosti: Vnímání +3, Nenápadnost +4
+  smysly: vidění ve tmě 60 stop, pasivní Vnímání 13
+  schopnosti:
+  - nazev: Skokan
+    text: Délka skoku se mu určuje podle Obratnosti místo Síly.
+  akce:
+  - nazev: Škrábnutí
+    text: '*Hod na útok na blízko:* +4, dosah 5 stop. *Zásah:* 1 sečné zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: crab
+  nazev: Krab
+  en: Crab
+  vlastni_nazev: false
+  velikost: Malé zvíře
+  n: '0'
+  oc: 11
+  bv: 3 (1k4 + 1)
+  rychlost: 20 stop, plavání 20 stop
+  plavani: true
+  splhani: false
+  vlastnosti:
+    SIL: 6 (−2)
+    OBR: 11 (+0)
+    ODL: 12 (+1)
+    INT: 1 (−5)
+    MDR: 8 (−1)
+    CHA: 2 (−4)
+  dovednosti: Nenápadnost +2
+  smysly: mimozrakové vnímání 30 stop, pasivní Vnímání 9
+  schopnosti:
+  - nazev: Obojživelník
+    text: Dýchá vzduch i vodu.
+  akce:
+  - nazev: Dráp
+    text: '*Hod na útok na blízko:* +2, dosah 5 stop. *Zásah:* 1 drtivé zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: rat
+  nazev: Krysa
+  en: Rat
+  vlastni_nazev: false
+  velikost: Malé zvíře
+  n: '0'
+  oc: 10
+  bv: 1 (1k4 - 1)
+  rychlost: 20 stop, šplhání 20 stop
+  plavani: false
+  splhani: true
+  vlastnosti:
+    SIL: 2 (−4)
+    OBR: 11 (+0)
+    ODL: 9 (−1)
+    INT: 2 (−4)
+    MDR: 10 (+0)
+    CHA: 4 (−3)
+  dovednosti: Vnímání +2
+  smysly: vidění ve tmě 30 stop, pasivní Vnímání 12
+  schopnosti:
+  - nazev: Hbitost
+    text: Když se pohybem dostane z dosahu nepřítele, nevyvolá příležitostný útok.
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +2, dosah 5 stop. *Zásah:* 1 bodné zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: weasel
+  nazev: Lasička
+  en: Weasel
+  vlastni_nazev: false
+  velikost: Malé zvíře
+  n: '0'
+  oc: 13
+  bv: 1 (1k4 - 1)
+  rychlost: 30 stop, šplhání 30 stop
+  plavani: false
+  splhani: true
+  vlastnosti:
+    SIL: 3 (−4)
+    OBR: 16 (+3)
+    ODL: 8 (−1)
+    INT: 2 (−4)
+    MDR: 12 (+1)
+    CHA: 3 (−4)
+  dovednosti: Akrobacie +5, Vnímání +3, Nenápadnost +5
+  smysly: vidění ve tmě 60 stop, pasivní Vnímání 13
+  schopnosti: []
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +5, dosah 5 stop. *Zásah:* 1 bodné zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: seahorse
+  nazev: Mořský koník
+  en: Seahorse
+  vlastni_nazev: true
+  velikost: Malé zvíře
+  n: '0'
+  oc: 12
+  bv: 1 (1k4 - 1)
+  rychlost: 5 stop, plavání 20 stop
+  plavani: true
+  splhani: false
+  vlastnosti:
+    SIL: 1 (−5)
+    OBR: 12 (+1)
+    ODL: 8 (−1)
+    INT: 1 (−5)
+    MDR: 10 (+0)
+    CHA: 2 (−4)
+  dovednosti: Vnímání +2, Nenápadnost +5
+  smysly: pasivní Vnímání 12
+  schopnosti:
+  - nazev: Vodní dech
+    text: Dýchá jen pod vodou.
+  akce:
+  - nazev: Bublinkový úprk
+    text: Pod vodou se pohne až o svou rychlost plavání, aniž by vyvolal příležitostné útoky.
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: giant-fire-beetle
+  nazev: Obří ohnivý brouk
+  en: Giant Fire Beetle
+  vlastni_nazev: true
+  velikost: Malé zvíře
+  n: '0'
+  oc: 13
+  bv: 4 (1k6 + 1)
+  rychlost: 30 stop, šplhání 30 stop
+  plavani: false
+  splhani: true
+  vlastnosti:
+    SIL: 8 (−1)
+    OBR: 10 (+0)
+    ODL: 12 (+1)
+    INT: 1 (−5)
+    MDR: 7 (−2)
+    CHA: 3 (−4)
+  dovednosti: ''
+  smysly: mimozrakové vnímání 30 stop, pasivní Vnímání 8
+  schopnosti:
+  - nazev: Světélkování
+    text: Vydává jasné světlo v okruhu 10 stop a tlumené světlo dalších 10 stop.
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +1, dosah 5 stop. *Zásah:* 1 ohnivé zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: baboon
+  nazev: Pavián
+  en: Baboon
+  vlastni_nazev: true
+  velikost: Malé zvíře
+  n: '0'
+  oc: 12
+  bv: 3 (1k6)
+  rychlost: 30 stop, šplhání 30 stop
+  plavani: false
+  splhani: true
+  vlastnosti:
+    SIL: 8 (−1)
+    OBR: 14 (+2)
+    ODL: 11 (+0)
+    INT: 4 (−3)
+    MDR: 12 (+1)
+    CHA: 6 (−2)
+  dovednosti: ''
+  smysly: pasivní Vnímání 11
+  schopnosti:
+  - nazev: Smečková taktika
+    text: Má výhodu na hod na útok proti bytosti, pokud je do 5 stop od ní aspoň jeden jeho spojenec, který není zneschopněný.
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +1, dosah 5 stop. *Zásah:* 1 (1k4 - 1) bodného zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: spider
+  nazev: Pavouk
+  en: Spider
+  vlastni_nazev: false
+  velikost: Malé zvíře
+  n: '0'
+  oc: 12
+  bv: 1 (1k4 - 1)
+  rychlost: 20 stop, šplhání 20 stop
+  plavani: false
+  splhani: true
+  vlastnosti:
+    SIL: 2 (−4)
+    OBR: 14 (+2)
+    ODL: 8 (−1)
+    INT: 1 (−5)
+    MDR: 10 (+0)
+    CHA: 2 (−4)
+  dovednosti: Nenápadnost +4
+  smysly: vidění ve tmě 30 stop, pasivní Vnímání 10
+  schopnosti:
+  - nazev: Pavoučí šplh
+    text: Šplhá po obtížných površích, i po stropě, bez ověření vlastnosti.
+  - nazev: Chodec po sítích
+    text: Nepůsobí na něj omezení pohybu způsobená pavučinami a ví, kde je každá jiná bytost, která se dotýká téže pavučiny.
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +4, dosah 5 stop. *Zásah:* 1 bodné zranění plus 2 (1k4) jedového zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: piranha
+  nazev: Piraňa
+  en: Piranha
+  vlastni_nazev: true
+  velikost: Malé zvíře
+  n: '0'
+  oc: 13
+  bv: 1 (1k4 - 1)
+  rychlost: 5 stop, plavání 40 stop
+  plavani: true
+  splhani: false
+  vlastnosti:
+    SIL: 2 (−4)
+    OBR: 16 (+3)
+    ODL: 9 (−1)
+    INT: 1 (−5)
+    MDR: 7 (−2)
+    CHA: 2 (−4)
+  dovednosti: ''
+  smysly: vidění ve tmě 60 stop, pasivní Vnímání 8
+  schopnosti:
+  - nazev: Vodní dech
+    text: Dýchá jen pod vodou.
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +5 (s výhodou, pokud cíl nemá plné body výdrže), dosah 5 stop. *Zásah:* 1 bodné zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: jackal
+  nazev: Šakal
+  en: Jackal
+  vlastni_nazev: true
+  velikost: Malé zvíře
+  n: '0'
+  oc: 12
+  bv: 3 (1k6)
+  rychlost: 40 stop
+  plavani: false
+  splhani: false
+  vlastnosti:
+    SIL: 8 (−1)
+    OBR: 15 (+2)
+    ODL: 11 (+0)
+    INT: 3 (−4)
+    MDR: 12 (+1)
+    CHA: 6 (−2)
+  dovednosti: Vnímání +5, Nenápadnost +4
+  smysly: vidění ve tmě 90 stop, pasivní Vnímání 15
+  schopnosti: []
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +1, dosah 5 stop. *Zásah:* 1 (1k4 - 1) bodného zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: scorpion
+  nazev: Štír
+  en: Scorpion
+  vlastni_nazev: true
+  velikost: Malé zvíře
+  n: '0'
+  oc: 11
+  bv: 1 (1k4 - 1)
+  rychlost: 10 stop
+  plavani: false
+  splhani: false
+  vlastnosti:
+    SIL: 2 (−4)
+    OBR: 11 (+0)
+    ODL: 8 (−1)
+    INT: 1 (−5)
+    MDR: 8 (−1)
+    CHA: 2 (−4)
+  dovednosti: ''
+  smysly: mimozrakové vnímání 10 stop, pasivní Vnímání 9
+  schopnosti: []
+  akce:
+  - nazev: Žihadlo
+    text: '*Hod na útok na blízko:* +2, dosah 5 stop. *Zásah:* 1 bodné zranění plus 3 (1k6) jedového zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: frog
+  nazev: Žába
+  en: Frog
+  vlastni_nazev: false
+  velikost: Malé zvíře
+  n: '0'
+  oc: 11
+  bv: 1 (1k4 - 1)
+  rychlost: 20 stop, plavání 20 stop
+  plavani: true
+  splhani: false
+  vlastnosti:
+    SIL: 1 (−5)
+    OBR: 13 (+1)
+    ODL: 8 (−1)
+    INT: 1 (−5)
+    MDR: 8 (−1)
+    CHA: 3 (−4)
+  dovednosti: Vnímání +1, Nenápadnost +3
+  smysly: vidění ve tmě 30 stop, pasivní Vnímání 11
+  schopnosti:
+  - nazev: Obojživelník
+    text: Dýchá vzduch i vodu.
+  - nazev: Skok z místa
+    text: Skočí daleko až 10 stop a vysoko až 5 stop, s rozběhem i bez něj.
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +3, dosah 5 stop. *Zásah:* 1 bodné zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: venomous-snake
+  nazev: Had jedovatý
+  en: Venomous Snake
+  vlastni_nazev: false
+  velikost: Malé zvíře
+  n: 1/8
+  oc: 12
+  bv: 5 (2k4)
+  rychlost: 30 stop, plavání 30 stop
+  plavani: true
+  splhani: false
+  vlastnosti:
+    SIL: 2 (−4)
+    OBR: 15 (+2)
+    ODL: 11 (+0)
+    INT: 1 (−5)
+    MDR: 10 (+0)
+    CHA: 3 (−4)
+  dovednosti: ''
+  smysly: mimozrakové vnímání 10 stop, pasivní Vnímání 10
+  schopnosti: []
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +4, dosah 5 stop. *Zásah:* 4 (1k4 + 2) bodného zranění plus 3 (1k6) jedového zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: mastiff
+  nazev: Mastif
+  en: Mastiff
+  vlastni_nazev: false
+  velikost: Střední zvíře
+  n: 1/8
+  oc: 12
+  bv: 5 (1k8 + 1)
+  rychlost: 40 stop
+  plavani: false
+  splhani: false
+  vlastnosti:
+    SIL: 13 (+1)
+    OBR: 14 (+2)
+    ODL: 12 (+1)
+    INT: 3 (−4)
+    MDR: 12 (+1)
+    CHA: 7 (−2)
+  dovednosti: Vnímání +5
+  smysly: vidění ve tmě 60 stop, pasivní Vnímání 15
+  schopnosti: []
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +3, dosah 5 stop. *Zásah:* 4 (1k6 + 1) bodného zranění. Pokud je cíl střední nebo menší bytost, je ležící.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: mule
+  nazev: Mula
+  en: Mule
+  vlastni_nazev: false
+  velikost: Střední zvíře
+  n: 1/8
+  oc: 10
+  bv: 11 (2k8 + 2)
+  rychlost: 40 stop
+  plavani: false
+  splhani: false
+  vlastnosti:
+    SIL: 14 (+2)
+    OBR: 10 (+0)
+    ODL: 13 (+1)
+    INT: 2 (−4)
+    MDR: 10 (+0)
+    CHA: 5 (−3)
+  dovednosti: ''
+  smysly: pasivní Vnímání 10
+  schopnosti:
+  - nazev: Tažné zvíře
+    text: Pro nosnost se počítá, jako by byl o jeden stupeň velikosti větší.
+  akce:
+  - nazev: Kopyta
+    text: '*Hod na útok na blízko:* +4, dosah 5 stop. *Zásah:* 4 (1k4 + 2) drtivého zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: giant-crab
+  nazev: Obří krab
+  en: Giant Crab
+  vlastni_nazev: false
+  velikost: Střední zvíře
+  n: 1/8
+  oc: 15
+  bv: 13 (3k8)
+  rychlost: 30 stop, plavání 30 stop
+  plavani: true
+  splhani: false
+  vlastnosti:
+    SIL: 13 (+1)
+    OBR: 13 (+1)
+    ODL: 11 (+0)
+    INT: 1 (−5)
+    MDR: 9 (−1)
+    CHA: 3 (−4)
+  dovednosti: Nenápadnost +3
+  smysly: mimozrakové vnímání 30 stop, pasivní Vnímání 9
+  schopnosti:
+  - nazev: Obojživelník
+    text: Dýchá vzduch i vodu.
+  akce:
+  - nazev: Dráp
+    text: '*Hod na útok na blízko:* +3, dosah 5 stop. *Zásah:* 4 (1k6 + 1) drtivého zranění. Pokud je cíl střední nebo menší bytost, je držený (SO vyproštění 11) jedním ze dvou klepet.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: giant-rat
+  nazev: Obří krysa
+  en: Giant Rat
+  vlastni_nazev: true
+  velikost: Malé zvíře
+  n: 1/8
+  oc: 13
+  bv: 7 (2k6)
+  rychlost: 30 stop, šplhání 30 stop
+  plavani: false
+  splhani: true
+  vlastnosti:
+    SIL: 7 (−2)
+    OBR: 16 (+3)
+    ODL: 11 (+0)
+    INT: 2 (−4)
+    MDR: 10 (+0)
+    CHA: 4 (−3)
+  dovednosti: Vnímání +2
+  smysly: vidění ve tmě 60 stop, pasivní Vnímání 12
+  schopnosti:
+  - nazev: Smečková taktika
+    text: Má výhodu na hod na útok proti bytosti, pokud je do 5 stop od ní aspoň jeden jeho spojenec, který není zneschopněný.
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +5, dosah 5 stop. *Zásah:* 5 (1k4 + 3) bodného zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: giant-weasel
+  nazev: Obří lasička
+  en: Giant Weasel
+  vlastni_nazev: false
+  velikost: Střední zvíře
+  n: 1/8
+  oc: 13
+  bv: 9 (2k8)
+  rychlost: 40 stop, šplhání 30 stop
+  plavani: false
+  splhani: true
+  vlastnosti:
+    SIL: 11 (+0)
+    OBR: 17 (+3)
+    ODL: 10 (+0)
+    INT: 4 (−3)
+    MDR: 12 (+1)
+    CHA: 5 (−3)
+  dovednosti: Akrobacie +5, Vnímání +3, Nenápadnost +5
+  smysly: vidění ve tmě 60 stop, pasivní Vnímání 13
+  schopnosti: []
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +5, dosah 5 stop. *Zásah:* 5 (1k4 + 3) bodného zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: pony
+  nazev: Poník
+  en: Pony
+  vlastni_nazev: false
+  velikost: Střední zvíře
+  n: 1/8
+  oc: 10
+  bv: 11 (2k8 + 2)
+  rychlost: 40 stop
+  plavani: false
+  splhani: false
+  vlastnosti:
+    SIL: 15 (+2)
+    OBR: 10 (+0)
+    ODL: 13 (+1)
+    INT: 2 (−4)
+    MDR: 11 (+0)
+    CHA: 7 (−2)
+  dovednosti: ''
+  smysly: pasivní Vnímání 10
+  schopnosti: []
+  akce:
+  - nazev: Kopyta
+    text: '*Hod na útok na blízko:* +4, dosah 5 stop. *Zásah:* 4 (1k4 + 2) drtivého zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: camel
+  nazev: Velbloud
+  en: Camel
+  vlastni_nazev: false
+  velikost: Velké zvíře
+  n: 1/8
+  oc: 10
+  bv: 17 (2k10 + 6)
+  rychlost: 50 stop
+  plavani: false
+  splhani: false
+  vlastnosti:
+    SIL: 15 (+2)
+    OBR: 8 (−1)
+    ODL: 17 (+3)
+    INT: 2 (−4)
+    MDR: 11 (+0)
+    CHA: 5 (−3)
+  dovednosti: ''
+  smysly: vidění ve tmě 60 stop, pasivní Vnímání 10
+  schopnosti: []
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +4, dosah 5 stop. *Zásah:* 4 (1k4 + 2) drtivého zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: constrictor-snake
+  nazev: Had škrtič
+  en: Constrictor Snake
+  vlastni_nazev: false
+  velikost: Velké zvíře
+  n: 1/4
+  oc: 13
+  bv: 13 (2k10 + 2)
+  rychlost: 30 stop, plavání 30 stop
+  plavani: true
+  splhani: false
+  vlastnosti:
+    SIL: 15 (+2)
+    OBR: 14 (+2)
+    ODL: 12 (+1)
+    INT: 1 (−5)
+    MDR: 10 (+0)
+    CHA: 3 (−4)
+  dovednosti: Vnímání +2, Nenápadnost +4
+  smysly: mimozrakové vnímání 10 stop, pasivní Vnímání 12
+  schopnosti: []
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +4, dosah 5 stop. *Zásah:* 6 (1k8 + 2) bodného zranění.'
+  - nazev: Škrcení
+    text: '*Záchrana na Sílu:* SO 12, jedna střední nebo menší bytost do 5 stop, kterou had vidí. *Neúspěch:* 7 (3k4) drtivého zranění a cíl je držený (SO vyproštění 12).'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: swarm-of-rats
+  nazev: Hejno krys
+  en: Swarm of Rats
+  vlastni_nazev: true
+  velikost: Střední zvíře
+  n: 1/4
+  oc: 10
+  bv: 14 (4k8 - 4)
+  rychlost: 30 stop, šplhání 30 stop
+  plavani: false
+  splhani: true
+  vlastnosti:
+    SIL: 9 (−1)
+    OBR: 11 (+0)
+    ODL: 9 (−1)
+    INT: 2 (−4)
+    MDR: 10 (+0)
+    CHA: 3 (−4)
+  dovednosti: ''
+  smysly: vidění ve tmě 30 stop, pasivní Vnímání 10
+  schopnosti:
+  - nazev: Hejno
+    text: Hejno může obsadit místo jiné bytosti a naopak a projde každým otvorem, kterým by prošel drobný jedinec. Hejno si nemůže obnovit body výdrže ani získat dočasné body výdrže.
+  akce:
+  - nazev: Kousance
+    text: '*Hod na útok na blízko:* +2, dosah 5 stop. *Zásah:* 5 (2k4) bodného zranění, nebo 2 (1k4) bodného zranění, pokud je hejno zkrvavené.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: boar
+  nazev: Kanec
+  en: Boar
+  vlastni_nazev: false
+  velikost: Střední zvíře
+  n: 1/4
+  oc: 11
+  bv: 13 (2k8 + 4)
+  rychlost: 40 stop
+  plavani: false
+  splhani: false
+  vlastnosti:
+    SIL: 13 (+1)
+    OBR: 11 (+0)
+    ODL: 14 (+2)
+    INT: 2 (−4)
+    MDR: 9 (−1)
+    CHA: 5 (−3)
+  dovednosti: ''
+  smysly: pasivní Vnímání 9
+  schopnosti:
+  - nazev: Zuřivost zkrvaveného
+    text: Dokud je zkrvavený, má výhodu na hody na útok.
+  akce:
+  - nazev: Nabodnutí
+    text: '*Hod na útok na blízko:* +3, dosah 5 stop. *Zásah:* 4 (1k6 + 1) bodného zranění. Pokud je cíl střední nebo menší bytost a kanec se těsně před zásahem pohnul aspoň 20 stop přímo k ní, utrpí cíl navíc 3 (1k6) bodného zranění a je ležící.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: riding-horse
+  nazev: Kůň jezdecký
+  en: Riding Horse
+  vlastni_nazev: false
+  velikost: Velké zvíře
+  n: 1/4
+  oc: 11
+  bv: 13 (2k10 + 2)
+  rychlost: 60 stop
+  plavani: false
+  splhani: false
+  vlastnosti:
+    SIL: 16 (+3)
+    OBR: 13 (+1)
+    ODL: 12 (+1)
+    INT: 2 (−4)
+    MDR: 11 (+0)
+    CHA: 7 (−2)
+  dovednosti: ''
+  smysly: pasivní Vnímání 10
+  schopnosti: []
+  akce:
+  - nazev: Kopyta
+    text: '*Hod na útok na blízko:* +5, dosah 5 stop. *Zásah:* 7 (1k8 + 3) drtivého zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: draft-horse
+  nazev: Kůň tažný
+  en: Draft Horse
+  vlastni_nazev: false
+  velikost: Velké zvíře
+  n: 1/4
+  oc: 10
+  bv: 15 (2k10 + 4)
+  rychlost: 40 stop
+  plavani: false
+  splhani: false
+  vlastnosti:
+    SIL: 18 (+4)
+    OBR: 10 (+0)
+    ODL: 15 (+2)
+    INT: 2 (−4)
+    MDR: 11 (+0)
+    CHA: 7 (−2)
+  dovednosti: ''
+  smysly: pasivní Vnímání 10
+  schopnosti: []
+  akce:
+  - nazev: Kopyta
+    text: '*Hod na útok na blízko:* +6, dosah 5 stop. *Zásah:* 6 (1k4 + 4) drtivého zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: elk
+  nazev: Los
+  en: Elk
+  vlastni_nazev: false
+  velikost: Velké zvíře
+  n: 1/4
+  oc: 10
+  bv: 11 (2k10)
+  rychlost: 50 stop
+  plavani: false
+  splhani: false
+  vlastnosti:
+    SIL: 16 (+3)
+    OBR: 10 (+0)
+    ODL: 11 (+0)
+    INT: 2 (−4)
+    MDR: 10 (+0)
+    CHA: 6 (−2)
+  dovednosti: Vnímání +2
+  smysly: vidění ve tmě 60 stop, pasivní Vnímání 12
+  schopnosti: []
+  akce:
+  - nazev: Beranění
+    text: '*Hod na útok na blízko:* +5, dosah 5 stop. *Zásah:* 6 (1k6 + 3) drtivého zranění. Pokud je cíl velká nebo menší bytost a los se těsně před zásahem pohnul aspoň 20 stop přímo k ní, utrpí cíl navíc 3 (1k6) drtivého zranění a je ležící.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: giant-venomous-snake
+  nazev: Obří jedovatý had
+  en: Giant Venomous Snake
+  vlastni_nazev: true
+  velikost: Střední zvíře
+  n: 1/4
+  oc: 14
+  bv: 11 (2k8 + 2)
+  rychlost: 40 stop, plavání 40 stop
+  plavani: true
+  splhani: false
+  vlastnosti:
+    SIL: 10 (+0)
+    OBR: 18 (+4)
+    ODL: 13 (+1)
+    INT: 2 (−4)
+    MDR: 10 (+0)
+    CHA: 3 (−4)
+  dovednosti: Vnímání +2
+  smysly: mimozrakové vnímání 10 stop, pasivní Vnímání 12
+  schopnosti: []
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +6, dosah 10 stop. *Zásah:* 6 (1k4 + 4) bodného zranění plus 4 (1k8) jedového zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: giant-badger
+  nazev: Obří jezevec
+  en: Giant Badger
+  vlastni_nazev: false
+  velikost: Střední zvíře
+  n: 1/4
+  oc: 13
+  bv: 15 (2k8 + 6)
+  rychlost: 30 stop, hrabání 10 stop
+  plavani: false
+  splhani: false
+  vlastnosti:
+    SIL: 13 (+1)
+    OBR: 10 (+0)
+    ODL: 17 (+3)
+    INT: 2 (−4)
+    MDR: 12 (+1)
+    CHA: 5 (−3)
+  dovednosti: Vnímání +3
+  smysly: vidění ve tmě 60 stop, pasivní Vnímání 13
+  schopnosti: []
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +3, dosah 5 stop. *Zásah:* 6 (2k4 + 1) bodného zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: giant-lizard
+  nazev: Obří ještěr
+  en: Giant Lizard
+  vlastni_nazev: true
+  velikost: Velké zvíře
+  n: 1/4
+  oc: 12
+  bv: 19 (3k10 + 3)
+  rychlost: 40 stop, šplhání 40 stop
+  plavani: false
+  splhani: true
+  vlastnosti:
+    SIL: 15 (+2)
+    OBR: 12 (+1)
+    ODL: 13 (+1)
+    INT: 2 (−4)
+    MDR: 10 (+0)
+    CHA: 5 (−3)
+  dovednosti: ''
+  smysly: vidění ve tmě 60 stop, pasivní Vnímání 10
+  schopnosti:
+  - nazev: Pavoučí šplh
+    text: Šplhá po obtížných površích, i po stropě, bez ověření vlastnosti.
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +4, dosah 5 stop. *Zásah:* 6 (1k8 + 2) bodného zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: giant-wolf-spider
+  nazev: Obří slíďák
+  en: Giant Wolf Spider
+  vlastni_nazev: true
+  velikost: Střední zvíře
+  n: 1/4
+  oc: 13
+  bv: 11 (2k8 + 2)
+  rychlost: 40 stop, šplhání 40 stop
+  plavani: false
+  splhani: true
+  vlastnosti:
+    SIL: 12 (+1)
+    OBR: 16 (+3)
+    ODL: 13 (+1)
+    INT: 3 (−4)
+    MDR: 12 (+1)
+    CHA: 4 (−3)
+  dovednosti: Vnímání +3, Nenápadnost +7
+  smysly: vidění ve tmě 60 stop, mimozrakové vnímání 10 stop, pasivní Vnímání 13
+  schopnosti:
+  - nazev: Pavoučí šplh
+    text: Šplhá po obtížných površích, i po stropě, bez ověření vlastnosti.
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +5, dosah 5 stop. *Zásah:* 5 (1k4 + 3) bodného zranění plus 5 (2k4) jedového zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: giant-centipede
+  nazev: Obří stonožka
+  en: Giant Centipede
+  vlastni_nazev: true
+  velikost: Malé zvíře
+  n: 1/4
+  oc: 14
+  bv: 9 (2k6 + 2)
+  rychlost: 30 stop, šplhání 30 stop
+  plavani: false
+  splhani: true
+  vlastnosti:
+    SIL: 5 (−3)
+    OBR: 14 (+2)
+    ODL: 12 (+1)
+    INT: 1 (−5)
+    MDR: 7 (−2)
+    CHA: 3 (−4)
+  dovednosti: ''
+  smysly: mimozrakové vnímání 30 stop, pasivní Vnímání 8
+  schopnosti: []
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +4, dosah 5 stop. *Zásah:* 4 (1k4 + 2) bodného zranění a cíl je otrávený do začátku příštího tahu stonožky.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: giant-frog
+  nazev: Obří žába
+  en: Giant Frog
+  vlastni_nazev: true
+  velikost: Střední zvíře
+  n: 1/4
+  oc: 11
+  bv: 18 (4k8)
+  rychlost: 30 stop, plavání 30 stop
+  plavani: true
+  splhani: false
+  vlastnosti:
+    SIL: 12 (+1)
+    OBR: 13 (+1)
+    ODL: 11 (+0)
+    INT: 2 (−4)
+    MDR: 10 (+0)
+    CHA: 3 (−4)
+  dovednosti: Vnímání +2, Nenápadnost +4
+  smysly: vidění ve tmě 30 stop, pasivní Vnímání 12
+  schopnosti:
+  - nazev: Obojživelník
+    text: Dýchá vzduch i vodu.
+  - nazev: Skok z místa
+    text: Skočí daleko až 20 stop a vysoko až 10 stop, s rozběhem i bez něj.
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +3, dosah 5 stop. *Zásah:* 5 (1k6 + 2) bodného zranění. Pokud je cíl střední nebo menší bytost, je držený (SO vyproštění 11).'
+  - nazev: Spolknutí
+    text: Žába spolkne malý nebo menší cíl, který drží. Spolknutý cíl není držený, ale je oslepený a spoutaný a má úplný kryt proti útokům a jiným účinkům zvenčí. Dokud má žába cíl spolknutý, nemůže použít Kousnutí. Když žába zemře, spolknutý cíl přestane být spoutaný a může z mrtvoly uniknout za 5 stop pohybu; vyleze ležící. Na konci příštího tahu žáby utrpí spolknutý cíl 5 (2k4) kyselinového zranění. Pokud ho to nezabije, žába ho vyvrhne a cíl vyleze ležící.
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: panther
+  nazev: Panter
+  en: Panther
+  vlastni_nazev: false
+  velikost: Střední zvíře
+  n: 1/4
+  oc: 13
+  bv: 13 (3k8)
+  rychlost: 50 stop, šplhání 40 stop
+  plavani: false
+  splhani: true
+  vlastnosti:
+    SIL: 14 (+2)
+    OBR: 16 (+3)
+    ODL: 10 (+0)
+    INT: 3 (−4)
+    MDR: 14 (+2)
+    CHA: 7 (−2)
+  dovednosti: Vnímání +4, Nenápadnost +6
+  smysly: vidění ve tmě 60 stop, pasivní Vnímání 14
+  schopnosti: []
+  akce:
+  - nazev: Rozpárání
+    text: '*Hod na útok na blízko:* +5, dosah 5 stop. *Zásah:* 6 (1k6 + 3) sečného zranění.'
+  bonusove:
+  - nazev: Mrštný únik
+    text: Provede akci Odpoutání nebo Skrýt se.
+  reakce: []
+  albina: ''
+- id: wolf
+  nazev: Vlk
+  en: Wolf
+  vlastni_nazev: false
+  velikost: Střední zvíře
+  n: 1/4
+  oc: 12
+  bv: 11 (2k8 + 2)
+  rychlost: 40 stop
+  plavani: false
+  splhani: false
+  vlastnosti:
+    SIL: 14 (+2)
+    OBR: 15 (+2)
+    ODL: 12 (+1)
+    INT: 3 (−4)
+    MDR: 12 (+1)
+    CHA: 6 (−2)
+  dovednosti: Vnímání +5, Nenápadnost +4
+  smysly: vidění ve tmě 60 stop, pasivní Vnímání 15
+  schopnosti:
+  - nazev: Smečková taktika
+    text: Má výhodu na hod na útok proti bytosti, pokud je do 5 stop od ní aspoň jeden jeho spojenec, který není zneschopněný.
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +4, dosah 5 stop. *Zásah:* 5 (1k6 + 2) bodného zranění. Pokud je cíl střední nebo menší bytost, je ležící.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: crocodile
+  nazev: Krokodýl
+  en: Crocodile
+  vlastni_nazev: false
+  velikost: Velké zvíře
+  n: 1/2
+  oc: 12
+  bv: 13 (2k10 + 2)
+  rychlost: 20 stop, plavání 30 stop
+  plavani: true
+  splhani: false
+  vlastnosti:
+    SIL: 15 (+2)
+    OBR: 10 (+0)
+    ODL: 13 (+1)
+    INT: 2 (−4)
+    MDR: 10 (+0)
+    CHA: 5 (−3)
+  dovednosti: Nenápadnost +2
+  smysly: pasivní Vnímání 10
+  schopnosti:
+  - nazev: Zadržení dechu
+    text: Vydrží zadržet dech 1 hodinu.
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +4, dosah 5 stop. *Zásah:* 6 (1k8 + 2) bodného zranění. Pokud je cíl střední nebo menší bytost, je držený (SO vyproštění 12). Dokud je držený, je i spoutaný.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: warhorse
+  nazev: Kůň válečný
+  en: Warhorse
+  vlastni_nazev: false
+  velikost: Velké zvíře
+  n: 1/2
+  oc: 11
+  bv: 19 (3k10 + 3)
+  rychlost: 60 stop
+  plavani: false
+  splhani: false
+  vlastnosti:
+    SIL: 18 (+4)
+    OBR: 12 (+1)
+    ODL: 13 (+1)
+    INT: 2 (−4)
+    MDR: 12 (+1)
+    CHA: 7 (−2)
+  dovednosti: ''
+  smysly: pasivní Vnímání 11
+  schopnosti: []
+  akce:
+  - nazev: Kopyta
+    text: '*Hod na útok na blízko:* +6, dosah 5 stop. *Zásah:* 9 (2k4 + 4) drtivého zranění. Pokud je cíl velká nebo menší bytost a kůň se těsně před zásahem pohnul aspoň 20 stop přímo k ní, utrpí cíl navíc 5 (2k4) drtivého zranění a je ležící.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: black-bear
+  nazev: Medvěd černý
+  en: Black Bear
+  vlastni_nazev: false
+  velikost: Střední zvíře
+  n: 1/2
+  oc: 11
+  bv: 19 (3k8 + 6)
+  rychlost: 30 stop, šplhání 30 stop, plavání 30 stop
+  plavani: true
+  splhani: true
+  vlastnosti:
+    SIL: 15 (+2)
+    OBR: 12 (+1)
+    ODL: 14 (+2)
+    INT: 2 (−4)
+    MDR: 12 (+1)
+    CHA: 7 (−2)
+  dovednosti: Vnímání +5
+  smysly: vidění ve tmě 60 stop, pasivní Vnímání 15
+  schopnosti: []
+  akce:
+  - nazev: Vícenásobný útok
+    text: Provede dva útoky Rozpáráním.
+  - nazev: Rozpárání
+    text: '*Hod na útok na blízko:* +4, dosah 5 stop. *Zásah:* 5 (1k6 + 2) sečného zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: giant-goat
+  nazev: Obří koza
+  en: Giant Goat
+  vlastni_nazev: false
+  velikost: Velké zvíře
+  n: 1/2
+  oc: 11
+  bv: 19 (3k10 + 3)
+  rychlost: 40 stop, šplhání 30 stop
+  plavani: false
+  splhani: true
+  vlastnosti:
+    SIL: 17 (+3)
+    OBR: 13 (+1)
+    ODL: 12 (+1)
+    INT: 3 (−4)
+    MDR: 12 (+1)
+    CHA: 6 (−2)
+  dovednosti: Vnímání +3
+  smysly: vidění ve tmě 60 stop, pasivní Vnímání 13
+  schopnosti: []
+  akce:
+  - nazev: Beranění
+    text: '*Hod na útok na blízko:* +5, dosah 5 stop. *Zásah:* 6 (1k6 + 3) drtivého zranění. Pokud je cíl velká nebo menší bytost a koza se těsně před zásahem pohnula aspoň 20 stop přímo k ní, utrpí cíl navíc 5 (2k4) drtivého zranění a je ležící.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: giant-seahorse
+  nazev: Obří mořský koník
+  en: Giant Seahorse
+  vlastni_nazev: false
+  velikost: Velké zvíře
+  n: 1/2
+  oc: 14
+  bv: 16 (3k10)
+  rychlost: 5 stop, plavání 40 stop
+  plavani: true
+  splhani: false
+  vlastnosti:
+    SIL: 15 (+2)
+    OBR: 12 (+1)
+    ODL: 11 (+0)
+    INT: 2 (−4)
+    MDR: 12 (+1)
+    CHA: 5 (−3)
+  dovednosti: ''
+  smysly: pasivní Vnímání 11
+  schopnosti:
+  - nazev: Vodní dech
+    text: Dýchá jen pod vodou.
+  akce:
+  - nazev: Beranění
+    text: '*Hod na útok na blízko:* +4, dosah 5 stop. *Zásah:* 9 (2k6 + 2) drtivého zranění, nebo 11 (2k8 + 2) drtivého zranění, pokud se koník těsně před zásahem pohnul aspoň 20 stop přímo k cíli.'
+  bonusove:
+  - nazev: Bublinkový úprk
+    text: Pod vodou se pohne až o polovinu své rychlosti plavání, aniž by vyvolal příležitostné útoky.
+  reakce: []
+  albina: ''
+- id: ape
+  nazev: Opice
+  en: Ape
+  vlastni_nazev: false
+  velikost: Střední zvíře
+  n: 1/2
+  oc: 12
+  bv: 19 (3k8 + 6)
+  rychlost: 30 stop, šplhání 30 stop
+  plavani: false
+  splhani: true
+  vlastnosti:
+    SIL: 16 (+3)
+    OBR: 14 (+2)
+    ODL: 14 (+2)
+    INT: 6 (−2)
+    MDR: 12 (+1)
+    CHA: 7 (−2)
+  dovednosti: Atletika +5, Vnímání +3
+  smysly: pasivní Vnímání 13
+  schopnosti: []
+  akce:
+  - nazev: Vícenásobný útok
+    text: Provede dva útoky Pěstí.
+  - nazev: Pěst
+    text: '*Hod na útok na blízko:* +5, dosah 5 stop. *Zásah:* 5 (1k4 + 3) drtivého zranění.'
+  - nazev: Kámen
+    text: '*Hod na útok na dálku:* +5, dostřel 25/50 stop. *Zásah:* 10 (2k6 + 3) drtivého zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: reef-shark
+  nazev: Žralok útesový
+  en: Reef Shark
+  vlastni_nazev: false
+  velikost: Střední zvíře
+  n: 1/2
+  oc: 12
+  bv: 22 (4k8 + 4)
+  rychlost: 5 stop, plavání 30 stop
+  plavani: true
+  splhani: false
+  vlastnosti:
+    SIL: 14 (+2)
+    OBR: 15 (+2)
+    ODL: 13 (+1)
+    INT: 1 (−5)
+    MDR: 10 (+0)
+    CHA: 4 (−3)
+  dovednosti: Vnímání +2
+  smysly: mimozrakové vnímání 30 stop, pasivní Vnímání 12
+  schopnosti:
+  - nazev: Smečková taktika
+    text: Má výhodu na hod na útok proti bytosti, pokud je do 5 stop od ní aspoň jeden jeho spojenec, který není zneschopněný.
+  - nazev: Vodní dech
+    text: Dýchá jen pod vodou.
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +4, dosah 5 stop. *Zásah:* 7 (2k4 + 2) bodného zranění.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: swarm-of-piranhas
+  nazev: Hejno piraní
+  en: Swarm of Piranhas
+  vlastni_nazev: true
+  velikost: Střední zvíře
+  n: '1'
+  oc: 13
+  bv: 28 (8k8 - 8)
+  rychlost: 5 stop, plavání 40 stop
+  plavani: true
+  splhani: false
+  vlastnosti:
+    SIL: 13 (+1)
+    OBR: 16 (+3)
+    ODL: 9 (−1)
+    INT: 1 (−5)
+    MDR: 7 (−2)
+    CHA: 2 (−4)
+  dovednosti: ''
+  smysly: vidění ve tmě 60 stop, pasivní Vnímání 8
+  schopnosti:
+  - nazev: Hejno
+    text: Hejno může obsadit místo jiné bytosti a naopak a projde každým otvorem, kterým by prošel drobný jedinec. Hejno si nemůže obnovit body výdrže ani získat dočasné body výdrže.
+  - nazev: Vodní dech
+    text: Dýchá jen pod vodou.
+  akce:
+  - nazev: Kousance
+    text: '*Hod na útok na blízko:* +5 (s výhodou, pokud cíl nemá plné body výdrže), dosah 5 stop. *Zásah:* 8 (2k4 + 3) bodného zranění, nebo 5 (1k4 + 3) bodného zranění, pokud je hejno zkrvavené.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: lion
+  nazev: Lev
+  en: Lion
+  vlastni_nazev: false
+  velikost: Velké zvíře
+  n: '1'
+  oc: 12
+  bv: 22 (4k10)
+  rychlost: 50 stop
+  plavani: false
+  splhani: false
+  vlastnosti:
+    SIL: 17 (+3)
+    OBR: 15 (+2)
+    ODL: 11 (+0)
+    INT: 3 (−4)
+    MDR: 12 (+1)
+    CHA: 8 (−1)
+  dovednosti: Vnímání +3, Nenápadnost +4
+  smysly: vidění ve tmě 60 stop, pasivní Vnímání 13
+  schopnosti:
+  - nazev: Smečková taktika
+    text: Má výhodu na hod na útok proti bytosti, pokud je do 5 stop od ní aspoň jeden jeho spojenec, který není zneschopněný.
+  - nazev: Skok s rozběhem
+    text: S rozběhem 10 stop skočí daleko až 25 stop.
+  akce:
+  - nazev: Vícenásobný útok
+    text: Provede dva útoky Rozpáráním. Jeden útok může nahradit použitím Řevu.
+  - nazev: Rozpárání
+    text: '*Hod na útok na blízko:* +5, dosah 5 stop. *Zásah:* 7 (1k8 + 3) sečného zranění.'
+  - nazev: Řev
+    text: '*Záchrana na Moudrost:* SO 11, jedna bytost do 15 stop. *Neúspěch:* cíl je vystrašený do začátku příštího tahu lva.'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: giant-octopus
+  nazev: Obří chobotnice
+  en: Giant Octopus
+  vlastni_nazev: true
+  velikost: Velké zvíře
+  n: '1'
+  oc: 11
+  bv: 45 (7k10 + 7)
+  rychlost: 10 stop, plavání 60 stop
+  plavani: true
+  splhani: false
+  vlastnosti:
+    SIL: 17 (+3)
+    OBR: 13 (+1)
+    ODL: 13 (+1)
+    INT: 5 (−3)
+    MDR: 10 (+0)
+    CHA: 4 (−3)
+  dovednosti: Vnímání +4, Nenápadnost +5
+  smysly: vidění ve tmě 60 stop, pasivní Vnímání 14
+  schopnosti:
+  - nazev: Vodní dech
+    text: Dýchá jen pod vodou. Mimo vodu vydrží zadržet dech 1 hodinu.
+  akce:
+  - nazev: Chapadla
+    text: '*Hod na útok na blízko:* +5, dosah 10 stop. *Zásah:* 10 (2k6 + 3) drtivého zranění. Pokud je cíl střední nebo menší bytost, je držený (SO vyproštění 13) všemi osmi chapadly. Dokud je držený, je i spoutaný.'
+  bonusove: []
+  reakce:
+  - nazev: Inkoustový oblak
+    text: '*Spouštěč:* chobotnice utrpí pod vodou zranění. *Odezva:* vypustí inkoust, který vyplní krychli o hraně 10 stop se středem na ní, a pohne se až o svou rychlost plavání. V krychli je 1 minutu silně omezená viditelnost, nebo dokud inkoust nerozptýlí silný proud či podobný účinek.'
+  albina: ''
+- id: giant-hyena
+  nazev: Obří hyena
+  en: Giant Hyena
+  vlastni_nazev: true
+  velikost: Velké zvíře
+  n: '1'
+  oc: 12
+  bv: 45 (6k10 + 12)
+  rychlost: 50 stop
+  plavani: false
+  splhani: false
+  vlastnosti:
+    SIL: 16 (+3)
+    OBR: 14 (+2)
+    ODL: 14 (+2)
+    INT: 2 (−4)
+    MDR: 12 (+1)
+    CHA: 7 (−2)
+  dovednosti: Vnímání +3
+  smysly: vidění ve tmě 60 stop, pasivní Vnímání 13
+  schopnosti: []
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +5, dosah 5 stop. *Zásah:* 10 (2k6 + 3) bodného zranění.'
+  bonusove:
+  - nazev: Běsnění
+    text: Hned poté, co způsobí zranění bytosti, která už byla zkrvavená, se může pohnout až o polovinu své rychlosti a provede jeden útok Kousnutím.
+  reakce: []
+  albina: ''
+- id: giant-spider
+  nazev: Obří pavouk
+  en: Giant Spider
+  vlastni_nazev: false
+  velikost: Velké zvíře
+  n: '1'
+  oc: 14
+  bv: 26 (4k10 + 4)
+  rychlost: 30 stop, šplhání 30 stop
+  plavani: false
+  splhani: true
+  vlastnosti:
+    SIL: 14 (+2)
+    OBR: 16 (+3)
+    ODL: 12 (+1)
+    INT: 2 (−4)
+    MDR: 11 (+0)
+    CHA: 4 (−3)
+  dovednosti: Vnímání +4, Nenápadnost +7
+  smysly: vidění ve tmě 60 stop, pasivní Vnímání 14
+  schopnosti:
+  - nazev: Pavoučí šplh
+    text: Šplhá po obtížných površích, i po stropě, bez ověření vlastnosti.
+  - nazev: Chodec po sítích
+    text: Nepůsobí na něj omezení pohybu způsobená pavučinami a ví, kde je každá jiná bytost, která se dotýká téže pavučiny.
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +5, dosah 5 stop. *Zásah:* 7 (1k8 + 3) bodného zranění plus 7 (2k6) jedového zranění.'
+  - nazev: Síť
+    text: '*Záchrana na Obratnost:* SO 13, jedna bytost do 60 stop, kterou pavouk vidí. *Neúspěch:* cíl je spoutaný, dokud síť nezničí (OČ 10; BV 5; zranitelnost vůči ohnivému zranění; imunita vůči jedovému a psychickému zranění).'
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: giant-toad
+  nazev: Obří ropucha
+  en: Giant Toad
+  vlastni_nazev: true
+  velikost: Velké zvíře
+  n: '1'
+  oc: 11
+  bv: 39 (6k10 + 6)
+  rychlost: 30 stop, plavání 30 stop
+  plavani: true
+  splhani: false
+  vlastnosti:
+    SIL: 15 (+2)
+    OBR: 13 (+1)
+    ODL: 13 (+1)
+    INT: 2 (−4)
+    MDR: 10 (+0)
+    CHA: 3 (−4)
+  dovednosti: ''
+  smysly: vidění ve tmě 60 stop, pasivní Vnímání 10
+  schopnosti:
+  - nazev: Obojživelník
+    text: Dýchá vzduch i vodu.
+  - nazev: Skok z místa
+    text: Skočí daleko až 20 stop a vysoko až 10 stop, s rozběhem i bez něj.
+  akce:
+  - nazev: Kousnutí
+    text: '*Hod na útok na blízko:* +4, dosah 5 stop. *Zásah:* 5 (1k6 + 2) bodného zranění plus 5 (2k4) jedového zranění. Pokud je cíl střední nebo menší bytost, je držený (SO vyproštění 12).'
+  - nazev: Spolknutí
+    text: Ropucha spolkne střední nebo menší cíl, který drží. Spolknutý cíl není držený, ale je oslepený a spoutaný a má úplný kryt proti útokům a jiným účinkům zvenčí. Navíc na konci každého tahu ropuchy utrpí 10 (3k6) kyselinového zranění. Ropucha může mít spolknutý jen jeden cíl a dokud ho má, nemůže použít Kousnutí. Když ropucha zemře, spolknutá bytost přestane být spoutaná a může z mrtvoly uniknout za 5 stop pohybu; vyleze ležící.
+  bonusove: []
+  reakce: []
+  albina: ''
+- id: tiger
+  nazev: Tygr
+  en: Tiger
+  vlastni_nazev: false
+  velikost: Velké zvíře
+  n: '1'
+  oc: 13
+  bv: 30 (4k10 + 8)
+  rychlost: 40 stop
+  plavani: false
+  splhani: false
+  vlastnosti:
+    SIL: 17 (+3)
+    OBR: 16 (+3)
+    ODL: 14 (+2)
+    INT: 3 (−4)
+    MDR: 12 (+1)
+    CHA: 8 (−1)
+  dovednosti: Vnímání +3, Nenápadnost +7
+  smysly: vidění ve tmě 60 stop, pasivní Vnímání 13
+  schopnosti: []
+  akce:
+  - nazev: Rozpárání
+    text: '*Hod na útok na blízko:* +5, dosah 5 stop. *Zásah:* 10 (2k6 + 3) sečného zranění. Pokud je cíl velká nebo menší bytost, je ležící.'
+  bonusove:
+  - nazev: Mrštný únik
+    text: Provede akci Odpoutání nebo Skrýt se.
+  reakce: []
+  albina: ''

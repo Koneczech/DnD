@@ -63,10 +63,18 @@ Co jedna část potřebuje od jiné. Hotové položky se mažou, záznam zůstan
 
 ## Otevřené
 
-- Mikrofony na sezení 4 (3 stopy: hráči, DM, zvuk z OBS). Varianty jsou v předávce `prepis-do-kanonu`, nic není vybrané.
+- **Mikrofony na sezení 4** (3 stopy: hráči, DM, zvuk z OBS). Je to největší páka kvality přepisu (viz Změřeno). Varianty jsou v `reference/predavka-prepis-do-kanonu.md`, nic není vybrané. Rozhodnout před sezením 4.
 - Cloudový přepis (Soniox, ElevenLabs) jen se souhlasem hráčů.
 - Odložené rozpory jsou v `kampan/rozpory.yaml` se `stav: otevrene`; Kontrola dat je hlásí jako varování.
 - Lokální pracovní kopie `repo-navrh` a `repo-kvalita` a jejich větve smaže dvojklik na `uklid-pracovnich-kopii.cmd` v `Dokumenty\DnD\repo` (obsah je na GitHubu, skript se po sobě smaže); pak tenhle bod smazat.
+
+## Změřeno (nezkoušet znovu bez nového důvodu)
+
+Výsledky, které jedna relace změřila a jiná by je jinak navrhla znovu.
+
+- **Přepisové modely** (relace Přepis, 28. 10. 2026, zlatý standard sezení 3, díl 2, 0–1500 s, 2 011 slov, podíl chybných slov): WhisperX large-v3 asi 10 %, česky dotrénovaný Whisper 24,1 %, Canary-1B-v2 52,6 %, Parakeet TDT 0.6B v3 58,7 %. Parakeet a Canary běžely na CPU (int8). **Parakeet ani Canary na sezení 3 znovu netestovat.** Znovu porovnat modely má smysl až se zvukem ze 3 stop (sezení 4).
+- **Kde vznikají chyby:** na zkontrolovaných 62 % sezení 3 je 14,1 % chybných slov, u DM 8 %, u hráčů 17–28 %. Rozhoduje vzdálenost od mikrofonu, ne model.
+- **Rozlišení mluvčích:** pyannote Community-1 (pyannote.audio 4) je nasazená přes WhisperX. Nevyzkoušený je režim „mluví jen jeden“ (exclusive diarization), zkouška na zlatém standardu je u relace Přepis.
 
 ## Deník
 
@@ -82,3 +90,4 @@ Jeden řádek na relaci: datum, relace, co se udělalo, kde to je.
 - 31. 10. 2026 · Uspořádání (Claude) · návrh `sNN.yaml` píše relace Hub, postup pro DM v `prepis-kanon.md` § 3a · větev `navrh-pise-hub`
 - 31. 10. 2026 · Hub (Claude) · přehled typů karet kánonu (artefakt Karty kánonu), rozhodnutí 82 co patří do kánonu, návrh Co ví družina pro skupinu 1 ke schválení · větev `co-patri-do-kanonu`, PR #109
 - 31. 10. 2026 · Hub (Claude) · Co ví družina, skupina 1 zapsaná podle schváleného návrhu (24 odrážek u 8 karet, z toho 1 skrytá, 3 přepínače Družina zná, R17 a R18); chyba „Družina to zná, ale nic nevidí“ klesla ze 17 na 10 karet, žádná nová chyba · větev `co-vi-druzina-1`, PR #110
+- 1. 11. 2026 · Uspořádání (Claude) · výsledky měření přepisových modelů do rozcestníku (oddíl Změřeno), mikrofony jako priorita před sezením 4 · větev `prepis-mereni`

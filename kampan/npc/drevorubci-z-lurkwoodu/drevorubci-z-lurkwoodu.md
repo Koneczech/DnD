@@ -10,7 +10,7 @@ role: dřevorubci
 aliases: ["dřevorubci"]
 vazby: ["[[lurkwood]]", "[[marwen-fellova]]", "[[mirabar]]", "[[koudur]]", "[[alba]]", "[[longsaddle]]", "[[s02]]"]
 vztahy:
-  - { s: "[[marwen-fellova]]", popis: "předačka jejich party" }
+  - { s: "[[marwen-fellova]]", popis: "předačka jejich party", verejne: true }
 tags: [aktualni]
 ilustrace: []
 zdroj: "sezení 2 (11. 9. 2026), přepis nahrávky"

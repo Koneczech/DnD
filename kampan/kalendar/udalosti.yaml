@@ -12,12 +12,12 @@ udalosti:
     datum: { rok: 1491, mesic: Eleint, den: 12 }
     text: Opuštění Mirabaru
     verejna: true
-    vazby: [ "[[s01-leta-okradla-koudura]]", "[[s01-zajeti-v-ulicce]]" ]
+    vazby: [ "[[s01-leta-okradla-koudura]]", "[[s01-zajeti-v-ulicce]]", "[[mirabar]]", "[[novacek-kruhu]]" ]
   - id: umtwx7hnhme81
     datum: { rok: 1491, mesic: Eleint, den: 13 }
     text: Setkání s Torvou (a Tavisem)
     verejna: true
-    vazby: [ "[[s01-alba-omracena-v-lurkwoodu]]", "[[s01-boj-v-tabore-kruhu]]", "[[s01-co-druzina-zjistila-v-tabore]]", "[[s01-tusker-vzal-semena]]" ]
+    vazby: [ "[[s01-alba-omracena-v-lurkwoodu]]", "[[s01-boj-v-tabore-kruhu]]", "[[s01-co-druzina-zjistila-v-tabore]]", "[[s01-tusker-vzal-semena]]", "[[tabor-kruhu]]", "[[torva]]", "[[tavis]]", "[[novacek-kruhu]]" ]
   - id: umtwx7oqlr83s
     datum: { rok: 1491, mesic: Eleint, den: 13 }
     text: První společný tábor
@@ -53,17 +53,17 @@ udalosti:
     datum: { rok: 1491, mesic: Eleint, den: 18 }
     text: Longsaddle
     verejna: true
-    vazby: [ "[[longsaddle]]", "[[u-deraveho-grose]]", "[[s02-patrani-v-longsaddle]]" ]
+    vazby: [ "[[longsaddle]]", "[[u-deraveho-grose]]", "[[s02-patrani-v-longsaddle]]", "[[ilma-dunwarova]]", "[[marwen-fellova]]", "[[gerd]]" ]
   - id: umutn742q4xjx
     datum: { rok: 1491, mesic: Eleint, den: 18 }
     text: Setkání s Malkem
     verejna: true
-    vazby: [ "[[malk-orren]]", "[[s02-dohoda-s-malkem]]", "[[s02-leta-rekla-o-thirilovi]]" ]
+    vazby: [ "[[malk-orren]]", "[[s02-dohoda-s-malkem]]", "[[s02-leta-rekla-o-thirilovi]]", "[[malkova-zasilka]]" ]
   - id: umutnd8lfm2t8
     datum: { rok: 1491, mesic: Eleint, den: 18 }
     text: "Koudur: První koncert mimo Mirabar - úspěch"
     verejna: true
-    vazby: [ "[[u-deraveho-grose]]", "[[s02-koudur-hral-u-deraveho-grose]]" ]
+    vazby: [ "[[u-deraveho-grose]]", "[[s02-koudur-hral-u-deraveho-grose]]", "[[ilma-dunwarova]]" ]
   - id: us02tabor
     datum: { rok: 1491, mesic: Eleint, den: 19 }
     text: Stopa k táboru lupičů

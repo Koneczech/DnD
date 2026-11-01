@@ -11,8 +11,8 @@ kde: "[[u-deraveho-grose]]"
 aliases: ["Marwen", "Marven"]
 vazby: ["[[drevorubci-z-lurkwoodu]]", "[[koudur]]", "[[alba]]", "[[u-deraveho-grose]]", "[[longsaddle]]", "[[ilma-dunwarova]]", "[[s02]]"]
 vztahy:
-  - { s: "[[drevorubci-z-lurkwoodu]]", popis: "její lidé" }
-  - { s: "[[koudur]]", popis: "bard, který ji pozval na koncert" }
+  - { s: "[[drevorubci-z-lurkwoodu]]", popis: "její lidé", verejne: true }
+  - { s: "[[koudur]]", popis: "bard, který ji pozval na koncert", verejne: true }
 tags: []
 ilustrace: []
 zdroj: "chat „Komplikovaná cesta k dopisu v Longsaddle“ (11. 9. 2026, příprava sezení 2) a sezení 2"

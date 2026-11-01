@@ -69,6 +69,7 @@ Jedno okno, ze kterého DM u stolu řídí všechno, co hráči vidí a slyší:
 | | Karty mimo Notion (8), hráčský kánon sezení 1 | ◐ |
 | | Zápis a hráčský kánon sezení 2, nové karty ze sezení 2 (Jorun, Artur, Marwen, Gerd, dřevorubci, brod, Malkova zásilka), události v Kalendáři | ◐ |
 | | Wiki kánonu: přehled, kategorie, stránka karty, Pohled družiny, hledání v liště | ◐ |
+| | Pohled družiny ukazuje Co se tu stalo a Odkazují sem z hráčského kánonu a odkazová pole (Kdo tu je, Členové, Sídlí tu…) mezi kartami, které družina zná (rozhodnutí 83) | ◐ |
 | | Co ví družina po odrážkách (oko 👁 u každé), rychlé přidání u stolu | ◐ |
 | | Odkrývání odstavců a odrážek z celého textu karty (oko 👁 u bloku, i z příběhu postavy) | ◐ |
 | | Kvalita kánonu: procento karet bez chyby, stránka Co opravit, rámeček na kartě, `npm run kvalita` (⚠ bod 154) | ◐ |

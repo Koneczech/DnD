@@ -491,9 +491,13 @@ export function castiKarty(ctx) {
     return vysledek;
   }
 
-  /** Kdo na entitu odkazuje, a nemá ji sama ve vazbách. Místa uvnitř místa ukazuje sekceMista. */
+  /**
+   * Kdo na entitu odkazuje, a nemá ji sama ve vazbách. Místa uvnitř místa ukazuje sekceMista,
+   * hráčský kánon u místa sekce Co se tu stalo, takže se tu neopakují.
+   */
   function zpetneOdkazy(k, nazev) {
-    const zpetne = k.odkazujici.filter((o) => !k.vazby.includes(o.id) && s.podleId.get(o.id)?.leziV !== k.id);
+    const zde = new Set((k.zde ?? []).map((z) => z.id));
+    const zpetne = k.odkazujici.filter((o) => !k.vazby.includes(o.id) && s.podleId.get(o.id)?.leziV !== k.id && !zde.has(o.id));
     if (!zpetne.length) return null;
     return [
       el('h3', { textContent: `Odkazují sem (${zpetne.length})` }),

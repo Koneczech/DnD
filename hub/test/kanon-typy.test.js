@@ -98,10 +98,47 @@ test('Kánon: údaje, odkazová pole a co Hub dopočítá u cílové karty', asy
     assert.deepEqual(mirabar.odkazujePolem.map((o) => [o.id, o.pole, o.pres]), [['dorn', 'kde', 'na-zvonici'], ['krkavci', 'sidlo', null], ['vendla', 'kde', null]]);
     assert.deepEqual(kanon.karta('krkavci', 'dm').odkazujePolem.map((o) => [o.id, o.pole]), [['dorn', 'frakce']]);
     assert.deepEqual(kanon.karta('dorn', 'dm').odkazujePolem.map((o) => [o.id, o.pole]), [['prsten', 'u_koho']]);
-    // Živý je výchozí a v údajích není; pohled družiny údaje ani dopočítané nevidí.
+    // Živý je výchozí a v údajích není. Pohled družiny údaje nevidí, odkazová pole a dopočítané
+    // ano, když zná obě karty (rozhodnutí 83).
     assert.equal(kanon.karta('vendla', 'dm').udaje.osud, undefined);
-    assert.deepEqual(kanon.karta('mirabar', 'druzina').odkazujePolem, []);
+    assert.deepEqual(kanon.karta('mirabar', 'druzina').odkazujePolem.map((o) => [o.id, o.pole, o.pres]), [['dorn', 'kde', 'na-zvonici'], ['krkavci', 'sidlo', null], ['vendla', 'kde', null]]);
     assert.deepEqual(kanon.karta('dorn', 'druzina').udaje, {});
+    assert.deepEqual(kanon.karta('dorn', 'druzina').odkazyPole, { kde: 'na-zvonici', frakce: 'krkavci' });
+  } finally {
+    await r.smazat();
+  }
+});
+
+test('Pohled družiny: odkazová pole jen ke kartám, které družina zná; hráčský kánon ukazuje vazby (rozhodnutí 83)', async () => {
+  const r = await docasneRepo();
+  const zapsat = async (rel, text) => {
+    await fs.mkdir(path.dirname(path.join(r.koren, rel)), { recursive: true });
+    await fs.writeFile(path.join(r.koren, rel), text);
+  };
+  const karta = (slozka, id, typ, verejne, hlava = '') => zapsat(`kampan/${slozka}/${id}/${id}.md`, `---\nschema: 1\nid: ${id}\ntyp: ${typ}\nnazev: ${id}\nverejne: ${verejne}\n${hlava}---\nText.\n`);
+  try {
+    await karta('mista', 'longsaddle', 'misto', true);
+    await karta('mista', 'hostinec', 'misto', true, 'lezi_v: "[[longsaddle]]"\n');
+    await karta('frakce', 'rada', 'frakce', true);
+    await karta('npc', 'gerd', 'npc', true, 'kde: "[[hostinec]]"\nfrakce: "[[rada]]"\n');
+    await karta('npc', 'tajny', 'npc', false, 'kde: "[[longsaddle]]"\n');
+    await karta('npc', 'agent', 'npc', true, 'kde: "[[skryte-misto]]"\n');
+    await karta('mista', 'skryte-misto', 'misto', false);
+    await zapsat('kampan/kanon/s02-patrani.md', '---\nschema: 1\nid: s02-patrani\ntyp: kanon\nnazev: Pátrání\nverejne: true\nsezeni: s02\nkdo: [parta]\nvazby: ["[[hostinec]]", "[[gerd]]", "[[tajny]]"]\n---\n## Co se stalo\n\nText.\n\n## Důsledek\n\nText.\n');
+    const kanon = kanonZ(r);
+    await kanon.nacist();
+    // Skrytá karta se do Kdo tu je nedostane, ani z místa uvnitř.
+    assert.deepEqual(kanon.karta('longsaddle', 'druzina').odkazujePolem.map((o) => [o.id, o.pole, o.pres]), [['gerd', 'kde', 'hostinec']]);
+    assert.deepEqual(kanon.karta('longsaddle', 'dm').odkazujePolem.map((o) => o.id), ['gerd', 'tajny']);
+    // Pole ke skrytému místu družina nevidí, k veřejnému ano.
+    assert.deepEqual(kanon.karta('agent', 'druzina').odkazyPole, {});
+    assert.deepEqual(kanon.karta('gerd', 'druzina').odkazyPole, { kde: 'hostinec', frakce: 'rada' });
+    assert.deepEqual(kanon.karta('rada', 'druzina').odkazujePolem.map((o) => [o.id, o.pole]), [['gerd', 'frakce']]);
+    // Hráčský kánon: vazby na veřejné karty platí i pro družinu, na skryté ne.
+    assert.deepEqual(kanon.karta('s02-patrani', 'druzina').vazby, ['hostinec', 'gerd']);
+    assert.deepEqual(kanon.karta('longsaddle', 'druzina').zde.map((z) => [z.id, z.pres]), [['s02-patrani', 'hostinec']]);
+    assert.deepEqual(kanon.karta('gerd', 'druzina').odkazujici.map((o) => o.id), ['s02-patrani']);
+    assert.throws(() => kanon.karta('tajny', 'druzina'), /neexistuje/);
   } finally {
     await r.smazat();
   }

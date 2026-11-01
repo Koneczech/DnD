@@ -343,10 +343,14 @@ function obrazekUzlu(obrazky) {
   return obrazky.find((o) => o.ucel === 'portret' && !o.varianta) ?? obrazky.find((o) => o.ucel === 'portret') ?? obrazky.find((o) => o.ucel === 'scena') ?? null;
 }
 
+/** Zná kartu družina? Sezení podle hráčského kánonu (⚠ bod 158), ostatní podle `verejne`; vyřazenou ne. */
+const znaDruzina = (x) => Boolean(x) && !x.vyrazeno && (x.typ === 'sezeni' ? (x.druzinaKanonu ?? 0) > 0 : x.verejne === true);
+
 /**
  * Entita pro daný pohled. Pohled družiny (rozhodnutí 71) je filtr, ne ochrana (rozhodnutí 2):
- * jen entity s `verejne: true`, vztahy s `verejne: true` k veřejným entitám, žádné holé vazby,
- * přezdívky, štítky ani údaje z hlavičky; z obrázků jen neskryté.
+ * jen entity s `verejne: true`, vztahy s `verejne: true` k veřejným entitám, holé vazby jen
+ * u hráčského kánonu, odkazová pole jen ke kartám, které družina zná (rozhodnutí 83), žádné
+ * přezdívky, štítky ani ostatní údaje z hlavičky; z obrázků jen neskryté.
  * @param {object} e entita z nacistEntitu
  * @param {(id: string) => object|undefined} najit
  */
@@ -367,10 +371,18 @@ export function vPohledu(e, pohled, najit) {
   const vidi = e.typ === 'sezeni' ? (e.druzinaKanonu ?? 0) > 0 : e.verejne;
   if (!vidi || e.vyrazeno) return null;
   const obrazky = e.obrazky.filter((o) => !o.skryta);
-  const vztahy = e.vztahy.filter((v) => v.verejne && najit(v.s)?.verejne && !najit(v.s)?.vyrazeno);
+  const vztahy = e.vztahy.filter((v) => v.verejne && znaDruzina(najit(v.s)));
+  // Hráčský kánon je celý pro družinu, včetně vazeb na karty, které družina zná (rozhodnutí 83).
+  // Díky tomu ho místo ukáže v Co se tu stalo a karta v Odkazují sem.
+  const vazby = e.typ === 'kanon'
+    ? [...new Set([...vztahy.map((v) => v.s), ...e.vazby.filter((id) => znaDruzina(najit(id)))])]
+    : vztahy.map((v) => v.s);
+  // Odkazová pole (Kde ho najít, Patří k, Sídlo, U koho je) družina zná, když zná obě karty,
+  // stejně jako Leží v (rozhodnutí 83).
+  const odkazyPole = Object.fromEntries(Object.entries(e.odkazyPole ?? {}).filter(([, cil]) => znaDruzina(najit(cil))));
   return {
     id: e.id, typ: e.typ, nazev: e.nazev, verejne: true, ikona: e.ikona, aliases: [], tags: [], aktualni: false,
-    vazby: vztahy.map((v) => v.s), vztahy, udaje: {}, odkazyPole: {}, soubor: null,
+    vazby, vztahy, udaje: {}, odkazyPole, soubor: null,
     // Hráčský kánon je celý pro družinu, včetně toho, koho se týká.
     kdo: e.typ === 'kanon' ? e.kdo ?? [] : [], odkryto: null,
     // Kde místo leží, družina ví, když zná obě místa.

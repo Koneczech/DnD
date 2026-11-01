@@ -4,12 +4,13 @@
 
 | Soubor | Obsah |
 | --- | --- |
-| `kouzla-druid.yaml` | 51 kouzel: všechna kouzla druida do 2. úrovně a Světlo (ásimarské dědictví Alby). Pole `na_listu`, `vzdy` a `zdroj_listu` podle `kampan/postavy/alba/list.yaml` |
+| `kouzla-druid.yaml` | 51 kouzel: všechna kouzla druida do 2. stupně a Světlo (ásimarské dědictví Alby). Pole `na_listu`, `vzdy` a `zdroj_listu` podle `kampan/postavy/alba/list.yaml` |
 | `zvirata-divoka-podoba.yaml` | 56 zvířat s nebezpečností do 1 bez rychlosti letu, tedy podoby, které může Alba (Kruh Měsíce, 3. úroveň) mít v Divoké podobě. `albina` označuje její oblíbené podoby (zlovlk = vlk lítý, medvěd = medvěd hnědý) |
 
 ## Jak je to přeložené
 
 - Termíny podle `reference/prekladovy-klic-cz.md` (český PHB 2024). Vzdálenosti ve stopách jako jinde v repu.
+- Úroveň kouzla je **stupeň**, pozice kouzel mají stupně (klíč: St. = stupeň kouzla). Úroveň má jen postava.
 - Složky kouzel česky: V (verbální), P (pohybová), S (surovinová).
 - Kostky jako `1k8`, zranění v 2. pádu („2k8 ohnivého zranění“).
 - **Vlastní názvy (⚠ ověřit v PHB):** kouzla Dlouhý krok (Longstrider), Očisti jídlo a pití (Purify Food and Drink); zvířata, která v klíči chybí (pole `vlastni_nazev: true`).

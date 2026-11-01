@@ -40,7 +40,7 @@ Příprava → hra u stolu → přepis a scénář → návrh a schválení → 
 | Větev | Co v ní je | Další krok |
 | --- | --- | --- |
 | `karta-sezeni` | Karta sezení ve wiki podle návrhu, který DM potvrdil 31. 10. (⚠ bod 158): údaje sezení, hráčský kánon, události, U stolu, Kdo a kde, stav zápisu; Kvalita kánonu u nezapsaných sezení; družina vidí sezení podle kánonu | DM: projít PR #107 a sloučit, pak vyzkoušet na kartách Sezení 2 a 3 |
-| `mirabar` | Mirabar podle návrhu, který DM schválil 1. 11.: popis města (Forgotten Realms a kánon), 6 odrážek Co ví družina, Co tu najdou, popis obrazu; nová frakce Rada jiskřivých kamenů s Patří k u Grimsdala, Balgura, Dagnara a Bruny; Grimsdal je hlavní radní trpasličí strany (R19) | DM: projít PR a sloučit |
+| `mirabar` | Mirabar podle návrhu, který DM schválil 1. 11.: popis města (Forgotten Realms a kánon), 6 odrážek Co ví družina, Co tu najdou, popis obrazu; nová frakce Rada jiskřivých kamenů s Patří k u Grimsdala, Balgura, Dagnara a Bruny; Grimsdal je hlavní radní trpasličí strany (R19) | DM: projít PR #114 a sloučit |
 
 ## Předávky (fronta)
 
@@ -92,4 +92,4 @@ Jeden řádek na relaci: datum, relace, co se udělalo, kde to je.
 - 31. 10. 2026 · Hub (Claude) · Co ví družina, skupina 1 zapsaná podle schváleného návrhu (24 odrážek u 8 karet, z toho 1 skrytá, 3 přepínače Družina zná, R17 a R18); chyba „Družina to zná, ale nic nevidí“ klesla ze 17 na 10 karet, žádná nová chyba · větev `co-vi-druzina-1`, PR #110
 - 1. 11. 2026 · Uspořádání (Claude) · kouzla druida do 2. úrovně a 56 podob pro Divokou podobu česky ze SRD 5.2.1 (`reference/srd-cz/`), Lazy GM's Resource Document (`reference/lazy-gm/`) · větev `srd-cz-lazy-gm`
 - 1. 11. 2026 · Uspořádání (Claude) · výsledky měření přepisových modelů do rozcestníku (oddíl Změřeno), mikrofony jako priorita před sezením 4 · větev `prepis-mereni`
-- 1. 11. 2026 · Hub (Claude) · Mirabar a Rada jiskřivých kamenů podle schváleného návrhu (dokument „Mirabar — návrh kontextu města“), sladěno s Forgotten Realms; R19; Kvalita kánonu 61 → 62 %, žádná nová chyba · větev `mirabar`
+- 1. 11. 2026 · Hub (Claude) · Mirabar a Rada jiskřivých kamenů podle schváleného návrhu (dokument „Mirabar — návrh kontextu města“), sladěno s Forgotten Realms; R19; Kvalita kánonu 61 → 62 %, žádná nová chyba · větev `mirabar`, PR #114

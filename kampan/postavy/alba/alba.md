@@ -26,7 +26,7 @@ zdroj: https://app.notion.com/p/3c79ed22673681d28d10e5b68c977bab
 
 > Aasimar, druidka (Druid 3, Circle of the Moon), 23 let. 18 HP, AC 14. %%zná%%
 
-Velmi dlouhé bílé vlasy, výrazné zelené oči, zlaté pihy kolem nosu a pod očima, dva červené pruhy malované přes tváře. %%zná%%
+Velmi dlouhé bílé vlasy, výrazné zelené oči, zlaté pihy kolem nosu a pod očima, dva červené pruhy malované přes tváře.
 
 Jazyky: Common, Halfling, Druidic
 

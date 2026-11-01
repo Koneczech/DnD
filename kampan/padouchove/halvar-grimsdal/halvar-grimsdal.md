@@ -5,6 +5,7 @@ typ: padouch
 nazev: "Halvar Grimsdal"
 verejne: false
 ikona: ⚖️
+frakce: "[[rada-jiskrivych-kamenu]]"
 aliases: ["Grimsdal"]
 vazby: ["[[leta]]", "[[thiril-ambersedge]]", "[[balgur-hardbeard]]", "[[koudur]]", "[[sidlo-hardbeardu]]", "[[stola-hardbeardu]]", "[[vezeni-pod-radnici]]"]
 vztahy:
@@ -17,7 +18,7 @@ zdroj: https://app.notion.com/p/3c49ed22673681139ec6d006048ae511
 ---
 # Halvar Grimsdal
 
-Trpaslík, hlavní radní Mirabaru, člen **Rady jiskřivých kamenů**. Drží úřad vah a pečetí — každý náklad rudy a kamene, který opustí Mirabar, projde jeho pečetí. Navenek úřad, fakticky páka.
+Trpaslík, člen [[rada-jiskrivych-kamenu|Rady jiskřivých kamenů]] a hlavní radní její trpasličí strany. Drží úřad vah a pečetí — každý náklad rudy a kamene, který opustí Mirabar, projde jeho pečetí. Navenek úřad, fakticky páka.
 
 Cholerik napojený na podsvětí. Není racionální. Zesměšnění nemůže nechat být.
 
@@ -34,3 +35,7 @@ Cholerik napojený na podsvětí. Není racionální. Zesměšnění nemůže ne
 **Hardbeardovi vozí safíry přes Grimsdalovu pečeť.** [[koudur|Koudurův]] otec s ním nemusí být kamarád, ale musí být zadobře — chodí spolu na zasedání rady. Koudur si Grimsdala pamatuje jako nepříjemného chlapa, co moc pil a smál se vlastním vtipům.
 
 Člověk, který nechal zavřít Letina otce, jedl u Koudurova stolu. Nikdo z party to netuší.
+
+## Neplatné
+
+- **R19** (1. 11. 2026): „hlavní radní Mirabaru, člen **Rady jiskřivých kamenů**“ — rozhodnutí DM: rada nemá hlavního radního, Grimsdal vede trpasličí stranu rady.

@@ -5,6 +5,7 @@ typ: npc
 nazev: "Bruna Ironvale"
 verejne: false
 ikona: ⚙️
+frakce: "[[rada-jiskrivych-kamenu]]"
 aliases: ["Bruna", "Ironvale"]
 vazby: ["[[krkavci-prapor]]", "[[praotec]]", "[[rod-redgrave]]", "[[tusker]]", "[[dorn-treestone]]", "[[treestoneovska-stola]]", "[[sidlo-hardbeardu]]", "[[rod-ironvale-historie]]"]
 vztahy:

@@ -25,3 +25,14 @@
       citat: Skalní průrva
   stav: rozhodnuto
   rozhodnuti: Platí stůl.
+- id: R19
+  kdy: 2026-11-01
+  druh: novy_fakt
+  karta: halvar-grimsdal
+  karta_tvrzeni: Hlavní radní Mirabaru.
+  prepis_tvrzeni: Podle Forgotten Realms rada hlavního radního nemá, předsedá jí markýz.
+  dukaz:
+    - dm: 2026-11-01
+      citat: bude hlavní radní za trpasličí stranu rady
+  stav: rozhodnuto
+  rozhodnuti: Grimsdal není hlavní radní Mirabaru, ale hlavní radní trpasličí strany Rady jiskřivých kamenů.

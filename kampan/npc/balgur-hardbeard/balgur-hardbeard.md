@@ -5,6 +5,7 @@ typ: npc
 nazev: "Balgur Hardbeard"
 verejne: false
 ikona: 💠
+frakce: "[[rada-jiskrivych-kamenu]]"
 aliases: ["Balgur"]
 vazby: ["[[koudur]]", "[[helga-hardbeard]]", "[[hedwiga-hardbeard]]", "[[halvar-grimsdal]]", "[[dagnar-stonewhen]]", "[[bruna-ironvale]]", "[[vira-stonewhen]]", "[[sidlo-hardbeardu]]", "[[stola-hardbeardu]]"]
 vztahy:

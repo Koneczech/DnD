@@ -40,7 +40,7 @@ Příprava → hra u stolu → přepis a scénář → návrh a schválení → 
 | Větev | Co v ní je | Další krok |
 | --- | --- | --- |
 | `karta-sezeni` | Karta sezení ve wiki podle návrhu, který DM potvrdil 31. 10. (⚠ bod 158): údaje sezení, hráčský kánon, události, U stolu, Kdo a kde, stav zápisu; Kvalita kánonu u nezapsaných sezení; družina vidí sezení podle kánonu | DM: projít PR #107 a sloučit, pak vyzkoušet na kartách Sezení 2 a 3 |
-| `co-vi-druzina-1` | Co ví družina, skupina 1 podle rozhodnutí 82: odrážky u Alby, Koudura, Lety, Nováčka kruhu, Tavise, Torvy, Tábora kruhu a Mirabaru; Družina zná vypnuto u Albiny matky a Cesty, zapnuto u Tavise; rozpory R17 (Torva a druidština) a R18 (tábor je skalní průrva); semenáček v oddílu DM Tábora kruhu | DM: projít PR #110 a sloučit |
+| `mirabar` | Mirabar podle návrhu, který DM schválil 1. 11.: popis města (Forgotten Realms a kánon), 6 odrážek Co ví družina, Co tu najdou, popis obrazu; nová frakce Rada jiskřivých kamenů s Patří k u Grimsdala, Balgura, Dagnara a Bruny; Grimsdal je hlavní radní trpasličí strany (R19) | DM: projít PR a sloučit |
 
 ## Předávky (fronta)
 
@@ -50,7 +50,6 @@ Co jedna část potřebuje od jiné. Hotové položky se mažou, záznam zůstan
 | --- | --- | --- | --- |
 | DM | Hub | Po schválení scénáře s03: finální `s03.yaml` podle `prepis-kanon.md` § 3a ve schématu 2 (`schema: 2`, `stav: finalni`, `scenar_verze`). Zkušební průchod předběžného návrhu: 73 ze 74 operací Hub přijme, `o62` mění pole `harptos_konec`, které karta sezení nemá. Při schválení všeho by zápis přidal 4 chyby Kvality kánonu (rozhodnutí 79): Ordwinův dopis, Thirilův prsten a Kapitán lupičů jsou skryté, i když je zmiňuje hráčský kánon (přidat `pole verejne` a odkrytou odrážku), Mrtvá dívka z tábora lupičů má popis jen 73 znaků (nejméně 200). Pole `rozhodnuti_r` v hlavičce Hub nečte, číslo R patří do `r` u rozporu. Odrážky Co ví družina a hráčský kánon podle rozhodnutí 82 (bez hodů a převyprávěných událostí) | čeká |
 | DM | – | Dokončit kontrolu scénáře sezení 3 (poslech), pak ho schválit | čeká |
-| DM | Hub | Mirabar: návrh kontextu města (městská rada a další), aby bylo s čím hrát; DM potvrdí. Karta má teď jen jednu odrážku a žádný popis | čeká |
 | Kánon | Příběh | 8× dořešit (`kampan/kanon/*` s `doresit: true`), 10 otevřených rozhodnutí; po zápisu sezení 3 i jeho otevřené nitky | čeká |
 | Uspořádání | Hub | Ukázat kouzla a podoby z `reference/srd-cz/` u Alby: List postavy → Spells (česky, anglický název v závorce, označit kouzla z listu) a podoby u Divoké podoby; vidí i družina na webu a telefonu | čeká |
 | Hub | Hub | Úklid kánonu po skupinách podle Kvality kánonu (rozhodnutí 79), souběžně s ostatní prací | čeká |
@@ -93,3 +92,4 @@ Jeden řádek na relaci: datum, relace, co se udělalo, kde to je.
 - 31. 10. 2026 · Hub (Claude) · Co ví družina, skupina 1 zapsaná podle schváleného návrhu (24 odrážek u 8 karet, z toho 1 skrytá, 3 přepínače Družina zná, R17 a R18); chyba „Družina to zná, ale nic nevidí“ klesla ze 17 na 10 karet, žádná nová chyba · větev `co-vi-druzina-1`, PR #110
 - 1. 11. 2026 · Uspořádání (Claude) · kouzla druida do 2. úrovně a 56 podob pro Divokou podobu česky ze SRD 5.2.1 (`reference/srd-cz/`), Lazy GM's Resource Document (`reference/lazy-gm/`) · větev `srd-cz-lazy-gm`
 - 1. 11. 2026 · Uspořádání (Claude) · výsledky měření přepisových modelů do rozcestníku (oddíl Změřeno), mikrofony jako priorita před sezením 4 · větev `prepis-mereni`
+- 1. 11. 2026 · Hub (Claude) · Mirabar a Rada jiskřivých kamenů podle schváleného návrhu (dokument „Mirabar — návrh kontextu města“), sladěno s Forgotten Realms; R19; Kvalita kánonu 61 → 62 %, žádná nová chyba · větev `mirabar`

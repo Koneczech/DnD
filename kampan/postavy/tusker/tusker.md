@@ -13,7 +13,7 @@ vazby: ["[[koudur]]", "[[dorn-treestone]]", "[[vendla-treestone]]", "[[sidlo-tre
 vztahy:
   - { s: "[[dorn-treestone]]", popis: "otec" }
   - { s: "[[vendla-treestone]]", popis: "matka" }
-  - { s: "[[koudur]]", popis: "kamarád z dětství, ochraňuje ho na cestách" }
+  - { s: "[[koudur]]", popis: "kamarád z dětství, ochraňuje ho na cestách", verejne: true }
   - { s: "[[rurik-tarn]]", popis: "kolega od stráže, který ho měsíce ponižoval" }
   - { s: "[[stary-trhovec]]", popis: "zachránil mu na hlídce život" }
   - { s: "[[neznamy-muz-tusker]]", popis: "přinesl ho jako nemluvně k Treestoneům" }

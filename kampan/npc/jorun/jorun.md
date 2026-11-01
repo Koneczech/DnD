@@ -11,7 +11,7 @@ kde: "[[u-deraveho-grose]]"
 aliases: []
 vazby: ["[[koudur]]", "[[tusker]]", "[[alba]]", "[[leta]]", "[[u-deraveho-grose]]", "[[longsaddle]]", "[[triboar]]", "[[mirabar]]", "[[s02]]"]
 vztahy:
-  - { s: "[[koudur]]", popis: "najatý doprovod do Triboaru" }
+  - { s: "[[koudur]]", popis: "najatý doprovod do Triboaru", verejne: true }
 tags: [aktualni]
 ilustrace: []
 zdroj: "sezení 2 (11. 9. 2026), přepis nahrávky"

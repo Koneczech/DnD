@@ -14,7 +14,7 @@ vztahy:
   - { s: "[[balgur-hardbeard]]", popis: "otec" }
   - { s: "[[helga-hardbeard]]", popis: "matka" }
   - { s: "[[hedwiga-hardbeard]]", popis: "sestra" }
-  - { s: "[[tusker]]", popis: "přítel a ochranka na cestách" }
+  - { s: "[[tusker]]", popis: "přítel a ochranka na cestách", verejne: true }
   - { s: "[[vira-stonewhen]]", popis: "snoubenka z dohody rodin, zasnoubení zrušil" }
   - { s: "[[brann-kettleborn]]", popis: "prodal mu dudy a učil ho na ně hrát" }
   - { s: "[[ulfgar-tinbarrel]]", popis: "šenkýr, který ho nechal tajně hrát Na Zvonici" }

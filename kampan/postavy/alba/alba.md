@@ -24,7 +24,7 @@ zdroj: https://app.notion.com/p/3c79ed22673681d28d10e5b68c977bab
 ---
 # Albalunna „Alba“ Nox
 
-> Aasimar, druidka (Druid 3, Circle of the Moon), 23 let. 18 HP, AC 14. %%zná%%
+> Aasimar, druidka (Druid 3, Circle of the Moon), 23 let. 18 HP, AC 14.
 
 Velmi dlouhé bílé vlasy, výrazné zelené oči, zlaté pihy kolem nosu a pod očima, dva červené pruhy malované přes tváře.
 

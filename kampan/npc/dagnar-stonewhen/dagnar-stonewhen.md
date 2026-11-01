@@ -5,6 +5,7 @@ typ: npc
 nazev: "Dagnar Stonewhen"
 verejne: false
 ikona: 🪨
+frakce: "[[rada-jiskrivych-kamenu]]"
 aliases: ["Dagnar"]
 vazby: ["[[vira-stonewhen]]", "[[balgur-hardbeard]]", "[[koudur]]", "[[sidlo-hardbeardu]]"]
 vztahy:

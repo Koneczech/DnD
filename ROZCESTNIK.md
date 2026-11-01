@@ -94,4 +94,4 @@ Jeden řádek na relaci: datum, relace, co se udělalo, kde to je.
 - 1. 11. 2026 · Hub (Claude) · Mirabar a Rada jiskřivých kamenů podle schváleného návrhu (dokument „Mirabar — návrh kontextu města“), sladěno s Forgotten Realms; R19; Kvalita kánonu 61 → 62 %, žádná nová chyba · větev `mirabar`, PR #114
 - 1. 11. 2026 · Hub (Claude) · pohled družiny: hráčský kánon a odkazová pole (rozhodnutí 83), vztahy a události pro družinu · větev `pohled-druziny`, PR #115
 - 1. 11. 2026 · Hub (Claude) · Balgur Hardbeard pro družinu (Členové Rady jiskřivých kamenů v pohledu družiny) · větev `balgur`
-- 1. 11. 2026 · Hub (Claude) · prázdné doporučené oddíly typu v 76 kartách, doporučení „Chybí doporučené oddíly“ z 74 na 0 · větev `oddily-typu`
+- 1. 11. 2026 · Hub (Claude) · prázdné doporučené oddíly typu v 76 kartách, doporučení „Chybí doporučené oddíly“ z 74 na 0 · větev `oddily-typu`, PR #117

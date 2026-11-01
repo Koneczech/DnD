@@ -52,6 +52,7 @@ Co jedna část potřebuje od jiné. Hotové položky se mažou, záznam zůstan
 | DM | – | Dokončit kontrolu scénáře sezení 3 (poslech), pak ho schválit | čeká |
 | DM | Hub | Mirabar: návrh kontextu města (městská rada a další), aby bylo s čím hrát; DM potvrdí. Karta má teď jen jednu odrážku a žádný popis | čeká |
 | Kánon | Příběh | 8× dořešit (`kampan/kanon/*` s `doresit: true`), 10 otevřených rozhodnutí; po zápisu sezení 3 i jeho otevřené nitky | čeká |
+| Uspořádání | Hub | Ukázat kouzla a podoby z `reference/srd-cz/` u Alby: List postavy → Spells (česky, anglický název v závorce, označit kouzla z listu) a podoby u Divoké podoby; vidí i družina na webu a telefonu | čeká |
 | Hub | Hub | Úklid kánonu po skupinách podle Kvality kánonu (rozhodnutí 79), souběžně s ostatní prací | čeká |
 
 ## Doporučené pořadí
@@ -90,4 +91,5 @@ Jeden řádek na relaci: datum, relace, co se udělalo, kde to je.
 - 31. 10. 2026 · Uspořádání (Claude) · návrh `sNN.yaml` píše relace Hub, postup pro DM v `prepis-kanon.md` § 3a · větev `navrh-pise-hub`
 - 31. 10. 2026 · Hub (Claude) · přehled typů karet kánonu (artefakt Karty kánonu), rozhodnutí 82 co patří do kánonu, návrh Co ví družina pro skupinu 1 ke schválení · větev `co-patri-do-kanonu`, PR #109
 - 31. 10. 2026 · Hub (Claude) · Co ví družina, skupina 1 zapsaná podle schváleného návrhu (24 odrážek u 8 karet, z toho 1 skrytá, 3 přepínače Družina zná, R17 a R18); chyba „Družina to zná, ale nic nevidí“ klesla ze 17 na 10 karet, žádná nová chyba · větev `co-vi-druzina-1`, PR #110
+- 1. 11. 2026 · Uspořádání (Claude) · kouzla druida do 2. úrovně a 56 podob pro Divokou podobu česky ze SRD 5.2.1 (`reference/srd-cz/`), Lazy GM's Resource Document (`reference/lazy-gm/`) · větev `srd-cz-lazy-gm`
 - 1. 11. 2026 · Uspořádání (Claude) · výsledky měření přepisových modelů do rozcestníku (oddíl Změřeno), mikrofony jako priorita před sezením 4 · větev `prepis-mereni`

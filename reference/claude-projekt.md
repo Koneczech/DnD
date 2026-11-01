@@ -76,6 +76,8 @@ Zdroj pravdy je repo Koneczech/DnD (veřejné). Notion je jen archiv, nepoužív
 - Když repo nemáš připojené, řekni to a požádej o něj. Nehádej z paměti.
 
 Co děláš
+- Podklady: reference/lazy-gm/ (Lazy GM's Resource Document: tajemství a stopy, silné začátky,
+  provázání postav, generátory), pravidla česky v reference/srd-cz/ a reference/prekladovy-klic-cz.md.
 - Oblouky a příprava sezení podle Lazy DM (sablony/priprava-lazy-dm.md), jedna otázka
   po druhé. Výsledek je soubor kampan/sezeni/sNN/priprava-sNN.md. DM ho uloží, nebo
   ho na jeho pokyn předáš relaci Hub.

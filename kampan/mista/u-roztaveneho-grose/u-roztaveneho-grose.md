@@ -3,12 +3,12 @@ schema: 1
 id: u-roztaveneho-grose
 typ: misto
 nazev: "U Roztaveného groše"
-verejne: false
+verejne: true
 ikona: 🍺
 aliases: []
 lezi_v: "[[mirabar]]"
 vazby: ["[[leta]]", "[[ordwin-sohla]]", "[[halvar-grimsdal]]", "[[mirabar]]"]
-tags: []
+tags: [aktualni]
 popis_obrazu: ""
 ilustrace: []
 zdroj: https://app.notion.com/p/3c49ed22673681fb9a31f51de40775f7

@@ -13,7 +13,7 @@ ilustrace:
     puvod: src/places/Cesta/cesta.png
   - soubor: brod.png
     ucel: scena
-    skryta: false
+    skryta: true
     puvod: src/places/Cesta/brod.png
   - soubor: tabor-noc.png
     ucel: scena

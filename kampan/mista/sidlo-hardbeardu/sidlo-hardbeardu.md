@@ -3,12 +3,12 @@ schema: 1
 id: sidlo-hardbeardu
 typ: misto
 nazev: "Sídlo Hardbeardů"
-verejne: false
+verejne: true
 ikona: 🏛️
 aliases: []
 lezi_v: "[[mirabar]]"
 vazby: ["[[koudur]]", "[[balgur-hardbeard]]", "[[hedwiga-hardbeard]]", "[[halvar-grimsdal]]", "[[dagnar-stonewhen]]", "[[bruna-ironvale]]", "[[mirabar]]"]
-tags: []
+tags: [aktualni]
 popis_obrazu: ""
 ilustrace: []
 zdroj: https://app.notion.com/p/3c69ed226736818fafefc7f80ddd02d3

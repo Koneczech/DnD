@@ -3,7 +3,7 @@ schema: 1
 id: na-zvonici
 typ: misto
 nazev: "Na Zvonici"
-verejne: false
+verejne: true
 ikona: 🔔
 aliases: ["Zvonice"]
 lezi_v: "[[mirabar]]"

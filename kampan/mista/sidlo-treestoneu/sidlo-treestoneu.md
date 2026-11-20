@@ -3,19 +3,19 @@ schema: 1
 id: sidlo-treestoneu
 typ: misto
 nazev: "Sídlo Treestoneů"
-verejne: false
+verejne: true
 ikona: 🏚️
 aliases: []
 lezi_v: "[[mirabar]]"
 vazby: ["[[tusker]]", "[[dorn-treestone]]", "[[vendla-treestone]]", "[[rurik-tarn]]", "[[sidlo-hardbeardu]]", "[[mirabar]]"]
-tags: []
+tags: [aktualni]
 popis_obrazu: ""
 ilustrace: []
 zdroj: https://app.notion.com/p/3c79ed226736819a94e8e620f7457dad
 ---
 # Sídlo Treestoneů
 
-Dům, který vypadá líp zvenku než zevnitř. **Adresa dobrá, sousedi bohatí** (Hardbeardovi bydlí vedle), ve vstupní hale portréty předků a velké zrcadlo pod nimi.
+Dům, který vypadá líp zvenku než zevnitř. **Adresa dobrá, sousedi bohatí** (Hardbeardovi bydlí vedle), ve vstupní hale portréty předků a velké zrcadlo pod nimi. %%zná%%
 
 Ale koberce jsou prošlapané, **půlka pokojů se netopí** a stříbro z jídelny se rok co rok tenčí. Treestoneové jsou starý rod — jenže staré jméno se nedá jíst.
 

@@ -23,7 +23,7 @@ Odpočinkové, hrací sezení. Štola (zával, zatopená štola, pavouk) zůstá
 - Tusker: ❓
 - Koudur: ❓ Koncert v Triboaru o Dožínkách stále platí.
 - Alba: ❓
-- Leta: ⚠ Den předtím se dozvěděla o Thirilově smrti. Tichá chvíle uprostřed veselí (třeba u Petřiných karet), nebo nic. Rozhoduje DM, případně Anna.
+- Leta: ⚠ Den předtím se dozvěděla o Thirilově smrti. Tichá chvíle uprostřed veselí (třeba u Phaedřiných karet), nebo nic. Rozhoduje DM, případně Anna.
 
 ## 2. Silný začátek
 
@@ -45,7 +45,7 @@ Odpočinkové, hrací sezení. Štola (zával, zatopená štola, pavouk) zůstá
 
 ## 4. Tajemství a stopy
 
-❓ Zatím nic. Až budou, rozdávají se přes hry (Marianova věta po prohře, Fejlího historky, Petřiny karty).
+❓ Zatím nic. Až budou, rozdávají se přes hry (Marrokova věta po prohře, Faelovy historky, Phaedřiny karty).
 
 - [ ] ❓ Háčky od Malka přes Jakuba
 - [ ]
@@ -64,25 +64,25 @@ Odpočinkové, hrací sezení. Štola (zával, zatopená štola, pavouk) zůstá
 
 ## 6. Důležitá NPC
 
-✅ Kejklíři vycházejí z DMova kanclu, ✅ říká se jim kejklíři, ne cirkus. ✅ Háčky předává Jakub.
+✅ Kejklíři vycházejí z DMova kanclu, ✅ říká se jim kejklíři, ne cirkus. ✅ Háčky předává Jakub (Jalen).
 
-Role jsou ⚠ pracovní, DM je zatím nepřepsal:
+Jména, rasy a staty jsou ⚠ návrh, celé statbloky v `kejkliri-postavy.docx`. DM přejmenoval Fenwicka na Faela ✅.
 
-| Kejklíř | Role | Co chce / jak ho hrát |
+| Kejklíř (předloha) | Role | Co chce / jak ho hrát |
 | --- | --- | --- |
-| Katka | principálka a bubenice | rockerka, cílevědomá, všichni ji respektují |
-| Franta | majitel, sedí v zavřeném voze | přísný, ale férový, družina ho potká jen v průchodu |
-| Zdeňa | kouzelník a hračkář | o svoje lidi se stará, problémy rád přehodí na jiné |
-| Fejlí | vyvolávač | všechno zná, mluví o věcech, které nikoho nezajímají, rád se poslouchá, nezodpovědný, single |
-| Milan | žonglér, který hraje šachy | líný, šikovný, raději si stěžuje |
-| Pavel | kolář a mechanik, „vytuněný“ vůz | systematický, vychází se všemi, ale nemá je všechny rád |
-| Sára | ošetřovatelka zvířat a akrobatka | pracovitá, sympatická, kolegyně všech |
-| Petr | vedoucí herecké tlupy | obléká se podle poslední módy, dělá, co může |
-| Marian | stánek se šipkami | nevrlý, nesnáší, když na něj někdo mluví |
-| Jakub | externista, jen na tuhle cestu | schopný a chytrý, melancholii nedává najevo; ✅ předává háčky od Malka |
-| Petra | kartářka | tichá, analytická, čte lidi |
+| Kestra (Katka) | principálka a bubenice | rockerka, cílevědomá, všichni ji respektují |
+| Faldor (Franta) | majitel, sedí v zavřeném voze | přísný, ale férový, družina ho potká jen v průchodu |
+| Zedwin (Zdeňa), gnóm | kouzelník a hračkář | o svoje lidi se stará, problémy rád přehodí na jiné |
+| Fael (Filip) | vyvolávač | všechno zná, mluví o věcech, které nikoho nezajímají, rád se poslouchá, nezodpovědný, single |
+| Milo (Milan), hobit | žonglér, který hraje šachy | líný, šikovný, raději si stěžuje |
+| Perrin (Pavel) | kolář a mechanik, „vytuněný“ vůz | systematický, vychází se všemi, ale nemá je všechny rád |
+| Saria (Sára) | ošetřovatelka zvířat a akrobatka | pracovitá, sympatická, kolegyně všech |
+| Piers (Petr) | vedoucí herecké tlupy | obléká se podle poslední módy, dělá, co může |
+| Marrok (Marian) | stánek se šipkami | nevrlý, nesnáší, když na něj někdo mluví |
+| Jalen (Jakub) | externista, jen na tuhle cestu | schopný a chytrý, melancholii nedává najevo; ✅ předává háčky od Malka |
+| Phaedra (Petra) | kartářka | tichá, analytická, čte lidi |
 
-⚠ Melancholii Mariana a Jakuba hrát jako cynismus, ne jako nemoc.
+⚠ Melancholii Marroka a Jalena hrát jako cynismus, ne jako nemoc.
 
 ## 7. Nestvůry
 

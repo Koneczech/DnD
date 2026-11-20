@@ -4,7 +4,7 @@ sezeni: s04
 ---
 # Hry v táboře kejklířů: pravidla
 
-Sedm her, opilost a pijácká soutěž pro sezení 4. Všechno je ⚠ návrh. Opravy NPC jsou odhad a dají se upravit u stolu. Upravovat se dá i dokument v Claude: https://claude.ai/artifact/94TW3FdRQxXSUxgghXXUTT
+Sedm her, opilost a pijácká soutěž pro sezení 4. Všechno je ⚠ návrh. Opravy NPC jsou odhad a dají se upravit u stolu. Verze s návodem pro stůl: https://claude.ai/artifact/5JSSHFYex2GCwoZuUVxUJV
 
 ## Jak číst hody
 
@@ -17,9 +17,9 @@ Sedm her, opilost a pijácká soutěž pro sezení 4. Všechno je ⚠ návrh. Op
 
 **Měna:** 1 zl = 10 st.
 
-## 1. Zvon síly (vede Zdeňa)
+## 1. Zvon síly (vede Zedwin)
 
-Zdeňova mechanická hračka: kolejnice, závaží, pružiny a nahoře mosazný zvon. Hráč udeří palicí do podložky a závaží vyletí nahoru.
+Zedwinova mechanická hračka: kolejnice, závaží, pružiny a nahoře mosazný zvon. Hráč udeří palicí do podložky a závaží vyletí nahoru.
 
 - **Sázka:** 1 st za pokus.
 - **Hod:** Síla (Atletika).
@@ -27,20 +27,20 @@ Zdeňova mechanická hračka: kolejnice, závaží, pružiny a nahoře mosazný 
 | Výsledek | Co se stane |
 | --- | --- |
 | do 9 | Závaží se sotva hne. |
-| 10–14 | Dojede do půlky, Zdeňa to komentuje. |
+| 10–14 | Dojede do půlky, Zedwin to komentuje. |
 | 15–19 | Zastaví se těsně pod zvonem. |
 | 20–24 | Zvon zazvoní. Výhra: perník nebo stužka. |
-| 25 a víc | Zvon zazvoní a mechanismus se rozsype. Zdeňa je nadšený a nabídne odvetu zdarma. |
+| 25 a víc | Zvon zazvoní a mechanismus se rozsype. Zedwin je nadšený a nabídne odvetu zdarma. |
 
 **Tusker:** Zuřivost dává výhodu na zkoušky Síly, ale spotřebuje jedno použití.
 
-## 2. Šipky (vede Marian)
+## 2. Šipky (vede Marrok)
 
-Pravidla jsou stejná jako v Longsaddle (rozhodnutí `sipky-jako-hra`). Marian nepromluví, dokud neprohraje.
+Pravidla jsou stejná jako v Longsaddle (rozhodnutí `sipky-jako-hra`). Marrok nepromluví, dokud neprohraje.
 
 - **Sázka:** 1 zl.
 - **Hod za každou šipku:** k20 + oprava Obratnosti. Se zdatností v herní sadě šipek i zdatnostní bonus (Tusker ji má).
-- **Marian:** +5.
+- **Marrok:** +5.
 - **Terč** se hází z devíti stop.
 
 | Výsledek hodu | Body |
@@ -58,81 +58,81 @@ Pravidla jsou stejná jako v Longsaddle (rozhodnutí `sipky-jako-hra`). Marian n
 - **Hra na tři šipky:** vyhrává nejvyšší součet, druhé místo dostane zpět vklad.
 - **Závod na 15 bodů:** po jedné šipce, kdo v kole první dosáhne 15 a víc, vyhrává. Když víc lidí, rozhodne vyšší součet, při rovnosti jedna šipka navíc.
 
-**Kdo Mariana porazí,** tomu neochotně řekne jednu větu navíc. Sem patří jedno z tajemství sezení.
+**Kdo Marroka porazí,** tomu neochotně řekne jednu větu navíc. Sem patří jedno z tajemství sezení.
 
-## 3. Dračí šachy (vede Milan)
+## 3. Dračí šachy (vede Milo)
 
-Milan místo žonglování hraje šachy s kýmkoli. Partie se hraje na dvě vítězná kola.
+Milo místo žonglování hraje šachy s kýmkoli. Partie se hraje na dvě vítězná kola.
 
 - **Sázka:** 1 zl nebo cokoli, na čem se dohodnou.
 - **Každé kolo:** soupeření v Inteligenci. Se zdatností v herní sadě dračích šachů i zdatnostní bonus.
-- **Milan:** Inteligence +4, Vhled +1.
+- **Milo:** Inteligence +4, Vhled +1.
 
-**Lest (jednou za partii):** hráč místo tahu zkusí Milana nachytat. Charisma (Klamání) proti Milanově Moudrosti (Vhled). Při úspěchu má v dalším kole výhodu, při neúspěchu nevýhodu.
+**Lest (jednou za partii):** hráč místo tahu zkusí Mila nachytat. Charisma (Klamání) proti Milově Moudrosti (Vhled). Při úspěchu má v dalším kole výhodu, při neúspěchu nevýhodu.
 
-**Milanova lenost:**
+**Milova lenost:**
 
-| Stav partie | Milan v dalším kole |
+| Stav partie | Milo v dalším kole |
 | --- | --- |
 | Prohrává 0 : 1 | Zabere se, hází s výhodou |
 | Vede 1 : 0 | Poleví, hází s nevýhodou |
 | 1 : 1 | Normálně |
 
-Kdo Milana porazí, uslyší, že „tohle stejně nebyla pořádná partie“, a Milan chce odvetu.
+Kdo Mila porazí, uslyší, že „tohle stejně nebyla pořádná partie“, a Milo chce odvetu.
 
-## 4. Skořápky (vede Fejlí)
+## 4. Skořápky (vede Fael)
 
-Tři skořápky, jedna kulička. Fejlí při tom nepřestane mluvit, aby odvedl pozornost.
+Tři skořápky, jedna kulička. Fael při tom nepřestane mluvit, aby odvedl pozornost.
 
 - **Sázka:** 1 st, výhra je dvojnásobek.
-- **Hod:** soupeření hráčovy Moudrosti (Vnímání) proti Fejlího Obratnosti (Hbitost rukou).
-- **Fejlí:** Hbitost rukou +5, Vnímání +2.
+- **Hod:** soupeření hráčovy Moudrosti (Vnímání) proti Faelovy Obratnosti (Čachry).
+- **Fael:** Čachry +5, Vnímání +2.
 
 | Výsledek | Co se stane |
 | --- | --- |
-| Fejlí vyhraje | Hráč ukazuje na špatnou skořápku. |
+| Fael vyhraje | Hráč ukazuje na špatnou skořápku. |
 | Hráč vyhraje | Uhodne. |
-| Hráč vyhraje o 5 a víc | Uhodne a navíc zahlédne, že Fejlí schovává kuličku v dlani. Podvádí. |
+| Hráč vyhraje o 5 a víc | Uhodne a navíc zahlédne, že Fael schovává kuličku v dlani. Podvádí. |
 
-**Leta podvede podvodníka:** místo hádání hodí Obratnost (Hbitost rukou) proti Fejlího Moudrosti (Vnímání). Při úspěchu vrátí kuličku pod skořápku, na kterou ukazuje, a vyhraje. Při neúspěchu ji Fejlí chytí za ruku a nastane trapná chvíle pro oba.
+**Leta podvede podvodníka:** místo hádání hodí Obratnost (Čachry) proti Faelovy Moudrosti (Vnímání). Při úspěchu vrátí kuličku pod skořápku, na kterou ukazuje, a vyhraje. Při neúspěchu ji Fael chytí za ruku a nastane trapná chvíle pro oba.
 
-## 5. Provaz nad senem (vede Sára)
+## 5. Provaz nad senem (vede Saria)
 
 Provaz mezi dvěma vozy, pod ním kupa sena. Jde se po třech úsecích, každý je těžší.
 
-- **Sázka:** zdarma, Sára to nabídne sama.
+- **Sázka:** zdarma, Saria to nabídne sama.
 - **Hod na každý úsek:** Obratnost (Akrobacie).
 
 | Úsek | SO | Odměna |
 | --- | --- | --- |
 | 1. Začátek | 10 | stužka |
 | 2. Prostředek (provaz se houpe) | 13 | perník |
-| 3. Konec (Sára zatřese provazem) | 16 | peříčko do vlasů a potlesk |
+| 3. Konec (Saria zatřese provazem) | 16 | peříčko do vlasů a potlesk |
 
 **Pád** skončí v seně, bez zranění a se smíchem. Kdo spadne, může to zkusit znovu od začátku.
 
 Pro Albu: úkol je jasný a stupňuje se, takže se v něm Adriana neztratí.
 
-## 6. Bubny proti dudám (Katka a Koudur)
+## 6. Bubny proti dudám (Kestra a Koudur)
 
 Hudební souboj před publikem kejklířů. Tři kola, kdo vyhraje dvě, vyhrává.
 
 - **Sázka:** čest. Nebo dohoda: kdo prohraje, nalije.
 - **Každé kolo:** soupeření v Charismě (Vystupování). Kolo vyhraje vyšší hod, publikum to potvrdí potleskem.
-- **Katka:** Vystupování +5.
+- **Kestra:** Vystupování +5.
 - **Remíza v kole:** oba hrají spolu, potlesk dostanou oba a kolo se nepočítá.
 
-**Výhra Koudura:** Katka mu nabídne zahrát na večerním představení za podíl z výdělku. Potom platí pravidlo placeného vystoupení (rozhodnutí `vystoupeni-za-penize`): tři hody na Vystupování, platba podle výsledku a spropitné od diváků zvlášť.
+**Výhra Koudura:** Kestra mu nabídne zahrát na večerním představení za podíl z výdělku. Potom platí pravidlo placeného vystoupení (rozhodnutí `vystoupeni-za-penize`): tři hody na Vystupování, platba podle výsledku a spropitné od diváků zvlášť.
 
 **Opilost pomáhá:** veselý Koudur (1. stupeň) má na Vystupování výhodu.
 
-## 7. Tři karty (vede Petra)
+## 7. Tři karty (vede Phaedra)
 
-Není to soutěž. Petra vyloží tři karty: minulost, teď a cesta. Nevěští, čte lidi.
+Není to soutěž. Phaedra vyloží tři karty: minulost, teď a cesta. Nevěští, čte lidi.
 
 - **Sázka:** 1 st do misky.
-- **Hod:** žádný. Petra říká, co vyčte (pasivní Vhled 15). DM určí, co na postavě vidí.
-- **Kdo chce něco skrýt:** Charisma (Klamání) SO 15. Při neúspěchu Petra řekne nahlas něco, co by vědět neměla.
+- **Hod:** žádný. Phaedra říká, co vyčte (pasivní Vhled 15). DM určí, co na postavě vidí.
+- **Kdo chce něco skrýt:** Charisma (Klamání) SO 15. Při neúspěchu Phaedra řekne nahlas něco, co by vědět neměla.
 
 Tichá chvíle pro Letu (ztráta Thirila) nebo pro Albu (hledá otce), pokud o ni stojí hráčky.
 
@@ -145,7 +145,7 @@ Po každém pití hodí postava záchranný hod na Odolnost. Při neúspěchu st
 | Pivo | 10 |
 | Víno nebo medovina | 12 |
 | Kořalka | 15 |
-| Kejklířský „oheň“ (Katčina láhev) | 18 |
+| Kejklířský „oheň“ (Kestřina láhev) | 18 |
 
 **Rychlé pití:** třetí a každé další pití během jedné hodiny má SO vyšší o 2.
 
@@ -166,14 +166,14 @@ Po každém pití hodí postava záchranný hod na Odolnost. Při neúspěchu st
 - **Koudur:** trpasličí odolnost dává výhodu na záchrany proti stavu Otrávený. Návrh: výhoda na všechny záchrany při pití.
 - **Tusker:** barbar má zdatnost v záchranách na Odolnost, přičte zdatnostní bonus.
 - **Alba:** Nižší navrácení (bonusová akce) ukončí stav Otrávený, opilého ze 3. nebo 4. stupně srazí na 2. Ochrana před jedem dá výhodu na záchrany po dobu trvání. Obě kouzla jsou na 2. stupni, pokud je má připravená.
-- **Hry:** na 2. stupni nevýhoda u šipek, provazu a Letiny Hbitosti rukou. Na 3. stupni nevýhoda na všechno.
+- **Hry:** na 2. stupni nevýhoda u šipek, provazu a u Letiných Čachrů. Na 3. stupni nevýhoda na všechno.
 
-## 9. Pijácká soutěž (vede Katka)
+## 9. Pijácká soutěž (vede Kestra)
 
 Oba pijí současně a oba hází záchranu podle pravidel opilosti.
 
 - **Sázka:** 2 zl, nebo poražený zítra ráno nakrmí zebru.
-- **Katka:** záchrana na Odolnost +4.
+- **Kestra:** záchrana na Odolnost +4.
 - **Průběh:** začíná se pivem a v každém kole se jde o řádek výš v tabulce pití (pivo, víno, kořalka, oheň). Platí i rychlé pití, takže SO po kolech je 10, 12, 17 a od čtvrtého kola 20.
 - **Prohrává**, kdo první dosáhne 4. stupně nebo odmítne pít. Když oba naráz, je to remíza a oba usnou u ohně.
 
@@ -181,10 +181,10 @@ Oba pijí současně a oba hází záchranu podle pravidel opilosti.
 
 | Kejklíř | Hra | Opravy |
 | --- | --- | --- |
-| Zdeňa | Zvon síly | — (hází jen hráč) |
-| Marian | Šipky | šipka +5 |
-| Milan | Dračí šachy | Inteligence +4, Vhled +1 |
-| Fejlí | Skořápky | Hbitost rukou +5, Vnímání +2 |
-| Sára | Provaz nad senem | — (SO 10 / 13 / 16) |
-| Katka | Bubny proti dudám, pijácká soutěž | Vystupování +5, záchrana na Odolnost +4 |
-| Petra | Tři karty | pasivní Vhled 15 |
+| Zedwin | Zvon síly | — (hází jen hráč) |
+| Marrok | Šipky | šipka +5 |
+| Milo | Dračí šachy | Inteligence +4, Vhled +1 |
+| Fael | Skořápky | Čachry +5, Vnímání +2 |
+| Saria | Provaz nad senem | — (SO 10 / 13 / 16) |
+| Kestra | Bubny proti dudám, pijácká soutěž | Vystupování +5, záchrana na Odolnost +4 |
+| Phaedra | Tři karty | pasivní Vhled 15 |
